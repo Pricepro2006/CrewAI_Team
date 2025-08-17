@@ -84,7 +84,7 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         let query = "SELECT * FROM workflow_tasks WHERE 1=1";
@@ -191,7 +191,7 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         const task = db
@@ -253,7 +253,7 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         // Get current task
@@ -355,7 +355,7 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         const taskId = `TASK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -432,7 +432,7 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         // Check if task exists
@@ -467,7 +467,7 @@ export const workflowRouter: Router<any> = router({
 
   // Get executive metrics
   metrics: publicProcedure.query(async ({ ctx }) => {
-    const db = new Database("./data/crewai.db");
+    const db = new Database("./data/crewai_enhanced.db");
 
     try {
       const metrics = db
@@ -539,7 +539,7 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         let dateFormat: string;

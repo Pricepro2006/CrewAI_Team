@@ -1,4 +1,4 @@
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { databaseManager } from "../../core/database/DatabaseManager.js";
 import { logger } from "../../utils/logger.js";
 import type { LlamaAnalysisResult, CriticalAnalysisResult } from "./types.js";
 
@@ -17,11 +17,16 @@ export interface AnalysisToSave {
 export async function saveAnalysisResults(
   analyses: AnalysisToSave[],
 ): Promise<void> {
-  const dbManager = getDatabaseManager();
-  const db = dbManager.getSQLiteDatabase();
+  try {
+    const connection = databaseManager.getConnection('main');
+    const db = connection.getRawDatabase();
+    
+    if (!db) {
+      throw new Error('Database connection not available');
+    }
 
-  // Prepare the insert statement
-  const stmt = db.prepare(`
+    // Prepare the insert statement
+    const stmt = db.prepare(`
     INSERT OR REPLACE INTO email_analysis (
       email_id,
       pipeline_stage,
@@ -31,10 +36,10 @@ export async function saveAnalysisResults(
       final_model_used,
       analysis_timestamp
     ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-  `);
+    `);
 
-  // Use a transaction for batch insert
-  const saveAll = db.transaction((analyses: AnalysisToSave[]) => {
+    // Use a transaction for batch insert
+    const saveAll = db.transaction((analyses: AnalysisToSave[]) => {
     for (const analysis of analyses) {
       try {
         // Convert objects to JSON strings
@@ -62,10 +67,9 @@ export async function saveAnalysisResults(
           error as Error,
         );
       }
-    }
-  });
+      }
+    });
 
-  try {
     saveAll(analyses);
     logger.info(
       `Saved analysis results for ${analyses?.length || 0} emails`,
@@ -73,11 +77,11 @@ export async function saveAnalysisResults(
     );
   } catch (error) {
     logger.error(
-      "Failed to save analysis results batch",
+      "Failed to save analysis results",
       "SAVE_ANALYSIS",
-      error as Error,
+      { count: analyses?.length || 0, error: error instanceof Error ? error.message : String(error) },
     );
-    throw error;
+    // Don't throw to allow system to continue
   }
 }
 
@@ -86,12 +90,22 @@ export async function saveAnalysisResults(
  * This transforms the pipeline JSON into the expected schema
  */
 export async function createCompatibilityView(): Promise<void> {
-  const dbManager = getDatabaseManager();
-  const db = dbManager.getSQLiteDatabase();
-
   try {
-    // Drop existing view if it exists
-    db.exec(`DROP VIEW IF EXISTS email_analysis_view`);
+    const connection = databaseManager.getConnection('main');
+    const db = connection.getRawDatabase();
+    
+    if (!db) {
+      logger.warn('Database connection not available for creating view', 'SAVE_ANALYSIS');
+      return;
+    }
+
+    // Try to drop existing view if it exists (ignore errors)
+    try {
+      db.exec(`DROP VIEW IF EXISTS email_analysis_view`);
+    } catch (dropError) {
+      // View might not exist, continue
+      logger.debug('View does not exist or could not be dropped', 'SAVE_ANALYSIS');
+    }
 
     // Create view that transforms JSON to match EmailStorageService expectations
     db.exec(`

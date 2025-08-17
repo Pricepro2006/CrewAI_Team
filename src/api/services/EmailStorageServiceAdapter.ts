@@ -11,6 +11,7 @@
 import Database from 'better-sqlite3';
 import { logger } from '../../utils/logger.js';
 import path from 'path';
+import fs from 'fs';
 
 export class EmailStorageServiceAdapter {
   private db: Database.Database;
@@ -18,25 +19,45 @@ export class EmailStorageServiceAdapter {
   constructor() {
     // Use the enhanced database instead of the original
     const dbPath = path.join(process.cwd(), 'data', 'crewai_enhanced.db');
-    this.db = new Database(dbPath);
     
-    logger.info('EmailStorageServiceAdapter initialized with enhanced database', 'EMAIL_ADAPTER');
+    // Ensure data directory exists
+    const dataDir = path.dirname(dbPath);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
     
-    // Create views that map enhanced schema to original schema
-    this.createCompatibilityViews();
+    try {
+      this.db = new Database(dbPath);
+      logger.info('EmailStorageServiceAdapter initialized with enhanced database', 'EMAIL_ADAPTER');
+      
+      // Create views that map enhanced schema to original schema
+      this.createCompatibilityViews();
+    } catch (error) {
+      logger.error('Failed to initialize EmailStorageServiceAdapter', 'EMAIL_ADAPTER', { error });
+      throw error;
+    }
   }
   
   private createCompatibilityViews() {
     try {
       // Drop existing views if they exist
-      this?.db?.exec(`
-        DROP VIEW IF EXISTS emails;
-        DROP VIEW IF EXISTS email_analysis;
-      `);
+      try {
+        this?.db?.exec(`DROP VIEW IF EXISTS emails`);
+      } catch (err) {
+        // View might not exist, continue
+        logger.debug('View emails does not exist or could not be dropped', 'EMAIL_ADAPTER');
+      }
+      
+      try {
+        this?.db?.exec(`DROP VIEW IF EXISTS email_analysis`);
+      } catch (err) {
+        // View might not exist, continue
+        logger.debug('View email_analysis does not exist or could not be dropped', 'EMAIL_ADAPTER');
+      }
       
       // Create emails view that maps enhanced schema to original schema
       this?.db?.exec(`
-        CREATE VIEW emails AS
+        CREATE VIEW IF NOT EXISTS emails AS
         SELECT 
           id,
           id as graph_id,  -- Enhanced DB doesn't have graph_id, use id
@@ -59,7 +80,7 @@ export class EmailStorageServiceAdapter {
       
       // Create email_analysis view that maps phase data to analysis structure
       this?.db?.exec(`
-        CREATE VIEW email_analysis AS
+        CREATE VIEW IF NOT EXISTS email_analysis AS
         SELECT
           id,
           id as email_id,
@@ -130,8 +151,9 @@ export class EmailStorageServiceAdapter {
         WHERE phase_completed > 0;
       `);
       
-      // Note: Indexes should be created on the underlying table, not on views
-      // The enhanced database already has proper indexes
+      // Note: SQLite does not allow indexes on views - "views may not be indexed" error
+      // Indexes should only be created on the underlying tables, not on views
+      // The enhanced database already has proper indexes on the base tables
       
       logger.info('Compatibility views created successfully', 'EMAIL_ADAPTER');
       
@@ -146,7 +168,13 @@ export class EmailStorageServiceAdapter {
   }
   
   close() {
-    this?.db?.close();
+    try {
+      if (this.db && !this.db.readonly) {
+        this.db.close();
+      }
+    } catch (error) {
+      logger.warn('Error closing database in EmailStorageServiceAdapter', 'EMAIL_ADAPTER', { error });
+    }
   }
 }
 

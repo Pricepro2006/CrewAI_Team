@@ -32,6 +32,11 @@ export class AuthService {
   private jwtSecret: string;
   private tokenExpiry: string = "24h";
   private refreshTokenExpiry: string = "7d";
+  
+  // Rate limiting for authentication attempts
+  private loginAttempts: Map<string, { count: number; lastAttempt: number }> = new Map();
+  private readonly MAX_LOGIN_ATTEMPTS = 5;
+  private readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 
   constructor(databasePath: string = "./data/app.db") {
     this.db = new Database(databasePath);
@@ -47,7 +52,7 @@ export class AuthService {
     // Additional validation for production
     if (process.env.NODE_ENV === "production") {
       // Ensure JWT secret is strong enough
-      if (this?.jwtSecret?.length < 32) {
+      if (this.jwtSecret.length < 32) {
         logger.error("JWT_SECRET is too weak for production!", "AUTH");
         throw new Error("JWT_SECRET must be at least 32 characters in production");
       }
@@ -57,7 +62,7 @@ export class AuthService {
   }
 
   private initializeUserTable(): void {
-    this?.db?.exec(`
+    this.db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -115,7 +120,7 @@ export class AuthService {
       const passwordHash = await bcrypt.hash(password, saltRounds);
 
       // Insert user
-      const stmt = this?.db?.prepare(`
+      const stmt = this.db.prepare(`
         INSERT INTO users (email, password_hash, role)
         VALUES (?, ?, ?)
       `);
@@ -154,6 +159,27 @@ export class AuthService {
    */
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
+      // Check rate limiting
+      const attempts = this.loginAttempts.get(email);
+      if (attempts) {
+        const timeSinceLastAttempt = Date.now() - attempts.lastAttempt;
+        
+        // Check if account is locked out
+        if (attempts.count >= this.MAX_LOGIN_ATTEMPTS && 
+            timeSinceLastAttempt < this.LOCKOUT_DURATION) {
+          const remainingLockout = Math.ceil((this.LOCKOUT_DURATION - timeSinceLastAttempt) / 60000);
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Account locked due to too many failed attempts. Try again in ${remainingLockout} minutes.`,
+          });
+        }
+        
+        // Reset attempts if lockout period has expired
+        if (timeSinceLastAttempt >= this.LOCKOUT_DURATION) {
+          this.loginAttempts.delete(email);
+        }
+      }
+      
       // Get user
       const user = this.db
         .prepare("SELECT * FROM users WHERE email = ? AND is_active = 1")
@@ -169,11 +195,21 @@ export class AuthService {
       // Verify password
       const isValid = await bcrypt.compare(password, user.password_hash);
       if (!isValid) {
+        // Record failed attempt
+        const currentAttempts = this.loginAttempts.get(email) || { count: 0, lastAttempt: 0 };
+        this.loginAttempts.set(email, {
+          count: currentAttempts.count + 1,
+          lastAttempt: Date.now()
+        });
+        
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "Invalid credentials",
         });
       }
+      
+      // Clear login attempts on successful login
+      this.loginAttempts.delete(email);
 
       // Update last login
       this.db
@@ -386,7 +422,7 @@ export class AuthService {
    * Close database connection
    */
   close(): void {
-    this?.db?.close();
+    this.db?.close();
   }
 }
 

@@ -13,17 +13,17 @@ import { EmailRepository } from '../../database/repositories/EmailRepository.js'
 import { UnifiedEmailService } from './UnifiedEmailService.js';
 import { logger } from '../../utils/logger.js';
 import { databaseManager } from '../../core/database/DatabaseManager.js';
+import { WebSocketService } from './WebSocketService.js';
 import type { 
   EmailRecord, 
   EmailPriority
 } from '../../shared/types/email.js';
 import type { 
   RawEmailData, 
-  IngestionMode,
   EmailIngestionConfig,
   IngestionBatchResult
 } from '../../core/services/EmailIngestionService.js';
-import { IngestionSource } from '../../core/services/EmailIngestionService.js';
+import { IngestionSource, IngestionMode } from '../../core/services/EmailIngestionService.js';
 import type { Phase1Results, Phase2Results, Phase3Results } from '../../core/services/EmailThreePhaseAnalysisService.js';
 import type { EmailEntity, EmailRecipient } from '../../types/common.types.js';
 
@@ -160,25 +160,46 @@ export class EmailIntegrationService {
   private emailRepository: EmailRepository;
   private unifiedEmailService: UnifiedEmailService;
   private isProcessing: boolean = false;
+  private wsService: WebSocketService | null = null;
 
   private constructor() {
     this.emailStorage = new EmailStorageService();
-    // Use a fallback approach if getRawDatabase doesn't exist
+    // Use the DatabaseManager to get the main database connection
     let db: any;
     try {
-      if (typeof databaseManager?.getRawDatabase === 'function') {
-        db = databaseManager.getRawDatabase();
-      } else if (typeof databaseManager?.getConnection === 'function') {
-        db = databaseManager.getConnection('main');
+      if (typeof databaseManager?.getConnection === 'function') {
+        const connection = databaseManager.getConnection('main');
+        // Extract the raw database from the EnhancedDatabaseConnection
+        db = connection.getRawDatabase();
+        logger.info('[EmailIntegrationService] Using DatabaseManager main connection', 'EMAIL_INTEGRATION');
       } else {
         // Fallback to creating a direct database connection
         const Database = require('better-sqlite3');
-        db = new Database('./data/crewai_enhanced.db');
+        const dbPath = './data/crewai_enhanced.db';
+        db = new Database(dbPath);
+        logger.info('[EmailIntegrationService] Using fallback database connection', 'EMAIL_INTEGRATION', { dbPath });
       }
     } catch (error) {
+      logger.warn('[EmailIntegrationService] DatabaseManager failed, using direct connection', 'EMAIL_INTEGRATION', { error });
       // Final fallback
-      const Database = require('better-sqlite3');
-      db = new Database('./data/crewai_enhanced.db');
+      try {
+        const Database = require('better-sqlite3');
+        const dbPath = './data/crewai_enhanced.db';
+        const fs = require('fs');
+        const path = require('path');
+        
+        // Ensure data directory exists
+        const dataDir = path.dirname(dbPath);
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        db = new Database(dbPath);
+        logger.info('[EmailIntegrationService] Using final fallback database connection', 'EMAIL_INTEGRATION', { dbPath });
+      } catch (fallbackError) {
+        logger.error('[EmailIntegrationService] All database connection attempts failed', 'EMAIL_INTEGRATION', { fallbackError });
+        throw new Error('Failed to establish database connection');
+      }
     }
     this.emailRepository = new EmailRepository({ db });
     this.unifiedEmailService = new UnifiedEmailService(this.emailRepository);
@@ -208,13 +229,24 @@ export class EmailIntegrationService {
     
     this.analysisService = new EmailThreePhaseAnalysisService();
 
-    // Initialize the ingestion service
-    this.emailIngestion.initialize().catch(error => {
-      logger.error('Failed to initialize email ingestion service', 'EMAIL_INTEGRATION', { error });
-    });
+    // Initialize the ingestion service with error handling
+    if (this.emailIngestion && typeof this.emailIngestion.initialize === 'function') {
+      this.emailIngestion.initialize().catch(error => {
+        logger.error('Failed to initialize email ingestion service', 'EMAIL_INTEGRATION', { error });
+      });
+    } else {
+      logger.warn('Email ingestion service does not have initialize method', 'EMAIL_INTEGRATION');
+    }
 
     // Set up event listeners
     this.setupEventListeners();
+    
+    // Initialize WebSocket service if available
+    try {
+      this.wsService = WebSocketService.getInstance();
+    } catch (error) {
+      logger.warn('WebSocket service not available', 'EMAIL_INTEGRATION', { error });
+    }
   }
 
   public static getInstance(): EmailIntegrationService {
@@ -349,12 +381,39 @@ export class EmailIntegrationService {
         source === 'database' ? IngestionSource.DATABASE :
         IngestionSource.MICROSOFT_GRAPH;
 
+      // Notify WebSocket about processing start
+      if (this.wsService) {
+        this.wsService.broadcast('email.ingestion.started', {
+          source,
+          totalEmails: emails.length,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
       // Ingest emails through the pipeline
       const result = await this?.emailIngestion?.ingestBatch(emails, ingestionSource);
       
       // Handle Result type
       if (!result.success) {
+        if (this.wsService) {
+          this.wsService.broadcast('email.ingestion.failed', {
+            source,
+            error: result.error?.message || 'Unknown error',
+            timestamp: new Date().toISOString()
+          });
+        }
         throw result.error;
+      }
+      
+      // Notify WebSocket about completion
+      if (this.wsService && result.data) {
+        this.wsService.broadcast('email.ingestion.completed', {
+          source,
+          processed: result.data.processed,
+          failed: result.data.failed, 
+          total: result.data.total,
+          timestamp: new Date().toISOString()
+        });
       }
       
       return result.data;

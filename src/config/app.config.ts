@@ -86,7 +86,8 @@ function createAppConfig(): AppConfig {
     api: {
       port: parseInt(credentialManager.get('API_PORT') || '3000', 10),
       cors: {
-        origin: process.env.ALLOWED_ORIGINS?.split(',') || process.env.CORS_ORIGIN?.split(',') || [
+        origin: process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || 
+              process.env.CORS_ORIGIN?.split(',').map(o => o.trim()).filter(Boolean) || [
           'http://localhost:3000', 
           'http://localhost:5173',
           'http://localhost:5174',
@@ -156,7 +157,8 @@ const appConfig: AppConfig = {
   api: {
     port: parseInt(process.env.API_PORT || '3000', 10),
     cors: {
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || process.env.CORS_ORIGIN?.split(',') || [
+      origin: process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || 
+              process.env.CORS_ORIGIN?.split(',').map(o => o.trim()).filter(Boolean) || [
         'http://localhost:3000', 
         'http://localhost:5173',
         'http://localhost:5174',

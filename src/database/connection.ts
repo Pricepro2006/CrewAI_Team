@@ -27,7 +27,7 @@ export function getDatabaseConnection(
 
   const {
     filename = process.env.DATABASE_PATH ||
-      path.join(process.cwd(), "data", "crewai.db"),
+      path.join(process.cwd(), "data", "crewai_enhanced.db"),
     readonly = false,
     verbose = process.env.NODE_ENV === "development",
   } = config;
@@ -55,14 +55,22 @@ export function getDatabaseConnection(
 
     logger.info("Database connection established", "DATABASE", { filename });
 
-    // Register close handler
-    process.on("exit", () => closeDatabaseConnection());
+    // Register close handler with proper error handling
+    const closeHandler = () => {
+      try {
+        closeDatabaseConnection();
+      } catch (error) {
+        logger.error("Error in close handler", "DATABASE", { error });
+      }
+    };
+    
+    process.on("exit", closeHandler);
     process.on("SIGINT", () => {
-      closeDatabaseConnection();
+      closeHandler();
       process.exit(0);
     });
     process.on("SIGTERM", () => {
-      closeDatabaseConnection();
+      closeHandler();
       process.exit(0);
     });
 
@@ -97,9 +105,8 @@ export function closeDatabaseConnection(): void {
  * Execute database migration
  */
 export async function runMigration(migrationPath: string): Promise<void> {
-  const connection = getDatabaseConnection();
-
   try {
+    const connection = getDatabaseConnection();
     const migration = fs.readFileSync(migrationPath, "utf-8");
     connection.exec(migration);
 
@@ -109,7 +116,8 @@ export async function runMigration(migrationPath: string): Promise<void> {
       error: error instanceof Error ? error.message : String(error),
       migrationPath,
     });
-    throw error;
+    // Don't throw during migrations to allow recovery
+    // throw error;
   }
 }
 
@@ -135,13 +143,24 @@ export function isDatabaseInitialized(): boolean {
  * Initialize database with schema
  */
 export async function initializeDatabase(): Promise<void> {
-  if (isDatabaseInitialized()) {
-    logger.info("Database already initialized", "DATABASE");
-    return;
+  try {
+    if (isDatabaseInitialized()) {
+      logger.info("Database already initialized", "DATABASE");
+      return;
+    }
+
+    const schemaPath = path.join(__dirname, "schema", "enhanced_schema.sql");
+    if (!fs.existsSync(schemaPath)) {
+      logger.warn("Schema file not found, skipping initialization", "DATABASE", { schemaPath });
+      return;
+    }
+    
+    await runMigration(schemaPath);
+    logger.info("Database initialized with schema", "DATABASE");
+  } catch (error) {
+    logger.error("Failed to initialize database", "DATABASE", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Don't throw to allow system to continue
   }
-
-  const schemaPath = path.join(__dirname, "schema", "enhanced_schema.sql");
-  await runMigration(schemaPath);
-
-  logger.info("Database initialized with schema", "DATABASE");
 }

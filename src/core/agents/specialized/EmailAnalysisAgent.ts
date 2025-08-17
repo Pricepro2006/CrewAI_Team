@@ -17,6 +17,7 @@ import {
 
 export class EmailAnalysisAgent extends BaseAgent {
   private cache: any; // Will be initialized later to avoid circular import
+  private initialized: boolean = false;
 
   // TD SYNNEX specific categories
   private readonly categories = {
@@ -72,11 +73,22 @@ export class EmailAnalysisAgent extends BaseAgent {
   };
 
   constructor() {
-    super(
-      "EmailAnalysisAgent",
-      "Specializes in analyzing and categorizing TD SYNNEX email communications",
-      PRODUCTION_EMAIL_CONFIG.primaryModel, // Use production-tested model
-    );
+    try {
+      super(
+        "EmailAnalysisAgent",
+        "Specializes in analyzing and categorizing TD SYNNEX email communications",
+        PRODUCTION_EMAIL_CONFIG.primaryModel, // Use production-tested model
+      );
+    } catch (error) {
+      // If super constructor fails, create a minimal agent
+      logger.error('Failed to initialize EmailAnalysisAgent base class', 'EMAIL_AGENT', { error });
+      // Continue with a simplified initialization
+      super(
+        "EmailAnalysisAgent",
+        "Specializes in analyzing and categorizing TD SYNNEX email communications",
+        "llama3.2:3b", // Fallback to default model
+      );
+    }
 
     // IMPORTANT: Disable RAG for EmailAnalysisAgent to prevent circular dependencies
     // Email content is indexed into RAG by the email processing pipeline
@@ -92,6 +104,26 @@ export class EmailAnalysisAgent extends BaseAgent {
     this.addCapability("entity-extraction");
     this.addCapability("workflow-management");
     this.addCapability("priority-assessment");
+  }
+  
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+    
+    try {
+      // Initialize cache
+      await this.initializeCache();
+      
+      // Initialize base agent if it has an init method
+      if (super.initialize && typeof super.initialize === 'function') {
+        await super.initialize();
+      }
+      
+      this.initialized = true;
+      logger.info('EmailAnalysisAgent initialized successfully', 'EMAIL_AGENT');
+    } catch (error) {
+      logger.error('Failed to initialize EmailAnalysisAgent', 'EMAIL_AGENT', { error });
+      // Don't throw - allow graceful degradation
+    }
   }
 
   private async initializeCache(): Promise<void> {
@@ -139,6 +171,11 @@ export class EmailAnalysisAgent extends BaseAgent {
   async analyzeEmail(email: Email): Promise<EmailAnalysis> {
     logger.info(`Analyzing email: ${email.subject}`, "EMAIL_AGENT");
 
+    // Ensure initialized
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    
     // Check cache first
     await this.initializeCache();
     const cached = this?.cache?.get(email.id);

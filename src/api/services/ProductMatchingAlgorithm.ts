@@ -62,7 +62,7 @@ export class ProductMatchingAlgorithm {
     'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can'
   ]);
 
-  private constructor() {}
+  protected constructor() {}
 
   static getInstance(): ProductMatchingAlgorithm {
     if (!ProductMatchingAlgorithm.instance) {
@@ -373,7 +373,7 @@ export class ProductMatchingAlgorithm {
   /**
    * Calculate size match score
    */
-  private calculateSizeMatch(features1: ProductFeatures, features2: ProductFeatures): number {
+  protected calculateSizeMatch(features1: ProductFeatures, features2: ProductFeatures): number {
     const size1 = features1?.numericFeatures?.size;
     const size2 = features2?.numericFeatures?.size;
 
@@ -663,7 +663,7 @@ export class ProductMatchingAlgorithm {
     return maxLength === 0 ? 1 : 1 - distance / maxLength;
   }
 
-  private levenshteinDistance(s1: string, s2: string): number {
+  protected levenshteinDistance(s1: string, s2: string): number {
     const matrix = [];
     const n = s2?.length || 0;
     const m = s1?.length || 0;
@@ -708,7 +708,7 @@ export class ProductMatchingAlgorithm {
     return union.size === 0 ? 1 : intersection.size / union.size;
   }
 
-  private generateNGrams(text: string, n: number): string[] {
+  protected generateNGrams(text: string, n: number): string[] {
     const ngrams = [];
     for (let i = 0; i <= text?.length || 0 - n; i++) {
       ngrams.push(text.substring(i, i + n));

@@ -46,7 +46,17 @@ async function startWebSocketServer() {
         }));
       } else if (req.url === '/' && req.method === 'GET') {
         const generalConnections = generalWSS ? Array.from(generalWSS.clients).length : 0;
-        res.writeHead(200, { 'Content-Type': 'text/html' });
+        const walmartConnections = walmartWSServer.getClientCount();
+        
+        // Sanitize port to prevent XSS
+        const safePort = String(PORT).replace(/[^0-9]/g, '');
+        
+        res.writeHead(200, { 
+          'Content-Type': 'text/html',
+          'Content-Security-Policy': "default-src 'self'",
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'DENY'
+        });
         res.end(`
           <html>
             <head><title>WebSocket Server</title></head>
@@ -54,8 +64,8 @@ async function startWebSocketServer() {
               <h1>WebSocket Server</h1>
               <h2>Available Endpoints:</h2>
               <ul>
-                <li><strong>General WebSocket:</strong> <code>ws://localhost:${PORT}/ws</code> (${generalConnections} connections)</li>
-                <li><strong>Walmart WebSocket:</strong> <code>ws://localhost:${PORT}/ws/walmart</code> (${walmartWSServer.getClientCount()} connections)</li>
+                <li><strong>General WebSocket:</strong> <code>ws://localhost:${safePort}/ws</code> (${generalConnections} connections)</li>
+                <li><strong>Walmart WebSocket:</strong> <code>ws://localhost:${safePort}/ws/walmart</code> (${walmartConnections} connections)</li>
               </ul>
               <p>Health check: <a href="/health">/health</a></p>
             </body>
@@ -168,7 +178,7 @@ async function startWebSocketServer() {
       } else {
         // Reject unknown WebSocket requests
         logger.warn(`Unknown WebSocket path: ${pathname}`, 'WEBSOCKET_SERVER');
-        socket.write('HTTP/1.1 404 Not Found\\r\\n\\r\\n');
+        socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
         socket.destroy();
       }
     });

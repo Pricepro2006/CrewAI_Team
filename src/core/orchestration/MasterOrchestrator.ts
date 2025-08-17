@@ -63,9 +63,9 @@ export class MasterOrchestrator {
     const startTime = Date.now();
 
     // Check cache first
-    if (this?.config?.enableCaching) {
+    if (this.config?.enableCaching) {
       const cacheKey = this.getCacheKey(query);
-      const cached = this?.cache?.get(cacheKey);
+      const cached = this.cache?.get(cacheKey);
       if (cached) {
         logger.info("Returning cached result", "ORCHESTRATOR", {
           query: query?.text?.substring(0, 50),
@@ -83,25 +83,30 @@ export class MasterOrchestrator {
     try {
       // Add to queue if high priority
       if (query.priority === "high") {
-        this?.queryQueue?.unshift(query);
+        this.queryQueue.unshift(query);
       } else {
-        this?.queryQueue?.push(query);
+        this.queryQueue.push(query);
       }
 
       // Process the query
       const result = await this.executeQuery(query);
 
       // Cache the result
-      if (this?.config?.enableCaching) {
+      if (this.config?.enableCaching) {
         const cacheKey = this.getCacheKey(query);
-        this?.cache?.set(cacheKey, result);
+        this.cache.set(cacheKey, result);
 
-        // Limit cache size
-        if (this?.cache?.size > 1000) {
-          const firstKey = this?.cache?.keys().next().value;
-          if (firstKey) {
-            this?.cache?.delete(firstKey);
+        // Limit cache size with error handling
+        try {
+          if (this.cache.size > 1000) {
+            const firstKey = this.cache.keys().next().value;
+            if (firstKey) {
+              this.cache.delete(firstKey);
+            }
           }
+        } catch (cacheError) {
+          logger.warn("Cache size limiting failed", "ORCHESTRATOR", { error: cacheError });
+          // Continue execution - cache management failure shouldn't break processing
         }
       }
 
@@ -180,7 +185,7 @@ export class MasterOrchestrator {
       confidence: 0.85,
       processingTime: 0,
       metadata: {
-        recommendationCount: recommendations?.length || 0,
+        recommendationCount: recommendations?.length ?? 0,
         context,
       },
     };
@@ -230,13 +235,13 @@ export class MasterOrchestrator {
    * Helper: Analyze price range
    */
   private analyzePriceRange(products: any[]): string {
-    if (!products?.length || 0) return "N/A";
+    if (!products?.length) return "N/A";
 
     const prices = products
       .map((p: any) => p.price || p.current_price || 0)
       .filter((price: any) => price > 0);
 
-    if (!prices?.length || 0) return "N/A";
+    if (!prices?.length) return "N/A";
 
     const min = Math.min(...prices);
     const max = Math.max(...prices);
@@ -272,7 +277,7 @@ export class MasterOrchestrator {
    * Clear cache
    */
   clearCache(): void {
-    this?.cache?.clear();
+    this.cache.clear();
     logger.info("Cache cleared", "ORCHESTRATOR");
   }
 
@@ -281,7 +286,7 @@ export class MasterOrchestrator {
    */
   getQueueStatus(): { size: number; processing: boolean } {
     return {
-      size: this?.queryQueue?.length,
+      size: this.queryQueue.length,
       processing: this.processing,
     };
   }

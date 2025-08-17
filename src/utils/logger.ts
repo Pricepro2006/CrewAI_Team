@@ -24,10 +24,21 @@ let path: any = null;
 if (isNode && !isBrowser) {
   try {
     // Use dynamic import for compatibility
-    import("fs").then(fsModule => fs = fsModule.promises).catch(() => fs = null);
-    import("path").then(pathModule => path = pathModule).catch(() => path = null);
+    import("fs")
+      .then(fsModule => fs = fsModule.promises)
+      .catch((error) => {
+        console.warn('Failed to load fs module:', error);
+        fs = null;
+      });
+    import("path")
+      .then(pathModule => path = pathModule)
+      .catch((error) => {
+        console.warn('Failed to load path module:', error);
+        path = null;
+      });
   } catch (error) {
     // Modules not available, will use console-only logging
+    console.warn('Failed to import Node.js modules:', error);
     fs = null;
     path = null;
   }
@@ -100,7 +111,7 @@ export class Logger {
     try {
       await fs.mkdir(this.logDir, { recursive: true });
     } catch (error) {
-      console.error("Failed to create log directory:", error);
+      console.error("Failed to create log directory:", error instanceof Error ? error.message : String(error));
       // Disable file logging if directory creation fails
       this.enableFile = false;
     }
@@ -144,13 +155,20 @@ export class Logger {
       const logFileName = this.getLogFileName(entry.level);
       const logPath = path.join(this.logDir, logFileName);
       const formatted = this.formatLogEntry(entry) + "\n";
-      await fs.appendFile(logPath, formatted);
+      await fs.appendFile(logPath, formatted, { encoding: 'utf8', flag: 'a' });
     } catch (error) {
-      console.error("Failed to write to log file:", error);
-      // Disable file logging on persistent errors
-      this.enableFile = false;
+      console.error("Failed to write to log file:", error instanceof Error ? error.message : String(error));
+      // Don't disable file logging on single error, use exponential backoff
+      if (!this.writeErrorCount) this.writeErrorCount = 0;
+      this.writeErrorCount++;
+      if (this.writeErrorCount > 10) {
+        console.error('Too many write errors, disabling file logging');
+        this.enableFile = false;
+      }
     }
   }
+
+  private writeErrorCount?: number;
 
   private getLogFileName(level: LogLevel): string {
     switch (level) {
@@ -180,21 +198,29 @@ export class Logger {
   }
 
   private async processLogQueue(): Promise<void> {
-    if (this.isWriting || this?.logQueue?.length === 0) return;
+    if (this.isWriting || !this.logQueue || this.logQueue.length === 0) return;
 
     this.isWriting = true;
 
-    const batch = this?.logQueue?.splice(0, 100); // Process in batches
+    try {
+      const batch = this.logQueue.splice(0, 100); // Process in batches
 
-    for (const entry of batch) {
-      await this.writeToFile(entry);
+      for (const entry of batch) {
+        await this.writeToFile(entry);
+      }
+    } catch (error) {
+      console.error('Error processing log queue:', error instanceof Error ? error.message : String(error));
+    } finally {
+      this.isWriting = false;
     }
 
-    this.isWriting = false;
-
     // Process remaining queue
-    if (this?.logQueue?.length > 0) {
-      setImmediate(() => this.processLogQueue());
+    if (this.logQueue && this.logQueue.length > 0) {
+      if (typeof setImmediate === 'function') {
+        setImmediate(() => this.processLogQueue());
+      } else {
+        setTimeout(() => this.processLogQueue(), 0);
+      }
     }
   }
 
@@ -232,9 +258,16 @@ export class Logger {
     this.writeToConsole(entry);
 
     // Only queue for file writing if file logging is enabled
-    if (this.enableFile) {
-      this?.logQueue?.push(entry);
-      this.processLogQueue();
+    if (this.enableFile && this.logQueue) {
+      // Limit queue size to prevent memory issues
+      if (this.logQueue.length < 10000) {
+        this.logQueue.push(entry);
+        this.processLogQueue().catch(error => {
+          console.error('Failed to process log queue:', error);
+        });
+      } else {
+        console.warn('Log queue is full, dropping log entry');
+      }
     }
   }
 
@@ -345,8 +378,15 @@ export class Logger {
   }
 
   async flush(): Promise<void> {
-    while (this?.logQueue?.length > 0 || this.isWriting) {
-      await new Promise((resolve: any) => setTimeout(resolve, 100));
+    const maxWaitTime = 30000; // 30 seconds max wait
+    const startTime = Date.now();
+    
+    while ((this.logQueue && this.logQueue.length > 0) || this.isWriting) {
+      if (Date.now() - startTime > maxWaitTime) {
+        console.error('Log flush timeout after 30 seconds');
+        break;
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, 100));
     }
   }
 
@@ -361,7 +401,10 @@ export class Logger {
    * Check if a message contains PII
    */
   containsPII(message: string): boolean {
-    return this?.piiRedactor?.containsPII(message);
+    if (!message || typeof message !== 'string') {
+      return false;
+    }
+    return this.piiRedactor?.containsPII(message) || false;
   }
 
   /**
@@ -377,12 +420,14 @@ export const logger = Logger.getInstance();
 
 // Error handling middleware
 export function createErrorHandler(component: string) {
-  return (error: Error, context?: Record<string, any>) => {
-    logger.error(`Unhandled error in ${component}`, component, context, error);
+  return (error: Error | unknown, context?: Record<string, any>) => {
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    logger.error(`Unhandled error in ${component}`, component, context, errorObj);
 
     // In production, you might want to send to external monitoring service
     if (process.env?.["NODE_ENV"] === "production") {
       // Send to Sentry, DataDog, etc.
+      // Example: Sentry.captureException(errorObj, { extra: context });
     }
   };
 }
@@ -434,7 +479,7 @@ export function withErrorHandling<T extends any[], R>(
       return result;
     } catch (error) {
       perfMonitor.end({ success: false });
-      errorHandler(error as Error, { operation, args });
+      errorHandler(error, { operation, args: args.length > 0 ? '[arguments omitted for security]' : undefined });
       throw error;
     }
   };

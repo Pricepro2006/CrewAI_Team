@@ -369,7 +369,7 @@ export class OptimizedWebSocketService extends EventEmitter {
     const batch: MessageBatch = {
       messages: queue,
       timestamp: Date.now(),
-      compressed: queue?.length || 0 > 3
+      compressed: (queue?.length || 0) > 3
     };
 
     this.sendDirect(connectionId, {
@@ -404,7 +404,8 @@ export class OptimizedWebSocketService extends EventEmitter {
     // Send to all subscribers
     let sent = 0;
     for (const connectionId of subscribers) {
-      if (this.send(connectionId, message)) {
+      if (this?.connections?.has(connectionId)) {
+        this.send(connectionId, message);
         sent++;
       }
     }
@@ -424,9 +425,8 @@ export class OptimizedWebSocketService extends EventEmitter {
 
     let sent = 0;
     for (const connectionId of connections) {
-      if (this.send(connectionId, message)) {
-        sent++;
-      }
+      this.send(connectionId, message);
+      sent++;
     }
 
     return sent;

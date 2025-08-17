@@ -251,22 +251,28 @@ export const chatRouter = createFeatureRouter(
         Return only the title, no quotes or explanation.
       `;
 
-        const llmPromise = ctx.masterOrchestrator?.["llm"]?.generate(prompt);
-        if (!llmPromise) {
+        // Type-safe LLM access with proper error handling
+        const orchestrator = ctx.masterOrchestrator as any;
+        if (!orchestrator?.llm?.generate) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "LLM not available",
+            message: "LLM service not available",
           });
         }
         
         const response = await withTimeout(
-          llmPromise,
+          orchestrator.llm.generate(prompt),
           DEFAULT_TIMEOUTS.LLM_GENERATION,
           "Title generation timed out",
-        );
+        ).catch((error) => {
+          logger.error("LLM title generation failed", "CHAT", { error });
+          return "Untitled Chat";
+        });
 
-        // Extract string from LLM response
-        const title = typeof response === 'string' ? response : response?.response || String(response || 'Untitled Chat');
+        // Extract string from LLM response with validation
+        const title = typeof response === 'string' 
+          ? response.substring(0, 50).trim() 
+          : (response as any)?.response?.substring(0, 50).trim() || 'Untitled Chat';
 
         await ctx?.conversationService?.updateTitle(
           input.conversationId,

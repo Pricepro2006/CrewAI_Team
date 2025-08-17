@@ -153,7 +153,7 @@ export class PurchaseHistoryService {
   private initializeTables(): void {
     try {
       // Purchase records table
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE TABLE IF NOT EXISTS purchase_records (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -178,7 +178,7 @@ export class PurchaseHistoryService {
       `);
 
       // Purchase analytics cache table
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE TABLE IF NOT EXISTS purchase_analytics_cache (
           user_id TEXT PRIMARY KEY,
           analytics_data TEXT NOT NULL,
@@ -189,17 +189,17 @@ export class PurchaseHistoryService {
       `);
 
       // Create indexes for performance
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE INDEX IF NOT EXISTS idx_purchase_records_user_date 
         ON purchase_records(user_id, purchase_date DESC)
       `);
 
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE INDEX IF NOT EXISTS idx_purchase_records_product 
         ON purchase_records(product_id, user_id)
       `);
 
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE INDEX IF NOT EXISTS idx_purchase_records_category 
         ON purchase_records(category, user_id)
       `);
@@ -216,6 +216,27 @@ export class PurchaseHistoryService {
    */
   async trackPurchase(purchase: Omit<PurchaseRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<PurchaseRecord> {
     try {
+      // Validate input data
+      if (purchase.quantity <= 0) {
+        throw new Error("Quantity must be greater than 0");
+      }
+      if (purchase.unitPrice < 0) {
+        throw new Error("Unit price cannot be negative");
+      }
+      if (purchase.totalPrice < 0) {
+        throw new Error("Total price cannot be negative");
+      }
+      
+      // Validate total price calculation
+      const expectedTotal = purchase.quantity * purchase.unitPrice;
+      if (Math.abs(purchase.totalPrice - expectedTotal) > 0.01) {
+        logger.warn("Total price mismatch", "PURCHASE_HISTORY_SERVICE", {
+          provided: purchase.totalPrice,
+          expected: expectedTotal,
+          difference: Math.abs(purchase.totalPrice - expectedTotal)
+        });
+      }
+      
       const now = new Date().toISOString();
       const purchaseRecord: PurchaseRecord = {
         ...purchase,
@@ -225,7 +246,7 @@ export class PurchaseHistoryService {
         metadata: purchase.metadata ? JSON.stringify(purchase.metadata) : null
       };
 
-      const stmt = this?.db?.prepare(`
+      const stmt = this.db.prepare(`
         INSERT INTO purchase_records (
           id, user_id, product_id, product_name, brand, category,
           quantity, unit_price, total_price, store_id, store_location,
@@ -283,7 +304,7 @@ export class PurchaseHistoryService {
   async analyzePurchasePatterns(userId: string): Promise<PurchasePattern[]> {
     try {
       // Single optimized query that includes all necessary data
-      const stmt = this?.db?.prepare(`
+      const stmt = this.db.prepare(`
         WITH purchase_stats AS (
           SELECT 
             product_id,
@@ -472,7 +493,7 @@ export class PurchaseHistoryService {
         params.push(storeId);
       }
 
-      const whereClause = conditions?.length || 0 > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
       // Build ORDER BY clause
       const orderByMap = {
@@ -486,13 +507,13 @@ export class PurchaseHistoryService {
       const orderClause = `ORDER BY ${orderByColumn} ${sortOrder.toUpperCase()}`;
 
       // Get total count
-      const countStmt = this?.db?.prepare(`
+      const countStmt = this.db.prepare(`
         SELECT COUNT(*) as total FROM purchase_records ${whereClause}
       `);
       const totalResult = countStmt.get(...params) as { total: number };
 
       // Get purchases
-      const dataStmt = this?.db?.prepare(`
+      const dataStmt = this.db.prepare(`
         SELECT * FROM purchase_records 
         ${whereClause} 
         ${orderClause} 
@@ -531,7 +552,7 @@ export class PurchaseHistoryService {
    */
   async getProductFrequency(userId: string, productId?: string): Promise<ProductFrequency[]> {
     try {
-      const stmt = this?.db?.prepare(`
+      const stmt = this.db.prepare(`
         WITH product_frequency AS (
           SELECT 
             product_id,
@@ -746,7 +767,7 @@ export class PurchaseHistoryService {
       }
 
       // Calculate analytics
-      const stmt = this?.db?.prepare(`
+      const stmt = this.db.prepare(`
         SELECT 
           COUNT(*) as total_purchases,
           SUM(total_price) as total_spent,
@@ -762,7 +783,7 @@ export class PurchaseHistoryService {
       const basicStats = stmt.get(userId) as any;
 
       // Get category statistics
-      const categoryStmt = this?.db?.prepare(`
+      const categoryStmt = this.db.prepare(`
         SELECT 
           category,
           SUM(total_price) as category_spent,
@@ -776,7 +797,7 @@ export class PurchaseHistoryService {
       const categoryStats = categoryStmt.all(userId);
 
       // Get brand preferences
-      const brandStmt = this?.db?.prepare(`
+      const brandStmt = this.db.prepare(`
         SELECT 
           brand,
           COUNT(*) as brand_purchases
@@ -790,7 +811,7 @@ export class PurchaseHistoryService {
       const brandStats = brandStmt.all(userId);
 
       // Get seasonal spending
-      const seasonalStmt = this?.db?.prepare(`
+      const seasonalStmt = this.db.prepare(`
         SELECT 
           CAST(strftime('%m', purchase_date) AS INTEGER) as month,
           AVG(quantity) as avg_quantity,
@@ -843,7 +864,7 @@ export class PurchaseHistoryService {
   // Helper methods
 
   private async calculatePriceFlexibility(userId: string, productId: string): Promise<number> {
-    const stmt = this?.db?.prepare(`
+    const stmt = this.db.prepare(`
       SELECT AVG(unit_price) as avg_price, 
              AVG((unit_price - (SELECT AVG(unit_price) FROM purchase_records WHERE user_id = ? AND product_id = ?)) * 
                  (unit_price - (SELECT AVG(unit_price) FROM purchase_records WHERE user_id = ? AND product_id = ?))) as variance
@@ -856,7 +877,7 @@ export class PurchaseHistoryService {
   }
 
   private async getSeasonalTrends(userId: string, productId: string): Promise<SeasonalTrend[]> {
-    const stmt = this?.db?.prepare(`
+    const stmt = this.db.prepare(`
       SELECT 
         CAST(strftime('%m', purchase_date) AS INTEGER) as month,
         AVG(quantity) as averageQuantity,
@@ -871,7 +892,7 @@ export class PurchaseHistoryService {
   }
 
   private async getPreferredStore(userId: string, productId: string): Promise<string | undefined> {
-    const stmt = this?.db?.prepare(`
+    const stmt = this.db.prepare(`
       SELECT store_id, COUNT(*) as count
       FROM purchase_records 
       WHERE user_id = ? AND product_id = ? AND store_id IS NOT NULL
@@ -892,7 +913,7 @@ export class PurchaseHistoryService {
 
   private async getCurrentPrice(productId: string): Promise<number | null> {
     try {
-      const product = await this?.productRepo?.findById(productId);
+      const product = await this.productRepo.findById(productId);
       return product?.current_price || null;
     } catch {
       return null;
@@ -917,7 +938,7 @@ export class PurchaseHistoryService {
 
   private async getCachedAnalytics(userId: string): Promise<PurchaseAnalytics | null> {
     try {
-      const stmt = this?.db?.prepare(`
+      const stmt = this.db.prepare(`
         SELECT analytics_data, expires_at 
         FROM purchase_analytics_cache 
         WHERE user_id = ? AND expires_at > datetime('now')
@@ -937,7 +958,7 @@ export class PurchaseHistoryService {
     try {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
       
-      const stmt = this?.db?.prepare(`
+      const stmt = this.db.prepare(`
         INSERT OR REPLACE INTO purchase_analytics_cache (user_id, analytics_data, last_updated, expires_at)
         VALUES (?, ?, datetime('now'), ?)
       `);
@@ -950,7 +971,7 @@ export class PurchaseHistoryService {
 
   private async invalidateAnalyticsCache(userId: string): Promise<void> {
     try {
-      const stmt = this?.db?.prepare(`DELETE FROM purchase_analytics_cache WHERE user_id = ?`);
+      const stmt = this.db.prepare(`DELETE FROM purchase_analytics_cache WHERE user_id = ?`);
       stmt.run(userId);
     } catch (error) {
       logger.warn("Failed to invalidate analytics cache", "PURCHASE_HISTORY_SERVICE", { error });
@@ -965,14 +986,14 @@ export class PurchaseHistoryService {
       const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
       
       // Delete old purchase records
-      const deleteRecordsStmt = this?.db?.prepare(`
+      const deleteRecordsStmt = this.db.prepare(`
         DELETE FROM purchase_records 
         WHERE purchase_date < ?
       `);
       const deletedRecords = deleteRecordsStmt.run(cutoffDate).changes;
 
       // Delete expired cache entries
-      const deleteCacheStmt = this?.db?.prepare(`
+      const deleteCacheStmt = this.db.prepare(`
         DELETE FROM purchase_analytics_cache 
         WHERE expires_at < datetime('now')
       `);

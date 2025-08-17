@@ -92,12 +92,18 @@ export class CentralizedCacheService extends EventEmitter {
   constructor(config: Partial<CacheConfig> = {}) {
     super();
     
-    this.config = CacheConfigSchema.parse(config);
-    this.initializeStats();
-    this.initializeMemoryCache();
-    this.initializeRedis();
-    this.initializeSQLite();
-    this.setupCleanupTasks();
+    try {
+      this.config = CacheConfigSchema.parse(config);
+      this.initializeStats();
+      this.initializeMemoryCache();
+      this.initializeRedis();
+      this.initializeSQLite();
+      this.setupCleanupTasks();
+      this.isInitialized = true;
+    } catch (error) {
+      this.emit('initialization:error', error);
+      throw error;
+    }
   }
 
   private initializeStats(): void {
@@ -114,9 +120,13 @@ export class CentralizedCacheService extends EventEmitter {
   }
 
   private initializeMemoryCache(): void {
+    if (!this.config?.memory) {
+      throw new Error('Memory cache configuration is required');
+    }
+    
     this.memoryCache = new LRUCache<string, CacheEntry>({
-      max: this?.config?.memory.maxSize,
-      ttl: this?.config?.memory.ttl * 1000, // Convert to milliseconds
+      max: this.config.memory.maxSize,
+      ttl: this.config.memory.ttl * 1000, // Convert to milliseconds
       updateAgeOnGet: true,
       updateAgeOnHas: false,
       dispose: (entry, key) => {
@@ -210,7 +220,7 @@ export class CentralizedCacheService extends EventEmitter {
       this.cleanupExpiredEntries().catch(error => {
         this.emit('cleanup:error', error);
       });
-    }, this?.config?.sqlite.cleanupInterval);
+    }, this.config?.sqlite?.cleanupInterval || 3600000);
 
     // Update hit ratios periodically
     setInterval(() => {

@@ -72,6 +72,7 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
       updateAgeOnGet: this.options.updateAgeOnGet,
       updateAgeOnHas: this.options.updateAgeOnHas,
       allowStale: this.options.stale,
+      ttl: this.options.ttl ?? 5 * 60 * 1000,
       
       // Calculate size of cache entries
       sizeCalculation: (entry: CacheEntry<T>) => entry.size,
@@ -82,15 +83,6 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
           this.stats.evictions++;
           this.emit('eviction', { key, reason, entry });
         }
-      },
-      
-      // TTL based on entry
-      ttl: (entry: CacheEntry<T>) => {
-        // Reduce TTL for frequently accessed items to keep them fresh
-        if (entry.accessCount > 10) {
-          return Math.floor((this.options.ttl ?? 5 * 60 * 1000) * 0.5);
-        }
-        return this.options.ttl ?? 5 * 60 * 1000;
       }
     });
 

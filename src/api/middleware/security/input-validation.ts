@@ -335,7 +335,7 @@ export async function validateFileUpload(
     maxSize?: number;
     scanForVirus?: boolean;
   } = {}
-): { valid: boolean; error?: string } {
+): Promise<{ valid: boolean; error?: string }> {
   const {
     allowedTypes = ALLOWED_FILE_TYPES.image,
     maxSize = MAX_FILE_SIZE,
@@ -554,7 +554,7 @@ export function validateInput(schema: z.ZodSchema) {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {
+  ) => {
     try {
       // Validate and sanitize input
       const validated = await schema.parseAsync(req.body);
@@ -599,7 +599,7 @@ export function validateQuery(schema: z.ZodSchema) {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {
+  ) => {
     try {
       const validated = await schema.parseAsync(req.query);
       req.query = validated as any;

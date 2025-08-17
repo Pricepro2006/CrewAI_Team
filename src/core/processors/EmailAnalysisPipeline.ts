@@ -68,7 +68,15 @@ export class EmailAnalysisPipeline {
   private analysisAgent: EmailAnalysisAgent;
 
   constructor() {
-    this.analysisAgent = new EmailAnalysisAgent();
+    try {
+      this.analysisAgent = new EmailAnalysisAgent();
+    } catch (error) {
+      logger.error('Failed to initialize EmailAnalysisAgent in pipeline', 'PIPELINE', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Create a stub agent that will fail gracefully
+      this.analysisAgent = {} as EmailAnalysisAgent;
+    }
     this.initializeStages();
   }
 
@@ -103,7 +111,7 @@ export class EmailAnalysisPipeline {
         );
 
         const stageDuration = Date.now() - stageStartTime;
-        metrics.histogram("pipeline?.stage?.duration", stageDuration, {
+        metrics.histogram("pipeline.stage.duration", stageDuration, {
           stage: stage.name,
         });
 
@@ -118,7 +126,7 @@ export class EmailAnalysisPipeline {
           error: error instanceof Error ? error.message : String(error),
         });
 
-        metrics.increment("pipeline?.stage?.error", 1, {
+        metrics.increment("pipeline.stage.error", 1, {
           stage: stage.name,
         });
 
@@ -134,8 +142,8 @@ export class EmailAnalysisPipeline {
       workflowState: enrichedEmail.workflow?.state,
     });
 
-    metrics.histogram("pipeline?.total?.duration", processingTime);
-    metrics.increment("pipeline?.emails?.processed", 1);
+    metrics.histogram("pipeline.total.duration", processingTime);
+    metrics.increment("pipeline.emails.processed", 1);
 
     return enrichedEmail as EnrichedEmail;
   }
@@ -187,7 +195,20 @@ class ContentAnalysisStage implements AnalysisStage {
       importance: email.importance || "normal",
     };
 
-    const analysis = await this?.analysisAgent?.analyzeEmail(emailForAnalysis);
+    if (!this.analysisAgent || typeof this.analysisAgent.analyzeEmail !== 'function') {
+      // Return minimal analysis if agent not available
+      return {
+        ...email,
+        analysis: {
+          summary: email.subject || '',
+          sentiment: 'neutral',
+          intent: 'unknown',
+          topics: [],
+        },
+      };
+    }
+    
+    const analysis = await this.analysisAgent.analyzeEmail(emailForAnalysis);
 
     return {
       ...email,

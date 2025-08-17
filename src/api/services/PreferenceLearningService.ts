@@ -4,8 +4,7 @@
  * Continuously adapts recommendations and matching algorithms
  */
 
-import { Logger } from "../../utils/logger.js";
-const logger = Logger.getInstance();
+import { logger } from "../../utils/logger.js";
 import { getDatabaseManager } from "../../database/DatabaseManager.js";
 import { PurchaseHistoryService } from "./PurchaseHistoryService.js";
 import type { PurchaseRecord, ProductFrequency } from "./PurchaseHistoryService.js";
@@ -99,9 +98,17 @@ export class PreferenceLearningService {
     const dbManager = getDatabaseManager();
     const connection = dbManager.connectionPool?.getConnection();
     if (!connection) {
-      throw new Error("Database connection not available");
+      logger.error("Failed to get database connection", "PREFERENCE_LEARNING");
+      throw new Error("Database connection not available for PreferenceLearningService");
     }
-    this.db = connection.getDatabase();
+    
+    try {
+      this.db = connection.getDatabase();
+    } catch (error) {
+      logger.error("Failed to get database instance", "PREFERENCE_LEARNING", { error });
+      throw new Error("Failed to initialize database for PreferenceLearningService");
+    }
+    
     this.historyService = PurchaseHistoryService.getInstance();
     
     this.config = {
@@ -128,7 +135,7 @@ export class PreferenceLearningService {
   private initializeTables(): void {
     try {
       // User preferences table
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE TABLE IF NOT EXISTS user_preferences (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -147,7 +154,7 @@ export class PreferenceLearningService {
       `);
 
       // Learning events table
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE TABLE IF NOT EXISTS learning_events (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -168,7 +175,7 @@ export class PreferenceLearningService {
       `);
 
       // Preference evolution history
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE TABLE IF NOT EXISTS preference_evolution (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -185,17 +192,17 @@ export class PreferenceLearningService {
       `);
 
       // Create indexes
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE INDEX IF NOT EXISTS idx_user_preferences_user_category 
         ON user_preferences(user_id, category)
       `);
 
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE INDEX IF NOT EXISTS idx_learning_events_user_timestamp 
         ON learning_events(user_id, timestamp DESC)
       `);
 
-      this?.db?.exec(`
+      this.db.exec(`
         CREATE INDEX IF NOT EXISTS idx_preference_evolution_user 
         ON preference_evolution(user_id, changed_at DESC)
       `);
@@ -252,7 +259,7 @@ export class PreferenceLearningService {
       }
 
       // Get purchase history for additional insights
-      const purchaseHistory = await this?.historyService?.getUserHistory({ userId, limit: 100 });
+      const purchaseHistory = await this.historyService.getUserHistory({ userId, limit: 100 });
       const purchases = purchaseHistory?.purchases;
 
       // Calculate brand preferences
@@ -458,20 +465,20 @@ export class PreferenceLearningService {
     return preferences?.map(pref => {
       // Apply time decay to preferences
       const daysSinceReinforced = (now - new Date(pref.lastReinforced).getTime()) / (1000 * 60 * 60 * 24);
-      const decayFactor = Math.exp(-daysSinceReinforced * this?.config?.decayRate / 30);
+      const decayFactor = Math.exp(-daysSinceReinforced * this.config.decayRate / 30);
       const adjustedConfidence = Math.max(0.1, pref.confidence * decayFactor);
 
       return {
         ...pref,
         confidence: adjustedConfidence
       };
-    }).filter(pref => pref.confidence >= this?.config?.minConfidenceThreshold);
+    }).filter(pref => pref.confidence >= this.config.minConfidenceThreshold);
   }
 
   // Private helper methods
 
   private async recordLearningEvent(event: LearningEvent): Promise<void> {
-    const stmt = this?.db?.prepare(`
+    const stmt = this.db.prepare(`
       INSERT INTO learning_events (
         id, user_id, event_type, product_id, product_name, category, brand,
         price, search_query, recommendation_id, deal_id, feedback, metadata, timestamp
@@ -594,8 +601,8 @@ export class PreferenceLearningService {
 
     if (existing) {
       // Strengthen existing preference
-      const newConfidence = Math.min(1.0, existing.confidence + this?.config?.learningRate);
-      const newStrength = Math.min(1.0, existing.strength + this?.config?.learningRate * 0.5);
+      const newConfidence = Math.min(1.0, existing.confidence + this.config.learningRate);
+      const newStrength = Math.min(1.0, existing.strength + this.config.learningRate * 0.5);
       
       await this.updatePreference(existing.id, {
         confidence: newConfidence,
@@ -610,8 +617,8 @@ export class PreferenceLearningService {
         category,
         preferenceType,
         value,
-        confidence: this?.config?.learningRate * 2,
-        strength: this?.config?.learningRate,
+        confidence: this.config.learningRate * 2,
+        strength: this.config.learningRate,
         source: 'implicit'
       });
     }
@@ -626,8 +633,8 @@ export class PreferenceLearningService {
     const existing = await this.findPreference(userId, preferenceType, value, category);
 
     if (existing) {
-      const newConfidence = Math.max(0.0, existing.confidence - this?.config?.learningRate);
-      const newStrength = Math.max(0.0, existing.strength - this?.config?.learningRate * 0.5);
+      const newConfidence = Math.max(0.0, existing.confidence - this.config.learningRate);
+      const newStrength = Math.max(0.0, existing.strength - this.config.learningRate * 0.5);
       
       await this.updatePreference(existing.id, {
         confidence: newConfidence,
@@ -675,7 +682,7 @@ export class PreferenceLearningService {
   }
 
   private async getUserPreferences(userId: string): Promise<UserPreference[]> {
-    const stmt = this?.db?.prepare(`
+    const stmt = this.db.prepare(`
       SELECT * FROM user_preferences 
       WHERE user_id = ?
       ORDER BY confidence DESC, strength DESC
@@ -704,7 +711,7 @@ export class PreferenceLearningService {
     value: string,
     category: string
   ): Promise<UserPreference | null> {
-    const stmt = this?.db?.prepare(`
+    const stmt = this.db.prepare(`
       SELECT * FROM user_preferences 
       WHERE user_id = ? AND preference_type = ? AND value = ? AND category = ?
     `);
@@ -732,7 +739,7 @@ export class PreferenceLearningService {
     const now = new Date().toISOString();
     const id = `pref_${data.userId}_${Date.now()}`;
 
-    const stmt = this?.db?.prepare(`
+    const stmt = this.db.prepare(`
       INSERT INTO user_preferences (
         id, user_id, category, preference_type, value, confidence, strength,
         source, created_at, updated_at, last_reinforced, reinforcement_count
@@ -754,7 +761,7 @@ export class PreferenceLearningService {
     values.push(new Date().toISOString()); // updated_at
     values.push(preferenceId);
 
-    const stmt = this?.db?.prepare(`
+    const stmt = this.db.prepare(`
       UPDATE user_preferences 
       SET ${fields}, updated_at = ?
       WHERE id = ?
