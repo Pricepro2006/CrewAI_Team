@@ -62,11 +62,19 @@ export class ResearchAgent extends BaseAgent {
         }
       }
 
-      // Analyze the task to determine research strategy
-      const researchPlan = await this.createResearchPlan(task, context);
+      // For simple execution, use the task directly as a search query
+      // This avoids complex LLM-based plan creation which may be failing
+      const simpleResearchPlan: ResearchPlan = {
+        queries: [task], // Use the task directly as the search query
+        sourceTypes: ["technical", "documentation", "news"],
+        extractionFocus: ["facts", "examples", "best practices"],
+        tools: ["web_search"]
+      };
 
-      // Execute research based on the plan
-      const results = await this.executeResearchPlan(researchPlan, context);
+      console.log(`[ResearchAgent] Using direct search for: "${task}"`);
+
+      // Execute research based on the simple plan
+      const results = await this.executeResearchPlan(simpleResearchPlan, context);
 
       // Enhance results with RAG knowledge if available
       if (ragContext) {
@@ -104,8 +112,8 @@ export class ResearchAgent extends BaseAgent {
         output: synthesis,
         metadata: {
           agent: this.name,
-          toolsUsed: researchPlan.tools,
-          queriesExecuted: researchPlan?.queries?.length,
+          toolsUsed: simpleResearchPlan.tools,
+          queriesExecuted: simpleResearchPlan?.queries?.length,
           sourcesFound: results?.length || 0,
           ragEnhanced: !!ragContext,
           timestamp: new Date().toISOString(),
@@ -173,9 +181,9 @@ export class ResearchAgent extends BaseAgent {
         try {
           cachedResults =
             await this.searchKnowledgeService?.searchPreviousResults?.(query, 3);
-          if ((cachedResults?.length || 0) > 0) {
+          if (cachedResults && cachedResults.length > 0) {
             console.log(
-              `[ResearchAgent] Found ${cachedResults?.length || 0} cached results for similar queries`,
+              `[ResearchAgent] Found ${cachedResults.length} cached results for similar queries`,
             );
           }
         } catch (error) {
@@ -263,14 +271,17 @@ export class ResearchAgent extends BaseAgent {
       ${context.ragDocuments ? `Existing knowledge base context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n\n")}` : ""}
       
       Create a comprehensive research plan that includes:
-      1. Key search queries to execute
+      1. Key search queries to execute (list specific search queries in quotes, e.g., "TypeScript best practices", "TypeScript 2025 features")
       2. Types of sources to prioritize (academic, news, technical, etc.)
       3. Information to extract (facts, statistics, expert opinions, etc.)
       4. Tools to use (web_search, web_scraper, etc.)
+      
+      For the task "${task}", provide at least 2-3 specific search queries that would help find relevant information.
     `;
 
     const responseResponse = await this.generateLLMResponse(prompt);
     const response = responseResponse?.response;
+    console.log("[ResearchAgent] LLM Research Plan Response:", response?.substring(0, 500));
     return this.parseResearchPlan(response);
   }
 
@@ -319,7 +330,49 @@ export class ResearchAgent extends BaseAgent {
     }
 
     // Ensure we have at least some defaults
-    if (queries.length === 0) queries.push("general research query");
+    if (queries.length === 0) {
+      // If no specific queries found, use the original task or key phrases from response
+      // Look for lines that start with numbers or bullets that might be queries
+      for (const line of lines) {
+        if (/^[1-9]\./.test(line.trim()) && line.toLowerCase().includes('search')) {
+          const query = line.replace(/^[1-9]\.\s*/, '').trim();
+          if (query.length > 10 && query.length < 200) {
+            queries.push(query);
+          }
+        }
+      }
+      
+      // If still no queries, extract key phrases from the response
+      if (queries.length === 0) {
+        // Look for "search for" or "query for" patterns
+        const searchPattern = /(?:search for|query for|find|research)\s+([^.\n]+)/gi;
+        let match;
+        while ((match = searchPattern.exec(response)) !== null) {
+          if (match[1] && match[1].length > 5 && match[1].length < 100) {
+            queries.push(match[1].trim());
+          }
+        }
+      }
+      
+      // Final fallback - extract key terms from the original response
+      if (queries.length === 0) {
+        // Try to extract the task subject from the response
+        const taskMatch = response.match(/task[:\s]+"([^"]+)"/i) || 
+                          response.match(/research[:\s]+"([^"]+)"/i) ||
+                          response.match(/about[:\s]+"([^"]+)"/i);
+        if (taskMatch && taskMatch[1]) {
+          queries.push(taskMatch[1]);
+        } else {
+          // Use the first significant phrase from the response
+          const words = response.split(/\s+/).filter(w => w.length > 3 && !['the', 'and', 'for', 'with', 'that', 'this', 'from', 'will'].includes(w.toLowerCase()));
+          if (words.length >= 3) {
+            queries.push(words.slice(0, 5).join(' '));
+          } else {
+            queries.push("information about the requested topic");
+          }
+        }
+      }
+    }
     if (sourceTypes.length === 0) sourceTypes.push("general");
     if (extractionFocus.length === 0) extractionFocus.push("information");
     if (tools.length === 0) tools.push("web_search");
@@ -351,6 +404,7 @@ export class ResearchAgent extends BaseAgent {
 
     // Execute searches
     for (const query of plan.queries) {
+      console.log(`[ResearchAgent] Executing search for query: "${query}"`);
       if (searchTool) {
         const searchResult = await searchTool.execute({
           query,
@@ -422,7 +476,7 @@ export class ResearchAgent extends BaseAgent {
     results: ResearchResult[],
     task: string,
   ): Promise<string> {
-    if (results?.length || 0 === 0) {
+    if (!results || results.length === 0) {
       return "No relevant information found for the given task.";
     }
 
@@ -434,7 +488,7 @@ export class ResearchAgent extends BaseAgent {
       try {
         const cachedResults =
           await this.searchKnowledgeService?.searchPreviousResults?.(task, 2);
-        if (cachedResults?.length || 0 > 0) {
+        if (cachedResults && cachedResults.length > 0) {
           cachedContext = `\n\nPreviously cached relevant information:\n${cachedResults
             .map((r: any) => r.content)
             .join("\n\n")}\n\n`;
@@ -614,9 +668,9 @@ interface ResearchPlan {
 
 interface ResearchResult {
   source: string;
-  title: string;
+  title?: string;
   content: string;
-  type: "search_result" | "scraped_content";
+  type: "search_result" | "scraped_content" | "knowledge_base";
   relevance: number;
 }
 
