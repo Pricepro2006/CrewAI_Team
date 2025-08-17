@@ -232,41 +232,104 @@ export class PlanExecutor {
       );
     }
 
-    const agent = await this?.agentRegistry?.getAgent(step.agentType);
-    const tool = agent.getTool(step.toolName);
+    // Try primary agent first
+    let agent = await this?.agentRegistry?.getAgent(step.agentType);
+    let tool = agent.getTool(step.toolName);
 
     if (!tool) {
-      throw new Error(
-        `Tool ${step.toolName} not found for agent ${step.agentType}`,
-      );
+      // Try fallback agents if primary doesn't have the tool
+      const fallbackAgents = this.getFallbackAgents(step.agentType);
+      for (const fallbackType of fallbackAgents) {
+        console.log(`Primary agent ${step.agentType} lacks tool ${step.toolName}, trying fallback ${fallbackType}`);
+        const fallbackAgent = await this?.agentRegistry?.getAgent(fallbackType);
+        const fallbackTool = fallbackAgent.getTool(step.toolName);
+        if (fallbackTool) {
+          agent = fallbackAgent;
+          tool = fallbackTool;
+          console.log(`Using fallback agent ${fallbackType} for tool ${step.toolName}`);
+          break;
+        }
+      }
+      
+      if (!tool) {
+        throw new Error(
+          `Tool ${step.toolName} not found for agent ${step.agentType} or fallback agents`,
+        );
+      }
     }
 
-    const result = await withTimeout(
-      agent.executeWithTool({
-        tool,
-        context: {
-          task: step.description,
-          ragDocuments: context.documents,
-          tool: step.toolName,
-        },
-        parameters: step.parameters || {},
-      }),
-      DEFAULT_TIMEOUTS.TOOL_EXECUTION,
-      `Tool execution timed out for ${step.toolName}`,
-    );
+    // Execute with retry logic for failures
+    let lastError: Error | undefined;
+    const maxRetries = 2;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await withTimeout(
+          agent.executeWithTool({
+            tool,
+            context: {
+              task: step.description,
+              ragDocuments: context.documents,
+              tool: step.toolName,
+            },
+            parameters: step.parameters || {},
+          }),
+          DEFAULT_TIMEOUTS.TOOL_EXECUTION,
+          `Tool execution timed out for ${step.toolName}`,
+        );
 
-    return {
-      stepId: step.id,
-      success: result.success,
-      ...(result.output && { output: result.output }),
-      ...(result.data && { data: result.data }),
-      ...(result.error && { error: result.error }),
-      metadata: {
-        ...result.metadata,
-        toolUsed: step.toolName,
-        contextRelevance: context.relevance,
-      },
+        if (result.success) {
+          return {
+            stepId: step.id,
+            success: result.success,
+            ...(result.output && { output: result.output }),
+            ...(result.data && { data: result.data }),
+            ...(result.error && { error: result.error }),
+            metadata: {
+              ...result.metadata,
+              toolUsed: step.toolName,
+              contextRelevance: context.relevance,
+              attempts: attempt + 1,
+              agentUsed: agent.name
+            },
+          };
+        }
+        
+        lastError = new Error(result.error || "Unknown error");
+      } catch (error) {
+        lastError = error as Error;
+        
+        // Try with fallback agent on failure
+        if (attempt < maxRetries) {
+          const fallbackAgents = this.getFallbackAgents(step.agentType);
+          if (fallbackAgents.length > attempt) {
+            const fallbackType = fallbackAgents[attempt];
+            console.log(`Retrying with fallback agent ${fallbackType} after error: ${lastError.message}`);
+            agent = await this?.agentRegistry?.getAgent(fallbackType);
+            const fallbackTool = agent.getTool(step.toolName);
+            if (fallbackTool) {
+              tool = fallbackTool;
+            }
+          }
+        }
+      }
+    }
+    
+    throw lastError || new Error("Tool execution failed after retries");
+  }
+  
+  private getFallbackAgents(agentType: string): string[] {
+    // Define fallback chains for each agent type
+    const fallbackMap: Record<string, string[]> = {
+      ResearchAgent: ["ToolExecutorAgent"],
+      CodeAgent: ["ToolExecutorAgent", "ResearchAgent"],
+      DataAnalysisAgent: ["ResearchAgent", "ToolExecutorAgent"],
+      WriterAgent: ["ResearchAgent"],
+      ToolExecutorAgent: ["ResearchAgent"],
+      EmailAnalysisAgent: []
     };
+    
+    return fallbackMap[agentType] || [];
   }
 
   private async executeInformationQuery(

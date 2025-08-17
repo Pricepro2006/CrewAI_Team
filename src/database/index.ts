@@ -20,6 +20,10 @@ export {
 } from "./ConnectionPool.js";
 export { OptimizedConnectionPool, createOptimizedPool } from "./OptimizedConnectionPool.js";
 
+// Optimized Query Executor (Performance Enhancement)
+export { OptimizedQueryExecutor } from "./OptimizedQueryExecutor.js";
+export { getOptimizedQueryExecutor, executeOptimizedQuery, getDatabaseStats, clearQueryCache } from "./query-optimizer.js";
+
 // Unified Connection Management (RECOMMENDED)
 export {
   UnifiedConnectionManager,

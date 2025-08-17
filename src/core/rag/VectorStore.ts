@@ -20,7 +20,7 @@ export class VectorStore {
     this.config = config;
 
     // Always use HTTP for ChromaDB connection in 2025+ versions
-    const chromaUrl = config.baseUrl || config.path || "http://localhost:8001";
+    const chromaUrl = config.baseUrl || config.path || "http://localhost:8000";
     const clientConfig: any = {};
 
     // Ensure we're using HTTP URL format
@@ -32,7 +32,7 @@ export class VectorStore {
         "ChromaDB file path configuration is deprecated. Using HTTP URL instead.",
         "VECTOR_STORE"
       );
-      clientConfig.path = "http://localhost:8001";
+      clientConfig.path = "http://localhost:8000";
     }
 
     this.client = new ChromaClient(clientConfig);

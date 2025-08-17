@@ -22,8 +22,8 @@ export class ResilientVectorStore implements IVectorStore {
     // Initialize resilient manager
     this.manager = new ResilientChromaDBManager({
       chromadb: {
-        host: this.extractHost(config.path || "http://localhost:8001"),
-        port: this.extractPort(config.path || "http://localhost:8001"),
+        host: this.extractHost(config.path || "http://localhost:8000"),
+        port: this.extractPort(config.path || "http://localhost:8000"),
         ssl: (config.path || "").startsWith("https"),
       },
       connectionManager: {
@@ -65,9 +65,9 @@ export class ResilientVectorStore implements IVectorStore {
   private extractPort(url: string): number {
     try {
       const parsed = new URL(url);
-      return parseInt(parsed.port) || (parsed.protocol === "https:" ? 443 : 8001);
+      return parseInt(parsed.port) || (parsed.protocol === "https:" ? 443 : 8000);
     } catch {
-      return 8001;
+      return 8000;
     }
   }
 

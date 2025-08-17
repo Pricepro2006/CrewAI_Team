@@ -144,7 +144,7 @@ export const healthRouter = router({
 
     // Check ChromaDB connection (optional service - system remains healthy even if unavailable)
     try {
-      const chromaUrl = process.env.CHROMA_URL || "http://localhost:8001";
+      const chromaUrl = process.env.CHROMA_URL || "http://localhost:8000";
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced timeout
 

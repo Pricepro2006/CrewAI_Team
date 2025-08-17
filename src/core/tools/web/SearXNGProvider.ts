@@ -127,6 +127,8 @@ export class SearXNGSearchTool extends ValidatedTool {
     params: SearXNGSearchParams,
   ): Promise<ToolResult> {
     try {
+      console.log(`[SearXNGSearchTool] Received search query: "${params.query}"`);
+      
       // Build query parameters
       const searchParams = new URLSearchParams({
         q: params.query,

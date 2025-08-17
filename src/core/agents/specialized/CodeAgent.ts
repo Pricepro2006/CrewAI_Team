@@ -155,10 +155,9 @@ export class CodeAgent extends BaseAgent {
     return {
       type,
       language,
-        requirements: [],
-        challenges: [],
-      };
-    }
+      requirements: [],
+      challenges: [],
+    };
   }
 
   private async generateCode(
