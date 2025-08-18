@@ -745,10 +745,10 @@ export class SmartMatchingService {
     // Suggestion 2: Based on purchase history patterns
     if (userHistory?.length || 0 > 0) {
       const relatedItems = userHistory?.filter(item =>
-        item?.productName?.toLowerCase().includes(query.split(' ')[0].toLowerCase())
-      );
+        item?.productName?.toLowerCase()?.includes(query.split(' ')[0]?.toLowerCase() || '')
+      ).filter(Boolean);
       
-      if (relatedItems?.length || 0 > 0) {
+      if (relatedItems && relatedItems.length > 0 && relatedItems[0]?.productName) {
         suggestions.push(`Based on your history, you usually buy ${relatedItems[0].productName}`);
       }
     }
@@ -905,7 +905,7 @@ export class SmartMatchingService {
     cachedSuggestions: string[] | null
   ): Promise<string[]> {
     // Return cached if available and recent
-    if (cachedSuggestions && cachedSuggestions?.length || 0 > 0) {
+    if (cachedSuggestions && cachedSuggestions.length > 0) {
       return cachedSuggestions;
     }
     

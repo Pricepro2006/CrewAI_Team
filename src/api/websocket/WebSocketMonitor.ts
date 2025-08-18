@@ -645,9 +645,9 @@ export class WebSocketMonitor extends EventEmitter {
   }
 
   private calculatePercentile(sortedArray: number[], percentile: number): number {
-    if (sortedArray?.length || 0 === 0) return 0;
-    const index = Math.ceil(sortedArray?.length || 0 * percentile) - 1;
-    return sortedArray[Math.max(0, Math.min(index, sortedArray?.length || 0 - 1))];
+    if ((sortedArray?.length || 0) === 0) return 0;
+    const index = Math.ceil((sortedArray?.length || 0) * percentile) - 1;
+    return sortedArray[Math.max(0, Math.min(index, (sortedArray?.length || 0) - 1))] || 0;
   }
 
   private calculateMessagesPerSecond(): number {

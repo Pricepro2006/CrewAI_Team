@@ -38,7 +38,7 @@ export class SimpleAPIProxy {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as any;
       
       // Transform to match expected format
       return {
@@ -68,7 +68,7 @@ export class SimpleAPIProxy {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as any;
       
       // Transform to match expected format
       return {

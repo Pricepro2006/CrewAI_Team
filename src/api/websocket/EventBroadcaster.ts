@@ -248,7 +248,9 @@ export class EventBroadcaster extends EventEmitter {
 
       if (result.success) {
         if (this.metrics.successfulBroadcasts) { this.metrics.successfulBroadcasts++ };
-        this?.metrics?.totalRecipients += result.totalRecipients;
+        if (this.metrics) {
+          this.metrics.totalRecipients += result.totalRecipients;
+        }
       } else {
         if (this.metrics.failedBroadcasts) { this.metrics.failedBroadcasts++ };
       }
@@ -316,7 +318,7 @@ export class EventBroadcaster extends EventEmitter {
     const totalRecipients = localRecipients + remoteNodes;
     
     return {
-      success: errors?.length || 0 === 0 || totalRecipients > 0,
+      success: (errors?.length || 0) === 0 || totalRecipients > 0,
       localRecipients,
       remoteNodes,
       totalRecipients,
