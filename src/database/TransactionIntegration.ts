@@ -8,7 +8,7 @@
 import { transactionManager } from "./TransactionManager.js";
 import { retryManager } from "../core/retry/RetryManager.js";
 import { checkpointManager } from "../core/recovery/CheckpointManager.js";
-import { Logger } from "../../utils/logger.js";
+import { Logger } from "../utils/logger.js";
 import type { TransactionContext } from "./TransactionManager.js";
 
 const logger = new Logger("TransactionIntegration");

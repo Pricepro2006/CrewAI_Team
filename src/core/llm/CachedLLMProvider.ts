@@ -155,6 +155,7 @@ export class CachedLLMProvider extends LLMProviderManager {
 
   /**
    * Generate cache key from prompt and options
+   * Using SHA-256 for security (already updated from MD5)
    */
   private getCacheKey(prompt: string, options?: any): string {
     const input = JSON.stringify({ prompt, options });

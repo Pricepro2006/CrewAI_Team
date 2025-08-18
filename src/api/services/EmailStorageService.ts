@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-// Use dynamic import for better-sqlite3 to avoid type issues
+// Use optimized database from centralized module
+import { getDatabase, executeSecure, OptimizedQueryExecutor } from "../../database/index.js";
 import Database from "better-sqlite3";
 // Type definitions for database operations
 type DatabaseQueryParams = string | number | boolean | null | undefined;
@@ -250,11 +251,11 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         "EMAIL_STORAGE",
       );
     } else {
-      // Fallback to direct connection (not recommended for production)
+      // Use optimized database with caching and performance monitoring
       const databasePath = dbPath || appConfig?.database?.path;
-      this.db = new Database(databasePath);
+      this.db = getDatabase(databasePath) as any;
       logger.info(
-        "EmailStorageService initialized with single connection (fallback mode)",
+        "EmailStorageService initialized with OptimizedQueryExecutor",
         "EMAIL_STORAGE",
       );
     }

@@ -10,7 +10,7 @@
  */
 
 import Database from "better-sqlite3";
-import { Logger } from "../../utils/logger.js";
+import { Logger } from "../utils/logger.js";
 import {
   getDatabaseConnection,
   type DatabaseConnection,

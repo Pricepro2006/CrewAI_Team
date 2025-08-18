@@ -6,7 +6,7 @@
 import Database, { type Database as DatabaseType } from "better-sqlite3";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import appConfig from "../config/app.config.js";
 import { fileURLToPath } from "url";
 import {

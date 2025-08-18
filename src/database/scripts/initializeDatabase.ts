@@ -384,8 +384,10 @@ async function resetDatabase(): Promise<void> {
 // Export functions for use as a module
 export { initializeDatabase, resetDatabase };
 
-// Command-line execution
-if (require.main === module) {
+// Command-line execution using ES modules
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
   const command = process.argv[2] || "init";
 
   switch (command) {
