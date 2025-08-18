@@ -192,7 +192,7 @@ export function EmailTable({
         header: "Assigned To",
         cell: ({ row }) => (
           <div className="text-sm" onClick={(e: any) => e.stopPropagation()}>
-            {onAssignEmail && teamMembers?.length || 0 > 0 ? (
+            {onAssignEmail && (teamMembers?.length || 0) > 0 ? (
               <InlineAssignment
                 emailId={row?.original?.id}
                 currentAssignee={row?.original?.assignedTo}

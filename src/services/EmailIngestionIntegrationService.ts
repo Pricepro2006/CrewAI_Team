@@ -74,9 +74,8 @@ export class EmailIngestionIntegrationService {
    */
   async initialize(): Promise<Result<void>> {
     try {
-      logger.info('Initializing Email Ingestion Integration Service', {
-        config: this.config
-      });
+      logger.info('Initializing Email Ingestion Integration Service', 
+        JSON.stringify({ config: this.config }));
 
       // Initialize secure configuration
       initializeSecureConfig();
@@ -101,12 +100,13 @@ export class EmailIngestionIntegrationService {
       return { success: true, data: undefined };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Failed to initialize Email Ingestion Integration Service', {
-        error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined
-      });
+      logger.error('Failed to initialize Email Ingestion Integration Service', 
+        JSON.stringify({
+          error: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined
+        }));
 
-      return { success: false, error: errorMessage };
+      return { success: false, error: new Error(errorMessage) };
     }
   }
 
@@ -120,7 +120,10 @@ export class EmailIngestionIntegrationService {
       processing: {
         batchSize: parseInt(process.env.EMAIL_PROCESSING_BATCH_SIZE || '50'),
         concurrency: parseInt(process.env.EMAIL_PROCESSING_CONCURRENCY || '10'),
-        maxRetries: parseInt(process.env.EMAIL_PROCESSING_MAX_RETRIES || '3')
+        maxRetries: parseInt(process.env.EMAIL_PROCESSING_MAX_RETRIES || '3'),
+        retryDelay: parseInt(process.env.EMAIL_PROCESSING_RETRY_DELAY || '5000'),
+        deduplicationWindow: 24,
+        priorityBoostKeywords: ['urgent', 'critical', 'asap', 'emergency']
       },
       deduplication: {
         enabled: true,
@@ -135,7 +138,7 @@ export class EmailIngestionIntegrationService {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
         password: process.env.REDIS_PASSWORD,
-        db: parseInt(process.env.REDIS_DB || '0')
+        maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3')
       }
     });
 
@@ -172,27 +175,24 @@ export class EmailIngestionIntegrationService {
     // Override ingestion completion handler to trigger analysis
     const originalIngestBatch = this?.ingestionService?.ingestBatch.bind(this.ingestionService);
     
-    if (this.ingestionService) {
-
-    
+    if (this.ingestionService && originalIngestBatch) {
       this.ingestionService.ingestBatch = async (emails, source) => {
-      const result = await originalIngestBatch(emails, source);
-
-    
-    }
-      
-      if (result.success && this?.config?.enableAnalysisIntegration) {
-        // Trigger adaptive 3-phase analysis for newly ingested emails
-        this.triggerAnalysisForNewEmails(result.data.processed).catch(error => {
-          logger.error('Failed to trigger analysis for new emails', {
-            error: error instanceof Error ? error.message : 'Unknown error',
-            processed: result.data.processed
+        const result = await originalIngestBatch(emails, source);
+        
+        if (result.success && this?.config?.enableAnalysisIntegration) {
+          // Trigger adaptive 3-phase analysis for newly ingested emails
+          this.triggerAnalysisForNewEmails(result.data.processed).catch(error => {
+            logger.error('Failed to trigger analysis for new emails', 
+              JSON.stringify({
+                error: error instanceof Error ? error.message : 'Unknown error',
+                processed: result.data.processed
+              }));
           });
-        });
-      }
-      
-      return result;
-    };
+        }
+        
+        return result;
+      };
+    }
   }
 
   /**

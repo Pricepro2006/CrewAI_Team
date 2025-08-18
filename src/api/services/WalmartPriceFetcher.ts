@@ -937,7 +937,7 @@ export class WalmartPriceFetcher {
     query: string,
     location: StoreLocation = this.DEFAULT_STORE,
     limit: number = 10
-  ): Promise<Array<WalmartProduct & { livePrice?: PriceResult }>> {
+  ): Promise<Array<WalmartProduct & { livePrice?: LivePrice }>> {
     try {
       // First, try using known fallback products for common queries
       // This ensures we always have working results
@@ -949,7 +949,7 @@ export class WalmartPriceFetcher {
         for (const product of fallbackResults.slice(0, limit)) {
           try {
             const livePrice = await this.fetchProductPrice(product.walmartId, location);
-            product.livePrice = livePrice;
+            product.livePrice = this.convertToLivePrice(livePrice);
             product.price = livePrice?.price || 0;
             product.inStock = livePrice?.inStock ?? true;
             resultsWithPrices.push(product);
@@ -992,7 +992,7 @@ export class WalmartPriceFetcher {
     query: string,
     location: StoreLocation,
     limit: number
-  ): Promise<Array<WalmartProduct & { livePrice?: PriceResult }>> {
+  ): Promise<Array<WalmartProduct & { livePrice?: LivePrice }>> {
     try {
       const searchUrl = `https://www?.walmart.com/search?q=${encodeURIComponent(query)}`;
       
@@ -1017,7 +1017,7 @@ export class WalmartPriceFetcher {
       }
 
       const html = await response.text();
-      const products: Array<WalmartProduct & { livePrice?: PriceResult }> = [];
+      const products: Array<WalmartProduct & { livePrice?: LivePrice }> = [];
 
       // Extract product URLs from HTML
       const productUrlPattern = /\/ip\/[^"'\s]+\/(\d+)/g;
@@ -1075,7 +1075,7 @@ export class WalmartPriceFetcher {
             featured: false,
             dateAdded: new Date().toISOString(),
             lastUpdated: new Date().toISOString(),
-            livePrice
+            livePrice: this.convertToLivePrice(livePrice)
           });
 
           // Add delay between requests
@@ -1101,7 +1101,7 @@ export class WalmartPriceFetcher {
     query: string, 
     location: StoreLocation, 
     limit: number
-  ): Promise<Array<WalmartProduct & { livePrice?: PriceResult }>> {
+  ): Promise<Array<WalmartProduct & { livePrice?: LivePrice }>> {
     try {
       const graphqlQuery = {
         query: `
@@ -1160,7 +1160,7 @@ export class WalmartPriceFetcher {
       
       if (data.data && data?.data?.search && data?.data?.search.searchResult) {
         const items = data?.data?.search.searchResult.item || [];
-        const products = [];
+        const products: Array<WalmartProduct & { livePrice?: LivePrice }> = [];
         
         for (const item of items.slice(0, limit)) {
           if (item.id && item.priceInfo && item?.priceInfo?.currentPrice) {
@@ -1200,7 +1200,7 @@ export class WalmartPriceFetcher {
               featured: false,
               dateAdded: new Date().toISOString(),
               lastUpdated: new Date().toISOString(),
-              livePrice
+              livePrice: this.convertToLivePrice(livePrice)
             });
           }
         }
@@ -1223,7 +1223,7 @@ export class WalmartPriceFetcher {
     query: string,
     location: StoreLocation,
     limit: number
-  ): Promise<Array<WalmartProduct & { livePrice?: PriceResult }>> {
+  ): Promise<Array<WalmartProduct & { livePrice?: LivePrice }>> {
     // Only try web scraping if Playwright is available and other methods failed
     try {
       // For now, return empty - web scraping is complex and may trigger bot detection
@@ -1242,7 +1242,7 @@ export class WalmartPriceFetcher {
   private getFallbackProducts(
     query: string, 
     location: StoreLocation
-  ): Array<WalmartProduct & { livePrice?: PriceResult }> {
+  ): Array<WalmartProduct & { livePrice?: LivePrice }> {
     // Updated with currently working Walmart product IDs (verified December 2024)
     const fallbackMap: Record<string, Array<{ id: string; name: string; brand: string }>> = {
       'milk': [
@@ -1394,6 +1394,23 @@ export class WalmartPriceFetcher {
   }
 
   // Cache management
+  /**
+   * Convert PriceResult to LivePrice format
+   */
+  private convertToLivePrice(priceResult: PriceResult | null): LivePrice | undefined {
+    if (!priceResult) return undefined;
+    
+    return {
+      price: priceResult.price,
+      salePrice: priceResult.salePrice,
+      wasPrice: priceResult.wasPrice,
+      inStock: priceResult.inStock,
+      lastUpdated: priceResult.lastUpdated.toISOString(),
+      storeLocation: priceResult.storeLocation,
+      source: priceResult.source
+    };
+  }
+
   private getCachedPrice(productId: string, zipCode: string): PriceResult | null {
     const key = `${productId}-${zipCode}`;
     const cached = this?.priceCache?.get(key);

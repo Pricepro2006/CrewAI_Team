@@ -58,31 +58,38 @@ export class AnalysisScorer {
   ): number {
     let score = 0;
 
-    // Check workflow state accuracy (40% of context score)
-    if (analysis.workflow_state === baseline.workflow_state) {
+    // Check workflow type accuracy (40% of context score)
+    if (analysis.workflow_type === baseline.workflow_type) {
       score += 4;
     } else if (
       this.isCloseWorkflowState(
-        analysis.workflow_state,
-        baseline.workflow_state,
+        analysis.workflow_type,
+        baseline.workflow_type,
       )
     ) {
       score += 2;
     }
 
     // Check priority accuracy (30% of context score)
-    if (analysis.priority === baseline.priority) {
+    const analysisPriority = analysis.phase1_results?.basic_classification?.priority;
+    const baselinePriority = baseline.phase1_results?.basic_classification?.priority;
+    if (analysisPriority === baselinePriority) {
       score += 3;
-    } else if (this.isClosePriority(analysis.priority, baseline.priority)) {
+    } else if (analysisPriority && baselinePriority && this.isClosePriority(analysisPriority, baselinePriority)) {
       score += 1.5;
     }
 
     // Check urgency indicators (30% of context score)
-    const urgencyMatch = this.compareUrgencyIndicators(
-      analysis.urgency_indicators || [],
-      baseline.urgency_indicators || [],
-    );
-    score += urgencyMatch * 3;
+    const analysisUrgency = analysis.phase1_results?.basic_classification?.urgency;
+    const baselineUrgency = baseline.phase1_results?.basic_classification?.urgency;
+    if (analysisUrgency === baselineUrgency) {
+      score += 3;
+    } else {
+      // Partial credit if both exist but don't match
+      if (analysisUrgency !== undefined && baselineUrgency !== undefined) {
+        score += 1;
+      }
+    }
 
     return Math.min(10, score);
   }
@@ -93,11 +100,11 @@ export class AnalysisScorer {
   ): number {
     const entityTypes = [
       "po_numbers",
-      "quote_numbers",
-      "case_numbers",
-      "part_numbers",
-      "companies",
-      "contacts",
+      "quotes",
+      "cases",
+      "parts",
+      "companies", 
+      "people",
     ];
 
     let totalScore = 0;
@@ -106,17 +113,17 @@ export class AnalysisScorer {
     // Different weights for different entity types
     const typeWeights = {
       po_numbers: 2.0, // Most critical
-      quote_numbers: 1.5,
-      case_numbers: 1.5,
-      part_numbers: 1.0,
+      quotes: 1.5,
+      cases: 1.5,
+      parts: 1.0,
       companies: 1.5,
-      contacts: 1.0,
+      people: 1.0,
     };
 
     for (const entityType of entityTypes) {
       const weight = typeWeights[entityType as keyof typeof typeWeights] || 1.0;
-      const analysisEntities = analysis.entities?.[entityType] || [];
-      const baselineEntities = baseline.entities?.[entityType] || [];
+      const analysisEntities = analysis.phase1_results?.entities?.[entityType as keyof typeof analysis.phase1_results.entities] || [];
+      const baselineEntities = baseline.phase1_results?.entities?.[entityType as keyof typeof baseline.phase1_results.entities] || [];
 
       const precision = this.calculatePrecision(
         analysisEntities,
@@ -138,34 +145,38 @@ export class AnalysisScorer {
   ): number {
     let score = 0;
 
-    // Business process identification (50%)
-    if (analysis.business_process === baseline.business_process) {
+    // Business process identification (50%) - using workflow_type as proxy
+    if (analysis.workflow_type === baseline.workflow_type) {
       score += 5;
     } else if (
       this.isRelatedProcess(
-        analysis.business_process,
-        baseline.business_process,
+        analysis.workflow_type,
+        baseline.workflow_type,
       )
     ) {
       score += 2.5;
     }
 
-    // SLA and risk assessment (30%)
-    if (analysis.sla_status && baseline.sla_status) {
-      if (analysis.sla_status === baseline.sla_status) {
+    // SLA and risk assessment (30%) - using risk_level from contextual insights
+    const analysisRisk = analysis.phase2_results?.contextual_insights?.risk_level;
+    const baselineRisk = baseline.phase2_results?.contextual_insights?.risk_level;
+    if (analysisRisk && baselineRisk) {
+      if (analysisRisk === baselineRisk) {
         score += 3;
       } else if (
-        this.isSimilarSLAStatus(analysis.sla_status, baseline.sla_status)
+        this.isSimilarSLAStatus(analysisRisk, baselineRisk)
       ) {
         score += 1.5;
       }
     }
 
-    // Business impact assessment (20%)
-    if (analysis.business_impact && baseline.business_impact) {
+    // Business impact assessment (20%) - using business_impact from contextual insights
+    const analysisImpact = analysis.phase2_results?.contextual_insights?.business_impact;
+    const baselineImpact = baseline.phase2_results?.contextual_insights?.business_impact;
+    if (analysisImpact && baselineImpact) {
       const similarity = this.compareBusinessImpact(
-        analysis.business_impact,
-        baseline.business_impact,
+        analysisImpact,
+        baselineImpact,
       );
       score += similarity * 2;
     }
@@ -177,8 +188,8 @@ export class AnalysisScorer {
     analysis: EmailAnalysis,
     baseline: EmailAnalysis,
   ): number {
-    const analysisActions = analysis.action_items || [];
-    const baselineActions = baseline.action_items || [];
+    const analysisActions = analysis.phase2_results?.action_items || [];
+    const baselineActions = baseline.phase2_results?.action_items || [];
 
     if (!baselineActions || baselineActions.length === 0) {
       return (!analysisActions || analysisActions.length === 0) ? 10 : 5;
@@ -210,31 +221,36 @@ export class AnalysisScorer {
     analysis: EmailAnalysis,
     baseline: EmailAnalysis,
   ): number {
-    if (!analysis.suggested_response || !baseline.suggested_response) {
-      return analysis.suggested_response === baseline.suggested_response
-        ? 10
-        : 0;
+    // Use recommended_actions as proxy for response quality
+    const analysisResponse = analysis.phase2_results?.contextual_insights?.recommended_actions;
+    const baselineResponse = baseline.phase2_results?.contextual_insights?.recommended_actions;
+    if (!analysisResponse || !baselineResponse) {
+      return (analysisResponse === baselineResponse) ? 10 : 0;
     }
 
     let score = 0;
 
+    // Convert string arrays to strings for comparison
+    const analysisResponseStr = Array.isArray(analysisResponse) ? analysisResponse.join(' ') : analysisResponse;
+    const baselineResponseStr = Array.isArray(baselineResponse) ? baselineResponse.join(' ') : baselineResponse;
+
     // Tone appropriateness (30%)
     const toneSimilarity = this.compareTone(
-      analysis.suggested_response,
-      baseline.suggested_response,
+      analysisResponseStr,
+      baselineResponseStr,
     );
     score += toneSimilarity * 3;
 
     // Key points coverage (40%)
     const keyPointsCoverage = this.compareKeyPoints(
-      analysis.suggested_response,
-      baseline.suggested_response,
+      analysisResponseStr,
+      baselineResponseStr,
     );
     score += keyPointsCoverage * 4;
 
     // Professional quality (30%)
     const professionalQuality = this.assessProfessionalQuality(
-      analysis.suggested_response,
+      analysisResponseStr,
     );
     score += professionalQuality * 3;
 
@@ -506,17 +522,17 @@ export class AnalysisScorer {
     const details: string[] = [];
 
     // Context understanding details
-    if (analysis.workflow_state !== baseline.workflow_state) {
+    if (analysis.workflow_type !== baseline.workflow_type) {
       details.push(
-        `Workflow state mismatch: ${analysis.workflow_state} vs ${baseline.workflow_state}`,
+        `Workflow type mismatch: ${analysis.workflow_type} vs ${baseline.workflow_type}`,
       );
     }
 
     // Entity extraction details
-    const entityTypes = ["po_numbers", "quote_numbers", "case_numbers"];
+    const entityTypes = ["po_numbers", "quotes", "cases"] as const;
     for (const type of entityTypes) {
-      const analysisCount = analysis.entities?.[type]?.length || 0;
-      const baselineCount = baseline.entities?.[type]?.length || 0;
+      const analysisCount = analysis.phase1_results?.entities?.[type]?.length || 0;
+      const baselineCount = baseline.phase1_results?.entities?.[type]?.length || 0;
 
       if (analysisCount !== baselineCount) {
         details.push(
@@ -526,8 +542,8 @@ export class AnalysisScorer {
     }
 
     // Action items details
-    const analysisActionCount = analysis.action_items?.length || 0;
-    const baselineActionCount = baseline.action_items?.length || 0;
+    const analysisActionCount = analysis.phase2_results?.action_items?.length || 0;
+    const baselineActionCount = baseline.phase2_results?.action_items?.length || 0;
 
     if (analysisActionCount !== baselineActionCount) {
       details.push(

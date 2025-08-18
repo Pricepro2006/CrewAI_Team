@@ -42,7 +42,7 @@ router.get('/database/metrics', async (req: Request, res: Response) => {
         totalQueries: mainMetrics.totalQueries + (walmartMetrics?.totalQueries || 0),
         avgCacheHitRate: ((mainMetrics.cacheHits + (walmartMetrics?.cacheHits || 0)) / 
                          Math.max(1, mainMetrics.totalQueries + (walmartMetrics?.totalQueries || 0))) * 100,
-        totalMemoryUsage: mainMetrics.cacheSize + (walmartMetrics?.cacheSize || 0)
+        totalMemoryUsage: (mainMetrics.cacheSize ?? 0) + (walmartMetrics?.cacheSize ?? 0)
       }
     };
     
@@ -82,7 +82,7 @@ router.get('/database/cache', async (req: Request, res: Response) => {
       prepared: {
         count: metrics.preparedStatements || 0,
         reused: metrics.preparedReused || 0,
-        reuseRate: (metrics.preparedReused / Math.max(1, metrics.preparedStatements)) * 100
+        reuseRate: (((metrics.preparedReused ?? 0) / Math.max(1, (metrics.preparedStatements || 0)))) * 100
       }
     };
     
@@ -151,9 +151,9 @@ router.get('/llm/metrics', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
       llm: {
         ...metrics,
-        hitRate: (metrics.cacheHits / Math.max(1, metrics.totalRequests)) * 100,
-        avgLatency: metrics.totalRequests > 0 ? metrics.totalLatency / metrics.totalRequests : 0,
-        deduplicationRate: (metrics.deduplicatedRequests / Math.max(1, metrics.totalRequests)) * 100
+        hitRate: metrics.hitRate,
+        avgLatency: 0, // Not tracked in current metrics
+        deduplicationRate: (metrics.dedupeCount / Math.max(1, metrics.hits + metrics.misses)) * 100
       }
     };
     
@@ -176,7 +176,17 @@ router.get('/llm/cache', async (req: Request, res: Response) => {
   try {
     const provider = CachedLLMProvider.getInstance();
     const metrics = provider.getMetrics();
-    const cacheDetails = provider.getCacheDetails();
+    // Get cache details from existing metrics and stats
+    const stats = provider.exportStats();
+    const cacheDetails = {
+      size: stats.cacheSize,
+      maxSize: 500, // From CachedLLMProvider config
+      evictions: metrics.evictions || 0,
+      memoryUsage: stats.memoryUsage * 1024 * 1024, // Convert MB to bytes
+      ttl: 30 * 60 * 1000, // 30 minutes from config
+      oldestEntry: null,
+      newestEntry: null
+    };
     
     const cacheStats = {
       success: true,
@@ -184,9 +194,9 @@ router.get('/llm/cache', async (req: Request, res: Response) => {
       cache: {
         size: cacheDetails.size,
         maxSize: cacheDetails.maxSize,
-        hits: metrics.cacheHits,
-        misses: metrics.cacheMisses,
-        hitRate: (metrics.cacheHits / Math.max(1, metrics.totalRequests)) * 100,
+        hits: metrics.hits,
+        misses: metrics.misses,
+        hitRate: metrics.hitRate,
         evictions: cacheDetails.evictions || 0,
         memoryUsage: cacheDetails.memoryUsage || 0,
         ttl: cacheDetails.ttl || 3600000,
@@ -194,9 +204,9 @@ router.get('/llm/cache', async (req: Request, res: Response) => {
         newestEntry: cacheDetails.newestEntry || null
       },
       deduplication: {
-        active: metrics.deduplicatedRequests,
-        saved: metrics.deduplicatedRequests,
-        rate: (metrics.deduplicatedRequests / Math.max(1, metrics.totalRequests)) * 100
+        active: metrics.dedupeCount,
+        saved: metrics.dedupeCount,
+        rate: (metrics.dedupeCount / Math.max(1, metrics.hits + metrics.misses)) * 100
       }
     };
     
@@ -231,13 +241,13 @@ router.post('/llm/cache/clear', async (req: Request, res: Response) => {
       message: 'LLM cache cleared successfully',
       before: {
         cacheSize: beforeMetrics.cacheSize,
-        cacheHits: beforeMetrics.cacheHits,
-        cacheMisses: beforeMetrics.cacheMisses
+        cacheHits: beforeMetrics.hits,
+        cacheMisses: beforeMetrics.misses
       },
       after: {
         cacheSize: afterMetrics.cacheSize,
-        cacheHits: afterMetrics.cacheHits,
-        cacheMisses: afterMetrics.cacheMisses
+        cacheHits: afterMetrics.hits,
+        cacheMisses: afterMetrics.misses
       }
     });
   } catch (error) {
@@ -271,22 +281,22 @@ router.get('/summary', async (req: Request, res: Response) => {
         database: {
           cacheHitRate: (dbMetrics.cacheHits / Math.max(1, dbMetrics.totalQueries)) * 100,
           totalQueries: dbMetrics.totalQueries,
-          avgQueryTime: dbMetrics.avgQueryTime,
-          cacheMemory: dbMetrics.cacheSize
+          avgQueryTime: dbMetrics.avgExecutionTime,
+          cacheMemory: dbMetrics.cacheSize ?? 0
         },
         llm: {
-          cacheHitRate: (llmMetrics.cacheHits / Math.max(1, llmMetrics.totalRequests)) * 100,
-          totalRequests: llmMetrics.totalRequests,
-          avgLatency: llmMetrics.totalRequests > 0 ? llmMetrics.totalLatency / llmMetrics.totalRequests : 0,
+          cacheHitRate: llmMetrics.hitRate,
+          totalRequests: llmMetrics.hits + llmMetrics.misses,
+          avgLatency: 0, // Not tracked in current metrics
           cacheMemory: llmMetrics.cacheSize
         },
         overall: {
-          totalCacheHits: dbMetrics.cacheHits + llmMetrics.cacheHits,
-          totalCacheMisses: dbMetrics.cacheMisses + llmMetrics.cacheMisses,
-          totalOperations: dbMetrics.totalQueries + llmMetrics.totalRequests,
-          avgCacheHitRate: ((dbMetrics.cacheHits + llmMetrics.cacheHits) / 
-                           Math.max(1, dbMetrics.totalQueries + llmMetrics.totalRequests)) * 100,
-          totalMemoryUsage: dbMetrics.cacheSize + llmMetrics.cacheSize
+          totalCacheHits: dbMetrics.cacheHits + llmMetrics.hits,
+          totalCacheMisses: dbMetrics.cacheMisses + llmMetrics.misses,
+          totalOperations: dbMetrics.totalQueries + (llmMetrics.hits + llmMetrics.misses),
+          avgCacheHitRate: ((dbMetrics.cacheHits + llmMetrics.hits) / 
+                           Math.max(1, dbMetrics.totalQueries + (llmMetrics.hits + llmMetrics.misses))) * 100,
+          totalMemoryUsage: (dbMetrics.cacheSize ?? 0) + (llmMetrics.cacheSize ?? 0)
         }
       }
     };
@@ -325,16 +335,16 @@ router.get('/recommendations', async (req: Request, res: Response) => {
       });
     }
     
-    if (dbMetrics.avgQueryTime > 100) {
+    if (dbMetrics.avgExecutionTime > 100) {
       recommendations.push({
         type: 'database',
         severity: 'high',
-        message: `Average query time is high (${dbMetrics.avgQueryTime.toFixed(1)}ms). Consider adding indexes or optimizing queries.`
+        message: `Average query time is high (${dbMetrics.avgExecutionTime.toFixed(1)}ms). Consider adding indexes or optimizing queries.`
       });
     }
     
     // LLM recommendations
-    const llmHitRate = (llmMetrics.cacheHits / Math.max(1, llmMetrics.totalRequests)) * 100;
+    const llmHitRate = llmMetrics.hitRate;
     if (llmHitRate < 30) {
       recommendations.push({
         type: 'llm',
@@ -343,16 +353,17 @@ router.get('/recommendations', async (req: Request, res: Response) => {
       });
     }
     
-    if (llmMetrics.errors > llmMetrics.totalRequests * 0.05) {
+    const totalLLMRequests = llmMetrics.hits + llmMetrics.misses;
+    if (llmMetrics.errors > totalLLMRequests * 0.05) {
       recommendations.push({
         type: 'llm',
         severity: 'high',
-        message: `High LLM error rate detected (${((llmMetrics.errors / Math.max(1, llmMetrics.totalRequests)) * 100).toFixed(1)}%). Check LLM service availability.`
+        message: `High LLM error rate detected (${((llmMetrics.errors / Math.max(1, totalLLMRequests)) * 100).toFixed(1)}%). Check LLM service availability.`
       });
     }
     
     // Memory recommendations
-    const totalMemory = dbMetrics.cacheSize + llmMetrics.cacheSize;
+    const totalMemory = (dbMetrics.cacheSize || 0) + llmMetrics.cacheSize;
     if (totalMemory > 500 * 1024 * 1024) { // 500MB
       recommendations.push({
         type: 'memory',
@@ -376,11 +387,11 @@ router.get('/recommendations', async (req: Request, res: Response) => {
       metrics: {
         database: {
           hitRate: dbHitRate,
-          avgQueryTime: dbMetrics.avgQueryTime
+          avgQueryTime: dbMetrics.avgExecutionTime
         },
         llm: {
           hitRate: llmHitRate,
-          errorRate: (llmMetrics.errors / Math.max(1, llmMetrics.totalRequests)) * 100
+          errorRate: (llmMetrics.errors / Math.max(1, llmMetrics.hits + llmMetrics.misses)) * 100
         },
         memory: {
           totalUsage: totalMemory,

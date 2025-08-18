@@ -60,7 +60,9 @@ export class SmartMatchingServiceOptimized extends SmartMatchingService {
         });
         
         // Update execution time in metadata
-        cachedResult?.searchMetadata?.executionTime = Date.now() - startTime;
+        if (cachedResult?.searchMetadata) {
+          cachedResult.searchMetadata.executionTime = Date.now() - startTime;
+        }
         return cachedResult;
       }
     } catch (error) {
@@ -82,7 +84,9 @@ export class SmartMatchingServiceOptimized extends SmartMatchingService {
     }
     
     // Update execution time
-    result?.searchMetadata?.executionTime = Date.now() - startTime;
+    if (result?.searchMetadata) {
+      result.searchMetadata.executionTime = Date.now() - startTime;
+    }
     
     // Log performance metrics
     const stats = this?.optimizedAlgorithm?.getPerformanceStats();

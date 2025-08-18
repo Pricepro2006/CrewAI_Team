@@ -85,7 +85,7 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
       searchCache.current[cacheKey] = {
         results: products,
         timestamp: Date.now(),
-        hasMore: products?.length || 0 === (options.limit || 20),
+        hasMore: (products?.length || 0) === (options.limit || 20),
       };
     } catch (err) {
       

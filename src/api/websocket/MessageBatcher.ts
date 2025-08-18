@@ -338,7 +338,9 @@ export class MessageBatcher extends EventEmitter {
         compressedSize = compressed?.length || 0;
         compressionRatio = originalSize / compressedSize;
         
-        this?.metrics?.compressionSavings += (originalSize - compressedSize);
+        if (this.metrics) {
+          this.metrics.compressionSavings += (originalSize - compressedSize);
+        }
       } catch (error) {
         this.emit('compression_error', { targetId, batchId, error });
       }
@@ -404,7 +406,7 @@ export class MessageBatcher extends EventEmitter {
     const messages = this.getMessagesForTarget(targetId);
     const currentBatchSize = this.adaptiveController?.getCurrentBatchSize() || this?.config?.maxBatchSize;
     
-    return messages?.length || 0 >= currentBatchSize;
+    return (messages?.length || 0) >= currentBatchSize;
   }
 
   private setupBatchTimer(targetId: string, priority: string): void {
@@ -433,20 +435,21 @@ export class MessageBatcher extends EventEmitter {
     const adjustment = this?.adaptiveController?.adjustParameters(currentLatency);
 
     if (adjustment.batchSizeChanged || adjustment.waitTimeChanged) {
-      this?.metrics?.adaptiveStats!.currentBatchSize = adjustment.newBatchSize;
-      this?.metrics?.adaptiveStats!.currentWaitTime = adjustment.newWaitTime;
-      
-      this?.metrics?.adaptiveStats!.adjustmentHistory.push({
-        timestamp: Date.now(),
-        batchSize: adjustment.newBatchSize,
-        waitTime: adjustment.newWaitTime,
-        latency: currentLatency
-      });
-
-      // Keep history manageable
-      if (this?.metrics?.adaptiveStats!.adjustmentHistory?.length || 0 > 100) {
-        this?.metrics?.adaptiveStats!.adjustmentHistory = 
-          this?.metrics?.adaptiveStats!.adjustmentHistory.slice(-100);
+      if (this.metrics?.adaptiveStats) {
+        this.metrics.adaptiveStats.currentBatchSize = adjustment.newBatchSize;
+        this.metrics.adaptiveStats.currentWaitTime = adjustment.newWaitTime;
+        
+        this.metrics.adaptiveStats.adjustmentHistory.push({
+          timestamp: Date.now(),
+          batchSize: adjustment.newBatchSize,
+          waitTime: adjustment.newWaitTime,
+          latency: currentLatency
+        });
+        // Keep history manageable
+        if (this.metrics.adaptiveStats.adjustmentHistory.length > 100) {
+          this.metrics.adaptiveStats.adjustmentHistory = 
+            this.metrics.adaptiveStats.adjustmentHistory.slice(-100);
+        }
       }
 
       this.emit('adaptive_adjustment', {
@@ -491,7 +494,9 @@ export class MessageBatcher extends EventEmitter {
 
   private updateBatchMetrics(batch: BatchedMessage): void {
     if (this.metrics.totalBatches) { this.metrics.totalBatches++ };
-    this?.metrics?.totalMessages += batch?.metadata?.batchSize;
+    if (this.metrics && batch?.metadata?.batchSize) {
+      this.metrics.totalMessages += batch.metadata.batchSize;
+    }
 
     if (batch?.metadata?.compressionRatio) {
       const currentAvg = this?.metrics?.averageCompressionRatio;
@@ -510,10 +515,10 @@ export class MessageBatcher extends EventEmitter {
   }
 
   private calculatePercentile(sortedArray: number[], percentile: number): number {
-    if (sortedArray?.length || 0 === 0) return 0;
+    if ((sortedArray?.length || 0) === 0) return 0;
     
-    const index = Math.ceil(sortedArray?.length || 0 * percentile) - 1;
-    return sortedArray[Math.max(0, Math.min(index, sortedArray?.length || 0 - 1))];
+    const index = Math.ceil((sortedArray?.length || 0) * percentile) - 1;
+    return sortedArray[Math.max(0, Math.min(index, (sortedArray?.length || 0) - 1))] || 0;
   }
 
   private performCleanup(): void {

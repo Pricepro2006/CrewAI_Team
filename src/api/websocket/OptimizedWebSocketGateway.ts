@@ -156,10 +156,14 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     try {
       const message = JSON.parse(data.toString());
       
-      connection?.stats?.messagesReceived++;
-      connection?.stats?.bytesReceived += Buffer.byteLength(data);
+      if (connection?.stats) {
+        connection.stats.messagesReceived++;
+        connection.stats.bytesReceived += Buffer.byteLength(data);
+      }
       if (this.stats.messagesReceived) { this.stats.messagesReceived++ };
-      this?.stats?.bytesReceived += Buffer.byteLength(data);
+      if (this.stats) {
+        this.stats.bytesReceived += Buffer.byteLength(data);
+      }
       
       switch (message.type) {
         case 'subscribe':

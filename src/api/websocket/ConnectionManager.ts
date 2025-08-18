@@ -341,8 +341,10 @@ export class ConnectionManager extends EventEmitter {
 
     // Add connection to pools
     connection.userId = userId;
-    connection?.metadata?.authContext = authContext;
-    this?.connections?.set(connection.id, connection);
+    if (connection.metadata) {
+      connection.metadata.authContext = authContext;
+    }
+    this.connections?.set(connection.id, connection);
 
     // Update tracking maps
     if (!this?.connectionsByUser?.has(userId)) {
@@ -468,8 +470,8 @@ export class ConnectionManager extends EventEmitter {
     const rateLimitKey = `${connectionId}:${action}`;
     const now = Date.now();
 
-    if (!connection?.metadata?.rateLimits) {
-      connection?.metadata?.rateLimits = {};
+    if (connection?.metadata && !connection.metadata.rateLimits) {
+      connection.metadata.rateLimits = {};
     }
 
     const rateLimit = connection?.metadata?.rateLimits[rateLimitKey] || {
@@ -484,7 +486,9 @@ export class ConnectionManager extends EventEmitter {
     }
 
     rateLimit.count++;
-    connection?.metadata?.rateLimits[rateLimitKey] = rateLimit;
+    if (connection?.metadata?.rateLimits) {
+      connection.metadata.rateLimits[rateLimitKey] = rateLimit;
+    }
 
     if (rateLimit.count > limit) {
       if (this.securityMetrics.rateLimitViolations) { this.securityMetrics.rateLimitViolations++ };

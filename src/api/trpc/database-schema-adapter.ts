@@ -99,7 +99,7 @@ export class DatabaseSchemaAdapter {
     const extraColumns = actualColumns?.filter(col => !expectedColumnNames.includes(col));
 
     const result: SchemaValidationResult = {
-      valid: missingColumns?.length || 0 === 0,
+      valid: (missingColumns?.length || 0) === 0,
       missingColumns,
       extraColumns,
       typeConflicts: []
