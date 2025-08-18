@@ -233,7 +233,7 @@ export class PlanExecutor {
     }
 
     // Try primary agent first
-    let agent = await this?.agentRegistry?.getAgent(step.agentType);
+    let agent = await this?.agentRegistry?.getAgent(step.agentType as any);
     let tool = agent.getTool(step.toolName);
 
     if (!tool) {
@@ -241,7 +241,7 @@ export class PlanExecutor {
       const fallbackAgents = this.getFallbackAgents(step.agentType);
       for (const fallbackType of fallbackAgents) {
         console.log(`Primary agent ${step.agentType} lacks tool ${step.toolName}, trying fallback ${fallbackType}`);
-        const fallbackAgent = await this?.agentRegistry?.getAgent(fallbackType);
+        const fallbackAgent = await this?.agentRegistry?.getAgent(fallbackType as any);
         const fallbackTool = fallbackAgent.getTool(step.toolName);
         if (fallbackTool) {
           agent = fallbackAgent;
@@ -305,7 +305,7 @@ export class PlanExecutor {
           if (fallbackAgents.length > attempt) {
             const fallbackType = fallbackAgents[attempt];
             console.log(`Retrying with fallback agent ${fallbackType} after error: ${lastError.message}`);
-            agent = await this?.agentRegistry?.getAgent(fallbackType);
+            agent = await this?.agentRegistry?.getAgent(fallbackType as any);
             const fallbackTool = agent.getTool(step.toolName);
             if (fallbackTool) {
               tool = fallbackTool;
@@ -336,7 +336,7 @@ export class PlanExecutor {
     step: PlanStep,
     context: Context,
   ): Promise<StepResult> {
-    const agent = await this?.agentRegistry?.getAgent(step.agentType);
+    const agent = await this?.agentRegistry?.getAgent(step.agentType as any);
 
     const result = await withTimeout(
       agent.execute(step.description, {

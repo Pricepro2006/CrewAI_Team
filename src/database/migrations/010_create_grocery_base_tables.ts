@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
  * Description: Creates foundational grocery system tables for user shopping lists and items
  */
 
-export function up(db: Database) {
+export function up(db: Database.Database) {
   console.log("Creating grocery base tables...");
 
   // Create grocery_lists table
@@ -187,7 +187,7 @@ export function up(db: Database) {
   console.log("✅ Grocery base tables created successfully");
 }
 
-export function down(db: Database) {
+export function down(db: Database.Database) {
   console.log("Dropping grocery base tables...");
 
   // Drop tables in reverse order due to foreign key constraints

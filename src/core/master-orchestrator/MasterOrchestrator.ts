@@ -78,8 +78,9 @@ export class MasterOrchestrator {
       this.llm = new LLMProviderManager();
       await this.llm.initialize();
       
+      const llmManager = this.llm as LLMProviderManager;
       logger.info("LLM provider initialized successfully", "ORCHESTRATOR", { 
-        isUsingFallback: this.llm.isUsingFallback(),
+        isUsingFallback: llmManager.isUsingFallback(),
         modelInfo: this.llm.getModelInfo()
       });
     } catch (error) {
@@ -98,7 +99,7 @@ export class MasterOrchestrator {
     
     // Initialize EnhancedParser now that LLM is available
     if (this.llm) {
-      this.enhancedParser = new EnhancedParser(this.llm);
+      this.enhancedParser = new EnhancedParser(this.llm as any);
     }
 
     // Initialize RAG system (gracefully handle ChromaDB failures)
@@ -294,7 +295,7 @@ export class MasterOrchestrator {
 
       // Step 0.5: Create intelligent agent routing plan with timeout
       const routingPlan = await withTimeout(
-        this.agentRouter.routeQuery(queryAnalysis),
+        this.agentRouter.routeQuery(queryAnalysis as QueryAnalysis),
         DEFAULT_TIMEOUTS.PLAN_CREATION,
         "Agent routing plan creation timed out",
       );
@@ -309,7 +310,7 @@ export class MasterOrchestrator {
       // Step 1: Create initial plan with enhanced context and timeout
       logger.info("Starting plan creation", "ORCHESTRATOR");
       let plan = await withTimeout(
-        this.createPlan(query, queryAnalysis, routingPlan),
+        this.createPlan(query, queryAnalysis as QueryAnalysis, routingPlan),
         DEFAULT_TIMEOUTS.PLAN_CREATION,
         "Plan creation timed out",
       );
@@ -403,7 +404,7 @@ export class MasterOrchestrator {
           );
 
           plan = await withTimeout(
-            this.replan(query, plan, review, queryAnalysis),
+            this.replan(query, plan, review, queryAnalysis as QueryAnalysis),
             DEFAULT_TIMEOUTS.PLAN_CREATION,
             "Replanning timed out",
           );

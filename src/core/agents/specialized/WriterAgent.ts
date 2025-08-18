@@ -192,7 +192,7 @@ export class WriterAgent extends BaseAgent {
       contentType,
       style,
       audience,
-      requirements: requirements.slice(0, 5), // Limit to 5 requirements
+      requirements: requirements.slice(0, 5) || [], // Limit to 5 requirements
       length,
     };
   }

@@ -6,7 +6,7 @@ import type { Database } from "better-sqlite3";
  * Description: Creates comprehensive purchase history tracking with product details, prices, quantities, and dates
  */
 
-export function up(db: Database) {
+export function up(db: Database.Database) {
   console.log("Creating purchase history table...");
 
   // Create purchase_history table
@@ -254,7 +254,7 @@ export function up(db: Database) {
   console.log("✅ Purchase history table created successfully");
 }
 
-export function down(db: Database) {
+export function down(db: Database.Database) {
   console.log("Dropping purchase history table...");
 
   db.exec(`DROP TABLE IF EXISTS purchase_receipts;`);

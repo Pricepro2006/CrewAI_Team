@@ -74,12 +74,12 @@ export interface BusinessIntelligenceData {
 }
 
 export class BusinessIntelligenceService {
-  private db: OptimizedQueryExecutor;
+  private db: OptimizedQueryExecutor | Database.Database;
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
   constructor(dbPath: string = './data/crewai_enhanced.db') {
-    this.db = getDatabase(dbPath);
+    this.db = getDatabase(dbPath) as any;
     logger.info('BusinessIntelligenceService initialized with OptimizedQueryExecutor', 'BI_SERVICE');
   }
 
@@ -166,7 +166,11 @@ export class BusinessIntelligenceService {
       params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const summaryRow = this?.db?.prepare(query).get(...params) as any;
+    const stmt = (this.db as any).prepare(query);
+    if (!stmt) {
+      throw new Error('Failed to prepare summary query');
+    }
+    const summaryRow = stmt.get(...params) as any;
 
     // Get unique entities
     const entitiesQuery = `
@@ -179,7 +183,11 @@ export class BusinessIntelligenceService {
       ${options.timeRange ? 'AND analyzed_at BETWEEN ? AND ?' : ''}
     `;
 
-    const emails = this?.db?.prepare(entitiesQuery).all(...params) as any[];
+    const entitiesStmt = (this.db as any).prepare(entitiesQuery);
+    if (!entitiesStmt) {
+      throw new Error('Failed to prepare entities query');
+    }
+    const emails = entitiesStmt.all(...params) as any[];
 
     const uniquePOs = new Set<string>();
     const uniqueQuotes = new Set<string>();
@@ -194,14 +202,14 @@ export class BusinessIntelligenceService {
         
         // PO numbers
         if (entities.po_numbers?.length) {
-          entities?.po_numbers?.forEach((po: string) => {
+          entities.po_numbers.forEach((po: string) => {
             if (po && po !== 'None') uniquePOs.add(po);
           });
         }
 
         // Quote numbers
         if (entities.quote_numbers?.length) {
-          entities?.quote_numbers?.forEach((quote: string) => {
+          entities.quote_numbers.forEach((quote: string) => {
             if (quote && quote !== 'None') uniqueQuotes.add(quote);
           });
         }
@@ -209,12 +217,12 @@ export class BusinessIntelligenceService {
         // Customers
         if (entities.customers) {
           if (Array.isArray(entities.customers)) {
-            entities?.customers?.forEach((customer: any) => {
+            entities.customers.forEach((customer: any) => {
               const name = typeof customer === 'string' ? customer : customer?.name;
               if (name) uniqueCustomers.add(name);
             });
-          } else if (entities?.customers?.name) {
-            uniqueCustomers.add(entities?.customers?.name);
+          } else if (entities.customers?.name) {
+            uniqueCustomers.add(entities.customers.name);
           }
         }
 
@@ -271,7 +279,11 @@ export class BusinessIntelligenceService {
 
     query += ' GROUP BY workflow_state';
 
-    const rows = this?.db?.prepare(query).all(...params) as any[];
+    const stmt = (this.db as any).prepare(query);
+    if (!stmt) {
+      return [];
+    }
+    const rows = stmt.all(...params) as any[];
     
     const workflowMap = new Map<string, { count: number; totalValue: number }>();
     let totalCount = 0;
@@ -334,7 +346,11 @@ export class BusinessIntelligenceService {
       params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const rows = this?.db?.prepare(query).all(...params) as any[];
+    const stmt = (this.db as any).prepare(query);
+    if (!stmt) {
+      return [];
+    }
+    const rows = stmt.all(...params) as any[];
     
     const priorityMap = new Map<string, number>([
       ['Critical', 0],
@@ -394,7 +410,11 @@ export class BusinessIntelligenceService {
       params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const emails = this?.db?.prepare(query).all(...params) as any[];
+    const stmt = (this.db as any).prepare(query);
+    if (!stmt) {
+      return [];
+    }
+    const emails = stmt.all(...params) as any[];
     
     const customerMap = new Map<string, {
       emailCount: number;
@@ -418,8 +438,8 @@ export class BusinessIntelligenceService {
               const name = typeof c === 'string' ? c : c?.name;
               if (name) customers.push(name);
             });
-          } else if (entities?.customers?.name) {
-            customers.push(entities?.customers?.name);
+          } else if (entities.customers?.name) {
+            customers.push(entities.customers.name);
           }
         }
 
@@ -500,7 +520,15 @@ export class BusinessIntelligenceService {
 
     query += ' ORDER BY analyzed_at DESC LIMIT 500';
 
-    const emails = this?.db?.prepare(query).all(...params) as any[];
+    const stmt = (this.db as any).prepare(query);
+    if (!stmt) {
+      return {
+        poNumbers: [],
+        quoteNumbers: [],
+        recentHighValueItems: []
+      };
+    }
+    const emails = stmt.all(...params) as any[];
     
     const poNumbers = new Set<string>();
     const quoteNumbers = new Set<string>();
@@ -514,7 +542,7 @@ export class BusinessIntelligenceService {
         
         // Extract PO numbers
         if (entities.po_numbers?.length) {
-          entities?.po_numbers?.forEach((po: string) => {
+          entities.po_numbers.forEach((po: string) => {
             if (po && po !== 'None' && po?.length || 0 > 3) {
               poNumbers.add(po);
             }
@@ -523,7 +551,7 @@ export class BusinessIntelligenceService {
 
         // Extract quote numbers
         if (entities.quote_numbers?.length) {
-          entities?.quote_numbers?.forEach((quote: string) => {
+          entities.quote_numbers.forEach((quote: string) => {
             if (quote && quote !== 'None' && quote?.length || 0 > 3) {
               quoteNumbers.add(quote);
             }
@@ -589,7 +617,20 @@ export class BusinessIntelligenceService {
       params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const metrics = this?.db?.prepare(query).get(...params) as any;
+    const stmt = (this.db as any).prepare(query);
+    if (!stmt) {
+      return {
+        avgConfidence: 0,
+        avgProcessingTime: 0,
+        successRate: 0,
+        totalProcessed: 0,
+        timeRange: {
+          start: options.timeRange?.start?.toISOString() || new Date().toISOString(),
+          end: options.timeRange?.end?.toISOString() || new Date().toISOString(),
+        },
+      };
+    }
+    const metrics = stmt.get(...params) as any;
 
     return {
       avgConfidence: metrics.avgConfidence || 0,
@@ -621,15 +662,15 @@ export class BusinessIntelligenceService {
    * Set cache data
    */
   private setCache(key: string, data: any): void {
-    this?.cache?.set(key, { data, timestamp: Date.now() });
+    this.cache.set(key, { data, timestamp: Date.now() });
     
     // Clean old cache entries
-    if (this?.cache?.size > 100) {
-      const entries = Array.from(this?.cache?.entries())
+    if (this.cache.size > 100) {
+      const entries = Array.from(this.cache.entries())
         .sort((a, b) => a[1].timestamp - b[1].timestamp);
-      if ((entries?.length || 0) > 0 && entries[0]) {
+      if (entries.length > 0 && entries[0]) {
         const oldestKey = entries[0][0];
-        this?.cache?.delete(oldestKey);
+        this.cache.delete(oldestKey);
       }
     }
   }
@@ -638,7 +679,7 @@ export class BusinessIntelligenceService {
    * Clear cache
    */
   clearCache(): void {
-    this?.cache?.clear();
+    this.cache.clear();
     logger.info('BI cache cleared', 'BI_SERVICE');
   }
 

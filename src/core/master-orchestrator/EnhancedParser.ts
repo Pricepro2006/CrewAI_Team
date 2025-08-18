@@ -202,7 +202,7 @@ Respond with only the intent category (one word).`;
 
     try {
       const response = await this?.llm?.generate(prompt, { maxTokens: 10 });
-      const intent = response.trim().toLowerCase();
+      const intent = (typeof response === 'string' ? response : response?.response || '').trim().toLowerCase();
 
       // Validate response
       const validIntents = [

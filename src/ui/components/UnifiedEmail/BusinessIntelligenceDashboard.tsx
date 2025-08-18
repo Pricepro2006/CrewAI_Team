@@ -90,7 +90,7 @@ const StatusDistributionChart = ({ data, totalEmails, title, showPercentages, ch
       },
     },
     onClick: (event: any, elements: any) => {
-      if (elements?.length || 0 > 0 && onClick) {
+      if ((elements?.length || 0) > 0 && onClick) {
         const index = elements[0].index;
         const label = chartData.labels[index];
         const value = chartData.datasets[0].data[index];
@@ -182,7 +182,7 @@ const WorkflowTimelineChart = ({ data, timeRange, title, showProcessingTime, cha
       },
     },
     onClick: (event: any, elements: any) => {
-      if (elements?.length || 0 > 0 && onClick) {
+      if ((elements?.length || 0) > 0 && onClick) {
         const index = elements[0].index;
         onClick(data[index]);
       }

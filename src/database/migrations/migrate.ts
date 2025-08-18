@@ -18,7 +18,7 @@ interface MigrationRecord {
 }
 
 export class MigrationRunner {
-  private db: Database;
+  private db: Database.Database;
   private migrationsPath: string;
 
   constructor(dbPath: string, migrationsPath?: string) {
@@ -28,7 +28,7 @@ export class MigrationRunner {
   }
 
   private initializeMigrationTable(): void {
-    this?.db?.exec(`
+    this.db.exec(`
       CREATE TABLE IF NOT EXISTS migrations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         filename TEXT UNIQUE NOT NULL,
@@ -38,7 +38,7 @@ export class MigrationRunner {
   }
 
   async getAppliedMigrations(): Promise<MigrationRecord[]> {
-    const stmt = this?.db?.prepare("SELECT * FROM migrations ORDER BY id");
+    const stmt = this.db.prepare("SELECT * FROM migrations ORDER BY id");
     return stmt.all() as MigrationRecord[];
   }
 
@@ -80,7 +80,7 @@ export class MigrationRunner {
         migration.up(this.db);
 
         // Record the migration as applied
-        const stmt = this?.db?.prepare(`
+        const stmt = this.db.prepare(`
           INSERT INTO migrations (filename, applied_at) 
           VALUES (?, datetime('now'))
         `);
@@ -128,7 +128,7 @@ export class MigrationRunner {
       migration.down(this.db);
 
       // Remove the migration record
-      const stmt = this?.db?.prepare("DELETE FROM migrations WHERE filename = ?");
+      const stmt = this.db.prepare("DELETE FROM migrations WHERE filename = ?");
       stmt.run(target.filename);
 
       console.log(`✅ Migration ${target.filename} rolled back successfully`);
@@ -162,7 +162,7 @@ export class MigrationRunner {
   }
 
   close(): void {
-    this?.db?.close();
+    this.db.close();
   }
 }
 

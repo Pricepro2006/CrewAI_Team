@@ -34,7 +34,7 @@ export function authenticateJWT(
   next: NextFunction,
 ): void {
   try {
-    const token = jwtManager.extractTokenFromHeader(req?.headers?.authorization);
+    const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
 
     if (!token) {
       res.status(401).json({
@@ -102,7 +102,7 @@ export function optionalAuthenticateJWT(
   next: NextFunction,
 ): void {
   try {
-    const token = jwtManager.extractTokenFromHeader(req?.headers?.authorization);
+    const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
 
     if (!token) {
       req.user = undefined;

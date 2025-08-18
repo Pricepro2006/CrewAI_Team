@@ -92,7 +92,15 @@ export class SecurityMonitoringService extends EventEmitter {
   /**
    * Get security statistics
    */
-  getStats(timeWindowMs: number = 3600000): Record<string, any> {
+  getStats(timeWindowMs: number = 3600000): {
+    timeWindow: string;
+    totalEvents: number;
+    eventCounts: Record<string, number>;
+    guestUserStats: any;
+    suspiciousIps: string[];
+    topDeniedResources: Array<{resource: string; count: number}>;
+    alertsTriggered: string[];
+  } {
     const now = Date.now();
     const windowStart = new Date(now - timeWindowMs);
 
@@ -100,7 +108,7 @@ export class SecurityMonitoringService extends EventEmitter {
       event => event.timestamp >= windowStart
     );
 
-    const eventCounts = recentEvents.reduce((acc: any, event: any) => {
+    const eventCounts = recentEvents.reduce((acc: Record<string, number>, event: SecurityEvent) => {
       acc[event.type] = (acc[event.type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -184,7 +192,7 @@ export class SecurityMonitoringService extends EventEmitter {
 
     return this.events
       .filter(event => event.timestamp >= windowStart)
-      .reduce((acc: any, event: any) => {
+      .reduce((acc: Record<string, number>, event: SecurityEvent) => {
         acc[event.type] = (acc[event.type] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
@@ -194,7 +202,7 @@ export class SecurityMonitoringService extends EventEmitter {
    * Identify suspicious IPs
    */
   private identifySuspiciousIps(events: SecurityEvent[]): string[] {
-    const ipCounts = events.reduce((acc: any, event: any) => {
+    const ipCounts = events.reduce((acc: Record<string, number>, event: SecurityEvent) => {
       if (event.ip) {
         acc[event.ip] = (acc[event.ip] || 0) + 1;
       }
@@ -217,7 +225,7 @@ export class SecurityMonitoringService extends EventEmitter {
         event.type === SecurityEventType.PERMISSION_DENIED
     );
 
-    const resourceCounts = deniedEvents.reduce((acc: any, event: any) => {
+    const resourceCounts = deniedEvents.reduce((acc: Record<string, number>, event: SecurityEvent) => {
       if (event.resource) {
         acc[event.resource] = (acc[event.resource] || 0) + 1;
       }
@@ -242,7 +250,7 @@ export class SecurityMonitoringService extends EventEmitter {
           e.timestamp > new Date(Date.now() - 300000) // 5 minutes
       );
 
-      if (recentGuestCreations?.length || 0 > 5) {
+      if ((recentGuestCreations?.length || 0) > 5) {
         this.emit("security-alert", {
           type: "RAPID_GUEST_CREATION",
           message: `IP ${event.ip} created ${recentGuestCreations?.length || 0} guest users in 5 minutes`,
@@ -260,7 +268,7 @@ export class SecurityMonitoringService extends EventEmitter {
           e.timestamp > new Date(Date.now() - 600000) // 10 minutes
       );
 
-      if (recentFailures?.length || 0 > 10) {
+      if ((recentFailures?.length || 0) > 10) {
         this.emit("security-alert", {
           type: "POTENTIAL_BRUTE_FORCE",
           message: `IP ${event.ip} had ${recentFailures?.length || 0} auth failures in 10 minutes`,
@@ -300,7 +308,7 @@ export class SecurityMonitoringService extends EventEmitter {
       const stats = this.getStats();
       const alerts = stats?.alertsTriggered;
 
-      if (alerts?.length || 0 > 0) {
+      if ((alerts?.length || 0) > 0) {
         logger.warn("Security alerts detected in periodic analysis", "SECURITY_MONITOR", {
           alerts,
           stats,

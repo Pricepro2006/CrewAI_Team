@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
  * Description: Adds user authentication infrastructure including users, sessions, and refresh tokens
  */
 
-export function up(db: Database) {
+export function up(db: Database.Database) {
   console.log("Creating users and authentication tables...");
 
   // Create users table
@@ -124,7 +124,7 @@ export function up(db: Database) {
   console.log("✅ Users and authentication tables created successfully");
 }
 
-export function down(db: Database) {
+export function down(db: Database.Database) {
   console.log("Dropping users and authentication tables...");
 
   // Drop tables in reverse order due to foreign key constraints

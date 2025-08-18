@@ -26,7 +26,7 @@ export class PlanReviewer {
       issues.push("Some steps reference undefined dependencies");
     }
 
-    const satisfactory = issues?.length || 0 === 0;
+    const satisfactory: boolean = (issues?.length || 0) === 0;
 
     const result: ReviewResult = {
       satisfactory,
@@ -85,7 +85,7 @@ export class PlanReviewer {
       issues.push("No meaningful output generated");
     }
 
-    const satisfactory = issues?.length || 0 === 0;
+    const satisfactory: boolean = (issues?.length || 0) === 0;
 
     const result: ReviewResult = {
       satisfactory,

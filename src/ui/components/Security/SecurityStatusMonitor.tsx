@@ -76,9 +76,9 @@ export const SecurityStatusMonitor: React.FC = () => {
   }, [csrfStatus.hasToken]);
 
   // Check WebSocket status
-  const { data: wsStatus } = api?.websocket?.status.useQuery(undefined, {
+  const { data: wsStatus } = (api?.websocket?.status as any)?.useQuery?.(undefined, {
     refetchInterval: 30000,
-  });
+  }) || { data: null };
 
   useEffect(() => {
     if (wsStatus) {
@@ -98,8 +98,8 @@ export const SecurityStatusMonitor: React.FC = () => {
 
     const passedChecks = checks?.filter((c: any) => c).length;
 
-    if (passedChecks === checks?.length || 0) return "secure";
-    if (passedChecks >= checks?.length || 0 * 0.7) return "warning";
+    if (passedChecks === (checks?.length || 0)) return "secure";
+    if (passedChecks >= (checks?.length || 0) * 0.7) return "warning";
     return "error";
   };
 
@@ -197,7 +197,7 @@ export const SecurityStatusMonitor: React.FC = () => {
                 <div>CSRF Token Age: {csrfStatus.tokenAge}</div>
                 {csrfStatus.lastRefresh && (
                   <div>
-                    Last Refresh: {csrfStatus?.lastRefresh?.toLocaleTimeString()}
+                    Last Refresh: {typeof csrfStatus?.lastRefresh === 'object' && csrfStatus?.lastRefresh instanceof Date ? csrfStatus?.lastRefresh?.toLocaleTimeString() : 'Unknown'}
                   </div>
                 )}
               </div>
