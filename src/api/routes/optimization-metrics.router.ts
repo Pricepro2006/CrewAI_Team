@@ -7,6 +7,22 @@ import { Router, Request, Response } from 'express';
 import { getDatabase } from '../../database/index.js';
 import { CachedLLMProvider } from '../../core/llm/CachedLLMProvider.js';
 import { logger } from '../../utils/logger.js';
+import {
+  safeDatabaseMetrics,
+  safeLLMMetrics,
+  calculateHitRate,
+  safeAverage,
+  type QueryStats,
+  type ExtendedLLMMetrics,
+  type DatabaseMetricsResponse,
+  type CacheStatsResponse,
+  type CacheClearResponse,
+  type LLMMetricsResponse,
+  type LLMCacheStatsResponse,
+  type OptimizationSummaryResponse,
+  type RecommendationsResponse,
+  type Recommendation
+} from '../validation/metricsSchemas.js';
 
 const router = Router();
 
@@ -18,18 +34,18 @@ router.get('/database/metrics', async (req: Request, res: Response) => {
   try {
     // Get metrics from main database
     const mainDb = getDatabase();
-    const mainMetrics = mainDb.getMetrics();
+    const mainMetrics = safeDatabaseMetrics(mainDb.getMetrics());
     
     // Get metrics from walmart database if it exists
-    let walmartMetrics = null;
+    let walmartMetrics: QueryStats | null = null;
     try {
       const walmartDb = getDatabase('./walmart_grocery.db');
-      walmartMetrics = walmartDb.getMetrics();
+      walmartMetrics = safeDatabaseMetrics(walmartDb.getMetrics());
     } catch (error) {
       // Walmart database might not exist
     }
     
-    const response = {
+    const response: DatabaseMetricsResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       databases: {
@@ -37,12 +53,14 @@ router.get('/database/metrics', async (req: Request, res: Response) => {
         ...(walmartMetrics && { walmart: walmartMetrics })
       },
       summary: {
-        totalCacheHits: mainMetrics.cacheHits + (walmartMetrics?.cacheHits || 0),
-        totalCacheMisses: mainMetrics.cacheMisses + (walmartMetrics?.cacheMisses || 0),
-        totalQueries: mainMetrics.totalQueries + (walmartMetrics?.totalQueries || 0),
-        avgCacheHitRate: ((mainMetrics.cacheHits + (walmartMetrics?.cacheHits || 0)) / 
-                         Math.max(1, mainMetrics.totalQueries + (walmartMetrics?.totalQueries || 0))) * 100,
-        totalMemoryUsage: (mainMetrics.cacheSize ?? 0) + (walmartMetrics?.cacheSize ?? 0)
+        totalCacheHits: mainMetrics.cacheHits + (walmartMetrics?.cacheHits ?? 0),
+        totalCacheMisses: mainMetrics.cacheMisses + (walmartMetrics?.cacheMisses ?? 0),
+        totalQueries: mainMetrics.totalQueries + (walmartMetrics?.totalQueries ?? 0),
+        avgCacheHitRate: calculateHitRate(
+          mainMetrics.cacheHits + (walmartMetrics?.cacheHits ?? 0),
+          mainMetrics.cacheMisses + (walmartMetrics?.cacheMisses ?? 0)
+        ),
+        totalMemoryUsage: (mainMetrics.cacheMemoryUsage ?? 0) + (walmartMetrics?.cacheMemoryUsage ?? 0)
       }
     };
     
@@ -64,25 +82,25 @@ router.get('/database/metrics', async (req: Request, res: Response) => {
 router.get('/database/cache', async (req: Request, res: Response) => {
   try {
     const db = getDatabase();
-    const metrics = db.getMetrics();
+    const metrics = safeDatabaseMetrics(db.getMetrics());
     
-    const cacheStats = {
+    const cacheStats: CacheStatsResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       cache: {
         size: metrics.cacheSize,
         hits: metrics.cacheHits,
         misses: metrics.cacheMisses,
-        hitRate: (metrics.cacheHits / Math.max(1, metrics.cacheHits + metrics.cacheMisses)) * 100,
-        evictions: metrics.cacheEvictions || 0,
-        memoryUsage: metrics.cacheMemoryUsage || 0,
-        entries: metrics.cacheEntries || 0,
-        maxSize: metrics.maxCacheSize || 1000
+        hitRate: calculateHitRate(metrics.cacheHits, metrics.cacheMisses),
+        evictions: metrics.cacheEvictions ?? 0,
+        memoryUsage: metrics.cacheMemoryUsage ?? 0,
+        entries: metrics.cacheEntries ?? 0,
+        maxSize: metrics.maxCacheSize ?? 1000
       },
       prepared: {
-        count: metrics.preparedStatements || 0,
-        reused: metrics.preparedReused || 0,
-        reuseRate: (((metrics.preparedReused ?? 0) / Math.max(1, (metrics.preparedStatements || 0)))) * 100
+        count: metrics.preparedStatements ?? 0,
+        reused: metrics.preparedReused ?? 0,
+        reuseRate: safeAverage(metrics.preparedReused ?? 0, metrics.preparedStatements ?? 0) * 100
       }
     };
     
@@ -104,14 +122,14 @@ router.get('/database/cache', async (req: Request, res: Response) => {
 router.post('/database/cache/clear', async (req: Request, res: Response) => {
   try {
     const db = getDatabase();
-    const beforeMetrics = db.getMetrics();
+    const beforeMetrics = safeDatabaseMetrics(db.getMetrics());
     
     // Clear cache
     db.clearCache();
     
-    const afterMetrics = db.getMetrics();
+    const afterMetrics = safeDatabaseMetrics(db.getMetrics());
     
-    res.json({
+    const response: CacheClearResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       message: 'Query cache cleared successfully',
@@ -125,7 +143,9 @@ router.post('/database/cache/clear', async (req: Request, res: Response) => {
         cacheHits: afterMetrics.cacheHits,
         cacheMisses: afterMetrics.cacheMisses
       }
-    });
+    };
+    
+    res.json(response);
   } catch (error) {
     logger.error('Failed to clear query cache', 'OPTIMIZATION_METRICS', error as Error);
     res.status(500).json({
@@ -144,16 +164,15 @@ router.get('/llm/metrics', async (req: Request, res: Response) => {
   try {
     // Get singleton instance metrics
     const provider = CachedLLMProvider.getInstance();
-    const metrics = provider.getMetrics();
+    const metrics = safeLLMMetrics(provider.getMetrics());
     
-    const response = {
+    const response: LLMMetricsResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       llm: {
         ...metrics,
-        hitRate: metrics.hitRate,
         avgLatency: 0, // Not tracked in current metrics
-        deduplicationRate: (metrics.dedupeCount / Math.max(1, metrics.hits + metrics.misses)) * 100
+        deduplicationRate: safeAverage(metrics.dedupeCount, metrics.hits + metrics.misses) * 100
       }
     };
     
@@ -175,38 +194,29 @@ router.get('/llm/metrics', async (req: Request, res: Response) => {
 router.get('/llm/cache', async (req: Request, res: Response) => {
   try {
     const provider = CachedLLMProvider.getInstance();
-    const metrics = provider.getMetrics();
+    const metrics = safeLLMMetrics(provider.getMetrics());
     // Get cache details from existing metrics and stats
     const stats = provider.exportStats();
-    const cacheDetails = {
-      size: stats.cacheSize,
-      maxSize: 500, // From CachedLLMProvider config
-      evictions: metrics.evictions || 0,
-      memoryUsage: stats.memoryUsage * 1024 * 1024, // Convert MB to bytes
-      ttl: 30 * 60 * 1000, // 30 minutes from config
-      oldestEntry: null,
-      newestEntry: null
-    };
     
-    const cacheStats = {
+    const cacheStats: LLMCacheStatsResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       cache: {
-        size: cacheDetails.size,
-        maxSize: cacheDetails.maxSize,
+        size: stats.cacheSize ?? 0,
+        maxSize: 500, // From CachedLLMProvider config
         hits: metrics.hits,
         misses: metrics.misses,
         hitRate: metrics.hitRate,
-        evictions: cacheDetails.evictions || 0,
-        memoryUsage: cacheDetails.memoryUsage || 0,
-        ttl: cacheDetails.ttl || 3600000,
-        oldestEntry: cacheDetails.oldestEntry || null,
-        newestEntry: cacheDetails.newestEntry || null
+        evictions: metrics.evictions ?? 0,
+        memoryUsage: (stats.memoryUsage ?? 0) * 1024 * 1024, // Convert MB to bytes
+        ttl: 30 * 60 * 1000, // 30 minutes from config
+        oldestEntry: null,
+        newestEntry: null
       },
       deduplication: {
         active: metrics.dedupeCount,
         saved: metrics.dedupeCount,
-        rate: (metrics.dedupeCount / Math.max(1, metrics.hits + metrics.misses)) * 100
+        rate: safeAverage(metrics.dedupeCount, metrics.hits + metrics.misses) * 100
       }
     };
     
@@ -228,14 +238,14 @@ router.get('/llm/cache', async (req: Request, res: Response) => {
 router.post('/llm/cache/clear', async (req: Request, res: Response) => {
   try {
     const provider = CachedLLMProvider.getInstance();
-    const beforeMetrics = provider.getMetrics();
+    const beforeMetrics = safeLLMMetrics(provider.getMetrics());
     
     // Clear cache
     provider.clearCache();
     
-    const afterMetrics = provider.getMetrics();
+    const afterMetrics = safeLLMMetrics(provider.getMetrics());
     
-    res.json({
+    const response: CacheClearResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       message: 'LLM cache cleared successfully',
@@ -249,7 +259,9 @@ router.post('/llm/cache/clear', async (req: Request, res: Response) => {
         cacheHits: afterMetrics.hits,
         cacheMisses: afterMetrics.misses
       }
-    });
+    };
+    
+    res.json(response);
   } catch (error) {
     logger.error('Failed to clear LLM cache', 'OPTIMIZATION_METRICS', error as Error);
     res.status(500).json({
@@ -268,40 +280,42 @@ router.get('/summary', async (req: Request, res: Response) => {
   try {
     // Database metrics
     const mainDb = getDatabase();
-    const dbMetrics = mainDb.getMetrics();
+    const dbMetrics = safeDatabaseMetrics(mainDb.getMetrics());
     
     // LLM metrics
     const provider = CachedLLMProvider.getInstance();
-    const llmMetrics = provider.getMetrics();
+    const llmMetrics = safeLLMMetrics(provider.getMetrics());
     
-    const summary = {
+    const response: OptimizationSummaryResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       optimization: {
         database: {
-          cacheHitRate: (dbMetrics.cacheHits / Math.max(1, dbMetrics.totalQueries)) * 100,
+          cacheHitRate: calculateHitRate(dbMetrics.cacheHits, dbMetrics.cacheMisses),
           totalQueries: dbMetrics.totalQueries,
           avgQueryTime: dbMetrics.avgExecutionTime,
-          cacheMemory: dbMetrics.cacheSize ?? 0
+          cacheMemory: dbMetrics.cacheMemoryUsage ?? 0
         },
         llm: {
           cacheHitRate: llmMetrics.hitRate,
           totalRequests: llmMetrics.hits + llmMetrics.misses,
           avgLatency: 0, // Not tracked in current metrics
-          cacheMemory: llmMetrics.cacheSize
+          cacheMemory: llmMetrics.cacheSize ?? 0
         },
         overall: {
           totalCacheHits: dbMetrics.cacheHits + llmMetrics.hits,
           totalCacheMisses: dbMetrics.cacheMisses + llmMetrics.misses,
           totalOperations: dbMetrics.totalQueries + (llmMetrics.hits + llmMetrics.misses),
-          avgCacheHitRate: ((dbMetrics.cacheHits + llmMetrics.hits) / 
-                           Math.max(1, dbMetrics.totalQueries + (llmMetrics.hits + llmMetrics.misses))) * 100,
-          totalMemoryUsage: (dbMetrics.cacheSize ?? 0) + (llmMetrics.cacheSize ?? 0)
+          avgCacheHitRate: calculateHitRate(
+            dbMetrics.cacheHits + llmMetrics.hits,
+            dbMetrics.cacheMisses + llmMetrics.misses
+          ),
+          totalMemoryUsage: (dbMetrics.cacheMemoryUsage ?? 0) + (llmMetrics.cacheSize ?? 0)
         }
       }
     };
     
-    res.json(summary);
+    res.json(response);
   } catch (error) {
     logger.error('Failed to get optimization summary', 'OPTIMIZATION_METRICS', error as Error);
     res.status(500).json({
@@ -319,14 +333,14 @@ router.get('/summary', async (req: Request, res: Response) => {
 router.get('/recommendations', async (req: Request, res: Response) => {
   try {
     const mainDb = getDatabase();
-    const dbMetrics = mainDb.getMetrics();
+    const dbMetrics = safeDatabaseMetrics(mainDb.getMetrics());
     const provider = CachedLLMProvider.getInstance();
-    const llmMetrics = provider.getMetrics();
+    const llmMetrics = safeLLMMetrics(provider.getMetrics());
     
-    const recommendations = [];
+    const recommendations: Recommendation[] = [];
     
     // Database recommendations
-    const dbHitRate = (dbMetrics.cacheHits / Math.max(1, dbMetrics.totalQueries)) * 100;
+    const dbHitRate = calculateHitRate(dbMetrics.cacheHits, dbMetrics.cacheMisses);
     if (dbHitRate < 50) {
       recommendations.push({
         type: 'database',
@@ -354,17 +368,18 @@ router.get('/recommendations', async (req: Request, res: Response) => {
     }
     
     const totalLLMRequests = llmMetrics.hits + llmMetrics.misses;
-    if (llmMetrics.errors > totalLLMRequests * 0.05) {
+    const errorRate = safeAverage(llmMetrics.errors, totalLLMRequests) * 100;
+    if (errorRate > 5) {
       recommendations.push({
         type: 'llm',
         severity: 'high',
-        message: `High LLM error rate detected (${((llmMetrics.errors / Math.max(1, totalLLMRequests)) * 100).toFixed(1)}%). Check LLM service availability.`
+        message: `High LLM error rate detected (${errorRate.toFixed(1)}%). Check LLM service availability.`
       });
     }
     
     // Memory recommendations
-    const totalMemory = (dbMetrics.cacheSize || 0) + llmMetrics.cacheSize;
-    if (totalMemory > 500 * 1024 * 1024) { // 500MB
+    const totalMemory = (dbMetrics.cacheMemoryUsage ?? 0) + (llmMetrics.cacheSize ?? 0);
+    if (totalMemory > 500 * 1024 * 1024) { // 500MB in bytes
       recommendations.push({
         type: 'memory',
         severity: 'medium',
@@ -380,7 +395,7 @@ router.get('/recommendations', async (req: Request, res: Response) => {
       });
     }
     
-    res.json({
+    const response: RecommendationsResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       recommendations,
@@ -391,14 +406,16 @@ router.get('/recommendations', async (req: Request, res: Response) => {
         },
         llm: {
           hitRate: llmHitRate,
-          errorRate: (llmMetrics.errors / Math.max(1, llmMetrics.hits + llmMetrics.misses)) * 100
+          errorRate
         },
         memory: {
           totalUsage: totalMemory,
           totalUsageMB: totalMemory / 1024 / 1024
         }
       }
-    });
+    };
+    
+    res.json(response);
   } catch (error) {
     logger.error('Failed to generate optimization recommendations', 'OPTIMIZATION_METRICS', error as Error);
     res.status(500).json({
