@@ -7,7 +7,8 @@
  * and provides alerts for operational issues.
  */
 
-import Database from 'better-sqlite3';
+import BetterSqlite3 from 'better-sqlite3';
+import type { Database } from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 import { performance } from 'perf_hooks';
@@ -95,7 +96,7 @@ class GroceryDatabaseMonitor {
     private logPath: string = './grocery_monitor.log',
     thresholds: Partial<PerformanceThresholds> = {}
   ) {
-    this.db = new Database(dbPath, { verbose: this?.logQuery?.bind(this) });
+    this.db = new BetterSqlite3(dbPath, { verbose: ((sql: string) => this.logQuery(sql)) as any }) as Database;
     this.thresholds = {
       maxAvgQueryTime: 100, // 100ms
       maxSlowQueries: 10, // per minute
@@ -348,12 +349,12 @@ ${this.generateSystemRecommendations(recentMetrics)}
     // For now, we'll simulate it
     setTimeout(() => {
       const executionTime = performance.now() - startTime;
-      if (this.queryStats.totalQueries) { this.queryStats.totalQueries++ };
-      this?.queryStats?.totalExecutionTime += executionTime;
+      if (this.queryStats.totalQueries !== undefined) { this.queryStats.totalQueries++; }
+      this.queryStats.totalExecutionTime = (this.queryStats.totalExecutionTime || 0) + executionTime;
       
       // Log slow queries
       if (executionTime > this?.thresholds?.maxAvgQueryTime) {
-        if (this.queryStats.slowQueries) { this.queryStats.slowQueries++ };
+        if (this.queryStats.slowQueries !== undefined) { this.queryStats.slowQueries++; }
         
         const slowQuery: SlowQuery = {
           sql,
@@ -431,9 +432,11 @@ ${this.generateSystemRecommendations(recentMetrics)}
     const indexes = this?.db?.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='index'").get() as any;
     
     // Check if VACUUM is needed (simplified heuristic)
-    const pageCount = this?.db?.pragma('page_count')[0] as any;
-    const freelist = this?.db?.pragma('freelist_count')[0] as any;
-    const vacuumNeeded = freelist && pageCount && (freelist / pageCount) > 0.2;
+    const pageCountResult = this?.db?.pragma('page_count') as Array<{ page_count?: number }>;
+    const freelistResult = this?.db?.pragma('freelist_count') as Array<{ freelist_count?: number }>;
+    const pageCount = pageCountResult?.[0]?.page_count || 0;
+    const freelist = freelistResult?.[0]?.freelist_count || 0;
+    const vacuumNeeded = !!(freelist && pageCount && (freelist / pageCount) > 0.2);
     
     return {
       databaseSize: dbStats.size,
@@ -483,11 +486,11 @@ ${this.generateSystemRecommendations(recentMetrics)}
       }
       
       const lastBackup = backupFiles[0];
-      const hoursSinceBackup = (Date.now() - lastBackup?.stats?.mtime.getTime()) / (1000 * 60 * 60);
+      const hoursSinceBackup = lastBackup ? (Date.now() - lastBackup.stats.mtime.getTime()) / (1000 * 60 * 60) : Infinity;
       
       return {
-        lastBackupTime: lastBackup?.stats?.mtime.toISOString(),
-        lastBackupSize: lastBackup?.stats?.size,
+        lastBackupTime: lastBackup?.stats?.mtime.toISOString() || 'never',
+        lastBackupSize: lastBackup?.stats?.size || 0,
         backupStatus: hoursSinceBackup > this?.thresholds?.backupOverdueHours ? 'overdue' : 'success'
       };
     } catch (error) {
@@ -734,7 +737,7 @@ async function main() {
   try {
     switch (command) {
       case 'start':
-        const interval = parseInt(args[1]) || 60;
+        const interval = args[1] ? parseInt(args[1]) : 60;
         monitor.startMonitoring(interval);
         
         // Keep the process running
@@ -747,7 +750,7 @@ async function main() {
         break;
         
       case 'report':
-        const hours = parseInt(args[1]) || 24;
+        const hours = args[1] ? parseInt(args[1]) : 24;
         const report = await monitor.generateReport(hours);
         
         if (args[2]) {
@@ -789,4 +792,5 @@ if (require.main === module) {
   main();
 }
 
-export { GroceryDatabaseMonitor, DatabaseMetrics, DatabaseAlert, PerformanceThresholds };
+export { GroceryDatabaseMonitor };
+export type { DatabaseMetrics, DatabaseAlert, PerformanceThresholds };
