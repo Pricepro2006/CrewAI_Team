@@ -39,6 +39,7 @@ import { securityRouter } from "./routers/security.router.js";
 import { monitoringRouter } from "./routers/monitoring.router.js";
 import { groceryNLPQueueRouter } from "./routers/grocery-nlp-queue.router.js";
 import { pollingRouter } from "./routers/polling.router.js";
+import { priceAlertsRouter } from "./price-alerts.router.js";
 
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router.js";
@@ -66,6 +67,7 @@ export const appRouter = createRouter({
   monitoring: monitoringRouter, // System monitoring and observability
   groceryNLPQueue: groceryNLPQueueRouter, // Grocery NLP Queue management
   polling: pollingRouter, // HTTP polling fallback endpoints
+  priceAlerts: priceAlertsRouter, // Price alert system
 });
 
 export type AppRouter = typeof appRouter;

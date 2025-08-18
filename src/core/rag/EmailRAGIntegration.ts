@@ -1,12 +1,104 @@
 /**
  * Email-RAG Integration Service
  * Connects email processing pipeline with RAG system for enhanced semantic search and context retrieval
+ * Implements database-aligned validation patterns with Zod schemas
  */
 
+import { z } from 'zod';
 import { RAGSystem } from "./RAGSystem.js";
 import { logger } from "../../utils/logger.js";
 import type { EmailRecord } from "../../shared/types/email.js";
 
+// Database-aligned Zod schemas mirroring email database constraints
+const EmailStatusSchema = z.enum(['red', 'yellow', 'green'], {
+  errorMap: () => ({ message: 'Status must be one of: red, yellow, green' })
+});
+
+const EmailWorkflowStateSchema = z.enum(['START_POINT', 'IN_PROGRESS', 'COMPLETION'], {
+  errorMap: () => ({ message: 'Workflow state must be one of: START_POINT, IN_PROGRESS, COMPLETION' })
+});
+
+const EmailPrioritySchema = z.enum(['critical', 'high', 'medium', 'low'], {
+  errorMap: () => ({ message: 'Priority must be one of: critical, high, medium, low' })
+}).default('medium');
+
+// Email content validation - mirrors database TEXT constraints
+const EmailContentSchema = z.object({
+  subject: z.string()
+    .trim()
+    .min(1, 'Subject cannot be empty')
+    .max(500, 'Subject exceeds maximum length of 500 characters'),
+  bodyText: z.string()
+    .trim()
+    .optional()
+    .transform(val => val || ''),
+  bodyHtml: z.string()
+    .trim()
+    .optional(),
+  summary: z.string()
+    .trim()
+    .max(1000, 'Summary exceeds maximum length')
+    .default('')
+});
+
+// Metadata validation with database field alignment
+const EmailMetadataSchema = z.object({
+  email_alias: z.string()
+    .trim()
+    .min(1, 'Email alias cannot be empty')
+    .max(100, 'Email alias too long'),
+  requested_by: z.string()
+    .trim()
+    .min(1, 'Requested by cannot be empty')
+    .max(100, 'Requested by field too long'),
+  workflow_type: z.string()
+    .trim()
+    .max(50, 'Workflow type too long')
+    .optional(),
+  source: z.enum(['manual', 'api', 'webhook', 'import']).default('manual'),
+  isRead: z.boolean().default(false),
+  hasAttachments: z.boolean().default(false)
+});
+
+// Complete email record validation schema
+const EmailRecordValidationSchema = EmailContentSchema
+  .merge(EmailMetadataSchema)
+  .extend({
+    status: EmailStatusSchema,
+    priority: EmailPrioritySchema,
+    workflow_state: EmailWorkflowStateSchema,
+    timestamp: z.string().datetime('Invalid timestamp format'),
+    receivedTime: z.string().datetime('Invalid received time format')
+  });
+
+// Search options validation
+const EmailSearchOptionsSchema = z.object({
+  limit: z.number()
+    .int('Limit must be an integer')
+    .min(1, 'Limit must be at least 1')
+    .max(1000, 'Limit cannot exceed 1000')
+    .default(10),
+  sender: z.string()
+    .trim()
+    .max(255, 'Sender field too long')
+    .optional(),
+  dateRange: z.object({
+    from: z.string().datetime().optional(),
+    to: z.string().datetime().optional()
+  }).optional(),
+  includeBody: z.boolean().default(false),
+  minScore: z.number()
+    .min(0.0, 'Score cannot be negative')
+    .max(1.0, 'Score cannot exceed 1.0')
+    .optional()
+});
+
+// Indexing batch validation
+const EmailBatchIndexingSchema = z.array(EmailRecordValidationSchema)
+  .min(1, 'Email batch cannot be empty')
+  .max(10000, 'Batch size cannot exceed 10,000 emails');
+
+// Type-safe interfaces aligned with database schema
 export interface EmailIndexingStatus {
   total: number;
   indexed: number;
@@ -24,6 +116,20 @@ export interface EmailSearchResult {
   date?: string;
   relevantChunks?: string[];
 }
+
+// Validated email indexing status schema
+const EmailIndexingStatusSchema = z.object({
+  total: z.number().int().min(0, 'Total must be non-negative'),
+  indexed: z.number().int().min(0, 'Indexed count must be non-negative'),
+  failed: z.number().int().min(0, 'Failed count must be non-negative'),
+  errors: z.array(z.string().max(500, 'Error message too long')).default([]),
+  duration: z.number().min(0, 'Duration must be non-negative')
+});
+
+// Derive types from schemas for compile-time safety
+export type ValidatedEmailRecord = z.infer<typeof EmailRecordValidationSchema>;
+export type ValidatedEmailSearchOptions = z.infer<typeof EmailSearchOptionsSchema>;
+export type ValidatedEmailIndexingStatus = z.infer<typeof EmailIndexingStatusSchema>;
 
 export class EmailRAGIntegration {
   private ragSystem: RAGSystem;
@@ -51,25 +157,51 @@ export class EmailRAGIntegration {
   }
 
   /**
-   * Index a single email into the RAG system
+   * Index a single email into the RAG system with validation
    */
   async indexEmail(email: EmailRecord): Promise<void> {
     try {
+      // Validate email data against database schema constraints
+      const validationResult = EmailRecordValidationSchema.safeParse({
+        subject: email.subject,
+        bodyText: email.bodyText,
+        bodyHtml: email.bodyHtml,
+        summary: email.summary,
+        email_alias: email.email_alias,
+        requested_by: email.requested_by,
+        workflow_type: email.workflow_type,
+        source: email.source,
+        isRead: email.isRead,
+        hasAttachments: email.hasAttachments,
+        status: email.status,
+        priority: email.priority,
+        workflow_state: email.workflow_state,
+        timestamp: email.timestamp,
+        receivedTime: email.receivedTime
+      });
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+        throw new Error(`Email validation failed: ${errors}`);
+      }
+
+      const validatedEmail = validationResult.data;
+
       await this.ragSystem.indexEmailContent(email.id, {
-        subject: email.subject || 'No Subject',
-        body: email.body || '',
-        sender: email.sender || undefined,
-        recipients: email.recipients ? [email.recipients] : undefined,
-        date: email.receivedDate?.toISOString(),
+        subject: validatedEmail.subject,
+        body: validatedEmail.bodyText || validatedEmail.summary || '',
+        sender: email.requested_by || undefined, // Map to available field
+        recipients: undefined, // No direct recipient field in EmailRecord
+        date: validatedEmail.receivedTime,
         metadata: {
-          messageId: email.messageId,
-          emailAlias: email.emailAlias,
-          status: email.status,
-          workflowType: email.workflowType,
-          priority: email.priority,
-          hasAttachments: email.hasAttachments,
-          isRead: email.isRead,
-          chainId: email.chainId,
+          emailAlias: validatedEmail.email_alias,
+          status: validatedEmail.status,
+          workflowType: validatedEmail.workflow_type,
+          priority: validatedEmail.priority,
+          hasAttachments: validatedEmail.hasAttachments,
+          isRead: validatedEmail.isRead,
+          workflowState: validatedEmail.workflow_state,
+          source: validatedEmail.source
         },
       });
 
@@ -84,11 +216,37 @@ export class EmailRAGIntegration {
   }
 
   /**
-   * Batch index multiple emails efficiently
+   * Batch index multiple emails efficiently with validation
    */
   async batchIndexEmails(emails: EmailRecord[]): Promise<EmailIndexingStatus> {
     if (this.indexingInProgress) {
       throw new Error("Email indexing already in progress");
+    }
+
+    // Validate batch size and content
+    const batchValidation = EmailBatchIndexingSchema.safeParse(
+      emails.map(email => ({
+        subject: email.subject,
+        bodyText: email.bodyText,
+        bodyHtml: email.bodyHtml,
+        summary: email.summary,
+        email_alias: email.email_alias,
+        requested_by: email.requested_by,
+        workflow_type: email.workflow_type,
+        source: email.source,
+        isRead: email.isRead,
+        hasAttachments: email.hasAttachments,
+        status: email.status,
+        priority: email.priority,
+        workflow_state: email.workflow_state,
+        timestamp: email.timestamp,
+        receivedTime: email.receivedTime
+      }))
+    );
+
+    if (!batchValidation.success) {
+      const errors = batchValidation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      throw new Error(`Batch validation failed: ${errors}`);
     }
 
     this.indexingInProgress = true;
@@ -100,19 +258,19 @@ export class EmailRAGIntegration {
       const emailData = emails.map(email => ({
         id: email.id,
         subject: email.subject || 'No Subject',
-        body: email.body || '',
-        sender: email.sender || undefined,
-        recipients: email.recipients ? [email.recipients] : undefined,
-        date: email.receivedDate?.toISOString(),
+        body: email.bodyText || email.summary || '',
+        sender: email.requested_by || undefined,
+        recipients: undefined, // Not available in current schema
+        date: email.receivedTime,
         metadata: {
-          messageId: email.messageId,
-          emailAlias: email.emailAlias,
+          emailAlias: email.email_alias,
           status: email.status,
-          workflowType: email.workflowType,
+          workflowType: email.workflow_type,
           priority: email.priority,
           hasAttachments: email.hasAttachments,
           isRead: email.isRead,
-          chainId: email.chainId,
+          workflowState: email.workflow_state,
+          source: email.source
         },
       }));
 
@@ -121,18 +279,23 @@ export class EmailRAGIntegration {
 
       const duration = Date.now() - startTime;
       
-      logger.info(
-        `Batch indexing completed: ${result.indexed}/${emails.length} emails indexed in ${duration}ms`,
-        "EMAIL_RAG_INTEGRATION"
-      );
-
-      return {
+      // Validate result against schema
+      const statusResult: EmailIndexingStatus = {
         total: emails.length,
         indexed: result.indexed,
         failed: result.failed,
         errors: result.errors,
         duration,
       };
+
+      const validatedStatus = EmailIndexingStatusSchema.parse(statusResult);
+      
+      logger.info(
+        `Batch indexing completed: ${validatedStatus.indexed}/${validatedStatus.total} emails indexed in ${validatedStatus.duration}ms`,
+        "EMAIL_RAG_INTEGRATION"
+      );
+
+      return validatedStatus;
     } finally {
       this.indexingInProgress = false;
     }
@@ -236,10 +399,10 @@ export class EmailRAGIntegration {
       const traditionalSearchResults: EmailSearchResult[] = traditionalResults.map((email, index) => ({
         emailId: email.id,
         subject: email.subject || 'No Subject',
-        snippet: email.body?.substring(0, 300) || '',
-        score: 1.0 - (index * 0.1), // Decreasing score based on position
-        sender: email.sender,
-        date: email.receivedDate?.toISOString(),
+        snippet: (email.bodyText || email.summary || '').substring(0, 300),
+        score: Math.max(0.1, 1.0 - (index * 0.1)), // Decreasing score based on position, minimum 0.1
+        sender: email.requested_by,
+        date: email.receivedTime,
       }));
 
       // Combine and rerank results
@@ -294,10 +457,10 @@ export class EmailRAGIntegration {
         combined: traditionalResults.map((email, index) => ({
           emailId: email.id,
           subject: email.subject || 'No Subject',
-          snippet: email.body?.substring(0, 300) || '',
-          score: 1.0 - (index * 0.1),
-          sender: email.sender,
-          date: email.receivedDate?.toISOString(),
+          snippet: (email.bodyText || email.summary || '').substring(0, 300),
+          score: Math.max(0.1, 1.0 - (index * 0.1)),
+          sender: email.requested_by,
+          date: email.receivedTime,
         })),
         ragOnly: [],
         traditional: traditionalResults,

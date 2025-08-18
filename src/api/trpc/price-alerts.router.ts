@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "./trpc.js";
+import { router, publicProcedure, protectedProcedure } from "./enhanced-router.js";
 import { TRPCError } from "@trpc/server";
 import { getPriceAlertService } from "../services/PriceAlertService.js";
 import type { 
@@ -61,7 +61,7 @@ export const priceAlertsRouter = router({
    */
   createAlert: protectedProcedure
     .input(createAlertSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -79,15 +79,37 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        const alert = service.createAlert({
-          ...input,
-          userId: ctx?.user?.id
+        const alert = await service.createAlert({
+          productId: input.productName || `product_${Date.now()}`,
+          targetPrice: input.targetPrice || 0,
+          alertType: input.targetPrice ? 'below' : 'change',
+          threshold: input.priceDropPercentage || 0,
+          userId: ctx?.user?.id,
+          productBrand: input.productBrand,
+          productCategory: input.productCategory,
+          upcCode: input.upcCode
         });
         
         return {
           success: true,
-          alert,
-          message: `Price alert "${alert.alertName}" created successfully`
+          alert: {
+            ...alert,
+            alertName: input.alertName,
+            alertType: input.alertType,
+            productName: input.productName,
+            productBrand: input.productBrand,
+            productCategory: input.productCategory,
+            upcCode: input.upcCode,
+            targetPrice: input.targetPrice,
+            priceDropPercentage: input.priceDropPercentage,
+            priceDropAmount: input.priceDropAmount,
+            alertFrequency: input.alertFrequency,
+            notificationMethods: input.notificationMethods,
+            conditions: input.conditions,
+            status: 'active',
+            userId: ctx?.user?.id
+          },
+          message: `Price alert "${input.alertName}" created successfully`
         };
       } catch (error) {
         throw new TRPCError({
@@ -104,7 +126,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       status: z.enum(['active', 'paused', 'expired', 'fulfilled', 'cancelled']).optional()
     }).optional())
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -122,12 +144,14 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        const alerts = service.getUserAlerts(ctx?.user?.id, input?.status);
+        const alerts = await service.getAlerts(ctx?.user?.id);
+        // Filter by status if provided
+        const filteredAlerts = input?.status ? alerts.filter((alert: any) => alert.status === input.status) : alerts;
         
         return {
           success: true,
-          alerts,
-          count: alerts?.length || 0
+          alerts: filteredAlerts,
+          count: filteredAlerts?.length || 0
         };
       } catch (error) {
         throw new TRPCError({
@@ -144,7 +168,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       alertId: z.string()
     }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -155,7 +179,8 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        const alert = service.getAlert(input.alertId);
+        const alerts = await service.getAlerts(ctx.user?.id);
+        const alert = alerts.find((a: any) => a.id === input.alertId);
         
         if (!alert) {
           throw new TRPCError({
@@ -164,8 +189,9 @@ export const priceAlertsRouter = router({
           });
         }
         
-        // Verify user owns this alert
-        if (alert.userId !== ctx.user?.id) {
+        // Alert already filtered by user ID in getAlerts
+        // Additional security check
+        if (alert && alert.userId !== ctx.user?.id) {
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'Access denied'
@@ -191,7 +217,7 @@ export const priceAlertsRouter = router({
    */
   updateAlert: protectedProcedure
     .input(updateAlertSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -203,7 +229,9 @@ export const priceAlertsRouter = router({
       
       try {
         // Verify user owns this alert
-        const alert = service.getAlert(input.alertId);
+        const alerts = await service.getAlerts(ctx.user?.id);
+        const alert = alerts.find((a: any) => a.id === input.alertId);
+        
         if (!alert || alert.userId !== ctx.user?.id) {
           throw new TRPCError({
             code: 'FORBIDDEN',
@@ -211,9 +239,9 @@ export const priceAlertsRouter = router({
           });
         }
         
-        const success = service.updateAlert(input.alertId, input.updates);
+        const updatedAlert = await service.updateAlert(input.alertId, input.updates);
         
-        if (!success) {
+        if (!updatedAlert) {
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to update alert'
@@ -241,7 +269,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       alertId: z.string()
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -253,7 +281,9 @@ export const priceAlertsRouter = router({
       
       try {
         // Verify user owns this alert
-        const alert = service.getAlert(input.alertId);
+        const alerts = await service.getAlerts(ctx.user?.id);
+        const alert = alerts.find((a: any) => a.id === input.alertId);
+        
         if (!alert || alert.userId !== ctx.user?.id) {
           throw new TRPCError({
             code: 'FORBIDDEN',
@@ -261,14 +291,7 @@ export const priceAlertsRouter = router({
           });
         }
         
-        const success = service.deleteAlert(input.alertId);
-        
-        if (!success) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to delete alert'
-          });
-        }
+        await service.deleteAlert(input.alertId);
         
         return {
           success: true,
@@ -291,7 +314,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       alertId: z.string()
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -303,7 +326,9 @@ export const priceAlertsRouter = router({
       
       try {
         // Verify user owns this alert
-        const alert = service.getAlert(input.alertId);
+        const alerts = await service.getAlerts(ctx.user?.id);
+        const alert = alerts.find((a: any) => a.id === input.alertId);
+        
         if (!alert || alert.userId !== ctx.user?.id) {
           throw new TRPCError({
             code: 'FORBIDDEN',
@@ -311,7 +336,7 @@ export const priceAlertsRouter = router({
           });
         }
         
-        const success = service.pauseAlert(input.alertId);
+        const success = await service.pauseAlert(input.alertId);
         
         if (!success) {
           throw new TRPCError({
@@ -341,7 +366,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       alertId: z.string()
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -353,7 +378,9 @@ export const priceAlertsRouter = router({
       
       try {
         // Verify user owns this alert
-        const alert = service.getAlert(input.alertId);
+        const alerts = await service.getAlerts(ctx.user?.id);
+        const alert = alerts.find((a: any) => a.id === input.alertId);
+        
         if (!alert || alert.userId !== ctx.user?.id) {
           throw new TRPCError({
             code: 'FORBIDDEN',
@@ -361,7 +388,7 @@ export const priceAlertsRouter = router({
           });
         }
         
-        const success = service.resumeAlert(input.alertId);
+        const success = await service.resumeAlert(input.alertId);
         
         if (!success) {
           throw new TRPCError({
@@ -391,7 +418,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       limit: z.number().min(1).max(100).default(50)
     }).optional())
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -409,7 +436,7 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        const notifications = service.getNotificationHistory(
+        const notifications = await service.getNotificationHistory(
           ctx?.user?.id, 
           input?.limit || 50
         );
@@ -434,7 +461,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       notificationId: z.string()
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -445,7 +472,7 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        service.markNotificationAsRead(input.notificationId);
+        await service.markNotificationAsRead(input.notificationId);
         
         return {
           success: true,
@@ -466,7 +493,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       notificationId: z.string()
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -477,7 +504,7 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        service.markNotificationAsClicked(input.notificationId);
+        await service.markNotificationAsClicked(input.notificationId);
         
         return {
           success: true,
@@ -495,7 +522,7 @@ export const priceAlertsRouter = router({
    * Get alert analytics
    */
   getAlertAnalytics: protectedProcedure
-    .query(async ({ ctx }) => {
+    .query(async ({ ctx }: { ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -513,7 +540,7 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        const analytics = service.getAlertAnalytics(ctx?.user?.id);
+        const analytics = await service.getAlertAnalytics(ctx?.user?.id);
         
         return {
           success: true,
@@ -532,7 +559,7 @@ export const priceAlertsRouter = router({
    */
   checkPriceChange: publicProcedure
     .input(priceChangeSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input }: { input: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -565,7 +592,7 @@ export const priceAlertsRouter = router({
     .input(z.object({
       alertId: z.string()
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const service = getPriceAlertService();
       
       if (!service) {
@@ -577,7 +604,9 @@ export const priceAlertsRouter = router({
       
       try {
         // Verify user owns this alert
-        const alert = service.getAlert(input.alertId);
+        const alerts = await service.getAlerts(ctx.user?.id);
+        const alert = alerts.find((a: any) => a.id === input.alertId);
+        
         if (!alert || alert.userId !== ctx.user?.id) {
           throw new TRPCError({
             code: 'FORBIDDEN',
