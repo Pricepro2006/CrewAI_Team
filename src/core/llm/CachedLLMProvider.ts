@@ -36,6 +36,7 @@ interface CacheMetrics {
 }
 
 export class CachedLLMProvider extends LLMProviderManager {
+  private static instance: CachedLLMProvider | null = null;
   private cache = new Map<string, CacheEntry>();
   private pendingRequests = new Map<string, PendingRequest>();
   private metrics: CacheMetrics = {
@@ -64,6 +65,16 @@ export class CachedLLMProvider extends LLMProviderManager {
       cacheTTL: this.cacheTTL,
       requestTimeout: this.requestTimeout
     });
+  }
+
+  /**
+   * Get singleton instance
+   */
+  static getInstance(): CachedLLMProvider {
+    if (!CachedLLMProvider.instance) {
+      CachedLLMProvider.instance = new CachedLLMProvider();
+    }
+    return CachedLLMProvider.instance;
   }
 
   /**

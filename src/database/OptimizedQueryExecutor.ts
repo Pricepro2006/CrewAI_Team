@@ -35,6 +35,13 @@ interface QueryStats {
   cacheMisses: number;
   avgExecutionTime: number;
   slowQueries: QueryMetrics[];
+  cacheSize?: number;
+  cacheEvictions?: number;
+  cacheMemoryUsage?: number;
+  cacheEntries?: number;
+  maxCacheSize?: number;
+  preparedStatements?: number;
+  preparedReused?: number;
 }
 
 export class OptimizedQueryExecutor {
@@ -484,13 +491,33 @@ export class OptimizedQueryExecutor {
       .sort((a, b) => b.executionTime - a.executionTime)
       .slice(0, 10);
 
+    // Calculate cache memory usage (rough estimate)
+    let cacheMemoryUsage = 0;
+    for (const [key, value] of this.queryCache.entries()) {
+      cacheMemoryUsage += key.length + JSON.stringify(value.data).length;
+    }
+
     return {
       totalQueries,
       cacheHits,
       cacheMisses,
       avgExecutionTime,
-      slowQueries
+      slowQueries,
+      cacheSize: this.queryCache.size,
+      cacheEvictions: 0, // Not tracked yet
+      cacheMemoryUsage: cacheMemoryUsage / 1024, // Convert to KB
+      cacheEntries: this.queryCache.size,
+      maxCacheSize: this.maxCacheSize,
+      preparedStatements: this.preparedStatements.size,
+      preparedReused: totalQueries - this.preparedStatements.size
     };
+  }
+
+  /**
+   * Get metrics (alias for getStats for compatibility)
+   */
+  getMetrics(): QueryStats {
+    return this.getStats();
   }
 
   /**

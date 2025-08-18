@@ -67,13 +67,13 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "http://localhost:3210",
+        target: "http://localhost:3001",
         changeOrigin: true,
         timeout: 30000,
         proxyTimeout: 30000
       },
       "/trpc": {
-        target: "http://localhost:3000",
+        target: "http://localhost:3001",
         changeOrigin: true,
         timeout: 30000,
         proxyTimeout: 30000
