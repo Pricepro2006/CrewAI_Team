@@ -303,7 +303,7 @@ export class ConnectionManager extends EventEmitter {
   // Connection management
   public async addConnection(connection: ClientConnection, authContext: AuthContext): Promise<boolean> {
     const { userId } = authContext;
-    const userIP = connection?.metadata?.ip;
+    const userIP = connection?.metadata?.ip || 'unknown';
 
     // Check global connection limit
     if (this?.connections?.size >= this?.poolConfig?.maxConnections) {
@@ -386,17 +386,17 @@ export class ConnectionManager extends EventEmitter {
     if (!connection) return false;
 
     const { userId } = connection;
-    const userIP = connection?.metadata?.ip;
+    const userIP = connection?.metadata?.ip || 'unknown';
 
     // Remove from main pool
     this?.connections?.delete(connectionId);
 
     // Update tracking maps
-    const userConnections = this?.connectionsByUser?.get(userId);
+    const userConnections = userId ? this?.connectionsByUser?.get(userId) : undefined;
     if (userConnections) {
       userConnections.delete(connectionId);
       if (userConnections.size === 0) {
-        this?.connectionsByUser?.delete(userId);
+        if (userId) this?.connectionsByUser?.delete(userId);
       }
     }
 
@@ -474,7 +474,7 @@ export class ConnectionManager extends EventEmitter {
       connection.metadata.rateLimits = {};
     }
 
-    const rateLimit = connection?.metadata?.rateLimits[rateLimitKey] || {
+    const rateLimit = connection?.metadata?.rateLimits?.[rateLimitKey] || {
       count: 0,
       windowStart: now
     };
@@ -635,15 +635,21 @@ export class ConnectionManager extends EventEmitter {
       const authContext = connection?.metadata?.authContext as AuthContext;
 
       // Count by user
-      this?.stats?.byUser[userId] = (this?.stats?.byUser[userId] || 0) + 1;
+      if (this.stats?.byUser && userId) {
+      this.stats.byUser[userId] = (this.stats.byUser[userId] || 0) + 1;
+      }
 
-      // Count by IP
-      this?.stats?.byIP[userIP] = (this?.stats?.byIP[userIP] || 0) + 1;
+    // Count by IP
+    if (this.stats?.byIP && userIP && userIP !== 'unknown') {
+      this.stats.byIP[userIP] = (this.stats.byIP[userIP] || 0) + 1;
+    }
 
       // Count by role
-      if (authContext) {
+      if (authContext && this.stats?.byRole) {
         authContext?.roles?.forEach(role => {
-          this?.stats?.byRole[role] = (this?.stats?.byRole[role] || 0) + 1;
+          if (this.stats?.byRole && role) {
+            this.stats.byRole[role] = (this.stats.byRole[role] || 0) + 1;
+          }
         });
       }
 

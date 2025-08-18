@@ -3,7 +3,7 @@
  * This file ensures the Price Alert Service is properly initialized with the Walmart database
  */
 
-import { initializePriceAlertService } from "./PriceAlertService.js";
+import { initializePriceAlertService, getPriceAlertService } from "./PriceAlertService.js";
 import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager.js";
 import { logger } from "../../utils/logger.js";
 
@@ -38,6 +38,7 @@ export async function initializePriceAlerts() {
       enablePush: true          // Enable push notifications via WebSocket
     };
     
+    // Initialize the PriceAlertService with database and config
     const service = initializePriceAlertService(db, config);
     
     // Run migrations to ensure tables exist
@@ -64,7 +65,7 @@ async function runPriceAlertMigrations(db: any) {
       WHERE type='table' AND name IN ('deal_alerts', 'deal_notifications', 'deal_sources', 'tracked_deals')
     `).all();
     
-    if (tables?.length || 0 === 4) {
+    if ((tables?.length || 0) === 4) {
       logger.debug("Price alert tables already exist", "PRICE_ALERTS");
       return;
     }

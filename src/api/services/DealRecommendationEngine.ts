@@ -33,6 +33,7 @@ export interface Deal {
 export interface BulkRecommendation {
   recommendedQuantity: number;
   totalSavings: number;
+  additionalSavings?: number;
   breakEvenQuantity: number;
   shelfLife?: number;
   storageRequirements?: string;

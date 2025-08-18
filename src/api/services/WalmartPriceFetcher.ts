@@ -1173,7 +1173,18 @@ export class WalmartPriceFetcher {
             unit: '',
             searchKeywords: [query],
             featured: false,
-            livePrice: this.convertToLivePrice(livePrice)
+            livePrice: this.convertToLivePrice(livePrice),
+            availability: {
+              inStock: livePrice?.inStock ?? true,
+              stockLevel: livePrice?.inStock ? 'in_stock' : 'out_of_stock'
+            },
+            metadata: {
+              source: 'scrape',
+              lastScraped: new Date().toISOString(),
+              confidence: 0.7
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           });
 
           // Add delay between requests
@@ -1288,7 +1299,11 @@ export class WalmartPriceFetcher {
               },
               description: '',
               price,
-              images: item.imageInfo?.thumbnailUrl ? [item?.imageInfo?.thumbnailUrl] : [],
+              images: item.imageInfo?.thumbnailUrl ? [{
+                id: '1',
+                url: item.imageInfo.thumbnailUrl,
+                type: 'thumbnail' as const
+              }] : [],
               inStock: item.availabilityStatus !== 'OUT_OF_STOCK',
               averageRating: 0,
               reviewCount: 0,
@@ -1296,7 +1311,18 @@ export class WalmartPriceFetcher {
               unit: '',
               searchKeywords: [query],
               featured: false,
-                  livePrice: this.convertToLivePrice(livePrice)
+              livePrice: this.convertToLivePrice(livePrice),
+              availability: {
+                inStock: item.availabilityStatus !== 'OUT_OF_STOCK',
+                stockLevel: item.availabilityStatus !== 'OUT_OF_STOCK' ? 'in_stock' : 'out_of_stock'
+              },
+              metadata: {
+                source: 'api',
+                lastScraped: new Date().toISOString(),
+                confidence: 0.9
+              },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             });
           }
         }
@@ -1427,7 +1453,17 @@ export class WalmartPriceFetcher {
         unit: '',
         searchKeywords: [query],
         featured: false,
-        livePrice: undefined  // Will be fetched when needed
+        livePrice: undefined,  // Will be fetched when needed
+        availability: {
+          inStock: true,
+          stockLevel: 'in_stock' as const
+        },
+        metadata: {
+          source: 'manual' as const,
+          confidence: 0.5
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }));
     }
 
@@ -1450,7 +1486,17 @@ export class WalmartPriceFetcher {
         unit: 'gallon',
         searchKeywords: [query],
         featured: false,
-        livePrice: undefined
+        livePrice: undefined,
+        availability: {
+          inStock: true,
+          stockLevel: 'in_stock' as const
+        },
+        metadata: {
+          source: 'manual' as const,
+          confidence: 0.5
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
     ];
   }

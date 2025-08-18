@@ -489,7 +489,7 @@ export class WebSocketMonitor extends EventEmitter {
       const func = new Function('metrics', `return ${condition}`);
       return func(this.currentMetrics);
     } catch (error) {
-      throw new Error(`Alert condition evaluation failed: ${error.message}`);
+      throw new Error(`Alert condition evaluation failed: ${(error as Error).message}`);
     }
   }
 
@@ -636,12 +636,14 @@ export class WebSocketMonitor extends EventEmitter {
 
   // Utility methods
   private recordMetric(name: string, value: number, tags?: Record<string, string>): void {
-    this?.eventMonitor?.recordMetric(name, value, tags);
+    // EventMonitor doesn't have recordMetric method, emit event instead
+    this.emit('metric_recorded', { name, value, tags });
   }
 
   private recordLatency(name: string, latency: number): void {
     this?.latencyBuffer?.push(latency);
-    this?.eventMonitor?.recordLatency(name, latency);
+    // Store latency locally since EventMonitor doesn't have public recordLatency
+    this.emit('latency_recorded', { name, latency });
   }
 
   private calculatePercentile(sortedArray: number[], percentile: number): number {

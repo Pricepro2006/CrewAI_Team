@@ -30,7 +30,7 @@ import type {
   EmailRecord,
   SortableColumn,
   SortDirection,
-} from "../../../types/email-dashboard?.interfaces.js";
+} from "../../../types/email-dashboard.interfaces.js";
 
 interface TeamMember {
   id: string;

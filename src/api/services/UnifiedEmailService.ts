@@ -17,6 +17,7 @@ import type {
   WorkflowState,
   WorkflowTypeStats,
   BottleneckInfo,
+  Alert,
 } from "../../types/unified-email.types.js";
 
 interface GraphEmailData {
@@ -767,8 +768,8 @@ export class UnifiedEmailService {
     };
   }
 
-  private async getCriticalAlerts(): Promise<any[]> {
-    const alerts = [];
+  private async getCriticalAlerts(): Promise<Alert[]> {
+    const alerts: Alert[] = [];
 
     if (!this.emailRepository) {
       return alerts;
