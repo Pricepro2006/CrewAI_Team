@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { getDatabase, OptimizedQueryExecutor } from "../../database/index.js";
 import Database from "better-sqlite3";
 import appConfig from "../../config/app.config.js";
 
@@ -19,10 +20,10 @@ export interface Message {
 }
 
 export class ConversationService {
-  private db: Database.Database;
+  private db: OptimizedQueryExecutor;
 
   constructor() {
-    this.db = new Database(appConfig?.database?.path);
+    this.db = getDatabase(appConfig?.database?.path);
     this.initializeDatabase();
   }
 

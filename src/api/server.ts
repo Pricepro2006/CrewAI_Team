@@ -35,6 +35,7 @@ import csrfRouter from "./routes/csrf.router.js";
 import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
 import metricsRouter from "./routes/metrics.router.js";
 import databasePerformanceRouter from "./routes/database-performance.router.js";
+import optimizationMetricsRouter from "./routes/optimization-metrics.router.js";
 import { databaseManager } from "../core/database/DatabaseManager.js";
 import {
   cleanupManager,
@@ -279,6 +280,9 @@ app.use("/api/metrics", metricsRouter);
 
 // Database performance monitoring routes
 app.use("/api/database", databasePerformanceRouter);
+
+// Optimization metrics routes (for OptimizedQueryExecutor and CachedLLMProvider)
+app.use("/api/optimization", optimizationMetricsRouter);
 
 // tRPC middleware
 app.use(

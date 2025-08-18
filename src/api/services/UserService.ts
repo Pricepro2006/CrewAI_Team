@@ -1,3 +1,4 @@
+import { getDatabase, OptimizedQueryExecutor } from "../../database/index.js";
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
 import type {
@@ -33,11 +34,11 @@ export enum UserRole {
  */
 
 export class UserService {
-  private db: Database.Database;
+  private db: OptimizedQueryExecutor;
 
   constructor(dbPath?: string) {
     const path = dbPath || appConfig?.database?.path;
-    this.db = new Database(path);
+    this.db = getDatabase(path);
   }
 
   /**

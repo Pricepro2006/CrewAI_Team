@@ -9,7 +9,7 @@ import { EmailRepositoryImpl } from "./repositories/EmailRepositoryImpl.js";
 import { EmailChainRepositoryImpl } from "./repositories/EmailChainRepositoryImpl.js";
 import { AnalysisRepositoryImpl } from "./repositories/AnalysisRepositoryImpl.js";
 import { executeTransaction, getConnectionPool } from "./ConnectionPool.js";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 // Use require for better-sqlite3 to avoid type issues
 const Database = require("better-sqlite3");
 

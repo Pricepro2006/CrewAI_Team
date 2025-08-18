@@ -1,3 +1,4 @@
+import { getDatabase, OptimizedQueryExecutor } from "../../database/index.js";
 import Database from 'better-sqlite3';
 import { logger } from '../../utils/logger.js';
 import type { EmailRow, EmailWithAnalysis } from '../../types/unified-email.types.js';
@@ -73,13 +74,13 @@ export interface BusinessIntelligenceData {
 }
 
 export class BusinessIntelligenceService {
-  private db: Database.Database;
+  private db: OptimizedQueryExecutor;
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
   constructor(dbPath: string = './data/crewai_enhanced.db') {
-    this.db = new Database(dbPath, { readonly: true });
-    logger.info('BusinessIntelligenceService initialized', 'BI_SERVICE');
+    this.db = getDatabase(dbPath);
+    logger.info('BusinessIntelligenceService initialized with OptimizedQueryExecutor', 'BI_SERVICE');
   }
 
   /**

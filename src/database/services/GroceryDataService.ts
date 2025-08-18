@@ -21,7 +21,7 @@ import {
   type UserPreferences,
 } from "../repositories/WalmartProductRepository.js";
 import { GroceryVectorCollections } from "../vector/GroceryVectorCollections.js";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 
 export interface CreateListParams {
   userId: string;
