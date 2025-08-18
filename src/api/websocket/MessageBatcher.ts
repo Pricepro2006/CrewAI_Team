@@ -303,8 +303,8 @@ export class MessageBatcher extends EventEmitter {
     if (!targetQueues) return [];
 
     const messages: PendingMessage[] = [];
-    const priorities = Object.keys(this?.config?.priority.levels)
-      .sort((a, b) => this?.config?.priority.levels[a] - this?.config?.priority.levels[b]);
+    const priorities = Object.keys(this.config?.priority?.levels || {})
+      .sort((a, b) => (this.config?.priority?.levels?.[a] || 0) - (this.config?.priority?.levels?.[b] || 0));
 
     for (const priority of priorities) {
       const priorityMessages = targetQueues.get(priority) || [];
@@ -335,8 +335,8 @@ export class MessageBatcher extends EventEmitter {
     if (this?.config?.compression.enabled && originalSize > this?.config?.compression.threshold) {
       try {
         const compressed = this.compressData(originalData);
-        compressedSize = compressed?.length || 0;
-        compressionRatio = originalSize / compressedSize;
+        compressedSize = compressed?.length ?? 0;
+        compressionRatio = compressedSize > 0 ? originalSize / compressedSize : 1;
         
         if (this.metrics) {
           this.metrics.compressionSavings += (originalSize - compressedSize);
@@ -378,10 +378,10 @@ export class MessageBatcher extends EventEmitter {
     }
 
     return messages.reduce((highest: any, msg: any) => {
-      const currentLevel = this?.config?.priority.levels[msg.priority] || 999;
-      const highestLevel = this?.config?.priority.levels[highest] || 999;
+      const currentLevel = this.config?.priority?.levels?.[msg.priority] || 999;
+      const highestLevel = this.config?.priority?.levels?.[highest] || 999;
       return currentLevel < highestLevel ? msg.priority : highest;
-    }, messages[0].priority);
+    }, messages[0]?.priority || 'normal');
   }
 
   // Flushing logic
@@ -429,10 +429,10 @@ export class MessageBatcher extends EventEmitter {
 
   // Adaptive learning
   private performAdaptiveLearning(): void {
-    if (!this.adaptiveController || this?.latencyBuffer?.length < 10) return;
+    if (!this.adaptiveController || (this.latencyBuffer?.length ?? 0) < 10) return;
 
     const currentLatency = this.calculateAverageLatency();
-    const adjustment = this?.adaptiveController?.adjustParameters(currentLatency);
+    const adjustment = this.adaptiveController.adjustParameters(currentLatency);
 
     if (adjustment.batchSizeChanged || adjustment.waitTimeChanged) {
       if (this.metrics?.adaptiveStats) {

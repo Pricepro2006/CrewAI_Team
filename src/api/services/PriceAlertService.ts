@@ -3,6 +3,7 @@
  * Manages price alerts and notifications for product monitoring
  */
 
+import Database from 'better-sqlite3';
 import { Logger } from "../../utils/logger.js";
 const logger = Logger.getInstance();
 
@@ -38,12 +39,34 @@ export interface PriceAlertConfig {
 export class PriceAlertService {
   private static instance: PriceAlertService;
   private alerts: Map<string, PriceAlert> = new Map();
+  private db: Database.Database | null = null;
+  private config: any = null;
 
   static getInstance(): PriceAlertService {
     if (!PriceAlertService.instance) {
       PriceAlertService.instance = new PriceAlertService();
     }
     return PriceAlertService.instance;
+  }
+
+  /**
+   * Initialize the service with database and configuration
+   */
+  initialize(db: Database.Database, config?: any): void {
+    this.db = db;
+    this.config = config;
+    logger.info('PriceAlertService initialized with database');
+  }
+
+  /**
+   * Shutdown the service and clean up resources
+   */
+  shutdown(): void {
+    this.alerts.clear();
+    this.db = null;
+    this.config = null;
+    PriceAlertService.instance = null as any;
+    logger.info('PriceAlertService shutdown complete');
   }
 
   async createAlert(config: PriceAlertConfig): Promise<PriceAlert> {
@@ -280,4 +303,11 @@ export class PriceAlertService {
 // Export function for backward compatibility
 export function getPriceAlertService(): PriceAlertService {
   return PriceAlertService.getInstance();
+}
+
+// Export initialization function
+export function initializePriceAlertService(db: Database.Database, config?: any): PriceAlertService {
+  const service = PriceAlertService.getInstance();
+  service.initialize(db, config);
+  return service;
 }
