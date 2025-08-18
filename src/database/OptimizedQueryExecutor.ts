@@ -64,7 +64,7 @@ export class OptimizedQueryExecutor {
     // Periodic cache cleanup
     setInterval(() => this.cleanupCache(), 30000); // Every 30 seconds
     
-    logger.info('OptimizedQueryExecutor initialized', { dbPath });
+    logger.info('OptimizedQueryExecutor initialized', 'database', { dbPath });
   }
 
   /**
@@ -113,9 +113,10 @@ export class OptimizedQueryExecutor {
       return result as T;
 
     } catch (error) {
-      logger.error('Query execution failed', {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Query execution failed', 'database', {
         sql: sql.substring(0, 100),
-        error: error.message,
+        error: errorMessage,
         executionTime: Date.now() - startTime
       });
       throw error;
@@ -185,9 +186,10 @@ export class OptimizedQueryExecutor {
       return result as T;
 
     } catch (error) {
-      logger.error('Query execution failed', {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Query execution failed', 'database', {
         sql: sql.substring(0, 100),
-        error: error.message,
+        error: errorMessage,
         executionTime: Date.now() - startTime
       });
       throw error;
@@ -204,7 +206,7 @@ export class OptimizedQueryExecutor {
       pragma: (pragma: string, value?: any) => this.db.pragma(pragma, value)
     };
     
-    const transaction = this.db.transaction((db: any) => fn(wrappedDb));
+    const transaction = this.db.transaction(() => fn(wrappedDb));
     return transaction();
   }
 
@@ -226,7 +228,7 @@ export class OptimizedQueryExecutor {
     try {
       transaction(queries);
       
-      logger.debug('Transaction completed', {
+      logger.debug('Transaction completed', 'database', {
         queryCount: queries.length,
         executionTime: Date.now() - startTime
       });
@@ -234,8 +236,9 @@ export class OptimizedQueryExecutor {
       return results;
 
     } catch (error) {
-      logger.error('Transaction failed', {
-        error: error.message,
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Transaction failed', 'database', {
+        error: errorMessage,
         queryCount: queries.length
       });
       throw error;
@@ -279,7 +282,9 @@ export class OptimizedQueryExecutor {
       // Limit prepared statement cache size
       if (this.preparedStatements.size > 100) {
         const firstKey = this.preparedStatements.keys().next().value;
-        this.preparedStatements.delete(firstKey);
+        if (firstKey !== undefined) {
+          this.preparedStatements.delete(firstKey);
+        }
       }
     }
     
@@ -307,7 +312,7 @@ export class OptimizedQueryExecutor {
     // Enable query planner optimizations
     this.db.pragma('optimize');
     
-    logger.info('Database optimizations applied');
+    logger.info('Database optimizations applied', 'database');
   }
 
   /**
@@ -329,14 +334,15 @@ export class OptimizedQueryExecutor {
       try {
         this.db.exec(index);
       } catch (error) {
-        logger.warn('Index creation failed', {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.warn('Index creation failed', 'database', {
           index: index.substring(0, 50),
-          error: error.message
+          error: errorMessage
         });
       }
     }
     
-    logger.info('Database indexes verified', { indexCount: indexes.length });
+    logger.info('Database indexes verified', 'database', { indexCount: indexes.length });
   }
 
   /**
@@ -391,7 +397,9 @@ export class OptimizedQueryExecutor {
     // Evict oldest entries if cache is full
     if (this.queryCache.size >= this.maxCacheSize) {
       const firstKey = this.queryCache.keys().next().value;
-      this.queryCache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.queryCache.delete(firstKey);
+      }
     }
 
     this.queryCache.set(key, {
@@ -416,7 +424,7 @@ export class OptimizedQueryExecutor {
     }
 
     if (cleaned > 0) {
-      logger.debug('Cache cleanup completed', {
+      logger.debug('Cache cleanup completed', 'database', {
         entriesRemoved: cleaned,
         cacheSize: this.queryCache.size
       });
@@ -447,7 +455,7 @@ export class OptimizedQueryExecutor {
    * Analyze slow queries and suggest optimizations
    */
   private analyzeSlowQuery(sql: string, executionTime: number, params?: any[]): void {
-    logger.warn('Slow query detected', {
+    logger.warn('Slow query detected', 'database', {
       sql: sql.substring(0, 200),
       executionTime,
       params: params?.slice(0, 3)
@@ -464,7 +472,7 @@ export class OptimizedQueryExecutor {
       );
 
       if (needsIndex) {
-        logger.warn('Query needs index optimization', {
+        logger.warn('Query needs index optimization', 'database', {
           sql: sql.substring(0, 100),
           suggestion: 'Consider adding an index on the WHERE clause columns'
         });
@@ -535,7 +543,7 @@ export class OptimizedQueryExecutor {
   clearCache(): void {
     this.queryCache.clear();
     this.queryMetrics = [];
-    logger.info('Query cache cleared');
+    logger.info('Query cache cleared', 'database');
   }
 
   /**
@@ -559,6 +567,6 @@ export class OptimizedQueryExecutor {
     this.preparedStatements.clear();
     this.queryCache.clear();
     this.db.close();
-    logger.info('Database connection closed');
+    logger.info('Database connection closed', 'database');
   }
 }

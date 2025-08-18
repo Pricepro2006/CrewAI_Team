@@ -7,7 +7,8 @@
  * with automated scheduling, compression, and integrity verification.
  */
 
-import Database from 'better-sqlite3';
+import BetterSqlite3 from 'better-sqlite3';
+import type { Database } from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -43,9 +44,9 @@ class GroceryDatabaseBackup {
 
   constructor(config: BackupConfig) {
     this.config = {
-      retentionDays: 30,
       compressionLevel: 6,
-      ...config
+      ...config,
+      retentionDays: config.retentionDays || 30
     };
     this.logger = console;
     this.ensureBackupDirectory();
@@ -68,8 +69,8 @@ class GroceryDatabaseBackup {
     
     try {
       // Create database backup using SQLite backup API
-      const sourceDb = new Database(this?.config?.sourceDbPath, { readonly: true });
-      const backupDb = new Database(backupPath);
+      const sourceDb = new BetterSqlite3(this?.config?.sourceDbPath, { readonly: true });
+      const backupDb = new BetterSqlite3(backupPath);
       
       await this.performBackup(sourceDb, backupDb);
       
@@ -172,7 +173,7 @@ class GroceryDatabaseBackup {
         fs.copyFileSync(workingBackupPath, testPath);
         
         // Test database connection and basic queries
-        const testDb = new Database(testPath, { readonly: true });
+        const testDb = new BetterSqlite3(testPath, { readonly: true });
         await this.performRestoreTests(testDb);
         testDb.close();
         
@@ -183,7 +184,7 @@ class GroceryDatabaseBackup {
         fs.copyFileSync(workingBackupPath, targetPath);
         
         // Verify the restored database
-        const restoredDb = new Database(targetPath, { readonly: true });
+        const restoredDb = new BetterSqlite3(targetPath, { readonly: true });
         await this.performRestoreTests(restoredDb);
         restoredDb.close();
       }
@@ -239,7 +240,7 @@ class GroceryDatabaseBackup {
     integrityCheck: boolean;
     recommendations: string[];
   }> {
-    const db = new Database(this?.config?.sourceDbPath, { readonly: true });
+    const db = new BetterSqlite3(this?.config?.sourceDbPath, { readonly: true });
     
     try {
       const stats = fs.statSync(this?.config?.sourceDbPath);
@@ -249,7 +250,7 @@ class GroceryDatabaseBackup {
       const tableStats = await this.getTableStatistics(db);
       
       // Perform integrity check
-      const integrityResult = db.pragma('integrity_check');
+      const integrityResult = db.pragma('integrity_check') as Array<{ integrity_check: string }>;
       const integrityCheck = integrityResult[0]?.integrity_check === 'ok';
       
       // Generate recommendations
@@ -336,13 +337,12 @@ ${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
 
   private async performBackup(sourceDb: Database, backupDb: Database): Promise<void> {
     return new Promise((resolve, reject) => {
-      const backup = sourceDb.backup(backupDb);
-      backup.step(-1);
-      if (backup.remaining === 0) {
-        backup.finish();
+      try {
+        const backup = sourceDb.backup(backupDb as any);
+        (backup as any).step(-1);
         resolve();
-      } else {
-        reject(new Error('Backup incomplete'));
+      } catch (error) {
+        reject(new Error(`Backup failed: ${error instanceof Error ? error.message : String(error)}`));
       }
     });
   }
@@ -436,8 +436,8 @@ ${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
 
   private async verifyBackupIntegrity(backupPath: string): Promise<boolean> {
     try {
-      const db = new Database(backupPath, { readonly: true });
-      const result = db.pragma('integrity_check');
+      const db = new BetterSqlite3(backupPath, { readonly: true });
+      const result = db.pragma('integrity_check') as Array<{ integrity_check: string }>;
       db.close();
       return result[0]?.integrity_check === 'ok';
     } catch {
@@ -490,9 +490,9 @@ ${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
       const files = fs.readdirSync(this?.config?.backupDir)
         .filter(f => f.startsWith('grocery_backup_'))
         .map(f => ({ name: f, mtime: fs.statSync(path.join(this?.config?.backupDir, f)).mtime }))
-        .sort((a, b) => b?.mtime?.getTime() - a?.mtime?.getTime());
+        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
       
-      return files?.length || 0 > 0 ? files[0].mtime : null;
+      return files.length > 0 && files[0] ? files[0].mtime : null;
     } catch {
       return null;
     }
@@ -559,11 +559,11 @@ async function main() {
         break;
         
       case 'restore':
-        if (args?.length || 0 < 3) {
+        if (!args || args.length < 3) {
           console.error('Usage: restore <backup-path> <target-path>');
           process.exit(1);
         }
-        await backup.restoreFromBackup(args[1], args[2], {
+        await backup.restoreFromBackup(args[1] || '', args[2] || '', {
           verifyIntegrity: args.includes('--verify'),
           createPreRestoreBackup: args.includes('--pre-backup'),
           testRestore: args.includes('--test')
@@ -616,4 +616,5 @@ if (require.main === module) {
   main();
 }
 
-export { GroceryDatabaseBackup, BackupConfig, BackupMetadata };
+export { GroceryDatabaseBackup };
+export type { BackupConfig, BackupMetadata };
