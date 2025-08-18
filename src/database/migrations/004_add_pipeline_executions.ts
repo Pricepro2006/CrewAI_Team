@@ -5,7 +5,7 @@
 
 import type { Database } from "better-sqlite3";
 
-export function up(db: Database): void {
+export function up(db: Database.Database): void {
   // Create pipeline_executions table
   db.exec(`
     CREATE TABLE IF NOT EXISTS pipeline_executions (
@@ -35,7 +35,7 @@ export function up(db: Database): void {
   console.log("✅ Created pipeline_executions table");
 }
 
-export function down(db: Database): void {
+export function down(db: Database.Database): void {
   db.exec(`
     DROP INDEX IF EXISTS idx_pipeline_executions_started_at;
     DROP INDEX IF EXISTS idx_pipeline_executions_status;

@@ -106,7 +106,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     this.addCapability("priority-assessment");
   }
   
-  async initialize(): Promise<void> {
+  override async initialize(): Promise<void> {
     if (this.initialized) return;
     
     try {
@@ -138,7 +138,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     }
   }
 
-  async execute(task: string, context: AgentContext): Promise<AgentResult> {
+  override async execute(task: string, context: AgentContext): Promise<AgentResult> {
     try {
       // Parse email data from task
       const email = context.metadata?.email as Email;

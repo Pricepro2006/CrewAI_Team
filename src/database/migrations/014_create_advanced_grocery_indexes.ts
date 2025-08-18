@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
  * Description: Creates comprehensive indexes, views, and triggers for optimal grocery system performance
  */
 
-export function up(db: Database) {
+export function up(db: Database.Database) {
   console.log("Creating advanced grocery indexes and relationships...");
 
   // Advanced composite indexes for complex queries
@@ -260,7 +260,7 @@ export function up(db: Database) {
   console.log("✅ Advanced grocery indexes and relationships created successfully");
 }
 
-export function down(db: Database) {
+export function down(db: Database.Database) {
   console.log("Dropping advanced grocery indexes and relationships...");
 
   // Drop triggers

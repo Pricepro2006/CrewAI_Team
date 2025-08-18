@@ -6,7 +6,7 @@ import type {
   ToolExecutionParams,
 } from "./AgentTypes.js";
 import { logger } from "../../../utils/logger.js";
-import { getCachedLLMProvider } from "../../llm/index.js";
+import { LLMProviderManager } from "../../llm/LLMProviderManager.js";
 import type { LLMProvider } from "../../llm/LLMProviderManager.js";
 import {
   MODEL_CONFIG,
@@ -96,12 +96,12 @@ export abstract class BaseAgent {
 
     logger.info(`Initializing agent ${this.name}`, "AGENT");
 
-    // Initialize LLM provider using cached singleton
+    // Initialize LLM provider using singleton manager
     try {
-      this.llm = getCachedLLMProvider();
+      this.llm = new LLMProviderManager();
       await this.llm.initialize();
       logger.debug(`LLM provider initialized successfully for ${this.name}`, "AGENT", {
-        isUsingFallback: this.llm.isUsingFallback(),
+        isUsingFallback: (this.llm as any).isUsingFallback ? (this.llm as any).isUsingFallback() : false,
         modelInfo: this.llm.getModelInfo()
       });
     } catch (error) {
@@ -137,9 +137,10 @@ export abstract class BaseAgent {
   }
 
   private createFallbackLLM(): LLMProvider {
+    const name = this.name;
     return {
-      async generate(prompt: string, options?: any): Promise<{ response: string; [key: string]: any }> {
-        logger.warn(`Fallback LLM used for agent ${this.name}`, "AGENT");
+      async generate(prompt: string, options?: any): Promise<any> {
+        logger.warn(`Fallback LLM used for agent ${name}`, "AGENT");
         return {
           response: "I apologize, but I'm experiencing technical difficulties with the AI models. Please try again later or contact support.",
           model: "fallback",
@@ -171,7 +172,7 @@ export abstract class BaseAgent {
     };
   }
 
-  protected async generateLLMResponse(prompt: string, options?: any): Promise<{ response: string; [key: string]: any }> {
+  protected async generateLLMResponse(prompt: string, options?: any): Promise<any> {
     if (!this.llm) {
       throw new Error(`LLM not initialized for agent ${this.name}`);
     }

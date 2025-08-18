@@ -93,13 +93,13 @@ export class SqlInjectionProtection {
    * Validate and sanitize SQL query parameters
    */
   validateQueryParameters(params: any[]): any[] {
-    if (params?.length || 0 > this?.config?.maxParameterCount) {
+    if (params.length > this.config.maxParameterCount) {
       throw new SqlInjectionError(
-        `Too many parameters: ${params?.length || 0} (max: ${this?.config?.maxParameterCount})`,
+        `Too many parameters: ${params.length} (max: ${this.config.maxParameterCount})`,
       );
     }
 
-    return params?.map((param, index) => {
+    return params.map((param, index) => {
       try {
         return this.sanitizeParameter(param);
       } catch (error) {
@@ -127,12 +127,12 @@ export class SqlInjectionProtection {
 
     if (typeof param === "string") {
       // Check for suspicious patterns
-      if (this?.config?.enableBlacklist && this.containsSqlInjection(param)) {
+      if (this.config.enableBlacklist && this.containsSqlInjection(param)) {
         throw new SqlInjectionError("Suspicious SQL pattern detected", param);
       }
 
       // Validate length
-      if (param?.length || 0 > 5000) {
+      if (param.length > 5000) {
         // Individual parameter limit
         throw new SqlInjectionError("Parameter too long");
       }
@@ -157,7 +157,7 @@ export class SqlInjectionProtection {
 
     // For other types, convert to string and validate
     const stringParam = String(param);
-    if (this?.config?.enableBlacklist && this.containsSqlInjection(stringParam)) {
+    if (this.config.enableBlacklist && this.containsSqlInjection(stringParam)) {
       throw new SqlInjectionError(
         "Suspicious SQL pattern in parameter",
         stringParam,
@@ -173,7 +173,7 @@ export class SqlInjectionProtection {
   private containsSqlInjection(input: string): boolean {
     const normalizedInput = input.toLowerCase().trim();
 
-    return SqlInjectionProtection?.SQL_INJECTION_PATTERNS?.some((pattern: any) =>
+    return SqlInjectionProtection.SQL_INJECTION_PATTERNS.some((pattern: any) =>
       pattern.test(normalizedInput),
     );
   }
@@ -186,17 +186,17 @@ export class SqlInjectionProtection {
       throw new SqlInjectionError("Invalid query: must be a non-empty string");
     }
 
-    if (query?.length || 0 > this?.config?.maxQueryLength) {
+    if (query.length > this.config.maxQueryLength) {
       throw new SqlInjectionError(
-        `Query too long: ${query?.length || 0} (max: ${this?.config?.maxQueryLength})`,
+        `Query too long: ${query.length} (max: ${this.config.maxQueryLength})`,
       );
     }
 
     // Check for suspicious patterns in the query structure
-    if (this?.config?.enableBlacklist && this.containsSqlInjection(query)) {
+    if (this.config.enableBlacklist && this.containsSqlInjection(query)) {
       logger.warn("Suspicious SQL query detected", "SQL_SECURITY", {
         queryPreview: query.substring(0, 200),
-        queryLength: query?.length || 0,
+        queryLength: query.length,
       });
       throw new SqlInjectionError(
         "Suspicious SQL pattern detected in query",
@@ -205,14 +205,14 @@ export class SqlInjectionProtection {
     }
 
     // Validate that query uses parameterized structure
-    if (this?.config?.enableStrictValidation) {
+    if (this.config.enableStrictValidation) {
       this.validateParameterizedQuery(query);
     }
 
-    if (this?.config?.enableQueryLogging) {
+    if (this.config.enableQueryLogging) {
       logger.debug("SQL query validated", "SQL_SECURITY", {
         queryType: this.getQueryType(query),
-        queryLength: query?.length || 0,
+        queryLength: query.length,
         parameterCount: (query.match(/\?/g) || []).length,
       });
     }
@@ -271,7 +271,7 @@ export class SqlInjectionProtection {
     const sanitized = columnName.trim();
 
     // Allow only alphanumeric characters, underscores, and dots
-    if (!SqlInjectionProtection?.ALLOWED_COLUMN_CHARS?.test(sanitized)) {
+    if (!SqlInjectionProtection.ALLOWED_COLUMN_CHARS.test(sanitized)) {
       throw new SqlInjectionError(
         "Invalid column name: contains invalid characters",
         sanitized,
@@ -279,7 +279,7 @@ export class SqlInjectionProtection {
     }
 
     // Check length
-    if ((sanitized?.length || 0) > 64) {
+    if ((sanitized.length) > 64) {
       // Standard SQL column name limit
       throw new SqlInjectionError("Column name too long");
     }
@@ -324,14 +324,14 @@ export class SqlInjectionProtection {
 
     const sanitized = tableName.trim();
 
-    if (!SqlInjectionProtection?.ALLOWED_TABLE_CHARS?.test(sanitized)) {
+    if (!SqlInjectionProtection.ALLOWED_TABLE_CHARS.test(sanitized)) {
       throw new SqlInjectionError(
         "Invalid table name: contains invalid characters",
         sanitized,
       );
     }
 
-    if ((sanitized?.length || 0) > 64) {
+    if ((sanitized.length) > 64) {
       throw new SqlInjectionError("Table name too long");
     }
 
@@ -358,10 +358,10 @@ export class SqlInjectionProtection {
       if (value === null || value === undefined) {
         clauses.push(`${sanitizedKey} IS NULL`);
       } else if (Array.isArray(value)) {
-        if (value?.length || 0 === 0) {
+        if (value.length === 0) {
           clauses.push("1=0"); // No match condition
         } else {
-          const placeholders = value?.map(() => "?").join(",");
+          const placeholders = value.map(() => "?").join(",");
           clauses.push(`${sanitizedKey} IN (${placeholders})`);
           params.push(...this.validateQueryParameters(value));
         }
