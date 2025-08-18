@@ -4,22 +4,22 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card.js";
+} from "../../../components/ui/card";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../../components/ui/tabs.js";
+} from "../../../components/ui/tabs";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "../../../components/ui/alert.js";
-import { Badge } from "../../../components/ui/badge.js";
-import { Progress } from "../../../components/ui/progress.js";
-import { Button } from "../../../components/ui/button.js";
-import { api } from "../../../lib/trpc.js";
+} from "../../../components/ui/alert";
+import { Badge } from "../../../components/ui/badge";
+import { Progress } from "../../../components/ui/progress";
+import { Button } from "../../../components/ui/button";
+import { api } from "../../../lib/trpc";
 import {
   AlertCircle,
   Activity,
@@ -123,9 +123,9 @@ const statusColors = {
   unhealthy: "#ef4444",
 };
 
-export const MonitoringDashboard: React.FC = () => {
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
+export const MonitoringDashboard: React.FC = (): React.ReactElement => {
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [refreshInterval, setRefreshInterval] = useState<number>(30000); // 30 seconds
 
   // Fetch monitoring data
   const {
@@ -136,7 +136,7 @@ export const MonitoringDashboard: React.FC = () => {
   } = api.monitoring.health.useQuery(undefined, {
     refetchInterval: autoRefresh ? refreshInterval : false,
     retry: false,
-    onError: (err) => {
+    onError: (err: Error) => {
       console.warn('Health monitoring API error:', err.message);
     }
   });
@@ -145,7 +145,7 @@ export const MonitoringDashboard: React.FC = () => {
     api.monitoring.healthDetailed.useQuery(undefined, {
       refetchInterval: autoRefresh ? refreshInterval : false,
       retry: false,
-      onError: (err) => {
+      onError: (err: Error) => {
         console.warn('Detailed health API error:', err.message);
       }
     });
@@ -154,7 +154,7 @@ export const MonitoringDashboard: React.FC = () => {
     api.monitoring.metrics.useQuery(undefined, {
       refetchInterval: autoRefresh ? refreshInterval : false,
       retry: false,
-      onError: (err) => {
+      onError: (err: Error) => {
         console.warn('Metrics API error:', err.message);
       }
     });
@@ -165,7 +165,7 @@ export const MonitoringDashboard: React.FC = () => {
       {
         refetchInterval: autoRefresh ? refreshInterval : false,
         retry: false,
-        onError: (err) => {
+        onError: (err: Error) => {
           console.warn('Error stats API error:', err.message);
         }
       },
@@ -177,7 +177,7 @@ export const MonitoringDashboard: React.FC = () => {
       {
         refetchInterval: autoRefresh ? refreshInterval : false,
         retry: false,
-        onError: (err) => {
+        onError: (err: Error) => {
           console.warn('Performance stats API error:', err.message);
         }
       },
@@ -189,7 +189,7 @@ export const MonitoringDashboard: React.FC = () => {
       {
         refetchInterval: autoRefresh ? refreshInterval : false,
         retry: false,
-        onError: (err) => {
+        onError: (err: Error) => {
           console.warn('Slow operations API error:', err.message);
         }
       },
@@ -200,13 +200,13 @@ export const MonitoringDashboard: React.FC = () => {
       refetchHealth();
       refetchDetailedHealth();
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       console.error('Force health check failed:', err.message);
     }
   });
 
   // Manual refresh
-  const handleManualRefresh = () => {
+  const handleManualRefresh = (): void => {
     refetchHealth();
     refetchDetailedHealth();
     refetchMetrics();
@@ -216,7 +216,7 @@ export const MonitoringDashboard: React.FC = () => {
   };
 
   // Format uptime
-  const formatUptime = (seconds: number) => {
+  const formatUptime = (seconds: number): string => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -224,17 +224,23 @@ export const MonitoringDashboard: React.FC = () => {
   };
 
   // Prepare chart data
-  const errorSeverityData = errorStats
-    ? Object.entries(errorStats?.stats?.bySeverity).map(([severity, count]) => ({
+  const errorSeverityData = errorStats?.stats?.bySeverity
+    ? Object.entries(errorStats.stats.bySeverity).map(([severity, count]) => ({
         name: severity.charAt(0).toUpperCase() + severity.slice(1),
-        value: count,
+        value: count as number,
         fill: severityColors[severity as keyof typeof severityColors],
       }))
     : [];
 
-  const performanceData = performanceStats
+  interface PerformanceDataItem {
+    avg: number;
+    p95: number;
+    p99: number;
+  }
+
+  const performanceData = performanceStats?.stats
     ? Object.entries(performanceStats.stats).map(
-        ([operation, data]: [string, any]) => ({
+        ([operation, data]: [string, PerformanceDataItem]) => ({
           operation,
           avg: Math.round(data.avg),
           p95: Math.round(data.p95),
@@ -261,7 +267,7 @@ export const MonitoringDashboard: React.FC = () => {
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">System Monitoring</h2>
           <button 
-            onClick={refetchHealth}
+            onClick={(): void => { refetchHealth(); }}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
             Retry
@@ -297,7 +303,7 @@ export const MonitoringDashboard: React.FC = () => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setAutoRefresh(!autoRefresh)}
+            onClick={(): void => setAutoRefresh(!autoRefresh)}
           >
             {autoRefresh ? "Disable" : "Enable"} Auto-refresh
           </Button>
@@ -442,7 +448,7 @@ export const MonitoringDashboard: React.FC = () => {
 
           <div className="flex justify-center">
             <Button
-              onClick={() => forceHealthCheck.mutate()}
+              onClick={(): void => { forceHealthCheck.mutate(); }}
               disabled={forceHealthCheck.isLoading}
             >
               {forceHealthCheck.isLoading
@@ -487,7 +493,11 @@ export const MonitoringDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {slowOps?.operations?.map((op: any, index: number) => (
+                  {slowOps?.operations?.map((op: {
+                    name: string;
+                    startTime: string;
+                    duration: number;
+                  }, index: number) => (
                     <div
                       key={index}
                       className="flex justify-between items-center p-2 bg-muted rounded"
