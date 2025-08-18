@@ -5,9 +5,11 @@
 
 import { z } from "zod";
 import { router, publicProcedure } from "./enhanced-router.js";
-import { getHealthCheckService, HealthCheckLevel } from "../../monitoring/HealthCheckService.js";
+import { healthCheckService as getHealthCheckService, type HealthCheckResult } from "../../monitoring/HealthCheckService.js";
 import { TRPCError } from "@trpc/server";
 import { logger } from "../../utils/logger.js";
+
+type HealthCheckLevel = "basic" | "deep" | "full";
 
 export const healthCheckRouter = router({
   /**
@@ -18,7 +20,7 @@ export const healthCheckRouter = router({
       level: z.enum(["basic", "deep", "full"]).optional().default("basic"),
     }).optional())
     .query(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = getHealthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -52,7 +54,7 @@ export const healthCheckRouter = router({
       limit: z.number().min(1).max(100).default(10),
     }).optional())
     .query(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = getHealthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -85,7 +87,7 @@ export const healthCheckRouter = router({
       serviceName: z.string(),
     }))
     .query(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = getHealthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -102,7 +104,7 @@ export const healthCheckRouter = router({
         }
 
         const serviceHealth = currentHealth?.services?.find(
-          s => s.name === input.serviceName
+          (s: any) => s.name === input.serviceName
         );
 
         if (!serviceHealth) {
@@ -130,7 +132,7 @@ export const healthCheckRouter = router({
       level: z.enum(["basic", "deep", "full"]).optional().default("basic"),
     }).optional())
     .mutation(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = getHealthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -166,7 +168,7 @@ export const healthCheckRouter = router({
       hours: z.number().min(1).max(24).default(1),
     }).optional())
     .query(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = getHealthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -179,23 +181,23 @@ export const healthCheckRouter = router({
         const history = service.getHealthHistory(100);
         const hoursAgo = new Date(Date.now() - (input?.hours || 1) * 60 * 60 * 1000);
         
-        const recentHistory = history?.filter(h => 
+        const recentHistory = history?.filter((h: any) => 
           new Date(h.timestamp) >= hoursAgo
         );
 
         // Calculate trends
         const trends = {
           totalChecks: recentHistory?.length || 0,
-          healthyPercentage: (recentHistory?.filter(h => h.status === "healthy").length / recentHistory?.length || 0) * 100,
-          degradedPercentage: (recentHistory?.filter(h => h.status === "degraded").length / recentHistory?.length || 0) * 100,
-          unhealthyPercentage: (recentHistory?.filter(h => h.status === "unhealthy").length / recentHistory?.length || 0) * 100,
+          healthyPercentage: (recentHistory?.filter((h: any) => h.status === "healthy").length / recentHistory?.length || 0) * 100,
+          degradedPercentage: (recentHistory?.filter((h: any) => h.status === "degraded").length / recentHistory?.length || 0) * 100,
+          unhealthyPercentage: (recentHistory?.filter((h: any) => h.status === "unhealthy").length / recentHistory?.length || 0) * 100,
           averageResponseTime: recentHistory.reduce((sum: any, h: any) => sum + (h.metrics?.responseTime || 0), 0) / recentHistory?.length || 0,
           serviceFailures: {} as Record<string, number>,
         };
 
         // Count service failures
-        recentHistory.forEach(h => {
-          h?.services?.forEach(s => {
+        recentHistory.forEach((h: any) => {
+          h?.services?.forEach((s: any) => {
             if (s.status === "unhealthy") {
               trends.serviceFailures[s.name] = (trends.serviceFailures[s.name] || 0) + 1;
             }
@@ -221,7 +223,7 @@ export const healthCheckRouter = router({
    */
   subscribeToHealth: publicProcedure
     .subscription(async function* () {
-      const service = getHealthCheckService();
+      const service = getHealthCheckService;
       
       if (!service) {
         throw new TRPCError({

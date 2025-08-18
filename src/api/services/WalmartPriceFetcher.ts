@@ -3,13 +3,115 @@
  * Implements multiple methods to fetch live Walmart pricing data
  * Supports location-specific pricing (Spartanburg SC 29301)
  * Enhanced with circuit breaker pattern for resilient external API calls
+ * Implements database-aligned Zod validation for type safety
  */
 
+import { z } from 'zod';
 import { Logger } from "../../utils/logger.js";
 const logger = Logger.getInstance();
 import { circuitBreakerService } from "../../core/resilience/CircuitBreakerService.js";
 import { cacheManager } from "../../core/cache/RedisCacheManager.js";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
+
+// Database-aligned validation schemas
+const PriceSchema = z.number()
+  .min(0, 'Price cannot be negative')
+  .max(999999.99, 'Price exceeds maximum allowed value')
+  .finite('Price must be a finite number');
+
+const ProductIdSchema = z.string()
+  .trim()
+  .min(1, 'Product ID cannot be empty')
+  .max(50, 'Product ID too long')
+  .regex(/^[a-zA-Z0-9_-]+$/, 'Product ID contains invalid characters');
+
+const StoreLocationSchema = z.object({
+  storeId: z.string()
+    .trim()
+    .max(20, 'Store ID too long')
+    .optional(),
+  zipCode: z.string()
+    .trim()
+    .regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code format'),
+  city: z.string()
+    .trim()
+    .max(100, 'City name too long')
+    .optional(),
+  state: z.string()
+    .length(2, 'State must be 2 characters')
+    .regex(/^[A-Z]{2}$/, 'State must be uppercase letters')
+    .optional()
+});
+
+const PriceResultSchema = z.object({
+  productId: ProductIdSchema,
+  price: PriceSchema,
+  salePrice: PriceSchema.optional(),
+  wasPrice: PriceSchema.optional(),
+  inStock: z.boolean().default(true),
+  storeLocation: z.string()
+    .trim()
+    .max(200, 'Store location too long')
+    .optional(),
+  lastUpdated: z.date(),
+  source: z.enum(['searxng', 'scraper', 'api', 'cache'], {
+    errorMap: () => ({ message: 'Source must be one of: searxng, scraper, api, cache' })
+  })
+});
+
+// Live pricing data schema aligned with interface
+const LivePriceSchema = z.object({
+  price: PriceSchema.optional(),
+  salePrice: PriceSchema.optional(),
+  wasPrice: PriceSchema.optional(),
+  inStock: z.boolean().optional(),
+  lastUpdated: z.string().optional(),
+  storeLocation: z.string().optional(),
+  source: z.string().optional()
+});
+
+// Product data validation matching database schema
+const WalmartProductSchema = z.object({
+  product_id: ProductIdSchema,
+  name: z.string()
+    .trim()
+    .min(1, 'Product name cannot be empty')
+    .max(500, 'Product name too long'),
+  brand: z.string()
+    .trim()
+    .max(100, 'Brand name too long')
+    .optional(),
+  description: z.string()
+    .trim()
+    .max(2000, 'Description too long')
+    .optional(),
+  category_path: z.string()
+    .trim()
+    .max(200, 'Category path too long')
+    .optional(),
+  department: z.string()
+    .trim()
+    .max(100, 'Department too long')
+    .optional(),
+  current_price: PriceSchema.optional(),
+  regular_price: PriceSchema.optional(),
+  unit_price: PriceSchema.optional(),
+  unit_measure: z.string().trim().max(20).optional(),
+  in_stock: z.boolean().default(true),
+  stock_level: z.number().int().min(0).optional(),
+  online_only: z.boolean().default(false),
+  store_only: z.boolean().default(false),
+  upc: z.string().trim().max(20).optional(),
+  sku: z.string().trim().max(50).optional(),
+  average_rating: z.number().min(0).max(5).optional(),
+  review_count: z.number().int().min(0).optional()
+});
+
+// Type exports for external use
+export type ValidatedPriceResult = z.infer<typeof PriceResultSchema>;
+export type ValidatedStoreLocation = z.infer<typeof StoreLocationSchema>;
+export type ValidatedWalmartProduct = z.infer<typeof WalmartProductSchema>;
+export type LivePrice = z.infer<typeof LivePriceSchema>;
 
 export interface PriceResult {
   productId: string;
@@ -673,7 +775,7 @@ export class WalmartPriceFetcher {
       // If API methods failed, try web scraping
       return await this.fetchViaWebScraping(productId, location);
 
-    } catch (error) {
+    } catch (error: unknown) {
       logger.debug("All API methods failed", "WALMART_PRICE", { error: error instanceof Error ? error.message : String(error) });
       return null;
     }
@@ -705,7 +807,7 @@ export class WalmartPriceFetcher {
       }
       
       if (!priceInfo && data.items && Array.isArray(data.items)) {
-        const item = data?.items?.find(i => i.productId === productId || i.id === productId) || data.items[0];
+        const item = data?.items?.find((i: any) => i.productId === productId || i.id === productId) || data.items[0];
         if (item) {
           productInfo = item;
           priceInfo = item.priceInfo || item.price || item.offers;
@@ -779,8 +881,8 @@ export class WalmartPriceFetcher {
 
       return null;
       
-    } catch (error) {
-      logger.debug(`Error extracting price: ${error.message}`, "WALMART_PRICE");
+    } catch (error: unknown) {
+      logger.debug(`Error extracting price: ${error instanceof Error ? error.message : String(error)}`, "WALMART_PRICE");
       return null;
     }
   }
@@ -810,7 +912,6 @@ export class WalmartPriceFetcher {
       
       const response = await fetch(productUrl, { 
         headers,
-        timeout: 15000,
         redirect: 'follow'
       });
       
@@ -895,8 +996,8 @@ export class WalmartPriceFetcher {
       logger.debug(`No price found in HTML for product ${productId}`, "WALMART_PRICE");
       return null;
 
-    } catch (error) {
-      logger.debug("Simple page fetch failed", "WALMART_PRICE", { error: error.message });
+    } catch (error: unknown) {
+      logger.debug("Simple page fetch failed", "WALMART_PRICE", { error: error instanceof Error ? error.message : String(error) });
       return null;
     }
   }
@@ -912,7 +1013,7 @@ export class WalmartPriceFetcher {
     
     // Process in batches to avoid overwhelming the service
     const batchSize = 5;
-    for (let i = 0; i < productIds?.length || 0; i += batchSize) {
+    for (let i: number = 0; i < (productIds?.length || 0); i += batchSize) {
       const batch = productIds.slice(i, i + batchSize);
       const batchPromises = batch?.map(id => this.fetchProductPrice(id, location));
       const batchResults = await Promise.all(batchPromises);
@@ -977,8 +1078,8 @@ export class WalmartPriceFetcher {
       // Last resort: use web scraping if available
       return await this.searchViaWebScraping(query, location, limit);
       
-    } catch (error) {
-      logger.error("Search with prices failed", "WALMART_PRICE", { error: error.message });
+    } catch (error: unknown) {
+      logger.error("Search with prices failed", "WALMART_PRICE", { error: error instanceof Error ? error.message : String(error) });
       
       // Return fallback products as final safety net
       return this.getFallbackProducts(query, location);
@@ -1008,7 +1109,6 @@ export class WalmartPriceFetcher {
       
       const response = await fetch(searchUrl, { 
         headers,
-        timeout: 15000,
         redirect: 'follow'
       });
       
@@ -1067,29 +1167,27 @@ export class WalmartPriceFetcher {
             price: livePrice?.price || 0,
             images: [],
             inStock: livePrice?.inStock ?? true,
-            rating: 0,
+            averageRating: 0,
             reviewCount: 0,
             size: '',
             unit: '',
             searchKeywords: [query],
             featured: false,
-            dateAdded: new Date().toISOString(),
-            lastUpdated: new Date().toISOString(),
             livePrice: this.convertToLivePrice(livePrice)
           });
 
           // Add delay between requests
           await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (error) {
-          logger.debug(`Failed to get price for product ${productId}`, "WALMART_PRICE", { error: error.message });
+        } catch (error: unknown) {
+          logger.debug(`Failed to get price for product ${productId}`, "WALMART_PRICE", { error: error instanceof Error ? error.message : String(error) });
         }
       }
 
       logger.info(`Found ${products?.length || 0} products via simple fetch for: ${query}`, "WALMART_PRICE");
       return products;
 
-    } catch (error) {
-      logger.debug("Simple search fetch failed", "WALMART_PRICE", { error: error.message });
+    } catch (error: unknown) {
+      logger.debug("Simple search fetch failed", "WALMART_PRICE", { error: error instanceof Error ? error.message : String(error) });
       return [];
     }
   }
@@ -1192,15 +1290,13 @@ export class WalmartPriceFetcher {
               price,
               images: item.imageInfo?.thumbnailUrl ? [item?.imageInfo?.thumbnailUrl] : [],
               inStock: item.availabilityStatus !== 'OUT_OF_STOCK',
-              rating: 0,
+              averageRating: 0,
               reviewCount: 0,
               size: '',
               unit: '',
               searchKeywords: [query],
               featured: false,
-              dateAdded: new Date().toISOString(),
-              lastUpdated: new Date().toISOString(),
-              livePrice: this.convertToLivePrice(livePrice)
+                  livePrice: this.convertToLivePrice(livePrice)
             });
           }
         }
@@ -1210,8 +1306,8 @@ export class WalmartPriceFetcher {
       }
       
       return [];
-    } catch (error) {
-      logger.debug("GraphQL search failed", "WALMART_PRICE", { error: error.message });
+    } catch (error: unknown) {
+      logger.debug("GraphQL search failed", "WALMART_PRICE", { error: error instanceof Error ? error.message : String(error) });
       return [];
     }
   }
@@ -1230,8 +1326,8 @@ export class WalmartPriceFetcher {
       // This can be implemented later if needed
       logger.debug("Web scraping search not implemented yet", "WALMART_PRICE");
       return [];
-    } catch (error) {
-      logger.debug("Web scraping search failed", "WALMART_PRICE", { error: error.message });
+    } catch (error: unknown) {
+      logger.debug("Web scraping search failed", "WALMART_PRICE", { error: error instanceof Error ? error.message : String(error) });
       return [];
     }
   }
@@ -1325,14 +1421,12 @@ export class WalmartPriceFetcher {
         price: 0,  // Will be updated with live price
         images: [],
         inStock: true,
-        rating: 4.2,
+        averageRating: 4.2,
         reviewCount: 100,
         size: '',
         unit: '',
         searchKeywords: [query],
         featured: false,
-        dateAdded: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
         livePrice: undefined  // Will be fetched when needed
       }));
     }
@@ -1350,14 +1444,12 @@ export class WalmartPriceFetcher {
         price: 0,
         images: [],
         inStock: true,
-        rating: 4.2,
+        averageRating: 4.2,
         reviewCount: 100,
         size: '1 gallon',
         unit: 'gallon',
         searchKeywords: [query],
         featured: false,
-        dateAdded: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
         livePrice: undefined
       }
     ];
