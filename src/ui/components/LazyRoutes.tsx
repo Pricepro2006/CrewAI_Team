@@ -36,7 +36,12 @@ const LazyPerformanceDashboard = lazy(() =>
 );
 
 // Route wrapper with optimized loading states
-const RouteWrapper: React.FC<{ children: React.ReactNode; title: string }> = ({ children, title }) => (
+interface RouteWrapperProps {
+  children: React.ReactNode;
+  title: string;
+}
+
+const RouteWrapper: React.FC<RouteWrapperProps> = ({ children, title }): React.ReactElement => (
   <Suspense 
     fallback={
       <div className="min-h-screen bg-gray-50">
@@ -56,7 +61,7 @@ const RouteWrapper: React.FC<{ children: React.ReactNode; title: string }> = ({ 
 );
 
 // Optimized routing with preload hints
-export const OptimizedRoutes: React.FC = () => {
+export const OptimizedRoutes: React.FC = (): React.ReactElement => {
   return (
     <Routes>
       {/* Walmart Grocery Agent Routes */}
@@ -143,7 +148,7 @@ export const OptimizedRoutes: React.FC = () => {
 };
 
 // Preload utilities for better UX
-export const preloadRoute = (routeName: string) => {
+export const preloadRoute = (routeName: string): void => {
   const preloadMap = {
     'walmart-dashboard': () => import('./walmart/WalmartDashboard'),
     'walmart-grocery': () => import('./walmart/WalmartGroceryList'),
@@ -157,14 +162,14 @@ export const preloadRoute = (routeName: string) => {
   
   const preloader = preloadMap[routeName as keyof typeof preloadMap];
   if (preloader) {
-    preloader().catch(err => console.warn(`Failed to preload ${routeName}:`, err));
+    preloader().catch((err: Error) => console.warn(`Failed to preload ${routeName}:`, err));
   }
 };
 
 // Hook for intelligent route preloading
-export const useRoutePreloading = () => {
+export const useRoutePreloading = (): void => {
   React.useEffect(() => {
-    const prefetchOnHover = (event: Event) => {
+    const prefetchOnHover = (event: Event): void => {
       const target = event.target as HTMLElement;
       const link = target.closest('a[href]') as HTMLAnchorElement;
       if (link && link?.href?.includes('/walmart')) {

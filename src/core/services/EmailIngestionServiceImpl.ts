@@ -44,6 +44,7 @@ import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
 import { io } from '../../api/websocket/index.js';
 import type { Result } from '../../shared/types/core.js';
+import { ServiceError } from './validation/serviceSchemas.js';
 
 export class EmailIngestionServiceImpl implements IEmailIngestionService {
   private readonly config: EmailIngestionConfig;
@@ -322,7 +323,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error : new Error('Unknown error occurred')
       };
     }
   }
@@ -416,7 +417,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Batch ingestion failed'
+        error: error instanceof Error ? error : new Error('Batch ingestion failed')
       };
     }
   }
@@ -468,7 +469,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to read JSON file'
+        error: error instanceof Error ? error : new Error('Failed to read JSON file')
       };
     }
   }
@@ -481,7 +482,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Database ingestion failed'
+        error: error instanceof Error ? error : new Error('Database ingestion failed')
       };
     }
   }
@@ -494,7 +495,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Microsoft Graph ingestion failed'
+        error: error instanceof Error ? error : new Error('Microsoft Graph ingestion failed')
       };
     }
   }
@@ -507,7 +508,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Gmail API ingestion failed'
+        error: error instanceof Error ? error : new Error('Gmail API ingestion failed')
       };
     }
   }

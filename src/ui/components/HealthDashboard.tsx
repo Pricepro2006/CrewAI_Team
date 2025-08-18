@@ -13,15 +13,15 @@ import {
   ArrowPathIcon,
   ClockIcon
 } from "@heroicons/react/24/outline";
-import { api } from "../../lib/trpc.js";
-import type { ServiceHealth, SystemHealth } from "../../api/services/HealthCheckService.js";
+import { api } from "../../lib/trpc";
+import type { ServiceHealth, SystemHealth } from "../../api/services/HealthCheckService";
 
 interface ServiceCardProps {
   service: ServiceHealth;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
-  const getStatusColor = (status: string) => {
+const ServiceCard: React.FC<ServiceCardProps> = ({ service }): React.ReactElement => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case "healthy":
         return "bg-green-100 text-green-800 border-green-300";
@@ -34,7 +34,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string): React.ReactElement => {
     switch (status) {
       case "healthy":
         return <CheckCircleIcon className="h-5 w-5 text-green-600" />;
@@ -82,8 +82,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
   );
 };
 
-export const HealthDashboard: React.FC = () => {
-  const [autoRefresh, setAutoRefresh] = useState(true);
+export const HealthDashboard: React.FC = (): React.ReactElement => {
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
   const [checkLevel, setCheckLevel] = useState<"basic" | "deep" | "full">("basic");
 
   // Get current health
@@ -124,7 +124,7 @@ export const HealthDashboard: React.FC = () => {
   const history = historyData?.history || [];
   const trends = trendsData?.trends;
 
-  const getSystemStatusColor = (status?: string) => {
+  const getSystemStatusColor = (status?: string): string => {
     switch (status) {
       case "healthy":
         return "bg-green-500";
@@ -137,7 +137,7 @@ export const HealthDashboard: React.FC = () => {
     }
   };
 
-  const formatUptime = (seconds: number) => {
+  const formatUptime = (seconds: number): string => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -166,7 +166,7 @@ export const HealthDashboard: React.FC = () => {
               {/* Check Level Selector */}
               <select
                 value={checkLevel}
-                onChange={(e: any) => setCheckLevel(e?.target?.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCheckLevel(e.target.value as "basic" | "deep" | "full")}
                 className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="basic">Basic Check</option>
@@ -179,7 +179,7 @@ export const HealthDashboard: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={autoRefresh}
-                  onChange={(e: any) => setAutoRefresh(e?.target?.checked)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAutoRefresh(e.target.checked)}
                   className="w-4 h-4"
                 />
                 <span className="text-sm">Auto-refresh</span>
@@ -187,7 +187,7 @@ export const HealthDashboard: React.FC = () => {
               
               {/* Manual Refresh Button */}
               <button
-                onClick={() => triggerCheckMutation.mutate({ level: checkLevel })}
+                onClick={(): void => { triggerCheckMutation.mutate({ level: checkLevel }); }}
                 disabled={triggerCheckMutation.isPending}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
@@ -237,7 +237,7 @@ export const HealthDashboard: React.FC = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {health?.services?.map((service: any) => (
+              {health?.services?.map((service: ServiceHealth) => (
                 <ServiceCard key={service.name} service={service} />
               ))}
             </div>
@@ -276,7 +276,7 @@ export const HealthDashboard: React.FC = () => {
               <div className="mt-4">
                 <h3 className="text-sm font-semibold mb-2">Service Failures</h3>
                 <div className="flex flex-wrap gap-2">
-                  {Object.entries(trends.serviceFailures).map(([service, count]) => (
+                  {Object.entries(trends.serviceFailures).map(([service, count]: [string, number]) => (
                     <span key={service} className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">
                       {service}: {count}
                     </span>
