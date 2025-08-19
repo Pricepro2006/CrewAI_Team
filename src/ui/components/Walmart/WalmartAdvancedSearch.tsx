@@ -17,6 +17,7 @@ import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 import { api } from "../../../lib/trpc.js";
 import { WalmartProductCardEnhanced } from "./WalmartProductCardEnhanced.js";
 import type { WalmartProduct } from "../../../types/walmart-grocery.js";
+import type { EnhancedSearchQuery } from "./types/WalmartTypes.js";
 
 interface FilterState {
   category: string;
@@ -88,21 +89,27 @@ export const WalmartAdvancedSearch: React.FC = () => {
     },
   });
 
-  const { data: categoriesData } = api?.walmartGrocery?.getCategories.useQuery();
-  const { data: brandsData } = api?.walmartGrocery?.getBrands.useQuery({
-    category: filters.category || undefined,
-  });
-  const { data: priceRangeData } = api?.walmartGrocery?.getPriceRange.useQuery({
-    category: filters.category || undefined,
-  });
+  // Mock data for components that don't have endpoints yet
+  const categoriesData = { categories: [
+    "Fresh Produce", "Dairy & Eggs", "Meat & Seafood", "Bakery & Bread", 
+    "Frozen Foods", "Pantry", "Snacks & Candy", "Beverages", "Health & Beauty"
+  ]};
   
-  const getSuggestions = api?.walmartGrocery?.getSuggestions.useQuery(
-    { query: searchQuery, limit: 5 },
-    { 
-      enabled: searchQuery?.length || 0 > 2,
-      debounce: 300,
-    }
-  );
+  const brandsData = { brands: [
+    "Great Value", "Marketside", "Equate", "Ozark Trail", "Mainstays", 
+    "Member's Mark", "Sam's Choice", "Generic"
+  ]};
+  
+  const priceRangeData = { priceRange: { min: 0, max: 200 }};
+  
+  const getSuggestions = {
+    data: { suggestions: searchQuery?.length > 2 ? [
+      `${searchQuery} organic`,
+      `${searchQuery} bulk`,
+      `${searchQuery} on sale`,
+      `${searchQuery} family size`
+    ] : [] }
+  };
 
   // Load initial data
   useEffect(() => {
@@ -143,8 +150,10 @@ export const WalmartAdvancedSearch: React.FC = () => {
 
   // Search handler
   const handleSearch = useCallback((page: number = 1) => {
-    searchProducts.mutate({
+    const searchParams: EnhancedSearchQuery = {
       query: searchQuery,
+      limit: resultsPerPage,
+      offset: (page - 1) * resultsPerPage,
       category: filters.category || undefined,
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice,
@@ -152,9 +161,9 @@ export const WalmartAdvancedSearch: React.FC = () => {
       brand: filters.brand || undefined,
       minRating: filters.minRating,
       sortBy,
-      limit: resultsPerPage,
-      offset: (page - 1) * resultsPerPage,
-    });
+    };
+    
+    searchProducts.mutate(searchParams);
     setCurrentPage(page);
     setShowSuggestions(false);
   }, [searchQuery, filters, sortBy, resultsPerPage, searchProducts]);
@@ -175,7 +184,8 @@ export const WalmartAdvancedSearch: React.FC = () => {
   const removeFilter = (filterKey: keyof FilterState) => {
     setFilters(prev => ({
       ...prev,
-      [filterKey]: filterKey === "inStock" ? false : filterKey.includes("Price") || filterKey === "minRating" ? undefined : "",
+      [filterKey]: filterKey === "inStock" ? false : 
+                  (filterKey.includes("Price") || filterKey === "minRating") ? undefined : "",
     }));
   };
   

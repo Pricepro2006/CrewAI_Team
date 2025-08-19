@@ -23,18 +23,18 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
         );
       } else {
         setOpenItems(
-          openItems.includes(value)
-            ? openItems?.filter((item: any) => item !== value)
-            : [...openItems, value],
+        openItems.includes(value)
+        ? openItems.filter((item) => item !== value)
+        : [...openItems, value],
         );
       }
     };
 
     return (
       <div ref={ref} className={cn("space-y-2", className)} {...props}>
-        {React?.Children?.map(children, (child, index) => {
+        {React.Children.map(children, (child, index) => {
           if (React.isValidElement(child)) {
-            const value = child?.props?.value || `item-${index}`;
+            const value = child.props?.value || `item-${index}`;
             return React.cloneElement(child, {
               isOpen: openItems.includes(value),
               onToggle: () => handleToggle(value),
@@ -61,7 +61,7 @@ const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps>(
   ({ className, children, isOpen, onToggle, value, ...props }, ref) => {
     return (
       <div ref={ref} className={cn("border rounded-lg", className)} {...props}>
-        {React?.Children?.map(children, (child: any) => {
+        {React.Children.map(children, (child) => {
           if (React.isValidElement(child)) {
             if (child.type === AccordionTrigger) {
               return React.cloneElement(child, { isOpen, onToggle });

@@ -107,14 +107,14 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
 
   // Priority breakdown chart data
   const priorityChartData = useMemo(() => {
-    const priorities = priorityBreakdown?.map((item: any) => item.priority);
+    const priorities = priorityBreakdown ? priorityBreakdown.map((item: any) => item.priority) : [];
 
     return {
       labels: priorities,
       datasets: [
         {
           label: "On Track",
-          data: priorityBreakdown?.map((item: any) => item.onTrack),
+          data: priorityBreakdown ? priorityBreakdown.map((item: any) => item.onTrack) : [],
           backgroundColor: `${CHART_COLORS.green}CC`,
           borderColor: CHART_COLORS.green,
           borderWidth: 1,
@@ -122,7 +122,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
         },
         {
           label: "At Risk",
-          data: priorityBreakdown?.map((item: any) => item.atRisk),
+          data: priorityBreakdown ? priorityBreakdown.map((item: any) => item.atRisk) : [],
           backgroundColor: `${CHART_COLORS.yellow}CC`,
           borderColor: CHART_COLORS.yellow,
           borderWidth: 1,
@@ -130,7 +130,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
         },
         {
           label: "Overdue",
-          data: priorityBreakdown?.map((item: any) => item.overdue),
+          data: priorityBreakdown ? priorityBreakdown.map((item: any) => item.overdue) : [],
           backgroundColor: `${CHART_COLORS.red}CC`,
           borderColor: CHART_COLORS.red,
           borderWidth: 1,
@@ -210,7 +210,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
               return `${tooltipItems[0].label} Priority`;
             },
             afterBody: function (tooltipItems: any[]) {
-              if (tooltipItems?.length || 0 > 0) {
+              if (tooltipItems && tooltipItems.length > 0) {
                 const priorityIndex = tooltipItems[0].dataIndex;
                 const priority = priorityBreakdown[priorityIndex];
                 if (!priority) return [];
@@ -267,7 +267,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
 
   // Handle chart clicks for drill-down
   const handleOverallClick = (event: any, elements: any[]) => {
-    if (onDrillDown && elements?.length || 0 > 0) {
+    if (onDrillDown && elements && elements.length > 0) {
       const elementIndex = elements[0].index;
       const statuses = ["onTrack", "atRisk", "overdue"] as const;
       const status = statuses[elementIndex];
@@ -278,12 +278,12 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
   };
 
   const handlePriorityClick = (event: any, elements: any[]) => {
-    if (onDrillDown && elements?.length || 0 > 0) {
+    if (onDrillDown && elements && elements.length > 0) {
       const elementIndex = elements[0].dataIndex;
       const datasetIndex = elements[0].datasetIndex;
       const priorityData = priorityBreakdown[elementIndex];
       if (priorityData) {
-        const priority = priorityData?.priority;
+        const priority = priorityData.priority;
         const statuses = ["onTrack", "atRisk", "overdue"] as const;
         const status = statuses[datasetIndex];
         if (status) {

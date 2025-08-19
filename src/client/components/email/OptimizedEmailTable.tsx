@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui
 import { Button } from "../../../components/ui/button.js";
 import { Badge } from "../../../components/ui/badge.js";
 import { cn } from "../../../lib/utils.js";
-import type { EmailRecord } from "../../../types/email-dashboard?.interfaces.js";
+import type { EmailRecord } from "../../../types/email-dashboard.interfaces.js";
 
 interface OptimizedEmailTableProps {
   className?: string;
@@ -71,7 +71,7 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
   const {
     data: searchResponse,
     isLoading: isSearching,
-  } = useOptimizedEmailSearch(debouncedSearchTerm, debouncedSearchTerm?.length || 0 >= 2);
+  } = useOptimizedEmailSearch(debouncedSearchTerm, (debouncedSearchTerm?.length || 0) >= 2);
   
   // Extract search results array from response
   const searchResults = useMemo(() => {
@@ -255,7 +255,7 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
             <EmailTable
               emails={displayEmails}
               loading={isLoadingData}
-              error={error?.message || null}
+              error={error instanceof Error ? error.message : null}
               selectedEmails={selectedEmails}
               teamMembers={teamMembers}
               onRowClick={handleEmailSelect}

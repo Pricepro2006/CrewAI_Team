@@ -197,9 +197,9 @@ export class EmailIngestionServiceFactory {
         const targetValue = result[key];
 
         if (this.isObject(sourceValue) && this.isObject(targetValue)) {
-          result[key] = this.deepMerge(targetValue, sourceValue);
+          (result as any)[key] = this.deepMerge(targetValue, sourceValue);
         } else if (sourceValue !== undefined) {
-          result[key] = sourceValue;
+          (result as any)[key] = sourceValue;
         }
       }
     }
@@ -365,7 +365,7 @@ export class EmailIngestionEnvironmentValidator {
     }
 
     return {
-      valid: errors?.length || 0 === 0,
+      valid: (errors?.length || 0) === 0,
       errors
     };
   }

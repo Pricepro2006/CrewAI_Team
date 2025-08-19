@@ -115,7 +115,7 @@ export class LLMProviderManager implements LLMProvider {
         this.useFallback = false;
       }
       
-      return response;
+      return response as LlamaCppResponse;
       
     } catch (error) {
       logger.error("Generation failed, attempting with fallback", "LLM_MANAGER", { error });

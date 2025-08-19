@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 
 /**
  * Migration: Add security audit tables
@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
  * Description: Creates comprehensive security audit logging tables for compliance
  */
 
-export function up(db: Database.Database) {
+export function up(db: DatabaseInstance) {
   console.log("Creating security audit tables...");
 
   // Create main audit log table
@@ -394,7 +394,7 @@ export function up(db: Database.Database) {
   console.log("✅ Security audit tables created successfully");
 }
 
-export function down(db: Database.Database) {
+export function down(db: DatabaseInstance) {
   console.log("Dropping security audit tables...");
 
   db.exec(`

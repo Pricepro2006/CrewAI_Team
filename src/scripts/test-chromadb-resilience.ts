@@ -5,11 +5,11 @@
  * Tests connection retry, circuit breaker, and in-memory fallback
  */
 
-import { ChromaDBConnectionManager, ConnectionState } from "../database/vector/ChromaDBConnectionManager.js";
-import { ResilientChromaDBManager, StorageMode } from "../database/vector/ResilientChromaDBManager.js";
-import { ResilientVectorStore } from "../core/rag/ResilientVectorStore.js";
-import { ChromaDBMonitor } from "../monitoring/ChromaDBMonitor.js";
-import { logger } from "../../utils/logger.js";
+import { ChromaDBConnectionManager, ConnectionState } from "../database/vector/ChromaDBConnectionManager";
+import { ResilientChromaDBManager, StorageMode } from "../database/vector/ResilientChromaDBManager";
+import { ResilientVectorStore } from "../core/rag/ResilientVectorStore";
+import { ChromaDBMonitor } from "../monitoring/ChromaDBMonitor";
+import { logger } from "../utils/logger";
 import chalk from "chalk";
 
 class ChromaDBResilienceTest {

@@ -9,7 +9,7 @@ import type {
   EmailRecord,
   EmailStatus,
   WorkflowState,
-} from "../../types/email-dashboard?.interfaces.js";
+} from "../../types/email-dashboard.interfaces.js";
 
 // Sample email data matching the screenshot
 const generateSampleEmails = (): EmailRecord[] => {

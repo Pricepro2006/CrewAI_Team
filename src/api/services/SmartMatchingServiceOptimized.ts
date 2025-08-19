@@ -80,7 +80,7 @@ export class SmartMatchingServiceOptimized {
     
     // Check cache first
     try {
-      const cachedResult = await this?.cacheManager?.get<SmartSearchResult>(
+      const cachedResult = await this.cacheManager?.get<SmartSearchResult>(
         `search:${cacheKey}`
       );
       
@@ -91,8 +91,8 @@ export class SmartMatchingServiceOptimized {
           executionTime: Date.now() - startTime
         });
         
-        // Update execution time in metadata
-        if (cachedResult?.searchMetadata) {
+        // Update execution time in metadata with safe property access
+        if (cachedResult.searchMetadata) {
           cachedResult.searchMetadata.executionTime = Date.now() - startTime;
         }
         return cachedResult;
@@ -106,7 +106,7 @@ export class SmartMatchingServiceOptimized {
     
     // Cache the result
     try {
-      await this?.cacheManager?.set(
+      await this.cacheManager?.set(
         `search:${cacheKey}`,
         result,
         { ttl: this.SEARCH_CACHE_TTL }
@@ -115,17 +115,17 @@ export class SmartMatchingServiceOptimized {
       logger.warn("Failed to cache search result", "OPTIMIZED_MATCHING", { error });
     }
     
-    // Update execution time
-    if (result?.searchMetadata) {
+    // Update execution time with safe property access
+    if (result.searchMetadata) {
       result.searchMetadata.executionTime = Date.now() - startTime;
     }
     
-    // Log performance metrics
-    const stats = this?.optimizedAlgorithm?.getPerformanceStats();
+    // Log performance metrics with safe method call
+    const stats = this.optimizedAlgorithm?.getPerformanceStats();
     logger.info("Optimized search completed", "OPTIMIZED_MATCHING", {
       query: validatedQuery,
-      totalResults: result?.searchMetadata?.totalResults || 0,
-      executionTime: result?.searchMetadata?.executionTime || 0,
+      totalResults: result.searchMetadata?.totalResults || 0,
+      executionTime: result.searchMetadata?.executionTime || 0,
       cacheHitRate: stats?.cacheHitRate || 0,
       avgCalculationTime: stats?.avgCalculationTime || 0
     });
@@ -168,13 +168,13 @@ export class SmartMatchingServiceOptimized {
         return this.createEmptyResult(query, processedQuery);
       }
       
-      const batchResult = await this?.optimizedAlgorithm?.processBatch({
+      const batchResult = await this.optimizedAlgorithm?.processBatch({
         queries: [processedQuery],
         products: productNames,
         options
       });
     
-      // Get scores from batch result
+      // Get scores from batch result with safe property access
       const scores = batchResult?.results?.get(processedQuery) || new Map();
       
       // Create matched products with scores using safe products
@@ -248,7 +248,7 @@ export class SmartMatchingServiceOptimized {
       const validatedScore = validationHelpers.validateMatchScore(matchScore, "Match score");
       // Get user history if available with type safety
       const userHistory = (options.userId && options.userId.length > 0)
-        ? await this.getUserHistory(options.userId)
+        ? (await this.getUserHistory(options.userId)) || []
         : [];
     
       // Calculate comprehensive score with error handling
@@ -261,7 +261,7 @@ export class SmartMatchingServiceOptimized {
         isPreviouslyPurchased: this.checkPreviousPurchase(product, userHistory)
       };
       
-      const comprehensiveScore = await this?.optimizedAlgorithm?.calculateComprehensiveScore(
+      const comprehensiveScore = await this.optimizedAlgorithm?.calculateComprehensiveScore(
         baseMatchedProduct,
         query,
         userHistory,
@@ -330,8 +330,8 @@ export class SmartMatchingServiceOptimized {
     try {
       const cacheKey = `products:${query}:${options.location?.zipCode || 'default'}`;
       
-      // Check cache
-      const cached = await this?.cacheManager?.get<WalmartProduct[]>(cacheKey);
+      // Check cache with safe method call
+      const cached = await this.cacheManager?.get<WalmartProduct[]>(cacheKey);
       if (cached && Array.isArray(cached)) {
         return validationHelpers.validateArrayLength(
           cached,
@@ -353,7 +353,7 @@ export class SmartMatchingServiceOptimized {
       );
       
       if (validatedProducts.length > 0) {
-        await this?.cacheManager?.set(cacheKey, validatedProducts, {
+        await this.cacheManager?.set(cacheKey, validatedProducts, {
           ttl: this.PRODUCT_CACHE_TTL
         });
       }
@@ -386,7 +386,7 @@ export class SmartMatchingServiceOptimized {
         const commonTerms = new Set<string>();
         
         for (const match of topProducts) {
-          if (match?.product?.name && typeof match.product.name === 'string') {
+          if (match.product?.name && typeof match.product.name === 'string') {
             const words = match.product.name.toLowerCase().split(/\s+/);
             words.forEach(word => {
               if (typeof word === 'string' && word.length > 3 && !query.includes(word)) {
@@ -430,9 +430,10 @@ export class SmartMatchingServiceOptimized {
     const categories = new Set<string>();
     
     for (const match of matches) {
-      // Extract category from product metadata if available
-      if ('category' in match.product) {
-        categories.add((match.product as any).category);
+      // Extract category from product metadata if available with safe property access
+      const product = match.product;
+      if (product && 'category' in product && typeof (product as any).category === 'string') {
+        categories.add((product as any).category);
       }
     }
     
@@ -457,6 +458,10 @@ export class SmartMatchingServiceOptimized {
     }
     
     const productFirstWord = product.name.toLowerCase().split(' ')[0];
+    if (!productFirstWord) {
+      return false;
+    }
+    
     return history.some(h => 
       h?.productName && 
       typeof h.productName === 'string' &&
@@ -473,6 +478,10 @@ export class SmartMatchingServiceOptimized {
     }
     
     const productFirstWord = product.name.toLowerCase().split(' ')[0];
+    if (!productFirstWord) {
+      return undefined;
+    }
+    
     const purchase = history.find(h => 
       h?.productName &&
       typeof h.productName === 'string' &&
@@ -490,6 +499,10 @@ export class SmartMatchingServiceOptimized {
     }
     
     const productFirstWord = product.name.toLowerCase().split(' ')[0];
+    if (!productFirstWord) {
+      return undefined;
+    }
+    
     const purchase = history.find(h => 
       h?.productName &&
       typeof h.productName === 'string' &&
@@ -507,6 +520,10 @@ export class SmartMatchingServiceOptimized {
     }
     
     const productFirstWord = product.name.toLowerCase().split(' ')[0];
+    if (!productFirstWord) {
+      return undefined;
+    }
+    
     const purchase = history.find(h => 
       h?.productName &&
       typeof h.productName === 'string' &&
@@ -528,6 +545,10 @@ export class SmartMatchingServiceOptimized {
     }
     
     const productFirstWord = product.name.toLowerCase().split(' ')[0];
+    if (!productFirstWord) {
+      return undefined;
+    }
+    
     const purchase = history.find(h => 
       h?.productName &&
       typeof h.productName === 'string' &&
@@ -551,9 +572,12 @@ export class SmartMatchingServiceOptimized {
   }
   
   private extractCurrentPrice(product: WalmartProduct): number {
-    // Type-safe price extraction with fallbacks
-    if (typeof product.livePrice === 'object' && product.livePrice?.price) {
-      return validationHelpers.validatePrice(product.livePrice.price, "Live price");
+    // Type-safe price extraction with fallbacks and null checks
+    if (product.livePrice && typeof product.livePrice === 'object' && 'price' in product.livePrice) {
+      const livePrice = (product.livePrice as any).price;
+      if (typeof livePrice === 'number') {
+        return validationHelpers.validatePrice(livePrice, "Live price");
+      }
     }
     if (typeof product.price === 'number') {
       return validationHelpers.validatePrice(product.price, "Product price");
@@ -645,7 +669,7 @@ export class SmartMatchingServiceOptimized {
         throw new Error("Invalid feedback type");
       }
       
-      await this?.optimizedAlgorithm?.updateModelWithFeedback({
+      await this.optimizedAlgorithm?.updateModelWithFeedback({
         query: validatedQuery,
         productName: productName.slice(0, 500), // Limit length
         score: validatedScore,
@@ -673,7 +697,7 @@ export class SmartMatchingServiceOptimized {
     algorithmStats: any;
     cacheStats: any;
   } {
-    const algorithmStats = this?.optimizedAlgorithm?.getPerformanceStats();
+    const algorithmStats = this.optimizedAlgorithm?.getPerformanceStats();
     
     // Get cache stats from Redis manager
     const cacheStats = {
@@ -692,11 +716,11 @@ export class SmartMatchingServiceOptimized {
    * Clear all caches
    */
   async clearAllCaches(): Promise<void> {
-    await this?.optimizedAlgorithm?.clearCaches();
+    await this.optimizedAlgorithm?.clearCaches();
     
     try {
-      await this?.cacheManager?.clear('search');
-      await this?.cacheManager?.clear('products');
+      await this.cacheManager?.clear('search');
+      await this.cacheManager?.clear('products');
     } catch (error) {
       logger.warn("Failed to clear Redis caches", "OPTIMIZED_MATCHING", { error });
     }

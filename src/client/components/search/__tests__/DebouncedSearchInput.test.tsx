@@ -1,14 +1,15 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import * as React from 'react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { DebouncedSearchInput } from '../DebouncedSearchInput.js';
+import '@testing-library/jest-dom';
+import { DebouncedSearchInput } from '../DebouncedSearchInput';
 
 // Mock hooks
-vi.mock('../../hooks/useDebounce.js', () => ({
-  useDebounce: vi.fn((value, delay) => {
+vi.mock('../../../hooks/useDebounce', () => ({
+  useDebounce: vi.fn((value: string, delay: number) => {
     // For testing, we'll use a simple implementation that returns the value after a timeout
-    const [debouncedValue, setDebouncedValue] = React.useState(value);
+    const [debouncedValue, setDebouncedValue] = React.useState<string>(value);
     
     React.useEffect(() => {
       const timer = setTimeout(() => {
@@ -24,17 +25,17 @@ vi.mock('../../hooks/useDebounce.js', () => ({
 
 // Mock Lucide icons
 vi.mock('lucide-react', () => ({
-  Search: ({ className }: any) => (
+  Search: ({ className }: { className?: string }) => (
     <div data-testid="search-icon" className={className}>🔍</div>
   ),
-  X: ({ className }: any) => (
+  X: ({ className }: { className?: string }) => (
     <div data-testid="x-icon" className={className}>✕</div>
   ),
 }));
 
-// Mock utils
-vi.mock('../../../lib/utils.js', () => ({
-  cn: (...classes: any[]) => classes.filter(Boolean).join(' '),
+// Mock utils  
+vi.mock('../../../../lib/utils', () => ({
+  cn: (...classes: (string | undefined | boolean)[]) => classes.filter(Boolean).join(' '),
 }));
 
 describe('DebouncedSearchInput', () => {
@@ -92,7 +93,8 @@ describe('DebouncedSearchInput', () => {
         />
       );
 
-      expect(container.firstChild).toHaveClass('custom-search-class');
+      const element = container.firstChild as HTMLElement;
+      expect(element).toHaveClass('custom-search-class');
     });
 
     it('shows clear button when there is text', async () => {
@@ -165,7 +167,12 @@ describe('DebouncedSearchInput', () => {
         expect(screen.getByTestId('x-icon')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByTestId('x-icon').closest('button')!);
+      const clearButton = screen.getByTestId('x-icon').closest('button');
+      if (clearButton) {
+        await user.click(clearButton);
+      } else {
+        throw new Error('Clear button not found');
+      }
 
       expect(input).toHaveValue('');
       expect(mockOnSearch).toHaveBeenCalledWith('');
@@ -244,14 +251,23 @@ describe('DebouncedSearchInput', () => {
       await user.type(input, 'test');
 
       // Loading indicator should appear while debouncing
-      expect(screen.getByRole('textbox').parentElement?.parentElement).toContainHTML('animate-spin');
+      const inputParent = input.parentElement?.parentElement;
+      if (inputParent) {
+        expect(inputParent.innerHTML).toContain('animate-spin');
+      } else {
+        throw new Error('Input parent not found');
+      }
 
       act(() => {
         vi.advanceTimersByTime(300);
       });
 
       await waitFor(() => {
-        expect(screen.queryByRole('textbox').parentElement?.parentElement).not.toContainHTML('animate-spin');
+        const input = screen.getByRole('textbox');
+        const inputParent = input.parentElement?.parentElement;
+        if (inputParent) {
+          expect(inputParent.innerHTML).not.toContain('animate-spin');
+        }
       });
     });
   });
@@ -462,7 +478,11 @@ describe('DebouncedSearchInput', () => {
 
       await waitFor(() => {
         const clearButton = screen.getByTestId('x-icon').closest('button');
-        expect(clearButton).toHaveAttribute('tabIndex', '-1');
+        if (clearButton) {
+          expect(clearButton).toHaveAttribute('tabIndex', '-1');
+        } else {
+          throw new Error('Clear button not found');
+        }
       });
     });
 
@@ -554,8 +574,9 @@ describe('DebouncedSearchInput', () => {
 
     it('handles undefined/null onSearch gracefully', () => {
       // TypeScript would prevent this, but testing runtime behavior
+      const unsafeOnSearch = undefined as unknown as (query: string) => void;
       expect(() => {
-        render(<DebouncedSearchInput onSearch={undefined as any} />);
+        render(<DebouncedSearchInput onSearch={unsafeOnSearch} />);
       }).not.toThrow();
     });
 
@@ -574,7 +595,7 @@ describe('DebouncedSearchInput', () => {
 
   describe('Integration Scenarios', () => {
     it('works with form submission', async () => {
-      const mockSubmit = vi.fn((e) => e.preventDefault());
+      const mockSubmit = vi.fn((e: React.FormEvent<HTMLFormElement>) => e.preventDefault());
 
       render(
         <form onSubmit={mockSubmit}>

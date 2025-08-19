@@ -19,7 +19,7 @@ const redisOptions = {
   // TLS configuration for production
   ...(process.env.REDIS_TLS_ENABLED === 'true' && {
     tls: {
-      checkServerIdentity: (_hostname, _cert) => {
+      checkServerIdentity: (_hostname: string, _cert: any) => {
         return undefined; // Custom certificate validation
       }
     }
@@ -42,7 +42,7 @@ export const redisClient = new Redis(redisOptions);
 
 // Handle Redis connection events with secure logging
 redisClient.on('connect', () => {
-  logger.info('Redis client connected', {
+  logger.info('Redis client connected', 'REDIS_CONFIG', {
     host: redisOptions.host,
     port: redisOptions.port,
     db: redisOptions.db,
@@ -55,7 +55,7 @@ redisClient.on('ready', () => {
 });
 
 redisClient.on('error', (err: any) => {
-  logger.error('Redis client error', {
+  logger.error('Redis client error', 'REDIS_CONFIG', {
     error: err.message,
     stack: err.stack,
     host: redisOptions.host,
@@ -68,7 +68,7 @@ redisClient.on('close', () => {
 });
 
 redisClient.on('reconnecting', (timeToReconnect: any) => {
-  logger.info('Redis client reconnecting', {
+  logger.info('Redis client reconnecting', 'REDIS_CONFIG', {
     timeToReconnect: `${timeToReconnect}ms`
   });
 });

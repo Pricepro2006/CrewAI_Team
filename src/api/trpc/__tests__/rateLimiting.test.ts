@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TRPCError } from "@trpc/server";
 
 // Mock dependencies
@@ -563,7 +563,7 @@ describe("TRPC Rate Limiting", () => {
       await rateLimitMiddleware({ ctx: mockContext, next });
 
       // Rate limits map should be much smaller now after cleanup
-      expect(mockContext?.rateLimits?.size).toBeLessThan(50);
+      expect(mockContext?.rateLimits?.length).toBeLessThan(50);
     });
   });
 });

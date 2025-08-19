@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from "express";
-import { RateLimiter } from "../RateLimiter.js";
+import { RateLimiter } from '../RateLimiter';
 
 // Mock Redis
 vi.mock("ioredis", () => {

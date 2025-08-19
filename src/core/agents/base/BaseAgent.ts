@@ -120,7 +120,7 @@ export abstract class BaseAgent {
     }
 
     // Initialize any tools (if they have initialization method)
-    for (const tool of this.tools.values()) {
+    for (const tool of Array.from(this.tools.values())) {
       if (
         "initialize" in tool &&
         typeof (tool as any).initialize === "function"

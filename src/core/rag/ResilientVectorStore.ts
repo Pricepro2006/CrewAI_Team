@@ -171,9 +171,9 @@ export class ResilientVectorStore implements IVectorStore {
           return results?.map(r => ({
             id: r.id,
             content: r.content,
-            metadata: r.metadata,
+            metadata: r.metadata as import('../shared/types.js').DocumentMetadata,
             score: r.similarity,
-          }));
+          })) as import('./types.js').QueryResult[];
         } catch (error) {
           logger.warn(
             `ChromaDB search failed, falling back to text search: ${error}`,
@@ -192,9 +192,9 @@ export class ResilientVectorStore implements IVectorStore {
       return results?.map(r => ({
         id: r.id,
         content: r.content,
-        metadata: r.metadata,
+        metadata: r.metadata as import('../shared/types.js').DocumentMetadata,
         score: r.similarity,
-      }));
+      })) as import('./types.js').QueryResult[];
     } catch (error) {
       logger.error(
         `Search failed: ${error}`,
@@ -229,9 +229,9 @@ export class ResilientVectorStore implements IVectorStore {
           return results?.map(r => ({
             id: r.id,
             content: r.content,
-            metadata: r.metadata,
+            metadata: r.metadata as import('../shared/types.js').DocumentMetadata,
             score: r.similarity,
-          }));
+          })) as import('./types.js').QueryResult[];
         } catch (error) {
           logger.warn(
             `Filtered search failed: ${error}`,

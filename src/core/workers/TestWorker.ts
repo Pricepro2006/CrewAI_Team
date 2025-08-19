@@ -31,7 +31,6 @@ if (parentPort) {
           message: "Worker shutting down gracefully"
         });
         process.exit(0);
-        break;
         
       default:
         log("Unknown message type", { type: message.type });

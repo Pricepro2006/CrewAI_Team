@@ -1,6 +1,45 @@
 import React, { useState } from "react";
-import type { UnifiedEmailData } from "../../../types/unified-email?.types.js";
 import "./EmailListView.css";
+
+// Define UnifiedEmailData locally to avoid import issues
+interface UnifiedEmailData {
+  id: string;
+  messageId: string;
+  subject: string;
+  bodyText: string;
+  from: string;
+  to: string[];
+  receivedAt: string;
+  workflowState: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  isWorkflowComplete: boolean;
+  priority: "low" | "medium" | "high" | "critical";
+  status: "pending" | "processing" | "completed" | "failed";
+  hasAttachments: boolean;
+  isRead: boolean;
+  tags?: string[];
+  analysis?: {
+    summary: string;
+    sentiment: string;
+    intent: string;
+    topics: string[];
+  };
+  agentAssignment?: {
+    agentId: string;
+    agentName: string;
+    assignedAt: string;
+    status: string;
+  };
+}
+
+interface SampleEmailItem {
+  id: string;
+  from: string;
+  requestedBy: string;
+  subject: string;
+  assignedTo?: string;
+  status?: string;
+  statusColor?: string;
+}
 
 interface EmailListViewProps {
   emails: UnifiedEmailData[];
@@ -128,7 +167,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           </tr>
         </thead>
         <tbody>
-          {displayEmails?.map((email: any) => (
+          {displayEmails?.map((email: UnifiedEmailData) => (
             <tr
               key={email.id}
               className={selectedEmailId === email.id ? "selected" : ""}
@@ -169,7 +208,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           </tr>
         </thead>
         <tbody>
-          {sampleMarketing?.map((item: any) => (
+          {sampleMarketing?.map((item: SampleEmailItem) => (
             <tr key={item.id}>
               <td>{item.from}</td>
               <td>{item.requestedBy}</td>
@@ -198,7 +237,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           </tr>
         </thead>
         <tbody>
-          {sampleVMware?.map((item: any) => (
+          {sampleVMware?.map((item: SampleEmailItem) => (
             <tr key={item.id}>
               <td>{item.from}</td>
               <td>{item.requestedBy}</td>

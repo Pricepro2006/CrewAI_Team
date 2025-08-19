@@ -76,7 +76,7 @@ export const SecurityStatusMonitor: React.FC = () => {
   }, [csrfStatus.hasToken]);
 
   // Check WebSocket status
-  const { data: wsStatus } = (api?.websocket?.status as any)?.useQuery?.(undefined, {
+  const { data: wsStatus } = (api?.ws?.status as any)?.useQuery?.(undefined, {
     refetchInterval: 30000,
   }) || { data: null };
 

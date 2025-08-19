@@ -2,7 +2,7 @@
  * API Error Handler - Provides graceful degradation for missing endpoints
  */
 
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../utils/logger";
 
 export interface APIError {
   message: string;

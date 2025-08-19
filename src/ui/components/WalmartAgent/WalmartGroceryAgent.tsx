@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History, Zap } from 'lucide-react';
-import { api } from '../../../lib/trpc.js';
-import { WalmartLivePricing } from './WalmartLivePricing.js';
-import { GroceryListEnhanced } from './GroceryListEnhanced.js';
+import { api } from '../../../client/lib/api';
+import WalmartLivePricing from './WalmartLivePricing';
+import { GroceryListEnhanced } from './GroceryListEnhanced';
 import './WalmartGroceryAgent.css';
 
 interface GroceryItem {
@@ -76,16 +76,16 @@ export const WalmartGroceryAgent: React.FC = () => {
       setSearchResults({
         query: searchQuery.trim(),
         totalResults: results.metadata?.totalResults || results.products?.length || 0,
-        items: results.products?.map((product: any) => ({
-          id: product.id || product.productId || `item-${Date.now()}-${Math.random()}`,
-          name: product.name || product.title,
-          price: product.price || 0,
-          originalPrice: product.originalPrice,
-          savings: product.originalPrice ? product.originalPrice - product.price : undefined,
+        items: results.products?.map((product: Record<string, unknown>) => ({
+          id: String(product.id || product.productId || `item-${Date.now()}-${Math.random()}`),
+          name: String(product.name || product.title || 'Unknown Product'),
+          price: Number(product.price || 0),
+          originalPrice: product.originalPrice ? Number(product.originalPrice) : undefined,
+          savings: (product.originalPrice && product.price) ? Number(product.originalPrice) - Number(product.price) : undefined,
           inStock: product.inStock !== false,
-          imageUrl: product.imageUrl || product.image || '/api/placeholder/100/100',
-          category: product.category || 'General',
-          unit: product.unit || product.size || 'each'
+          imageUrl: String(product.imageUrl || product.image || '/api/placeholder/100/100'),
+          category: String(product.category || 'General'),
+          unit: String(product.unit || product.size || 'each')
         })) || [],
         timestamp: new Date()
       });
@@ -119,14 +119,14 @@ export const WalmartGroceryAgent: React.FC = () => {
     if (!searchResults) return 0;
     return searchResults.items
       .filter(item => selectedItems.has(item.id))
-      .reduce((total: any, item: any) => total + (item.savings || 0), 0);
+      .reduce((total: number, item: GroceryItem) => total + (item.savings || 0), 0);
   };
 
   const calculateTotalPrice = () => {
     if (!searchResults) return 0;
     return searchResults.items
       .filter(item => selectedItems.has(item.id))
-      .reduce((total: any, item: any) => total + item.price, 0);
+      .reduce((total: number, item: GroceryItem) => total + item.price, 0);
   };
 
   const tabs = [
@@ -156,7 +156,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             <Package className="stat-icon" />
             <div className="stat-content">
               <span className="stat-value">
-                {statsData?.stats?.productsTracked?.toLocaleString() || '0'}
+                {(statsData?.stats?.productsTracked || 0).toLocaleString()}
               </span>
               <span className="stat-label">Products Tracked</span>
             </div>
@@ -165,7 +165,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             <TrendingUp className="stat-icon" />
             <div className="stat-content">
               <span className="stat-value">
-                ${statsData?.stats?.savedThisMonth?.toFixed(2) || '0.00'}
+                ${(statsData?.stats?.savedThisMonth || 0).toFixed(2)}
               </span>
               <span className="stat-label">Saved This Month</span>
             </div>
@@ -174,7 +174,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             <AlertCircle className="stat-icon" />
             <div className="stat-content">
               <span className="stat-value">
-                {statsData?.stats?.activeAlerts || '0'}
+                {statsData?.stats?.activeAlerts || 0}
               </span>
               <span className="stat-label">Active Price Alerts</span>
             </div>
@@ -184,8 +184,8 @@ export const WalmartGroceryAgent: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="agent-nav">
-        {tabs?.map((tab: any) => {
-          const IconComponent = tab?.icon;
+        {tabs?.map((tab) => {
+          const IconComponent = tab.icon;
           return (
             <button
               key={tab.id}
@@ -211,8 +211,8 @@ export const WalmartGroceryAgent: React.FC = () => {
             className="search-input"
             placeholder="Search for groceries (e.g., 'organic milk', 'fresh produce', 'snacks')"
             value={searchQuery}
-            onChange={(e: any) => setSearchQuery(e?.target?.value)}
-            onKeyPress={(e: any) => e.key === 'Enter' && handleSearch()}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSearch()}
           />
           <button 
             className="search-button"
@@ -265,7 +265,7 @@ export const WalmartGroceryAgent: React.FC = () => {
           </div>
 
           <div className="results-grid">
-            {searchResults?.items?.map((item: any) => (
+            {searchResults?.items?.map((item: GroceryItem) => (
               <div 
                 key={item.id} 
                 className={`grocery-item ${selectedItems.has(item.id) ? 'selected' : ''} ${!item.inStock ? 'out-of-stock' : ''}`}
@@ -400,7 +400,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             </div>
 
             <div className="budget-categories">
-              {budgetData?.budget?.categories && Object.entries(budgetData?.budget?.categories).map(([category, data]: [string, any]) => {
+              {budgetData?.budget?.categories && Object.entries(budgetData?.budget?.categories).map(([category, data]: [string, { budget: number; spent: number }]) => {
                 const percentUsed = data.budget > 0 ? (data.spent / data.budget * 100) : 0;
                 const isWarning = percentUsed >= 90;
                 
@@ -482,11 +482,11 @@ export const WalmartGroceryAgent: React.FC = () => {
               <h3>Trending Price Changes</h3>
               <div className="trend-list">
                 {trendingData?.trending && trendingData?.trending?.length > 0 ? (
-                  trendingData?.trending?.map((product: any) => (
+                  trendingData?.trending?.map((product: Record<string, unknown> & { id: string; name: string; category: string }) => (
                     <div key={product.id} className="trend-item">
                       <div className="trend-info">
                         <img 
-                          src={product.imageUrl || "/api/placeholder/60/60"} 
+                          src={String(product.imageUrl || "/api/placeholder/60/60")} 
                           alt={product.name} 
                           className="trend-thumbnail" 
                         />
@@ -497,11 +497,11 @@ export const WalmartGroceryAgent: React.FC = () => {
                       </div>
                       <div className="trend-data">
                         <div className={`price-change ${product.trend === 'down' ? 'positive' : product.trend === 'up' ? 'negative' : 'neutral'}`}>
-                          <span className="current-price">${product?.currentPrice?.toFixed(2)}</span>
+                          <span className="current-price">${(Number(product?.currentPrice) || 0).toFixed(2)}</span>
                           <span className="change">
                             {product.trend === 'down' ? '↓' : product.trend === 'up' ? '↑' : '→'} 
                             {' '}
-                            {Math.abs(product.priceChange).toFixed(1)}%
+                            {Math.abs(Number(product.priceChange) || 0).toFixed(1)}%
                           </span>
                         </div>
                         <div className="trend-indicator">

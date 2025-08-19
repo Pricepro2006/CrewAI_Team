@@ -25,9 +25,10 @@ import {
 import { api } from "../../../lib/trpc";
 import { useGroceryStore } from "../../../client/store/groceryStore";
 import type { WalmartProduct } from "../../../types/walmart-grocery";
+import type { ExtendedWalmartProduct } from "./types/WalmartTypes";
 
 interface WalmartProductCardEnhancedProps {
-  product: WalmartProduct;
+  product: WalmartProduct & ExtendedWalmartProduct;
   onCompare?: (product: WalmartProduct) => void;
   onQuickView?: (product: WalmartProduct) => void;
   inComparisonMode?: boolean;
@@ -109,7 +110,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     
     addToList(listId, product, quantity);
     setIsAddedToList(true);
-    showNotification(`Added to ${lists.find(l => l.id === listId)?.name || "grocery list"}`);
+    showNotification(`Added to ${lists.find(l => l.id === listId)?.list_name || "grocery list"}`);
     
     // Reset after animation
     setTimeout(() => setIsAddedToList(false), 2000);
@@ -165,11 +166,15 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     
     createPriceAlert(product.id, target);
     setPriceAlert.mutate({
-      productId: product.id,
+      alertType: "price_drop",
+      alertName: `Price drop for ${product.name}`,
       productName: product.name,
-      currentPrice,
+      productBrand: product.brand,
+      productCategory: typeof product.category === 'string' ? product.category : product.category?.name,
       targetPrice: target,
-      userId: "current-user"
+      currentPrice,
+      userId: "current-user",
+      notificationMethods: ["email"]
     });
   };
 

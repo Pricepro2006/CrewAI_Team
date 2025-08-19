@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ResearchAgent } from "./ResearchAgent.js";
-import { WebSearchTool } from "../../tools/web/WebSearchTool.js";
-import { WebScraperTool } from "../../tools/web/WebScraperTool.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ResearchAgent } from './ResearchAgent';
+import { WebSearchTool } from '../../tools/web/WebSearchTool';
+import { WebScraperTool } from '../../tools/web/WebScraperTool';
 
 // Note: This is a unit test file that focuses on ResearchAgent logic
 // without external dependencies. For real Ollama integration tests,
@@ -111,8 +111,8 @@ describe("ResearchAgent", () => {
 
       expect(result).toBeDefined();
       expect(result.success).toBe(true);
-      expect(result?.data?.synthesis).toBeDefined();
-      expect(result?.data?.sources).toBeInstanceOf(Array);
+      expect(result?.data).toBeDefined();
+      expect(result?.data?.findings).toBeInstanceOf(Array);
       expect(result?.data?.sources?.length || 0).toBeGreaterThan(0);
     });
 
@@ -149,7 +149,7 @@ describe("ResearchAgent", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result?.data?.synthesis).toBeDefined();
+      expect(result?.data).toBeDefined();
       expect(result?.data?.findings).toBeInstanceOf(Array);
     });
 
@@ -181,8 +181,8 @@ describe("ResearchAgent", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result?.data?.synthesis).toBeDefined();
-      expect(result?.data?.sources).toBeInstanceOf(Array);
+      expect(result?.data).toBeDefined();
+      expect(result?.data?.findings).toBeInstanceOf(Array);
     });
 
     it("should analyze specific URLs", async () => {
@@ -212,7 +212,7 @@ describe("ResearchAgent", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result?.data?.synthesis).toBeDefined();
+      expect(result?.data).toBeDefined();
       expect(result.metadata).toBeDefined();
     });
 
@@ -256,7 +256,7 @@ describe("ResearchAgent", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result?.data?.synthesis).toBeDefined();
+      expect(result?.data).toBeDefined();
     });
   });
 

@@ -7,8 +7,7 @@
  * with automated scheduling, compression, and integrity verification.
  */
 
-import BetterSqlite3 from 'better-sqlite3';
-import type { Database } from 'better-sqlite3';
+import Database, { type Database as DatabaseType } from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -69,8 +68,8 @@ class GroceryDatabaseBackup {
     
     try {
       // Create database backup using SQLite backup API
-      const sourceDb = new BetterSqlite3(this?.config?.sourceDbPath, { readonly: true });
-      const backupDb = new BetterSqlite3(backupPath);
+      const sourceDb = new Database(this?.config?.sourceDbPath, { readonly: true });
+      const backupDb = new Database(backupPath);
       
       await this.performBackup(sourceDb, backupDb);
       
@@ -173,7 +172,7 @@ class GroceryDatabaseBackup {
         fs.copyFileSync(workingBackupPath, testPath);
         
         // Test database connection and basic queries
-        const testDb = new BetterSqlite3(testPath, { readonly: true });
+        const testDb = new Database(testPath, { readonly: true });
         await this.performRestoreTests(testDb);
         testDb.close();
         
@@ -184,7 +183,7 @@ class GroceryDatabaseBackup {
         fs.copyFileSync(workingBackupPath, targetPath);
         
         // Verify the restored database
-        const restoredDb = new BetterSqlite3(targetPath, { readonly: true });
+        const restoredDb = new Database(targetPath, { readonly: true });
         await this.performRestoreTests(restoredDb);
         restoredDb.close();
       }
@@ -240,7 +239,7 @@ class GroceryDatabaseBackup {
     integrityCheck: boolean;
     recommendations: string[];
   }> {
-    const db = new BetterSqlite3(this?.config?.sourceDbPath, { readonly: true });
+    const db = new Database(this?.config?.sourceDbPath, { readonly: true });
     
     try {
       const stats = fs.statSync(this?.config?.sourceDbPath);
@@ -335,7 +334,7 @@ ${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
     }
   }
 
-  private async performBackup(sourceDb: Database, backupDb: Database): Promise<void> {
+  private async performBackup(sourceDb: DatabaseType, backupDb: DatabaseType): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         const backup = sourceDb.backup(backupDb as any);
@@ -347,7 +346,7 @@ ${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
     });
   }
 
-  private async collectBackupMetadata(sourceDb: Database, backupPath: string): Promise<Omit<BackupMetadata, 'filename' | 'compressionRatio' | 'encrypted'>> {
+  private async collectBackupMetadata(sourceDb: DatabaseType, backupPath: string): Promise<Omit<BackupMetadata, 'filename' | 'compressionRatio' | 'encrypted'>> {
     const stats = fs.statSync(backupPath);
     const checksum = this.calculateChecksum(backupPath);
     
@@ -436,7 +435,7 @@ ${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
 
   private async verifyBackupIntegrity(backupPath: string): Promise<boolean> {
     try {
-      const db = new BetterSqlite3(backupPath, { readonly: true });
+      const db = new Database(backupPath, { readonly: true });
       const result = db.pragma('integrity_check') as Array<{ integrity_check: string }>;
       db.close();
       return result[0]?.integrity_check === 'ok';
@@ -445,10 +444,10 @@ ${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
     }
   }
 
-  private async performRestoreTests(db: Database): Promise<void> {
+  private async performRestoreTests(db: DatabaseType): Promise<void> {
     // Test basic table access
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-    if (tables?.length || 0 === 0) {
+    if ((tables?.length || 0) === 0) {
       throw new Error('No tables found in restored database');
     }
     
@@ -463,7 +462,7 @@ ${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
     }
   }
 
-  private async getTableStatistics(db: Database): Promise<Array<{ table: string; rows: number; size: number }>> {
+  private async getTableStatistics(db: DatabaseType): Promise<Array<{ table: string; rows: number; size: number }>> {
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as Array<{ name: string }>;
     const stats = [];
     

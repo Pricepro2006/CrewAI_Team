@@ -3,13 +3,14 @@
  * Tests for the production-ready database connection pool system
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   DatabaseConnectionPool,
   getDatabaseConnection,
   executeQuery,
   executeTransaction,
   shutdownConnectionPool,
-} from "../ConnectionPool.js";
+} from '../ConnectionPool';
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -25,7 +26,7 @@ describe("DatabaseConnectionPool", () => {
     }
   });
 
-  test("should create singleton instance", () => {
+  it("should create singleton instance", () => {
     const pool1 = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -36,7 +37,7 @@ describe("DatabaseConnectionPool", () => {
     expect(pool1).toBe(pool2);
   });
 
-  test("should provide thread-safe connections", async () => {
+  it("should provide thread-safe connections", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -49,7 +50,7 @@ describe("DatabaseConnectionPool", () => {
     expect(result).toEqual({ test: 1 });
   });
 
-  test("should track connection metrics", async () => {
+  it("should track connection metrics", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -65,7 +66,7 @@ describe("DatabaseConnectionPool", () => {
     expect(stats.totalQueries).toBeGreaterThan(0);
   });
 
-  test("should handle transactions correctly", async () => {
+  it("should handle transactions correctly", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -93,7 +94,7 @@ describe("DatabaseConnectionPool", () => {
     expect(result).toBeGreaterThanOrEqual(2);
   });
 
-  test("should provide health check functionality", async () => {
+  it("should provide health check functionality", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -105,7 +106,7 @@ describe("DatabaseConnectionPool", () => {
     expect(health).toHaveProperty("errors");
   });
 
-  test("should handle connection cleanup", async () => {
+  it("should handle connection cleanup", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
       idleTimeout: 100, // Very short timeout for testing
@@ -122,7 +123,7 @@ describe("DatabaseConnectionPool", () => {
     expect(finalStats.totalConnections).toBeGreaterThanOrEqual(0);
   });
 
-  test("should handle errors gracefully", async () => {
+  it("should handle errors gracefully", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -133,13 +134,13 @@ describe("DatabaseConnectionPool", () => {
         db.prepare("SELECT * FROM non_existent_table").get();
         return true;
       });
-      fail("Expected error was not thrown");
+      throw new Error("Expected error was not thrown");
     } catch (error) {
       expect(error).toBeDefined();
     }
   });
 
-  test("should handle concurrent operations", async () => {
+  it("should handle concurrent operations", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -168,7 +169,7 @@ describe("DatabaseConnectionPool", () => {
     expect(results).toEqual([0, 1, 2, 3, 4]);
   });
 
-  test("should provide detailed connection metrics", async () => {
+  it("should provide detailed connection metrics", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -180,7 +181,7 @@ describe("DatabaseConnectionPool", () => {
     const metrics = pool.getConnectionMetrics();
     expect(metrics).toBeInstanceOf(Array);
 
-    if (metrics?.length || 0 > 0) {
+    if (metrics.length > 0) {
       const metric = metrics[0];
       expect(metric).toHaveProperty("id");
       expect(metric).toHaveProperty("threadId");
@@ -191,7 +192,7 @@ describe("DatabaseConnectionPool", () => {
     }
   });
 
-  test("should handle graceful shutdown", async () => {
+  it("should handle graceful shutdown", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -200,7 +201,7 @@ describe("DatabaseConnectionPool", () => {
     await executeQuery((db: any) => db.prepare("SELECT 1").get());
 
     // Should shutdown without errors
-    await expect(pool.shutdown()).resolves?.not?.toThrow();
+    await expect(pool.shutdown()).resolves.not.toThrow();
   });
 });
 
@@ -216,7 +217,7 @@ describe("ConnectionPool Integration", () => {
     }
   });
 
-  test("should work with DatabaseManager", async () => {
+  it("should work with DatabaseManager", async () => {
     const { getDatabaseManager } = await import("../DatabaseManager.js");
 
     const dbManager = getDatabaseManager({
@@ -232,7 +233,7 @@ describe("ConnectionPool Integration", () => {
     await dbManager.close();
   });
 
-  test("should work with EmailThreePhaseAnalysisService", async () => {
+  it("should work with EmailThreePhaseAnalysisService", async () => {
     const { EmailThreePhaseAnalysisService } = await import(
       "../../core/services/EmailThreePhaseAnalysisService.js"
     );
@@ -245,7 +246,7 @@ describe("ConnectionPool Integration", () => {
     await service.shutdown();
   });
 
-  test("should work with EmailChainAnalyzer", async () => {
+  it("should work with EmailChainAnalyzer", async () => {
     const { EmailChainAnalyzer } = await import(
       "../../core/services/EmailChainAnalyzer.js"
     );
@@ -271,7 +272,7 @@ describe("ConnectionPool Performance", () => {
     }
   });
 
-  test("should handle high query volume efficiently", async () => {
+  it("should handle high query volume efficiently", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -308,7 +309,7 @@ describe("ConnectionPool Performance", () => {
     expect(queriesPerSecond).toBeGreaterThan(100); // At least 100 QPS
   });
 
-  test("should maintain reasonable memory usage", async () => {
+  it("should maintain reasonable memory usage", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });

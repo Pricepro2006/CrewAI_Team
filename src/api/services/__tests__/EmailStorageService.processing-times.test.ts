@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Database from "better-sqlite3";
-import { EmailStorageService } from "../EmailStorageService.js";
+import { EmailStorageService } from '../EmailStorageService';
 import type {
   EmailAnalysisResult,
   ProcessingMetadata,
-} from "../EmailStorageService.js";
-import { logger } from "../../utils/logger.js";
+} from '../EmailStorageService';
+import { logger } from '../../utils/logger';
 
 // Mock logger to prevent console output during tests
 vi.mock("../../../utils/logger", () => ({

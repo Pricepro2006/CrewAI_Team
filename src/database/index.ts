@@ -28,9 +28,9 @@ export { getOptimizedQueryExecutor, executeOptimizedQuery, getDatabaseStats, cle
 import { OptimizedQueryExecutor as OptimizedQueryExecutorClass } from './OptimizedQueryExecutor.js';
 import { PIIRedactor } from '../utils/PIIRedactor.js';
 import { Logger } from '../utils/logger.js';
-import path from 'path';
-import fs from 'fs';
-import Database from 'better-sqlite3';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as Database from 'better-sqlite3';
 
 const logger = new Logger('DatabaseModule');
 
@@ -61,7 +61,7 @@ export function getDatabase(dbPath?: string): OptimizedQueryExecutorClass {
   }
   
   // Create new optimized instance
-  logger.info('Creating new OptimizedQueryExecutor instance', { path: absolutePath });
+  logger.info('Creating new OptimizedQueryExecutor instance', absolutePath);
   
   // Ensure database directory exists
   const dbDir = path.dirname(absolutePath);
@@ -74,11 +74,7 @@ export function getDatabase(dbPath?: string): OptimizedQueryExecutorClass {
   
   // Log initial stats
   const stats = instance.getStats();
-  logger.info('Database instance created', {
-    path: absolutePath,
-    cacheSize: stats.totalQueries,
-    instances: instances.size
-  });
+  logger.info('Database instance created', `Path: ${absolutePath}, Cache: ${stats.totalQueries}, Instances: ${instances.size}`);
   
   return instance;
 }
@@ -113,10 +109,7 @@ export async function executeSecure<T = any>(
     const paramsStr = JSON.stringify(params);
     if (piiRedactor.containsPII(paramsStr)) {
       const piiTypes = piiRedactor.detectPIITypes(paramsStr);
-      logger.warn('PII detected in query parameters', {
-        types: piiTypes,
-        query: sql.substring(0, 50)
-      });
+      logger.warn('PII detected in query parameters', `Types: ${piiTypes.join(',')}, Query: ${sql.substring(0, 50)}`);
       
       // For write queries with PII, execute without caching
       if (!sql.trim().toLowerCase().startsWith('select')) {
@@ -167,15 +160,15 @@ export function getCentralizedDatabaseStats(dbPath?: string): {
 export function clearDatabaseCache(dbPath?: string): void {
   const db = getDatabase(dbPath);
   db.clearCache();
-  logger.info('Database cache cleared', { path: dbPath });
+  logger.info('Database cache cleared', dbPath || 'default');
 }
 
 /**
  * Close all database connections (for graceful shutdown)
  */
 export function closeAllDatabases(): void {
-  for (const [path, db] of instances.entries()) {
-    logger.info('Closing database connection', { path });
+  for (const [dbPath, db] of Array.from(instances.entries())) {
+    logger.info('Closing database connection', dbPath);
     db.close();
   }
   instances.clear();
@@ -200,7 +193,7 @@ export { Database };
  * Use this to gradually migrate from direct Database usage
  */
 export function createDatabase(path: string): any {
-  logger.warn('DEPRECATED: Using legacy createDatabase. Migrate to getDatabase()', { path });
+  logger.warn('DEPRECATED: Using legacy createDatabase. Migrate to getDatabase()', path);
   return getDatabase(path);
 }
 

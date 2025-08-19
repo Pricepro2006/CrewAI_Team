@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import '@testing-library/jest-dom';
 import {
   EmailDashboardDemo,
   EmailDashboardMultiPanel,
@@ -12,7 +13,7 @@ import {
   StatusDistributionChart,
   WorkflowTimelineChart,
   SLATrackingDashboard,
-} from '../LazyRoutes.js';
+} from '../LazyRoutes';
 
 // Mock React.lazy to control component loading
 const createMockLazyComponent = (name: string, shouldError = false) => {
@@ -90,7 +91,7 @@ class TestErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return <ErrorFallback error={this.state.error!} />;
     }
@@ -136,7 +137,7 @@ describe('LazyRoutes - Email Dashboard Components', () => {
 
     it('is a lazy component', () => {
       expect(EmailDashboardDemo).toHaveProperty('$$typeof');
-      expect(EmailDashboardDemo._payload).toBeDefined();
+      expect(EmailDashboardDemo).toHaveProperty('_payload');
     });
   });
 
@@ -308,7 +309,7 @@ describe('LazyRoutes - Error Handling', () => {
       },
     }));
 
-    const FailingComponent = React.lazy(() => import('../pages/EmailDashboardDemo'));
+    const FailingComponent = React.lazy(() => import('../pages/EmailDashboardDemo').then(module => ({ default: module.EmailDashboardDemo })));
 
     render(
       <TestErrorBoundary>
@@ -331,9 +332,9 @@ describe('LazyRoutes - Error Handling', () => {
 describe('LazyRoutes - Performance', () => {
   it('components are only loaded when rendered', () => {
     // Before rendering, the components should not be fully loaded
-    expect(EmailDashboardDemo._payload).toBeDefined();
-    expect(WalmartDashboard._payload).toBeDefined();
-    expect(StatusDistributionChart._payload).toBeDefined();
+    expect(EmailDashboardDemo).toHaveProperty('$$typeof');
+    expect(WalmartDashboard).toHaveProperty('$$typeof');
+    expect(StatusDistributionChart).toHaveProperty('$$typeof');
     
     // The components should be React.lazy wrappers
     expect(EmailDashboardDemo).toHaveProperty('$$typeof');
@@ -348,7 +349,7 @@ describe('LazyRoutes - Performance', () => {
           <div>
             <EmailDashboardDemo />
             <WalmartDashboard />
-            <StatusDistributionChart />
+            <StatusDistributionChart data={{ red: 1, yellow: 1, green: 1 }} totalEmails={3} />
           </div>
         </Suspense>
       </TestErrorBoundary>

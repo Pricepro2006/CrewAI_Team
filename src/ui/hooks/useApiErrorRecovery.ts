@@ -242,7 +242,9 @@ export function useTRPCErrorRecovery() {
     if (isAuthError) {
       // Redirect to login after a delay
       setTimeout(() => {
-        window?.location?.href = "/login";
+        if (typeof window !== 'undefined' && window.location) {
+          window.location.href = "/login";
+        }
       }, 2000);
     }
 

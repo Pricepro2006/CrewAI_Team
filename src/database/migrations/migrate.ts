@@ -1,10 +1,9 @@
-import Database from "better-sqlite3";
-import { resolve } from "path";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
+import { resolve, dirname } from "path";
 import { readdir } from "fs/promises";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = resolve(fileURLToPath(import.meta.url), "..");
+// Use __dirname for Node.js compatibility without import.meta
+const __dirname = dirname(__filename || process.cwd());
 
 /**
  * Database Migration System
@@ -18,7 +17,7 @@ interface MigrationRecord {
 }
 
 export class MigrationRunner {
-  private db: Database.Database;
+  private db: DatabaseInstance;
   private migrationsPath: string;
 
   constructor(dbPath: string, migrationsPath?: string) {

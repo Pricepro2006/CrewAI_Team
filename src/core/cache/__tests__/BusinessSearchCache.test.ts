@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   BusinessSearchCache,
   type CacheEntry,
-} from "../BusinessSearchCache.js";
-import type { ValidationResult } from "../../validators/BusinessResponseValidator.js";
+} from '../BusinessSearchCache';
+import type { ValidationResult } from '../../validators/BusinessResponseValidator';
 
 // Mock Redis with shared data store
 const mockRedisData = new Map<string, string>();
@@ -256,9 +256,9 @@ describe("BusinessSearchCache", () => {
       const analysis = cache.analyzePerformance();
 
       expect(analysis.hotQueries[0]?.query).toBe("popular query");
-      expect(analysis.hotQueries[0]?.hitCount).toBe(10);
+      expect(analysis.hotQueries[0]?.hits).toBe(10);
       expect(analysis.hotQueries[1]?.query).toBe("medium query");
-      expect(analysis.hotQueries[1]?.hitCount).toBe(3);
+      expect(analysis.hotQueries[1]?.hits).toBe(3);
     });
 
     it("should calculate memory pressure", async () => {

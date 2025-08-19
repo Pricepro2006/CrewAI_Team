@@ -6,9 +6,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { WebSocketServer } from 'ws';
 import { createServer, Server } from 'http';
-import { WalmartWebSocketServer } from '../WalmartWebSocketServer.js';
-import { EmailProcessingWebSocket } from '../EmailProcessingWebSocket.js';
-import { logger } from '../../../utils/logger.js';
+import { WalmartWebSocketServer } from '../WalmartWebSocketServer';
+import { EmailProcessingWebSocket } from '../EmailProcessingWebSocket';
+import { logger } from '../../../utils/logger';
 
 describe('WebSocket Health Checks', () => {
   let server: Server;

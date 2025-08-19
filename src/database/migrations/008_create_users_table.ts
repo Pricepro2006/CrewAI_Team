@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 
 /**
  * Migration: Create users table and authentication-related tables
@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
  * Description: Adds user authentication infrastructure including users, sessions, and refresh tokens
  */
 
-export function up(db: Database.Database) {
+export function up(db: DatabaseInstance) {
   console.log("Creating users and authentication tables...");
 
   // Create users table
@@ -124,7 +124,7 @@ export function up(db: Database.Database) {
   console.log("✅ Users and authentication tables created successfully");
 }
 
-export function down(db: Database.Database) {
+export function down(db: DatabaseInstance) {
   console.log("Dropping users and authentication tables...");
 
   // Drop tables in reverse order due to foreign key constraints

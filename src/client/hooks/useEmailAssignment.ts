@@ -1,57 +1,63 @@
 import { useCallback } from "react";
 import { api, handleTrpcError } from "../lib/api.js";
-import type { TeamMember } from "../../config/team-members?.config.js";
+import type { TeamMember } from "../../config/team-members.config.js";
 
 export interface UseEmailAssignmentOptions {
-  onSuccess?: (data: any) => void;
-  onError?: (error: any) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }
 
 export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
   const utils = api.useUtils();
 
   // Queries with proper error handling
+  const teamMembersQuery = api.emailAssignment?.getTeamMembers?.useQuery?.(undefined, {
+    retry: (failureCount: number, error: unknown) => {
+      // Only retry for network errors, not auth/business logic errors
+      const errorData = error as { data?: { code?: string } };
+      if (failureCount < 2 && !errorData?.data?.code) {
+        return true;
+      }
+      return false;
+    },
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  }) || { data: [], isLoading: false, error: null, refetch: async () => ({}) };
+
   const {
     data: teamMembers = [],
     isLoading: loadingTeamMembers,
     error: teamMembersError,
     refetch: refetchTeamMembers
-  } = api.emailAssignment.getTeamMembers.useQuery(undefined, {
-    retry: (failureCount, error) => {
-      // Only retry for network errors, not auth/business logic errors
-      if (failureCount < 2 && !error?.data?.code) {
+  } = teamMembersQuery;
+
+  const workloadQuery = api.emailAssignment?.getWorkloadDistribution?.useQuery?.(undefined, {
+    retry: (failureCount: number, error: unknown) => {
+      const errorData = error as { data?: { code?: string } };
+      if (failureCount < 2 && !errorData?.data?.code) {
         return true;
       }
       return false;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  }) || { data: null, isLoading: false, error: null, refetch: async () => ({}) };
 
   const {
     data: workloadData,
     isLoading: loadingWorkload,
     error: workloadError,
     refetch: refetchWorkload
-  } = api.emailAssignment.getWorkloadDistribution.useQuery(undefined, {
-    retry: (failureCount, error) => {
-      if (failureCount < 2 && !error?.data?.code) {
-        return true;
-      }
-      return false;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  });
+  } = workloadQuery;
 
   // Mutations with enhanced error handling
-  const assignEmailMutation = api.emailAssignment.assignEmail.useMutation({
-    onSuccess: async (data) => {
+  const assignEmailMutation = api.emailAssignment?.assignEmail?.useMutation({
+    onSuccess: async (data: unknown) => {
       try {
         // Invalidate relevant queries
         await Promise.all([
-          utils.emails.invalidate(),
-          utils.emailAssignment.getWorkloadDistribution.invalidate(),
+          utils.emails?.invalidate?.(),
+          utils.emailAssignment?.getWorkloadDistribution?.invalidate?.(),
         ]);
         options?.onSuccess?.(data);
       } catch (error) {
@@ -60,32 +66,33 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
         options?.onSuccess?.(data);
       }
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       const errorMessage = handleTrpcError(error);
       console.error("Email assignment failed:", errorMessage, error);
       options?.onError?.(error);
     },
-    retry: (failureCount, error) => {
+    retry: (failureCount: number, error: unknown) => {
       // Only retry for network errors, not for business logic errors
+      const errorData = error as { data?: { code?: string } };
       if (
         failureCount < 2 &&
-        error?.data?.code !== "BAD_REQUEST" &&
-        error?.data?.code !== "NOT_FOUND" &&
-        error?.data?.code !== "UNAUTHORIZED"
+        errorData?.data?.code !== "BAD_REQUEST" &&
+        errorData?.data?.code !== "NOT_FOUND" &&
+        errorData?.data?.code !== "UNAUTHORIZED"
       ) {
         return true;
       }
       return false;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-  });
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 10000),
+  }) || { mutateAsync: async () => ({}), isPending: false, error: null };
 
-  const bulkAssignMutation = api.emailAssignment.bulkAssignEmails.useMutation({
-    onSuccess: async (data) => {
+  const bulkAssignMutation = api.emailAssignment?.bulkAssignEmails?.useMutation({
+    onSuccess: async (data: unknown) => {
       try {
         await Promise.all([
-          utils.emails.invalidate(),
-          utils.emailAssignment.getWorkloadDistribution.invalidate(),
+          utils.emails?.invalidate?.(),
+          utils.emailAssignment?.getWorkloadDistribution?.invalidate?.(),
         ]);
         options?.onSuccess?.(data);
       } catch (error) {
@@ -93,24 +100,25 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
         options?.onSuccess?.(data);
       }
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       const errorMessage = handleTrpcError(error);
       console.error("Bulk email assignment failed:", errorMessage, error);
       options?.onError?.(error);
     },
-    retry: (failureCount, error) => {
+    retry: (failureCount: number, error: unknown) => {
+      const errorData = error as { data?: { code?: string } };
       if (
         failureCount < 2 &&
-        error?.data?.code !== "BAD_REQUEST" &&
-        error?.data?.code !== "NOT_FOUND" &&
-        error?.data?.code !== "UNAUTHORIZED"
+        errorData?.data?.code !== "BAD_REQUEST" &&
+        errorData?.data?.code !== "NOT_FOUND" &&
+        errorData?.data?.code !== "UNAUTHORIZED"
       ) {
         return true;
       }
       return false;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-  });
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 10000),
+  }) || { mutateAsync: async () => ({}), isPending: false, error: null };
 
   // Assignment functions with proper error handling
   const assignEmail = useCallback(
@@ -156,9 +164,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
       }
       
       try {
-        return await utils.emailAssignment.getAssignmentSuggestions.fetch({
-          emailId,
-        });
+        return await utils.emailAssignment?.getAssignmentSuggestions?.fetch?.(emailId) || [];
       } catch (error) {
         const errorMessage = handleTrpcError(error);
         console.error('Failed to get assignment suggestions:', errorMessage);
@@ -186,25 +192,25 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
   );
 
   // Subscription for real-time updates with error handling
-  api.emailAssignment.onEmailUpdate.useSubscription(undefined, {
-    onData: async (data) => {
+  api.emailAssignment?.onEmailUpdate?.useSubscription?.(undefined, {
+    onData: async (data: unknown) => {
       console.log("Email update received:", data);
       try {
         // Invalidate relevant queries to refresh data
         await Promise.all([
-          utils.emails.invalidate(),
-          utils.emailAssignment.getWorkloadDistribution.invalidate(),
+          utils.emails?.invalidate?.(),
+          utils.emailAssignment?.getWorkloadDistribution?.invalidate?.(),
         ]);
       } catch (error) {
         console.warn('Failed to invalidate queries after email update:', error);
       }
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       const errorMessage = handleTrpcError(error);
       console.error("Email update subscription error:", errorMessage);
     },
-    // Automatically retry subscription on failure
-    retry: true,
+    // Enable subscription with proper error handling
+    enabled: true,
   });
 
   return {

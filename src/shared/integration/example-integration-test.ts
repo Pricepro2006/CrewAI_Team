@@ -398,7 +398,7 @@ describe("CrewAI Team Integration Tests", () => {
 
       // Set up message listener
       let receivedMessage: any = null;
-      testContext?.services?.websocket.once("email.create", (message: any) => {
+      testContext?.services?.websocket.once("email.create", async (message: any) => {
         receivedMessage = message;
       });
 

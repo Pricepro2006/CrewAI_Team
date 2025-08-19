@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from "react";
 import { X, Filter, Search, Calendar, Tag, User, Mail } from "lucide-react";
-import { Button } from "../../../components/ui/button.js";
-import { Input } from "../../../components/ui/input.js";
-import { Label } from "../../../components/ui/label.js";
-import { Badge } from "../../../components/ui/badge.js";
-import { Checkbox } from "../../../components/ui/checkbox.js";
-import { ScrollArea } from "../../../components/ui/scroll-area.js";
-import { Separator } from "../../../components/ui/separator.js";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import { Badge } from "../../../components/ui/badge";
+import { Checkbox } from "../../../components/ui/checkbox";
+import { ScrollArea } from "../../../components/ui/scroll-area";
+import { Separator } from "../../../components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -15,19 +15,19 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetFooter,
-} from "../../../components/ui/sheet.js";
+} from "../../../components/ui/sheet";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../components/ui/select.js";
+} from "../../../components/ui/select";
 import {
   DateRangePicker,
   type DateRange,
-} from "../../../components/ui/date-range-picker.js";
-import { StatusIndicator } from "./StatusIndicator.js";
+} from "../../../components/ui/date-range-picker";
+import { StatusIndicator } from "./StatusIndicator";
 import type {
   EmailStatus,
   WorkflowState,
@@ -35,7 +35,7 @@ import type {
   FilterConfig,
   FilterOptions,
   StatusOption,
-} from "../../../types/email-dashboard?.interfaces.js";
+} from "../../../types/email-dashboard.interfaces";
 
 interface FilterPanelProps {
   filters: FilterConfig;
@@ -152,7 +152,7 @@ export function FilterPanel({
                 placeholder="Search emails..."
                 value={localFilters.search || ""}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleFilterChange("search", e?.target?.value)
+                  handleFilterChange("search", e.target.value)
                 }
               />
             </div>
@@ -222,7 +222,7 @@ export function FilterPanel({
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
                       <span className="text-sm font-medium">
-                        {workflowStateLabels[state]}
+                        {workflowStateLabels[state as WorkflowState]}
                       </span>
                     </label>
                   </div>
@@ -252,7 +252,7 @@ export function FilterPanel({
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
                       <span className="text-sm font-medium">
-                        {priorityLabels[priority]}
+                        {priorityLabels[priority as Priority]}
                       </span>
                     </label>
                   </div>
@@ -348,7 +348,7 @@ export function FilterPanel({
                 <Checkbox
                   id="has-attachments"
                   checked={localFilters.hasAttachments === true}
-                  onCheckedChange={(checked: boolean) =>
+                  onCheckedChange={(checked) =>
                     handleFilterChange(
                       "hasAttachments",
                       checked === true ? true : undefined,
@@ -367,7 +367,7 @@ export function FilterPanel({
                 <Checkbox
                   id="unread-only"
                   checked={localFilters.isRead === false}
-                  onCheckedChange={(checked: boolean) =>
+                  onCheckedChange={(checked) =>
                     handleFilterChange(
                       "isRead",
                       checked === true ? false : undefined,

@@ -137,12 +137,12 @@ class SimpleFrontendAnalyzer {
         let memUsage = { total: 0, used: 0, percentage: 0 };
         
         if (memLines?.length || 0 > 1) {
-          const memData = memLines[1].split(/\s+/);
+          const memData = memLines[1]?.split(/\s+/);
           if (memData?.length || 0 >= 3) {
             memUsage = {
-              total: parseInt(memData[1]),
-              used: parseInt(memData[2]),
-              percentage: (parseInt(memData[2]) / parseInt(memData[1])) * 100
+              total: parseInt(memData?.[1] || '0'),
+              used: parseInt(memData?.[2] || '0'),
+              percentage: (parseInt(memData?.[2] || '0') / parseInt(memData?.[1] || '1')) * 100
             };
           }
         }

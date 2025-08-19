@@ -93,7 +93,10 @@ async function demonstratePricingService() {
 
     console.log(`Batch lookup completed in ${batchTime}ms:`);
     batchResults.forEach((result, i) => {
-      console.log(`  ${requests[i].productId}: $${result.price} (${result.source})`);
+      const request = requests?.[i];
+      if (request) {
+        console.log(`  ${request.productId}: $${result.price} (${result.source})`);
+      }
     });
     console.log('');
 

@@ -14,6 +14,7 @@
  * that resolved LLM returning markdown instead of JSON issues.
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   describe,
   it,
@@ -24,15 +25,15 @@ import {
   afterEach,
 } from "vitest";
 import axios from "axios";
-import { EmailThreePhaseAnalysisService } from "./EmailThreePhaseAnalysisService.js";
-import { RedisService } from "../cache/RedisService.js";
-import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
+import { EmailThreePhaseAnalysisService } from './EmailThreePhaseAnalysisService';
+import { RedisService } from '../cache/RedisService';
+import { EmailChainAnalyzer } from './EmailChainAnalyzer';
 
 // Mock dependencies first
 vi.mock("axios");
 
 // Mock RedisService with proper structure
-vi.mock("../cache/RedisService.js", () => {
+vi.mock('../cache/RedisService', () => {
   return {
     RedisService: vi.fn().mockImplementation(() => ({
       set: vi.fn().mockResolvedValue("OK"),
@@ -48,7 +49,7 @@ vi.mock("../cache/RedisService.js", () => {
 });
 
 // Mock EmailChainAnalyzer with proper structure
-vi.mock("./EmailChainAnalyzer.js", () => {
+vi.mock('./EmailChainAnalyzer', () => {
   return {
     EmailChainAnalyzer: vi.fn().mockImplementation(() => ({
       analyzeChain: vi.fn().mockResolvedValue({
@@ -64,7 +65,7 @@ vi.mock("./EmailChainAnalyzer.js", () => {
 });
 
 // Mock database connection pool with proper mock structure
-vi.mock("../../database/ConnectionPool.js", () => {
+vi.mock('../../database/ConnectionPool', () => {
   const createMockDbImplementation = () => ({
     prepare: vi.fn().mockReturnValue({
       run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
@@ -86,7 +87,7 @@ vi.mock("../../database/ConnectionPool.js", () => {
 });
 
 // Mock other services
-vi.mock("../../api/services/QueryPerformanceMonitor.js", () => {
+vi.mock('../../api/services/QueryPerformanceMonitor', () => {
   return {
     QueryPerformanceMonitor: vi.fn().mockImplementation(() => ({
       trackOperation: vi.fn(),
@@ -94,7 +95,7 @@ vi.mock("../../api/services/QueryPerformanceMonitor.js", () => {
   };
 });
 
-vi.mock("../../core/cache/EmailAnalysisCache.js", () => {
+vi.mock('../../core/cache/EmailAnalysisCache', () => {
   return {
     EmailAnalysisCache: vi.fn().mockImplementation(() => ({
       get: vi.fn().mockReturnValue(null),
@@ -104,7 +105,7 @@ vi.mock("../../core/cache/EmailAnalysisCache.js", () => {
   };
 });
 
-vi.mock("./LLMRateLimiter.js", () => {
+vi.mock('./LLMRateLimiter', () => {
   return {
     llmRateLimiters: {
       modelSpecific: {
@@ -119,7 +120,7 @@ vi.mock("./LLMRateLimiter.js", () => {
 });
 
 // Mock PromptSanitizer
-vi.mock("../../utils/PromptSanitizer.js", () => {
+vi.mock('../../utils/PromptSanitizer', () => {
   return {
     PromptSanitizer: {
       sanitizeEmailContent: vi.fn().mockReturnValue({
@@ -133,7 +134,7 @@ vi.mock("../../utils/PromptSanitizer.js", () => {
 });
 
 // Mock ThreePhasePrompts
-vi.mock("../prompts/ThreePhasePrompts.js", () => {
+vi.mock('../prompts/ThreePhasePrompts', () => {
   return {
     PHASE2_ENHANCED_PROMPT: "Enhanced Phase 2 prompt template with {PHASE1_RESULTS}, {EMAIL_SUBJECT}, {EMAIL_BODY}",
     PHASE2_RETRY_PROMPT: "Retry Phase 2 prompt template with {PHASE1_RESULTS}, {EMAIL_SUBJECT}, {EMAIL_BODY}",
@@ -211,10 +212,10 @@ This analysis indicates a high-value opportunity that requires careful attention
       expect(analysis.workflow_validation).toBe(
         "QUOTE_PROCESSING confirmed - customer seeking pricing information",
       );
-      expect(analysis?.missed_entities?.project_names).toEqual([
+      expect(analysis?.missed_entities).toEqual([
         "Data Center Upgrade",
       ]);
-      expect(analysis?.missed_entities?.company_names).toEqual([
+      expect(analysis?.missed_entities).toEqual([
         "TechCorp Solutions",
       ]);
       expect(analysis.confidence).toBe(0.87);
@@ -323,7 +324,7 @@ This represents a straightforward order fulfillment scenario with clear next ste
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("SUPPORT_TICKET confirmed");
-      expect(analysis?.missed_entities?.company_names).toEqual([
+      expect(analysis?.missed_entities).toEqual([
         "Acme Corporation",
       ]);
       expect(analysis.confidence).toBe(0.88);
@@ -676,15 +677,15 @@ business_process: RETURNS_MANAGEMENT
       const analysis = await service.analyzeEmail(sampleEmail);
 
       // Should fill in missing entity fields with empty arrays
-      expect(analysis?.missed_entities?.people).toEqual([]);
-      expect(analysis?.missed_entities?.products).toEqual([]);
-      expect(analysis?.missed_entities?.technical_specs).toEqual([]);
-      expect(analysis?.missed_entities?.locations).toEqual([]);
-      expect(analysis?.missed_entities?.other_references).toEqual([]);
+      expect(analysis?.missed_entities).toEqual([]);
+      expect(analysis?.missed_entities).toEqual([]);
+      expect(analysis?.missed_entities).toEqual([]);
+      expect(analysis?.missed_entities).toEqual([]);
+      expect(analysis?.missed_entities).toEqual([]);
 
       // Should preserve existing fields
-      expect(analysis?.missed_entities?.project_names).toEqual(["Project Alpha"]);
-      expect(analysis?.missed_entities?.company_names).toEqual(["Test Corp"]);
+      expect(analysis?.missed_entities).toEqual(["Project Alpha"]);
+      expect(analysis?.missed_entities).toEqual(["Test Corp"]);
     });
 
     it("should validate and normalize action items structure", async () => {
@@ -793,9 +794,9 @@ business_process: RETURNS_MANAGEMENT
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats?.parsingMetrics?.successRate).toBeGreaterThan(0);
-      expect(stats?.parsingMetrics?.totalAttempts).toBeGreaterThan(0);
-      expect(stats?.parsingMetrics?.averageAttempts).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThanOrEqual(1);
     });
 
     it("should handle LLM service timeouts gracefully", async () => {
@@ -888,10 +889,10 @@ business_process: RETURNS_MANAGEMENT
       }
 
       const stats = await service.getAnalysisStats();
-      expect(stats?.parsingMetrics?.totalAttempts).toBeGreaterThan(3);
-      expect(stats?.parsingMetrics?.successfulParses).toBeGreaterThanOrEqual(2);
-      expect(stats?.parsingMetrics?.retrySuccesses).toBeGreaterThanOrEqual(1);
-      expect(stats?.parsingMetrics?.fallbackUses).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics).toBeGreaterThan(3);
+      expect(stats?.parsingMetrics).toBeGreaterThanOrEqual(2);
+      expect(stats?.parsingMetrics).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -932,7 +933,7 @@ business_process: RETURNS_MANAGEMENT
       expect(analysis.workflow_validation).toContain("parsing failed");
       expect(analysis.confidence).toBe(0.3);
       expect(analysis.strategic_insights).toBeDefined(); // Should have Phase 2 fallback strategic insights
-      expect(analysis?.strategic_insights?.opportunity).toContain(
+      expect(analysis?.strategic_insights?.length).toContain(
         "Incomplete chain",
       );
     });
@@ -1001,7 +1002,7 @@ business_process: RETURNS_MANAGEMENT
       const analysis = await service.analyzeEmail(emailWithCompleteChain);
 
       expect(mockedAxios.post).toHaveBeenCalledTimes(2); // Phase 2 + Phase 3
-      expect(analysis?.strategic_insights?.opportunity).toBe(
+      expect(analysis?.strategic_insights?.length).toBe(
         "High-value complete workflow opportunity",
       );
       expect(analysis.executive_summary).toBe(

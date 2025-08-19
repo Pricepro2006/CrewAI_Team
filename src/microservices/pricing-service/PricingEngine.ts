@@ -162,7 +162,7 @@ export class PricingEngine {
     const active: Promotion[] = [];
 
     for (const [_, promo] of this.promotions) {
-      if (promo.startDate <= now && promo.endDate >= now) {
+      if (now && promo.startDate <= now && promo.endDate >= now) {
         active.push(promo);
       }
     }

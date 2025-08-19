@@ -21,7 +21,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { ServiceHealth, SystemHealth, PerformanceMetrics } from '../types/WalmartTypes';
-import { api } from '../../../utils/trpc';
+import { api } from '../../../lib/trpc';
 import './Health.css';
 
 interface ServiceHealthDashboardProps {
@@ -76,6 +76,9 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [showSettings, setShowSettings] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(props.autoRefresh ?? true);
+  const [refreshInterval, setRefreshInterval] = useState<number>(props.refreshInterval ?? 30000);
+  const [showDetails, setShowDetails] = useState<boolean>(props.showDetails ?? false);
   
   // Health check mutation
   const healthCheckMutation = api?.health?.checkSystem.useMutation({
@@ -361,7 +364,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
             <div className="metric-breakdown">
               {Object.entries(alertsBySeverity).map(([severity, alerts]) => (
                 <span key={severity} className={`severity-count severity-${severity}`}>
-                  {alerts?.length || 0} {severity}
+                  {Array.isArray(alerts) ? alerts.length : 0} {severity}
                 </span>
               ))}
             </div>

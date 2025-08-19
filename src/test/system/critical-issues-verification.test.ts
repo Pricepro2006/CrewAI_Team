@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { spawn, type ChildProcess } from 'child_process';
 import axios from 'axios';
-import { MasterOrchestrator } from '../../core/master-orchestrator/MasterOrchestrator.js';
-import { OllamaProvider } from '../../core/llm/OllamaProvider.js';
-import { AgentRegistry } from '../../core/agents/registry/AgentRegistry.js';
-import { VectorStore } from '../../core/rag/VectorStore.js';
-import { RAGSystem } from '../../core/rag/RAGSystem.js';
+import { MasterOrchestrator } from '../../core/master-orchestrator/MasterOrchestrator';
+import { OllamaProvider } from '../../core/llm/OllamaProvider';
+import { AgentRegistry } from '../../core/agents/registry/AgentRegistry';
+import { VectorStore } from '../../core/rag/VectorStore';
+import { RAGSystem } from '../../core/rag/RAGSystem';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -194,7 +194,7 @@ describe('Critical Issues Verification', () => {
           details: `Server started successfully on port ${API_PORT}. Health check: ${healthResponse?.data?.status}`
         });
 
-        expect(healthResponse?.data?.status).toBe('ok');
+        expect(healthResponse?.data?.length).toBe('ok');
       } else {
         recordResult({
           testName: 'Production Server Startup',

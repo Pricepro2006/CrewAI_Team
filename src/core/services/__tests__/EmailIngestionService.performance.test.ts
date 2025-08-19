@@ -6,22 +6,22 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { EmailIngestionServiceImpl } from '../EmailIngestionServiceImpl.js';
+import { EmailIngestionServiceImpl } from '../EmailIngestionServiceImpl';
 import {
   IngestionMode,
   IngestionSource,
   EmailIngestionConfig,
   RawEmailData
-} from '../EmailIngestionService.js';
-import { EmailRepository } from '../../../database/repositories/EmailRepository.js';
-import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService.js';
+} from '../EmailIngestionService';
+import { EmailRepository } from '../../../database/repositories/EmailRepository';
+import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService';
 
 // Mock dependencies for consistent performance testing
-vi.mock('../../../database/repositories/EmailRepository.js');
-vi.mock('../../../api/services/UnifiedEmailService.js');
-vi.mock('../../../utils/logger.js');
-vi.mock('../../../api/monitoring/metrics.js');
-vi.mock('../../../api/websocket/index.js');
+vi.mock('../../../database/repositories/EmailRepository');
+vi.mock('../../../api/services/UnifiedEmailService');
+vi.mock('../../../utils/logger');
+vi.mock('../../../api/monitoring/metrics');
+vi.mock('../../../api/websocket/index');
 
 // Mock Redis and BullMQ for performance tests
 vi.mock('ioredis', () => ({
@@ -284,13 +284,13 @@ describe('EmailIngestionService Performance Tests', () => {
         async () => {
           const batchResult = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
           expect(batchResult.success).toBe(true);
-          expect(batchResult.data?.processed).toBe(emailCount);
+          expect(batchResult.data?.length).toBe(emailCount);
         }
       );
 
       expect(result.success).toBe(true);
-      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(60);
-      expect(result?.metrics?.avgTimePerEmail).toBeLessThan(1000); // Less than 1 second per email
+      expect(result?.metrics?.length).toBeGreaterThan(60);
+      expect(result?.metrics?.length).toBeLessThan(1000); // Less than 1 second per email
     }, 30000);
 
     it('should meet 60+ emails/minute requirement - Large Batch', async () => {
@@ -305,13 +305,13 @@ describe('EmailIngestionService Performance Tests', () => {
         async () => {
           const batchResult = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
           expect(batchResult.success).toBe(true);
-          expect(batchResult.data?.processed).toBe(emailCount);
+          expect(batchResult.data?.length).toBe(emailCount);
         }
       );
 
       expect(result.success).toBe(true);
-      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(60);
-      expect(result?.metrics?.avgTimePerEmail).toBeLessThan(500); // Less than 500ms per email
+      expect(result?.metrics?.length).toBeGreaterThan(60);
+      expect(result?.metrics?.length).toBeLessThan(500); // Less than 500ms per email
     }, 60000);
 
     it('should handle high-concurrency processing', async () => {
@@ -339,7 +339,7 @@ describe('EmailIngestionService Performance Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(100); // Should be higher with concurrency
+      expect(result?.metrics?.length).toBeGreaterThan(100); // Should be higher with concurrency
     }, 45000);
   });
 
@@ -446,12 +446,12 @@ describe('EmailIngestionService Performance Tests', () => {
           async () => {
             const batchResult = await stressService.ingestBatch(emails, IngestionSource.JSON_FILE);
             expect(batchResult.success).toBe(true);
-            expect(batchResult.data?.processed).toBe(emailCount);
+            expect(batchResult.data?.length).toBe(emailCount);
           }
         );
 
         expect(result.success).toBe(true);
-        expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(60);
+        expect(result?.metrics?.length).toBeGreaterThan(60);
       } finally {
         await stressService.shutdown();
       }
@@ -488,7 +488,7 @@ describe('EmailIngestionService Performance Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(30); // Lower due to large emails
+      expect(result?.metrics?.length).toBeGreaterThan(30); // Lower due to large emails
     }, 90000);
 
     it('should maintain performance under continuous load', async () => {
@@ -578,7 +578,7 @@ describe('EmailIngestionService Performance Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(60);
+      expect(result?.metrics?.length).toBeGreaterThan(60);
     }, 90000);
   });
 

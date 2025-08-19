@@ -110,7 +110,8 @@ export class EmailChainAnalyzer {
 
     // Get all related emails in the chain
     const chainEmails = this.getEmailChain(email);
-    logger.debug(`Found ${chainEmails?.length || 0} emails in chain`, COMPONENT);
+    const chainLength = chainEmails?.length ?? 0;
+    logger.debug(`Found ${chainLength} emails in chain`, COMPONENT);
 
     // Analyze chain structure
     const analysis = this.analyzeChainStructure(chainEmails);
@@ -139,7 +140,7 @@ export class EmailChainAnalyzer {
         chainMap.set(analysis.chain_id, analysis);
         processedChains.add(analysis.chain_id);
       } catch (error) {
-        logger.error(`Error analyzing chain for ${emailId}:`, COMPONENT, {}, error);
+        logger.error(`Error analyzing chain for ${emailId}:`, COMPONENT, {}, error instanceof Error ? error : new Error(String(error)));
       }
     }
 
@@ -306,7 +307,7 @@ export class EmailChainAnalyzer {
       }
 
       // Use subject matching for chains without conversation_id
-      if (chainEmails?.length || 0 <= 1) {
+      if ((chainEmails?.length ?? 0) <= 1) {
         // Clean subject for matching
         const baseSubject = this.cleanSubject(email.subject);
 
@@ -314,7 +315,7 @@ export class EmailChainAnalyzer {
           if (this.mockDb) {
             // For mock mode, we don't need complex subject matching since we control the test data
             // Just include the current email in the chain if no other emails were found
-            if (chainEmails?.length || 0 === 0) {
+            if ((chainEmails?.length ?? 0) === 0) {
               chainEmails.push(email);
               processedIds.add(email.id);
             }
@@ -397,19 +398,19 @@ export class EmailChainAnalyzer {
    * Analyze chain structure for completeness
    */
   private analyzeChainStructure(emails: EmailChainNode[]): ChainAnalysis {
-    if (emails?.length || 0 === 0) {
+    if ((emails?.length ?? 0) === 0) {
       return this.createEmptyAnalysis();
     }
 
     // Extract key information
-    const workflowStates = emails?.map((e: any) => e.workflow_state);
+    const workflowStates = (emails ?? []).map((e: any) => e.workflow_state);
     const participants = this.extractParticipants(emails);
     const entities = this.extractChainEntities(emails);
     const chainType = this.detectChainType(emails);
 
     // Calculate duration
     const firstEmail = emails[0];
-    const lastEmail = emails[emails?.length || 0 - 1];
+    const lastEmail = emails[(emails?.length ?? 0) - 1];
     const durationMs = firstEmail && lastEmail
       ? new Date(lastEmail.received_at).getTime() -
         new Date(firstEmail.received_at).getTime()
@@ -423,7 +424,7 @@ export class EmailChainAnalyzer {
       workflowStates.includes("ORDER_MANAGEMENT");
 
     const hasMiddle =
-      workflowStates.includes("IN_PROGRESS") || emails?.length || 0 > 2;
+      workflowStates.includes("IN_PROGRESS") || (emails?.length ?? 0) > 2;
 
     const hasCompletion =
       workflowStates.includes("COMPLETION") ||
@@ -446,7 +447,7 @@ export class EmailChainAnalyzer {
     return {
       chain_id: this.generateChainId(emails),
       is_complete: isComplete,
-      chain_length: emails?.length || 0,
+      chain_length: emails?.length ?? 0,
       has_start_point: hasStartPoint,
       has_middle_correspondence: hasMiddle,
       has_completion: hasCompletion,
@@ -903,7 +904,7 @@ export class EmailChainAnalyzer {
       return '0';
     }
     let hash = 0;
-    for (let i = 0; i < str?.length || 0; i++) {
+    for (let i = 0; i < (str?.length ?? 0); i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
@@ -919,7 +920,7 @@ export class EmailChainAnalyzer {
       return 0;
     }
     let hash = 0;
-    for (let i = 0; i < str?.length || 0; i++) {
+    for (let i = 0; i < (str?.length ?? 0); i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer

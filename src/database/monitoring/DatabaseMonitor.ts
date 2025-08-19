@@ -29,7 +29,7 @@ export class DatabaseMonitor {
   registerDatabase(config: DatabaseConfig): Database.Database {
     try {
       const db = new Database(config.path, { 
-        verbose: this?.queryLogger?.bind(this, config.name),
+        verbose: (...args: unknown[]) => this.queryLogger(config.name, String(args[0] || '')),
         readonly: false
       });
 
@@ -39,7 +39,7 @@ export class DatabaseMonitor {
         slowQueryThreshold: config.slowQueryThreshold || 100
       };
 
-      this?.connections?.set(config.name, connection);
+      this.connections.set(config.name, connection);
 
       // Wrap common database methods to monitor performance
       this.wrapDatabaseMethods(connection);
@@ -111,8 +111,8 @@ export class DatabaseMonitor {
     const { db, name, slowQueryThreshold } = connection;
 
     // Wrap prepare method to monitor prepared statements
-    const originalPrepare = db?.prepare?.bind(db);
-    db.prepare = (sql: string) => {
+    const originalPrepare = db.prepare.bind(db);
+    (db as any).prepare = (sql: string) => {
       const statement = originalPrepare(sql);
       
       // Wrap statement methods
@@ -122,7 +122,7 @@ export class DatabaseMonitor {
     };
 
     // Wrap exec method for direct SQL execution
-    const originalExec = db?.exec?.bind(db);
+    const originalExec = db.exec.bind(db);
     db.exec = (sql: string) => {
       const startTime = Date.now();
       const queryId = `exec_${++this.queryCounter}`;
@@ -155,7 +155,7 @@ export class DatabaseMonitor {
     slowQueryThreshold: number
   ): void {
     // Wrap get method
-    const originalGet = statement?.get?.bind(statement);
+    const originalGet = statement.get.bind(statement);
     statement.get = (...params: any[]) => {
       const startTime = Date.now();
       const queryId = `get_${++this.queryCounter}`;
@@ -178,7 +178,7 @@ export class DatabaseMonitor {
     };
 
     // Wrap all method
-    const originalAll = statement?.all?.bind(statement);
+    const originalAll = statement.all.bind(statement);
     statement.all = (...params: any[]) => {
       const startTime = Date.now();
       const queryId = `all_${++this.queryCounter}`;
@@ -186,7 +186,7 @@ export class DatabaseMonitor {
       try {
         const results = originalAll(...params);
         const executionTime = Date.now() - startTime;
-        const rowCount = Array.isArray(results) ? results?.length || 0 : 0;
+        const rowCount = Array.isArray(results) ? results.length : 0;
         
         this.recordQuery(queryId, sql, databaseName, executionTime, rowCount, undefined);
         
@@ -202,7 +202,7 @@ export class DatabaseMonitor {
     };
 
     // Wrap run method
-    const originalRun = statement?.run?.bind(statement);
+    const originalRun = statement.run.bind(statement);
     statement.run = (...params: any[]) => {
       const startTime = Date.now();
       const queryId = `run_${++this.queryCounter}`;
@@ -225,7 +225,7 @@ export class DatabaseMonitor {
     };
 
     // Wrap iterate method
-    const originalIterate = statement?.iterate?.bind(statement);
+    const originalIterate = statement.iterate.bind(statement);
     statement.iterate = (...params: any[]) => {
       const startTime = Date.now();
       const queryId = `iterate_${++this.queryCounter}`;
@@ -271,23 +271,23 @@ export class DatabaseMonitor {
     );
 
     // Record additional metrics
-    monitoringService.recordMetric('db?.queries?.total', 1, { database }, 'counter');
+    monitoringService.recordMetric('db.queries.total', 1, { database }, 'counter');
     
     if (error) {
-      monitoringService.recordMetric('db?.queries?.errors', 1, { database }, 'counter');
+      monitoringService.recordMetric('db.queries.errors', 1, { database }, 'counter');
     } else {
-      monitoringService.recordMetric('db?.queries?.success', 1, { database }, 'counter');
+      monitoringService.recordMetric('db.queries.success', 1, { database }, 'counter');
     }
 
     // Check connection-specific thresholds
-    const connection = this?.connections?.get(database);
+    const connection = this.connections.get(database);
     if (connection && executionTime > connection.slowQueryThreshold) {
       monitoringService.createAlert('performance', 'low', 
         `Slow query in ${database}: ${executionTime}ms`, {
         database,
         executionTime,
         threshold: connection.slowQueryThreshold,
-        sql: sql?.length || 0 > 100 ? sql.substring(0, 100) + '...' : sql,
+        sql: sql.length > 100 ? sql.substring(0, 100) + '...' : sql,
         queryId
       });
     }
@@ -299,13 +299,13 @@ export class DatabaseMonitor {
   getStatistics(databaseName?: string): any {
     const stats: any = {};
     
-    for (const [name, connection] of this?.connections?.entries()) {
+    for (const [name, connection] of this.connections.entries()) {
       if (databaseName && name !== databaseName) continue;
       
       try {
         // Get basic database info
-        const db = connection?.db;
-        const info = {
+        const db = connection.db;
+        const info: Record<string, any> = {
           name,
           inMemory: db.memory,
           open: db.open,
@@ -353,11 +353,11 @@ export class DatabaseMonitor {
    * Close a database connection
    */
   closeDatabase(name: string): void {
-    const connection = this?.connections?.get(name);
+    const connection = this.connections.get(name);
     if (connection) {
       try {
-        connection?.db?.close();
-        this?.connections?.delete(name);
+        connection.db.close();
+        this.connections.delete(name);
         
         logger.info(`Database monitoring stopped for ${name}`, 'DB_MONITOR', { name });
       } catch (error) {
@@ -379,7 +379,7 @@ export class DatabaseMonitor {
    * Get list of monitored databases
    */
   getDatabases(): string[] {
-    return Array.from(this?.connections?.keys());
+    return Array.from(this.connections.keys());
   }
 }
 

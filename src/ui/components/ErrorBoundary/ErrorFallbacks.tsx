@@ -138,7 +138,7 @@ export const PermissionErrorFallback: React.FC<BaseErrorFallbackProps> = ({
       </p>
       <div className="space-y-3">
         <button
-          onClick={() => window?.location?.href = "/"}
+          onClick={() => { if (window?.location) window.location.href = "/"; }}
           className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           Go to Home

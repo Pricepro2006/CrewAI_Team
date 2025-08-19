@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import type { UseQueryResult } from "@tanstack/react-query";
 import { api } from "../../lib/trpc.js";
 import { useApiErrorRecovery } from "./useApiErrorRecovery.js";
 import { useErrorReporter } from "../contexts/ErrorContext.js";
@@ -82,21 +83,21 @@ export function useTRPCWithErrorHandling() {
 // Hook for specific tRPC procedures with built-in error handling
 export function useSafeTRPCQuery<T>(
   queryKey: string,
-  queryFn: () => ReturnType<typeof api.useQuery>,
+  queryFn: () => UseQueryResult<T, Error>,
   options?: {
     fallbackData?: T;
     enabled?: boolean;
     refetchInterval?: number;
     staleTime?: number;
   }
-) {
+): UseQueryResult<T, Error> & { data: T | undefined } {
   const reportError = useErrorReporter();
   
   const query = queryFn();
   
   // Report errors to error context
   if (query.error) {
-    reportError(new Error(query?.error?.message), {
+    reportError(new Error(query?.error?.message || 'Unknown query error'), {
       context: `TRPC Query: ${queryKey}`,
       recoverable: true,
       severity: "medium",
@@ -123,8 +124,8 @@ export function useOptimisticMutation<TInput, TOutput>(
   } = {}
 ) {
   const reportError = useErrorReporter();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const mutate = useCallback(
     async (input: TInput) => {

@@ -133,8 +133,9 @@ export class PathValidator {
       }
 
       // Step 5: Check for reserved names (Windows)
-      const basename = path.basename(decodedPath).toUpperCase().split('.')[0];
-      if (RESERVED_NAMES.includes(basename)) {
+      const basenameParts = path.basename(decodedPath).toUpperCase().split('.');
+      const basename = basenameParts[0];
+      if (basename && RESERVED_NAMES.includes(basename)) {
         return { valid: false, error: 'Path contains reserved system name' };
       }
 
@@ -260,7 +261,9 @@ export class PathValidator {
     if (this.validationCache.size >= this.MAX_CACHE_SIZE) {
       // Remove oldest entry (FIFO for simplicity)
       const firstKey = this.validationCache.keys().next().value;
-      this.validationCache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.validationCache.delete(firstKey);
+      }
     }
     this.validationCache.set(key, value);
   }
@@ -285,13 +288,17 @@ export class PathValidator {
     
     if (subdirectory) {
       const subValidation = this.validatePath(subdirectory);
-      if (!subValidation.valid) {
+      if (!subValidation.valid || !subValidation.sanitized) {
         return null;
       }
-      safePath = path.join(safePath, subValidation.sanitized!);
+      safePath = path.join(safePath, subValidation.sanitized);
     }
     
-    return path.join(safePath, validation.sanitized!);
+    if (!validation.sanitized) {
+      return null;
+    }
+    
+    return path.join(safePath, validation.sanitized);
   }
 
   /**
@@ -299,12 +306,12 @@ export class PathValidator {
    */
   public async canRead(inputPath: string): Promise<boolean> {
     const validation = this.validatePath(inputPath);
-    if (!validation.valid) {
+    if (!validation.valid || !validation.sanitized) {
       return false;
     }
 
     try {
-      await fs.promises.access(validation.sanitized!, fs.constants.R_OK);
+      await fs.promises.access(validation.sanitized, fs.constants.R_OK);
       return true;
     } catch {
       return false;
@@ -316,11 +323,11 @@ export class PathValidator {
    */
   public async canWrite(inputPath: string): Promise<boolean> {
     const validation = this.validatePath(inputPath);
-    if (!validation.valid) {
+    if (!validation.valid || !validation.sanitized) {
       return false;
     }
 
-    const dir = path.dirname(validation.sanitized!);
+    const dir = path.dirname(validation.sanitized);
     try {
       await fs.promises.access(dir, fs.constants.W_OK);
       return true;

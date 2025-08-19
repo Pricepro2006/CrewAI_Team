@@ -8,6 +8,7 @@ import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure } from "../enhanced-router.js";
 import { getGroceryNLPQueue } from "../../services/GroceryNLPQueue.js";
 import { logger } from "../../../utils/logger.js";
+import type { QueueConfiguration } from "../../types/grocery-nlp.types.js";
 
 // Input validation schemas
 const processNLPInputSchema = z.object({
@@ -408,7 +409,7 @@ export const groceryNLPQueueRouter = router({
         userRole: ctx?.user?.role
       });
       
-      queue.updateConfiguration(input);
+      queue.updateConfiguration(input as Partial<QueueConfiguration>);
       
       return {
         success: true,

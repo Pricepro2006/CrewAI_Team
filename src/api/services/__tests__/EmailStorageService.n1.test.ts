@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { EmailStorageService } from "../EmailStorageService.js";
-import { wsService } from "../WebSocketService.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmailStorageService } from '../EmailStorageService';
+import { wsService } from '../WebSocketService';
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";

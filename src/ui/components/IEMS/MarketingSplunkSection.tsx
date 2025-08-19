@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UserIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-import type { IEMSEmail } from "../../../types/iems-email?.types.js";
+import type { IEMSEmail } from "../../../types/iems-email.types.js";
 import "./MarketingSplunkSection.css";
 
 interface TeamMember {
@@ -24,7 +24,7 @@ export const MarketingSplunkSection: React.FC<MarketingSplunkSectionProps> = ({
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
   const toggleDropdown = (emailId: string) => {
-    setOpenDropdowns((prev: any) => {
+    setOpenDropdowns((prev: Set<string>) => {
       const newSet = new Set(prev);
       if (newSet.has(emailId)) {
         newSet.delete(emailId);
@@ -37,7 +37,7 @@ export const MarketingSplunkSection: React.FC<MarketingSplunkSectionProps> = ({
 
   const handleAssign = (emailId: string, member: TeamMember) => {
     onAssign(emailId, member.id, member.name);
-    setOpenDropdowns((prev: any) => {
+    setOpenDropdowns((prev: Set<string>) => {
       const newSet = new Set(prev);
       newSet.delete(emailId);
       return newSet;

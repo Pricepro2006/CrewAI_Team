@@ -18,11 +18,11 @@
  * discovered in the production dataset analysis.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmailChainAnalyzer } from './EmailChainAnalyzer';
 
 // Mock database connection
-vi.mock("../../database/ConnectionPool.js", () => ({
+vi.mock('../../database/ConnectionPool', () => ({
   getDatabaseConnection: vi.fn(),
   executeQuery: vi.fn((callback: any) => callback(mockDb)),
   executeTransaction: vi.fn((callback: any) => callback(mockDb)),
@@ -359,7 +359,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
       expect(analysis.is_complete).toBe(true); // >= 70% threshold
 
       // Should have quote number detection
-      expect(analysis?.key_entities?.quote_numbers).toContain("123456");
+      expect(analysis?.key_entities?.length).toContain("123456");
       expect(analysis.chain_type).toBe("quote_request");
 
       console.log(`Component Validation:

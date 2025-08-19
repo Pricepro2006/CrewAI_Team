@@ -3,16 +3,16 @@
  * Uses LLM to generate responses with token-level confidence tracking
  */
 
-import type { OllamaProvider } from "../../llm/OllamaProvider.js";
+import type { OllamaProvider } from "../../llm/OllamaProvider";
 import type {
   GenerationRequest,
   GenerationResult,
   GenerationOptions,
   TokenConfidence,
-} from "./types.js";
+} from "./types";
 
 export class ConfidenceResponseGenerator {
-  private llm: LlamaCppProvider;
+  private llm: OllamaProvider;
   private defaultOptions: GenerationOptions = {
     temperature: 0.7,
     maxTokens: 1000,
@@ -20,7 +20,7 @@ export class ConfidenceResponseGenerator {
     format: "text",
   };
 
-  constructor(llm: LlamaCppProvider) {
+  constructor(llm: OllamaProvider) {
     this.llm = llm;
   }
 

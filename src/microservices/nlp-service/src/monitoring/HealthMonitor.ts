@@ -233,8 +233,8 @@ export class HealthMonitor extends EventEmitter {
         metadata: {
           queueSize: queueStatus.queueSize,
           activeRequests: queueStatus.activeRequests,
-          maxConcurrent: queueStatus.maxConcurrent,
-          estimatedWaitTime: queueStatus.estimatedWaitTime
+          maxConcurrent: 'maxConcurrent' in queueStatus ? queueStatus.maxConcurrent : 2,
+          estimatedWaitTime: 'estimatedWaitTime' in queueStatus ? queueStatus.estimatedWaitTime : 0
         }
       };
     } catch (error) {
@@ -338,8 +338,9 @@ export class HealthMonitor extends EventEmitter {
       const timestamp = Date.now();
       
       // Check each alert rule
-      for (const rule of this?.alertRules?.values()) {
-        if (!rule.enabled) continue;
+      if (this.alertRules) {
+        for (const rule of Array.from(this.alertRules.values())) {
+          if (!rule.enabled) continue;
         
         const value = this.extractMetricValue(metrics, rule.component, rule.metric);
         if (value === null) continue;
@@ -349,6 +350,7 @@ export class HealthMonitor extends EventEmitter {
         if (shouldAlert && this.canTriggerAlert(rule, timestamp)) {
           const alert = this.createAlert(rule, value, timestamp);
           this.triggerAlert(alert);
+        }
         }
       }
       

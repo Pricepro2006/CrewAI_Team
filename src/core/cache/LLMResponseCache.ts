@@ -13,7 +13,7 @@
 import { cacheManager } from './RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
-import crypto from 'crypto';
+import { createHash } from 'crypto';
 import { z } from 'zod';
 
 // Schema for LLM response data
@@ -100,8 +100,7 @@ export class LLMResponseCache {
    */
   private generatePromptCacheKey(prompt: string, model: string): string {
     const normalizedPrompt = this.normalizePrompt(prompt);
-    const hash = crypto
-      .createHash('sha256')
+    const hash = createHash('sha256')
       .update(`${model}:${normalizedPrompt}`)
       .digest('hex');
     return `prompt:${hash}`;
@@ -179,7 +178,7 @@ export class LLMResponseCache {
       };
 
       const ttl = config.ttl || this.defaultTTL;
-      const compress = config.compressLargeResponses && response?.length || 0 > 2048;
+      const compress = config.compressLargeResponses && (response?.length || 0) > 2048;
 
       const success = await cacheManager.set(
         cacheKey,

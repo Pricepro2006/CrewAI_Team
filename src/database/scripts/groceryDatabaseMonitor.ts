@@ -7,8 +7,7 @@
  * and provides alerts for operational issues.
  */
 
-import BetterSqlite3 from 'better-sqlite3';
-import type { Database } from 'better-sqlite3';
+import Database, { type Database as DatabaseType } from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 import { performance } from 'perf_hooks';
@@ -78,7 +77,7 @@ interface PerformanceThresholds {
 }
 
 class GroceryDatabaseMonitor {
-  private db: Database;
+  private db: DatabaseType;
   private metricsHistory: DatabaseMetrics[] = [];
   private slowQueries: SlowQuery[] = [];
   private activeAlerts: Map<string, DatabaseAlert> = new Map();
@@ -96,7 +95,7 @@ class GroceryDatabaseMonitor {
     private logPath: string = './grocery_monitor.log',
     thresholds: Partial<PerformanceThresholds> = {}
   ) {
-    this.db = new BetterSqlite3(dbPath, { verbose: ((sql: string) => this.logQuery(sql)) as any }) as Database;
+    this.db = new Database(dbPath, { verbose: ((sql: string) => this.logQuery(sql)) as any });
     this.thresholds = {
       maxAvgQueryTime: 100, // 100ms
       maxSlowQueries: 10, // per minute
@@ -241,7 +240,7 @@ class GroceryDatabaseMonitor {
     const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
     const recentMetrics = this?.metricsHistory?.filter(m => new Date(m.timestamp) >= cutoffTime);
     
-    if (recentMetrics?.length || 0 === 0) {
+    if ((recentMetrics?.length || 0) === 0) {
       return 'No metrics available for the specified time period';
     }
     
@@ -477,7 +476,7 @@ ${this.generateSystemRecommendations(recentMetrics)}
         }))
         .sort((a, b) => b?.stats?.mtime.getTime() - a?.stats?.mtime.getTime());
       
-      if (backupFiles?.length || 0 === 0) {
+      if ((backupFiles?.length || 0) === 0) {
         return {
           lastBackupTime: 'never',
           lastBackupSize: 0,
@@ -581,8 +580,8 @@ ${this.generateSystemRecommendations(recentMetrics)}
 
   // Utility methods
   private calculateAverage<T>(items: T[], selector: (item: T) => number): number {
-    if (items?.length || 0 === 0) return 0;
-    return items.reduce((sum: any, item: any) => sum + selector(item), 0) / items?.length || 0;
+    if ((items?.length || 0) === 0) return 0;
+    return items.reduce((sum: number, item: T) => sum + selector(item), 0) / (items?.length || 1);
   }
 
   private formatBytes(bytes: number): string {
@@ -594,8 +593,8 @@ ${this.generateSystemRecommendations(recentMetrics)}
 
   private hashString(str: string): string {
     let hash = 0;
-    if (str?.length || 0 === 0) return hash.toString();
-    for (let i = 0; i < str?.length || 0; i++) {
+    if ((str?.length || 0) === 0) return hash.toString();
+    for (let i = 0; i < (str?.length || 0); i++) {
       const char = str.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
@@ -614,7 +613,7 @@ ${this.generateSystemRecommendations(recentMetrics)}
     const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
     const recentSlowQueries = this?.slowQueries?.filter(q => new Date(q.timestamp) >= cutoffTime);
     
-    if (recentSlowQueries?.length || 0 === 0) {
+    if ((recentSlowQueries?.length || 0) === 0) {
       return '✅ No slow queries detected in this period';
     }
     
@@ -634,7 +633,7 @@ ${this.generateSystemRecommendations(recentMetrics)}
       .sort((a, b) => b[1].length - a[1].length)
       .slice(0, 5) // Top 5 patterns
       .forEach(([pattern, queries]) => {
-        const avgTime = queries.reduce((sum: any, q: any) => sum + q.executionTime, 0) / queries?.length || 0;
+        const avgTime = queries.reduce((sum: number, q: SlowQuery) => sum + q.executionTime, 0) / (queries?.length || 1);
         const maxTime = Math.max(...queries?.map(q => q.executionTime));
         analysis += `\n- **Pattern**: ${pattern}\n`;
         analysis += `  - Occurrences: ${queries?.length || 0}\n`;
@@ -648,9 +647,9 @@ ${this.generateSystemRecommendations(recentMetrics)}
   private generateSystemRecommendations(metrics: DatabaseMetrics[]): string {
     const recommendations: string[] = [];
     
-    if (metrics?.length || 0 === 0) return 'No data available for recommendations';
+    if ((metrics?.length || 0) === 0) return 'No data available for recommendations';
     
-    const latestMetric = metrics[metrics?.length || 0 - 1];
+    const latestMetric = metrics[(metrics?.length || 1) - 1];
     
     // Performance recommendations
     if ((latestMetric?.performance?.avgQueryTime || 0) > 50) {
@@ -671,7 +670,7 @@ ${this.generateSystemRecommendations(recentMetrics)}
       recommendations.push('💾 **Backup Critical**: Ensure backup system is functioning properly');
     }
     
-    if (recommendations?.length || 0 === 0) {
+    if ((recommendations?.length || 0) === 0) {
       recommendations.push('✅ System is operating within normal parameters');
     }
     

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Database from "better-sqlite3";
-import { EmailAnalyticsService } from "../EmailAnalyticsService.js";
+import { EmailAnalyticsService } from '../EmailAnalyticsService';
 
 // Mock better-sqlite3
 vi.mock("better-sqlite3");

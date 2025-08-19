@@ -9,12 +9,12 @@
  * Usage: npx ts-node test_due_date_migration.ts
  */
 
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { existsSync, copyFileSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename = __filename || "migration.ts";
 const __dirname = dirname(__filename);
 
 const config = {
@@ -31,7 +31,7 @@ interface TestResult {
 }
 
 class MigrationTester {
-  private db: Database.Database | null = null;
+  private db: DatabaseInstance | null = null;
   private results: TestResult[] = [];
 
   constructor(private dbPath: string) {}
@@ -39,7 +39,7 @@ class MigrationTester {
   /**
    * Initialize test database
    */
-  private initDb(): Database.Database {
+  private initDb(): DatabaseInstance {
     this.db = new Database(this.dbPath);
     this?.db?.pragma('foreign_keys = ON');
     return this.db;

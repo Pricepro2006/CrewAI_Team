@@ -33,7 +33,7 @@ class ToastManager {
   }
 
   private notify() {
-    this?.listeners?.forEach((listener: any) => listener(this.toasts));
+    this?.listeners?.forEach((listener: (toasts: Toast[]) => void) => listener(this.toasts));
   }
 
   add(
@@ -68,7 +68,7 @@ class ToastManager {
   }
 
   remove(id: string) {
-    this.toasts = this?.toasts?.filter((t: any) => t.id !== id);
+    this.toasts = this?.toasts?.filter((t: Toast) => t.id !== id);
     this.notify();
   }
 
@@ -78,7 +78,7 @@ class ToastManager {
   }
 
   update(id: string, updates: Partial<Toast>) {
-    this.toasts = this?.toasts?.map((t: any) =>
+    this.toasts = this?.toasts?.map((t: Toast) =>
       t.id === id ? { ...t, ...updates } : t
     );
     this.notify();

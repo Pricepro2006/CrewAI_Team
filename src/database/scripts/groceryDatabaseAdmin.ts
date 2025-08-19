@@ -11,7 +11,7 @@
  * - Performance monitoring and alerting
  */
 
-import Database from 'better-sqlite3';
+import Database, { type Database as DatabaseType } from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -45,7 +45,7 @@ interface ConnectionPoolConfig {
 }
 
 class GroceryDatabaseAdmin {
-  private db: Database;
+  private db: DatabaseType;
   private maintenanceConfig: MaintenanceConfig;
   private connectionPoolConfig: ConnectionPoolConfig;
   private isMaintenanceMode: boolean = false;
@@ -288,23 +288,21 @@ class GroceryDatabaseAdmin {
     const startTime = performance.now();
     
     try {
-      // Use SQLite online backup API
-      const backupDb = new Database(backupPath);
-      
-      const backup = this?.db?.backup(backupDb);
-      
-      // Perform backup in chunks to avoid blocking
-      let remaining = backup.remaining;
-      while (remaining > 0) {
-        backup.step(100); // Backup 100 pages at a time
-        remaining = backup.remaining;
-        
-        // Allow other operations to proceed
-        await new Promise(resolve => setImmediate(resolve));
-      }
-      
-      backup.finish();
-      backupDb.close();
+      // Use SQLite online backup API - backup method expects destination path string
+      await new Promise<void>((resolve, reject) => {
+        try {
+          const backup = this.db.backup(backupPath);
+          
+          // Handle the backup completion
+          backup.then(() => {
+            resolve();
+          }).catch((error) => {
+            reject(error);
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
       
       const duration = performance.now() - startTime;
       const stats = fs.statSync(backupPath);
@@ -416,8 +414,8 @@ class GroceryDatabaseAdmin {
     pragmaSettings: Record<string, any>;
   }> {
     const cacheHitRatio = this.calculateCacheHitRatio();
-    const pageCount = this?.db?.pragma('page_count')[0] as any;
-    const freelistCount = this?.db?.pragma('freelist_count')[0] as any;
+    const pageCount = (this.db.pragma('page_count') as any)[0] as number;
+    const freelistCount = (this.db.pragma('freelist_count') as any)[0] as number;
     
     // Get WAL file size
     const walPath = `${this.dbPath}-wal`;
@@ -430,14 +428,14 @@ class GroceryDatabaseAdmin {
       // WAL file might not exist
     }
     
-    const busyTimeout = this?.db?.pragma('busy_timeout')[0] as any;
+    const busyTimeout = (this.db.pragma('busy_timeout') as any)[0] as number;
     
     const pragmaSettings = {
-      journal_mode: this?.db?.pragma('journal_mode')[0],
-      synchronous: this?.db?.pragma('synchronous')[0],
-      cache_size: this?.db?.pragma('cache_size')[0],
-      temp_store: this?.db?.pragma('temp_store')[0],
-      mmap_size: this?.db?.pragma('mmap_size')[0]
+      journal_mode: (this.db.pragma('journal_mode') as any)[0],
+      synchronous: (this.db.pragma('synchronous') as any)[0],
+      cache_size: (this.db.pragma('cache_size') as any)[0],
+      temp_store: (this.db.pragma('temp_store') as any)[0],
+      mmap_size: (this.db.pragma('mmap_size') as any)[0]
     };
     
     return {
@@ -637,10 +635,10 @@ ${this.generateRecommendations(performance, connectivity)}
   private async performCheckpoint(): Promise<{ pages: number; duration: number }> {
     const startTime = performance.now();
     
-    const result = this?.db?.pragma('wal_checkpoint(TRUNCATE)');
+    const result = this.db.pragma('wal_checkpoint(TRUNCATE)') as any[];
     
     const duration = performance.now() - startTime;
-    const pages = result[0] || 0;
+    const pages = (result && result[0]) || 0;
     
     console.log(`✅ Checkpoint completed: ${pages} pages in ${duration.toFixed(2)}ms`);
     
@@ -648,7 +646,7 @@ ${this.generateRecommendations(performance, connectivity)}
   }
 
   private async performIntegrityCheck(): Promise<{ passed: boolean; issues: string[] }> {
-    const result = this?.db?.pragma('integrity_check');
+    const result = this.db.pragma('integrity_check') as any[];
     const issues: string[] = [];
     
     result.forEach((row: any) => {
@@ -657,7 +655,7 @@ ${this.generateRecommendations(performance, connectivity)}
       }
     });
     
-    const passed = issues?.length || 0 === 0;
+    const passed = (issues?.length || 0) === 0;
     
     console.log(`🔍 Integrity check: ${passed ? 'PASSED' : 'FAILED'}`);
     if (!passed) {
@@ -755,7 +753,7 @@ ${this.generateRecommendations(performance, connectivity)}
       recommendations.push('🚨 Address connectivity issues immediately');
     }
     
-    if (recommendations?.length || 0 === 0) {
+    if ((recommendations?.length || 0) === 0) {
       recommendations.push('✅ System is operating optimally');
     }
     
@@ -774,15 +772,15 @@ async function main() {
   try {
     switch (command) {
       case 'create-user':
-        if (args?.length || 0 < 5) {
+        if ((args?.length || 0) < 5) {
           console.error('Usage: create-user <username> <email> <password> <role>');
           process.exit(1);
         }
         await admin.createUser({
-          username: args[1],
-          email: args[2],
-          password: args[3],
-          role: args[4] as any
+          username: args[1] || '',
+          email: args[2] || '',
+          password: args[3] || '',
+          role: (args[4] as DatabaseUser['role']) || 'user'
         });
         break;
         
@@ -806,11 +804,11 @@ async function main() {
         break;
         
       case 'backup':
-        if (args?.length || 0 < 2) {
+        if ((args?.length || 0) < 2) {
           console.error('Usage: backup <backup-path>');
           process.exit(1);
         }
-        const backupResult = await admin.createHotBackup(args[1]);
+        const backupResult = await admin.createHotBackup(args[1] || '');
         console.log('Backup Results:', JSON.stringify(backupResult, null, 2));
         break;
         
@@ -868,4 +866,5 @@ if (require.main === module) {
   main();
 }
 
-export { GroceryDatabaseAdmin, DatabaseUser, MaintenanceConfig, ConnectionPoolConfig };
+export { GroceryDatabaseAdmin };
+export type { DatabaseUser, MaintenanceConfig, ConnectionPoolConfig };

@@ -70,23 +70,23 @@ export class ConnectionPool extends EventEmitter {
 
   private initialize(): void {
     logger.info("Initializing connection pool", "CONNECTION_POOL", {
-      filename: this?.config?.filename,
-      poolSize: this?.config?.poolSize,
-      enableWAL: this?.config?.enableWAL,
+      filename: this.config.filename,
+      poolSize: this.config.poolSize,
+      enableWAL: this.config.enableWAL,
     });
 
     // Create initial connection to set up pragmas
     const setupDb = this.createConnection("setup");
 
-    if (this?.config?.enableWAL && !this?.config?.readonly) {
+    if (this.config.enableWAL && !this.config.readonly) {
       // Enable WAL mode for better concurrency
-      setupDb?.db?.pragma("journal_mode = WAL");
+      setupDb.db.pragma("journal_mode = WAL");
 
       // Performance optimizations
-      setupDb?.db?.pragma("synchronous = NORMAL");
-      setupDb?.db?.pragma("cache_size = 10000"); // 10MB cache
-      setupDb?.db?.pragma("temp_store = MEMORY");
-      setupDb?.db?.pragma("mmap_size = 268435456"); // 256MB memory map
+      setupDb.db.pragma("synchronous = NORMAL");
+      setupDb.db.pragma("cache_size = 10000"); // 10MB cache
+      setupDb.db.pragma("temp_store = MEMORY");
+      setupDb.db.pragma("mmap_size = 268435456"); // 256MB memory map
 
       logger.info(
         "WAL mode enabled with performance optimizations",
@@ -98,7 +98,7 @@ export class ConnectionPool extends EventEmitter {
     this.releaseConnection(setupDb);
 
     // Start checkpoint monitoring if WAL is enabled
-    if (this?.config?.enableWAL && !this?.config?.readonly) {
+    if (this.config.enableWAL && !this.config.readonly) {
       this.startCheckpointMonitoring();
     }
 
@@ -113,9 +113,9 @@ export class ConnectionPool extends EventEmitter {
     const connectionId =
       id || `conn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    const db = new Database(this?.config?.filename, {
-      readonly: this?.config?.readonly,
-      verbose: this?.config?.verbose
+    const db = new Database(this.config.filename, {
+      readonly: this.config.readonly,
+      verbose: this.config.verbose
         ? (message: any) => {
             logger.debug(`SQLite: ${message}`, "CONNECTION_POOL");
           }
@@ -137,8 +137,8 @@ export class ConnectionPool extends EventEmitter {
       queryCount: 0,
     };
 
-    this?.connections?.set(connectionId, connection);
-    if (this.stats.totalConnections) { this.stats.totalConnections++ };
+    this.connections.set(connectionId, connection);
+    this.stats.totalConnections++;
 
     logger.debug(`Created new connection: ${connectionId}`, "CONNECTION_POOL");
 
@@ -150,30 +150,30 @@ export class ConnectionPool extends EventEmitter {
    */
   async acquire(): Promise<Database.Database> {
     // Try to get an available connection
-    while (this?.availableConnections?.length > 0) {
-      const connectionId = this?.availableConnections?.shift()!;
-      const connection = this?.connections?.get(connectionId);
+    while (this.availableConnections.length > 0) {
+      const connectionId = this.availableConnections.shift()!;
+      const connection = this.connections.get(connectionId);
 
       if (connection && !connection.inUse) {
         connection.inUse = true;
         connection.lastUsed = Date.now();
-        if (this.stats.activeConnections) { this.stats.activeConnections++ };
+        this.stats.activeConnections++;
 
-        this.emit("acquire", { connectionId, poolSize: this?.connections?.size });
+        this.emit("acquire", { connectionId, poolSize: this.connections.size });
 
         return connection.db;
       }
     }
 
     // Create new connection if pool not at limit
-    if (this?.connections?.size < this?.config?.poolSize) {
+    if (this.connections.size < this.config.poolSize) {
       const connection = this.createConnection();
       connection.inUse = true;
-      if (this.stats.activeConnections) { this.stats.activeConnections++ };
+      this.stats.activeConnections++;
 
       this.emit("acquire", {
         connectionId: connection.id,
-        poolSize: this?.connections?.size,
+        poolSize: this.connections.size,
       });
 
       return connection.db;
@@ -186,11 +186,11 @@ export class ConnectionPool extends EventEmitter {
           if (!conn.inUse) {
             conn.inUse = true;
             conn.lastUsed = Date.now();
-            if (this.stats.activeConnections) { this.stats.activeConnections++ };
+            this.stats.activeConnections++;
 
             this.emit("acquire", {
               connectionId: id,
-              poolSize: this?.connections?.size,
+              poolSize: this.connections.size,
             });
 
             resolve(conn.db);
@@ -329,7 +329,7 @@ export class ConnectionPool extends EventEmitter {
           "CONNECTION_POOL",
         );
       }
-    }, this?.config?.checkpointInterval);
+    }, this.config.checkpointInterval);
   }
 
   /**
@@ -389,13 +389,13 @@ export class ConnectionPool extends EventEmitter {
     const now = Date.now();
 
     return {
-      poolSize: this?.connections?.size,
-      activeConnections: this?.stats?.activeConnections,
-      availableConnections: this?.availableConnections?.length,
-      totalQueries: this?.stats?.totalQueries,
-      checkpoints: this?.stats?.checkpoints,
-      recycledConnections: this?.stats?.recycledConnections,
-      connectionDetails: Array.from(this?.connections?.values()).map((conn: any) => ({
+      poolSize: this.connections.size,
+      activeConnections: this.stats.activeConnections,
+      availableConnections: this.availableConnections.length,
+      totalQueries: this.stats.totalQueries,
+      checkpoints: this.stats.checkpoints,
+      recycledConnections: this.stats.recycledConnections,
+      connectionDetails: Array.from(this.connections.values()).map((conn) => ({
         id: conn.id,
         inUse: conn.inUse,
         queryCount: conn.queryCount,
@@ -423,9 +423,9 @@ export class ConnectionPool extends EventEmitter {
     }
 
     // Close all connections
-    for (const conn of this?.connections?.values()) {
+    for (const conn of this.connections.values()) {
       try {
-        conn?.db?.close();
+        conn.db.close();
       } catch (error) {
         logger.error(
           `Error closing connection ${conn.id}: ${error}`,
@@ -434,7 +434,7 @@ export class ConnectionPool extends EventEmitter {
       }
     }
 
-    this?.connections?.clear();
+    this.connections.clear();
     this.availableConnections = [];
 
     this.emit("close");

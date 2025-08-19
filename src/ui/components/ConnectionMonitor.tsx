@@ -4,8 +4,37 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useConnectionWithFallback } from '../hooks/useConnectionWithFallback.js';
-import type { ConnectionMode, ConnectionQuality } from '../hooks/useConnectionWithFallback.js';
+import { useConnectionWithFallback } from '../hooks/useConnectionWithFallback';
+
+// Define local types to avoid import issues
+type ConnectionMode = 'websocket' | 'polling' | 'hybrid' | 'offline';
+type ConnectionQuality = 'excellent' | 'good' | 'fair' | 'poor' | 'offline';
+
+interface ConnectionMetrics {
+  latency: number;
+  uptime: number;
+  dataUpdates: number;
+  modeChanges: number;
+}
+
+interface WebSocketConnection {
+  isConnected: boolean;
+  isConnecting: boolean;
+  sessionId?: string;
+}
+
+interface Connection {
+  mode: ConnectionMode;
+  quality: ConnectionQuality;
+  isConnected: boolean;
+  isTransitioning: boolean;
+  dataVersion: number;
+  lastUpdate?: Date;
+  metrics: ConnectionMetrics;
+  websocket?: WebSocketConnection;
+  forceMode: (mode: ConnectionMode) => void;
+  refresh: () => void;
+};
 import { 
   WifiIcon,
   SignalIcon,
@@ -36,14 +65,14 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
   const [expanded, setExpanded] = useState(initialExpanded);
   const [showDetails, setShowDetails] = useState(false);
 
-  const connection = useConnectionWithFallback({
+  const connection: Connection = useConnectionWithFallback({
     userId,
     sessionId,
     preferWebSocket: true,
     autoFallback: true,
     hybridMode: false,
     onModeChange
-  });
+  }) as Connection;
 
   // Position classes
   const positionClasses = {
@@ -123,7 +152,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
   const ModeIcon = modeConfig?.icon;
 
   // Format uptime - memoized for performance
-  const formatUptime = useCallback((ms: number) => {
+  const formatUptime = useCallback((ms: number): string => {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -172,7 +201,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
         
         {/* Quality Bars */}
         <div className="flex gap-0.5">
-          {[1, 2, 3, 4].map((bar: any) => (
+          {[1, 2, 3, 4].map((bar: number) => (
             <div
               key={bar}
               className={clsx(
@@ -223,7 +252,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{qualityConfig.label}</span>
                 <div className="flex gap-0.5">
-                  {[1, 2, 3, 4].map((bar: any) => (
+                  {[1, 2, 3, 4].map((bar: number) => (
                     <div
                       key={bar}
                       className={clsx(

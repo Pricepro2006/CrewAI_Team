@@ -14,8 +14,8 @@
  * - Real-time progress tracking
  */
 
-import { Queue, Worker, QueueEvents } from 'bullmq';
-import type { Job } from 'bullmq';
+// Import bullmq components - using require for compatibility
+const { Queue, Worker, Job, QueueEvents } = require('bullmq');
 import { createHash } from 'crypto';
 import { EmailRepository } from '../../database/repositories/EmailRepository.js';
 import { EmailQueueProcessor } from '../processors/EmailQueueProcessor.js';
@@ -274,15 +274,15 @@ export const IngestionErrorCodes = {
 
 export interface QueueIntegration {
   // Queue setup
-  ingestionQueue: Queue<IngestionJob>;
-  deadLetterQueue: Queue<IngestionJob>;
-  worker: Worker<IngestionJob>;
+  ingestionQueue: Queue;
+  deadLetterQueue: Queue;
+  worker: Worker;
   events: QueueEvents;
   
   // Queue operations
-  addToQueue(job: IngestionJob): Promise<Job<IngestionJob>>;
-  processJob(job: Job<IngestionJob>): Promise<IngestionResult>;
-  handleFailedJob(job: Job<IngestionJob>, error: Error): Promise<void>;
+  addToQueue(job: IngestionJob): Promise<Job>;
+  processJob(job: Job): Promise<IngestionResult>;
+  handleFailedJob(job: Job, error: Error): Promise<void>;
   
   // Queue monitoring
   monitorQueueHealth(): void;

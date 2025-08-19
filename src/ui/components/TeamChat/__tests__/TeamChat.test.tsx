@@ -3,9 +3,9 @@
  * Tests team chat functionality and real-time messaging
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock TeamChat component
@@ -62,7 +62,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
 
   const handleInputChange = (value: string) => {
     setInputValue(value);
-    onTyping?.(value?.length || 0 > 0);
+    onTyping?.((value?.length || 0) > 0);
   };
 
   const getMessageTypeClass = (type: string) => {
@@ -162,9 +162,9 @@ const TeamChat: React.FC<TeamChatProps> = ({
             <div ref={messagesEndRef} />
           </div>
 
-          {typingUsers?.length || 0 > 0 && (
+          {(typingUsers?.length || 0) > 0 && (
             <div className="typing-indicator" data-testid="typing-indicator">
-              {typingUsers.join(", ")} {typingUsers?.length || 0 === 1 ? "is" : "are"} typing...
+              {typingUsers.join(", ")} {(typingUsers?.length || 0) === 1 ? "is" : "are"} typing...
             </div>
           )}
 

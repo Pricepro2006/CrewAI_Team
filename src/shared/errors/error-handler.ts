@@ -155,7 +155,7 @@ export class CrewAISystemError extends CrewAIError implements SystemError {
   public component: string;
   public severity: "low" | "medium" | "high" | "critical";
   public impact: "none" | "limited" | "significant" | "severe";
-  public resolution?: Record<string, unknown>;
+  public resolution?: import('../types/errors.js').ErrorResolution;
 
   constructor(
     code: string,
@@ -198,17 +198,17 @@ export class ErrorHandlerRegistry {
   }
 
   registerHandler(handler: ErrorHandler): void {
-    this?.handlers?.set(handler.name, handler);
+    this.handlers.set(handler.name, handler);
 
     // Sort global handlers by priority
-    this.globalHandlers = Array.from(this?.handlers?.values()).sort(
+    this.globalHandlers = Array.from(this.handlers.values()).sort(
       (a, b) => b.priority - a.priority,
     );
   }
 
   unregisterHandler(name: string): void {
-    this?.handlers?.delete(name);
-    this.globalHandlers = Array.from(this?.handlers?.values()).sort(
+    this.handlers.delete(name);
+    this.globalHandlers = Array.from(this.handlers.values()).sort(
       (a, b) => b.priority - a.priority,
     );
   }
@@ -258,26 +258,26 @@ export class ErrorHandlerRegistry {
   }
 
   private updateMetrics(error: BaseError): void {
-    if (this.metrics.totalErrors) { this.metrics.totalErrors++ };
+    this.metrics.totalErrors++;
 
     // Update error counts by code
-    if (!this?.metrics?.errorsByCode[error.code]) {
-      this?.metrics?.errorsByCode[error.code] = 0;
+    if (!this.metrics.errorsByCode[error.code]) {
+      this.metrics.errorsByCode[error.code] = 0;
     }
-    this?.metrics?.errorsByCode[error.code] =
-      (this?.metrics?.errorsByCode[error.code] || 0) + 1;
+    this.metrics.errorsByCode[error.code] =
+      (this.metrics.errorsByCode[error.code] || 0) + 1;
 
     // Update error counts by category
     const category = this.categorizeError(error);
-    if (!this?.metrics?.errorsByCategory[category]) {
-      this?.metrics?.errorsByCategory[category] = 0;
+    if (!this.metrics.errorsByCategory[category]) {
+      this.metrics.errorsByCategory[category] = 0;
     }
-    this?.metrics?.errorsByCategory[category]++;
+    this.metrics.errorsByCategory[category]++;
   }
 
   private updateErrorReport(error: BaseError, context: ErrorContext): void {
     const fingerprint = this.generateFingerprint(error);
-    const existingReport = this?.reports?.get(fingerprint);
+    const existingReport = this.reports.get(fingerprint);
 
     if (existingReport) {
       existingReport.frequency++;
@@ -300,7 +300,7 @@ export class ErrorHandlerRegistry {
         status: "new",
       };
 
-      this?.reports?.set(fingerprint, newReport);
+      this.reports.set(fingerprint, newReport);
     }
   }
 
@@ -357,11 +357,7 @@ export class ErrorHandlerRegistry {
 
   private updateResolutionTime(resolutionTime: number): void {
     // Update average resolution time (simplified calculation)
-    if (this.metrics) {
-
-      this.metrics.averageResolutionTime = (this?.metrics?.averageResolutionTime + resolutionTime) / 2;
-
-    }
+    this.metrics.averageResolutionTime = (this.metrics.averageResolutionTime + resolutionTime) / 2;
   }
 
   getMetrics(): ErrorMetrics {
@@ -369,11 +365,11 @@ export class ErrorHandlerRegistry {
   }
 
   getReports(): ErrorReport[] {
-    return Array.from(this?.reports?.values());
+    return Array.from(this.reports.values());
   }
 
   getReport(fingerprint: string): ErrorReport | undefined {
-    return this?.reports?.get(fingerprint);
+    return this.reports.get(fingerprint);
   }
 }
 
@@ -426,7 +422,7 @@ export class CircuitBreaker {
 
   private shouldAttemptReset(): boolean {
     if (!this.lastFailureTime) return false;
-    return Date.now() - this.lastFailureTime > this?.config?.resetTimeoutMs;
+    return Date.now() - this.lastFailureTime > this.config.resetTimeoutMs;
   }
 
   private recordFailure(): void {

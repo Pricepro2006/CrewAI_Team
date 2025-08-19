@@ -12,7 +12,7 @@ import { logger } from "../../utils/logger.js";
 import { EventEmitter } from "events";
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
-import path from "path";
+import * as path from "path";
 import type {
   QueueItem,
   QueueMetrics,
@@ -796,20 +796,20 @@ export class GroceryNLPQueue extends EventEmitter {
     const now = Date.now();
     const toDelete: string[] = [];
 
-    for (const [fingerprint, data] of this.requestFingerprints) {
+    for (const [fingerprint, data] of Array.from(this.requestFingerprints.entries())) {
       if (now - data.lastSeen > this.deduplicationTTL) {
         toDelete.push(fingerprint);
       }
     }
 
     toDelete.forEach(fingerprint => {
-      this?.requestFingerprints?.delete(fingerprint);
+      this.requestFingerprints.delete(fingerprint);
     });
 
-    if (toDelete?.length || 0 > 0) {
+    if (toDelete.length > 0) {
       logger.debug("Cleaned up fingerprints", "NLP_QUEUE", {
-        cleaned: toDelete?.length || 0,
-        remaining: this?.requestFingerprints?.size
+        cleaned: toDelete.length,
+        remaining: this.requestFingerprints.size
       });
     }
   }

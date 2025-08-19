@@ -15,7 +15,7 @@ import axios from 'axios';
  * Enhanced Ollama Provider with Circuit Breaker
  */
 export class CircuitBreakerOllamaProvider extends OllamaProvider {
-  async generate(prompt: string, options?: OllamaGenerateOptions): Promise<string> {
+  override async generate(prompt: string, options?: OllamaGenerateOptions): Promise<string> {
     return circuitBreakerService.executeOllamaRequest(
       'generate',
       () => super.generate(prompt, options),
@@ -27,7 +27,7 @@ export class CircuitBreakerOllamaProvider extends OllamaProvider {
     );
   }
 
-  async generateWithLogProbs(
+  override async generateWithLogProbs(
     prompt: string, 
     options?: OllamaGenerateOptions
   ): Promise<any> {
@@ -50,7 +50,7 @@ export class CircuitBreakerOllamaProvider extends OllamaProvider {
     );
   }
 
-  async embed(text: string): Promise<number[]> {
+  override async embed(text: string): Promise<number[]> {
     return circuitBreakerService.executeOllamaRequest(
       'embed',
       () => super.embed(text),
@@ -122,12 +122,12 @@ export class CircuitBreakerCacheManager {
 
   private getFromMemoryCache<T>(key: string, namespace: string): T | null {
     const fullKey = `${namespace}:${key}`;
-    const cached = this?.inMemoryCache?.get(fullKey);
+    const cached = this.inMemoryCache.get(fullKey);
     
     if (!cached) return null;
     
     if (Date.now() > cached.expiry) {
-      this?.inMemoryCache?.delete(fullKey);
+      this.inMemoryCache.delete(fullKey);
       return null;
     }
     
@@ -138,12 +138,14 @@ export class CircuitBreakerCacheManager {
     const fullKey = `default:${key}`;
     
     // Prevent memory leaks
-    if (this?.inMemoryCache?.size >= this.MAX_MEMORY_CACHE_SIZE) {
-      const oldestKey = this?.inMemoryCache?.keys().next().value;
-      this?.inMemoryCache?.delete(oldestKey);
+    if (this.inMemoryCache.size >= this.MAX_MEMORY_CACHE_SIZE) {
+      const oldestKey = this.inMemoryCache.keys().next().value;
+      if (oldestKey) {
+        this.inMemoryCache.delete(oldestKey);
+      }
     }
     
-    this?.inMemoryCache?.set(fullKey, {
+    this.inMemoryCache.set(fullKey, {
       value,
       expiry: Date.now() + (ttlSeconds * 1000),
     });
@@ -151,7 +153,7 @@ export class CircuitBreakerCacheManager {
 
   private deleteFromMemoryCache(key: string, namespace: string): void {
     const fullKey = `${namespace}:${key}`;
-    this?.inMemoryCache?.delete(fullKey);
+    this.inMemoryCache.delete(fullKey);
   }
 }
 
@@ -164,7 +166,7 @@ export class CircuitBreakerDatabaseService {
   async query<T>(sql: string, params: any[] = []): Promise<T[]> {
     return circuitBreakerService.executeDatabaseQuery(
       'query',
-      () => this?.db?.prepare(sql).all(params) as T[],
+      () => this.db.prepare(sql).all(params) as T[],
       [] as T[] // Empty array fallback
     );
   }
@@ -172,7 +174,7 @@ export class CircuitBreakerDatabaseService {
   async get<T>(sql: string, params: any[] = []): Promise<T | undefined> {
     return circuitBreakerService.executeDatabaseQuery(
       'get',
-      () => this?.db?.prepare(sql).get(params) as T | undefined,
+      () => this.db.prepare(sql).get(params) as T | undefined,
       undefined
     );
   }
@@ -180,7 +182,7 @@ export class CircuitBreakerDatabaseService {
   async run(sql: string, params: any[] = []): Promise<any> {
     return circuitBreakerService.executeDatabaseQuery(
       'run',
-      () => this?.db?.prepare(sql).run(params),
+      () => this.db.prepare(sql).run(params),
       { changes: 0, lastInsertRowid: null } // Fallback result
     );
   }
@@ -189,8 +191,8 @@ export class CircuitBreakerDatabaseService {
     return circuitBreakerService.executeDatabaseQuery(
       'transaction',
       async () => {
-        const transaction = this?.db?.transaction(() => {
-          return operations?.map(op => op());
+        const transaction = this.db.transaction(() => {
+          return operations.map(op => op());
         });
         return transaction();
       },
@@ -203,7 +205,7 @@ export class CircuitBreakerDatabaseService {
  * External API Service with Circuit Breaker (Walmart Pricing Example)
  */
 export class CircuitBreakerWalmartAPI {
-  private baseURL = 'https://developer?.api?.walmart.com';
+  private baseURL = 'https://developer.api.walmart.com';
 
   async getProductPrice(productId: string): Promise<any> {
     return circuitBreakerService.executeExternalAPI(
@@ -366,29 +368,29 @@ export class CircuitBreakerIntegrationExamples {
   async processGroceryList(userInput: string, userId: string): Promise<any> {
     try {
       // Step 1: Use LLM to parse grocery list (with circuit breaker)
-      const parsedList = await this?.llamaCppProvider?.generate(
+      const parsedList = await this.ollamaProvider.generate(
         `Parse this grocery list and extract items with quantities: ${userInput}`,
         { format: 'json', temperature: 0.1 }
       );
 
       // Step 2: Cache the parsed result (with circuit breaker)
-      await this?.cacheService?.set(`grocery_list_${userId}`, parsedList, { ttl: 3600 });
+      await this.cacheService.set(`grocery_list_${userId}`, parsedList, { ttl: 3600 });
 
       // Step 3: Get pricing information (with circuit breaker)
       const products = JSON.parse(parsedList).items || [];
-      const pricePromises = products?.map((product: any) => 
-        this?.walmartAPI?.getProductPrice(product.id)
+      const pricePromises = products.map((product: any) => 
+        this.walmartAPI.getProductPrice(product.id)
       );
       const prices = await Promise.allSettled(pricePromises);
 
       // Step 4: Send real-time update to user (with circuit breaker)
-      await this?.wsService?.sendToUser(userId, {
+      await this.wsService.sendToUser(userId, {
         type: 'grocery_list_processed',
         data: { products, prices },
       });
 
       // Step 5: Call inventory service to check availability (with circuit breaker)
-      const inventory = await this?.serviceMesh?.callInventoryService('store_123');
+      const inventory = await this.serviceMesh.callInventoryService('store_123');
 
       return {
         success: true,
@@ -408,7 +410,7 @@ export class CircuitBreakerIntegrationExamples {
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
-        partialData: await this?.cacheService?.get(`grocery_list_${userId}`),
+        partialData: await this.cacheService.get(`grocery_list_${userId}`),
       };
     }
   }
@@ -473,7 +475,7 @@ export class CircuitBreakerIntegrationExamples {
     logger.info('Dead letter queue processing completed', 'DLQ_PROCESSOR', {
       totalItems: deadLetters?.length || 0,
       processedCount,
-      remainingCount: deadLetters?.length || 0 - processedCount,
+      remainingCount: (deadLetters.length || 0) - processedCount,
     });
 
     return processedCount;

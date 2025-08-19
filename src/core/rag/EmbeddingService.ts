@@ -34,15 +34,15 @@ export class EmbeddingService {
       await this?.client?.get("/api/tags");
 
       // Verify embedding model is available
-      const response = await this?.client?.get("/api/tags");
+      const response = await this.client.get("/api/tags");
       const models = response?.data?.models || [];
       const hasEmbeddingModel = models.some(
-        (m: any) => m.name === this?.config?.model || m?.name?.includes("embed"),
+        (m: any) => m.name === this.config.model || m?.name?.includes("embed"),
       );
 
       if (!hasEmbeddingModel) {
         console.warn(
-          `Embedding model ${this?.config?.model} not found. Please pull it first.`,
+          `Embedding model ${this.config.model} not found. Please pull it first.`,
         );
       }
 
@@ -58,16 +58,16 @@ export class EmbeddingService {
     }
 
     try {
-      const response = await this?.client?.post("/api/embeddings", {
-        model: this?.config?.model,
+      const response = await this.client.post("/api/embeddings", {
+        model: this.config.model,
         prompt: text,
       });
 
-      return response?.data?.embedding;
+      return response?.data?.embedding || [];
     } catch (error) {
       console.error("Embedding generation failed:", error);
       // Return a zero vector as fallback
-      return new Array(this?.config?.dimensions).fill(0);
+      return new Array(this.config.dimensions || 768).fill(0);
     }
   }
 
@@ -81,7 +81,7 @@ export class EmbeddingService {
     }
 
     const embeddings: number[][] = [];
-    const batchSize = this?.config?.batchSize || 20; // Reduced for CPU inference stability
+    const batchSize = this.config.batchSize || 20; // Reduced for CPU inference stability
     const totalBatches = Math.ceil(texts.length / batchSize);
 
     console.log(`Processing ${texts.length} texts in ${totalBatches} batches (batch size: ${batchSize})`);
@@ -113,7 +113,7 @@ export class EmbeddingService {
       } catch (error) {
         console.error(`Batch ${batchNumber} failed:`, error);
         // Add zero vectors for failed batch to maintain array length consistency
-        const zeroVector = new Array(this?.config?.dimensions).fill(0);
+        const zeroVector = new Array(this.config.dimensions || 768).fill(0);
         embeddings.push(...batch.map(() => zeroVector));
       }
     }
@@ -136,14 +136,14 @@ export class EmbeddingService {
             error,
           );
           // Return zero vector as fallback
-          return new Array(this?.config?.dimensions).fill(0);
+          return new Array(this.config.dimensions || 768).fill(0);
         }
         // Exponential backoff
         await this.delay(Math.pow(2, i) * 1000);
       }
     }
 
-    return new Array(this?.config?.dimensions).fill(0);
+    return new Array(this.config.dimensions || 768).fill(0);
   }
 
   private delay(ms: number): Promise<void> {
@@ -154,7 +154,10 @@ export class EmbeddingService {
     embedding1: number[],
     embedding2: number[],
   ): Promise<number> {
-    if ((embedding1?.length || 0) !== (embedding2?.length || 0)) {
+    const embedding1Length = embedding1?.length ?? 0;
+    const embedding2Length = embedding2?.length ?? 0;
+    
+    if (embedding1Length !== embedding2Length) {
       throw new Error("Embeddings must have the same dimension");
     }
 
@@ -162,10 +165,12 @@ export class EmbeddingService {
     let norm1 = 0;
     let norm2 = 0;
 
-    for (let i = 0; i < (embedding1?.length || 0); i++) {
-      dotProduct += (embedding1[i] || 0) * (embedding2[i] || 0);
-      norm1 += (embedding1[i] || 0) * (embedding1[i] || 0);
-      norm2 += (embedding2[i] || 0) * (embedding2[i] || 0);
+    for (let i = 0; i < embedding1Length; i++) {
+      const val1 = embedding1[i] ?? 0;
+      const val2 = embedding2[i] ?? 0;
+      dotProduct += val1 * val2;
+      norm1 += val1 * val1;
+      norm2 += val2 * val2;
     }
 
     norm1 = Math.sqrt(norm1);
@@ -197,10 +202,10 @@ export class EmbeddingService {
   }
 
   getDimensions(): number {
-    return this?.config?.dimensions || 768;
+    return this.config.dimensions || 768;
   }
 
   getModel(): string {
-    return this?.config?.model;
+    return this.config.model;
   }
 }

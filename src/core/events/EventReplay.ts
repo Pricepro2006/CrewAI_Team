@@ -160,11 +160,11 @@ export class EventReplayManager extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Listen to service registry events for automatic recovery triggers
-    this?.serviceRegistry?.on('service_registered', (data: any) => {
+    this.serviceRegistry.on('service_registered', (data: any) => {
       this.checkAutoRecoveryTriggers('service_up', data);
     });
 
-    this?.serviceRegistry?.on('service_unregistered', (data: any) => {
+    this.serviceRegistry.on('service_unregistered', (data: any) => {
       this.checkAutoRecoveryTriggers('service_down', data);
     });
 
@@ -182,7 +182,7 @@ export class EventReplayManager extends EventEmitter {
 
     ReplayConfigSchema.parse(replayConfig);
     
-    this?.replayConfigs?.set(replayConfig.id, replayConfig);
+    this.replayConfigs.set(replayConfig.id, replayConfig);
     
     this.emit('replay_config_registered', {
       configId: replayConfig.id,
@@ -194,15 +194,15 @@ export class EventReplayManager extends EventEmitter {
   }
 
   public getReplayConfig(configId: string): ReplayConfig | null {
-    return this?.replayConfigs?.get(configId) || null;
+    return this.replayConfigs.get(configId) || null;
   }
 
   public listReplayConfigs(): ReplayConfig[] {
-    return Array.from(this?.replayConfigs?.values());
+    return Array.from(this.replayConfigs.values());
   }
 
   public removeReplayConfig(configId: string): boolean {
-    const removed = this?.replayConfigs?.delete(configId);
+    const removed = this.replayConfigs.delete(configId);
     if (removed) {
       this.emit('replay_config_removed', { configId });
     }
@@ -218,13 +218,13 @@ export class EventReplayManager extends EventEmitter {
 
     RecoveryPlanSchema.parse(recoveryPlan);
     
-    this?.recoveryPlans?.set(recoveryPlan.id, recoveryPlan);
+    this.recoveryPlans.set(recoveryPlan.id, recoveryPlan);
     
     this.emit('recovery_plan_registered', {
       planId: recoveryPlan.id,
       name: recoveryPlan.name,
       type: recoveryPlan.type,
-      stepsCount: recoveryPlan?.steps?.length
+      stepsCount: recoveryPlan.steps.length
     });
 
     return recoveryPlan.id;
@@ -235,7 +235,7 @@ export class EventReplayManager extends EventEmitter {
     resumeFromCheckpoint?: string;
     overrides?: Partial<ReplayConfig>;
   } = {}): Promise<string> {
-    const config = this?.replayConfigs?.get(configId);
+    const config = this.replayConfigs.get(configId);
     if (!config) {
       throw new Error(`Replay config ${configId} not found`);
     }
@@ -271,7 +271,7 @@ export class EventReplayManager extends EventEmitter {
       errors: []
     };
 
-    this?.activeSessions?.set(sessionId, session);
+    this.activeSessions.set(sessionId, session);
 
     try {
       // Start replay in background
@@ -286,43 +286,47 @@ export class EventReplayManager extends EventEmitter {
       return sessionId;
 
     } catch (error) {
-      this?.activeSessions?.delete(sessionId);
+      this.activeSessions.delete(sessionId);
       this.emit('replay_start_error', { sessionId, configId, error });
       throw error;
     }
   }
 
   public async pauseReplay(sessionId: string): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId);
+    const session = this.activeSessions.get(sessionId);
     if (!session || session.status !== 'running') {
       throw new Error(`Cannot pause replay session ${sessionId}`);
     }
 
     session.status = 'paused';
-    session?.metrics?.pausedAt = Date.now();
+    if (session.metrics) {
+      session.metrics.pausedAt = Date.now();
+    }
 
     // Clear any timers
-    const timer = this?.sessionTimers?.get(sessionId);
+    const timer = this.sessionTimers.get(sessionId);
     if (timer) {
       clearTimeout(timer);
-      this?.sessionTimers?.delete(sessionId);
+      this.sessionTimers.delete(sessionId);
     }
 
     this.emit('replay_paused', { sessionId });
   }
 
   public async resumeReplay(sessionId: string): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId);
+    const session = this.activeSessions.get(sessionId);
     if (!session || session.status !== 'paused') {
       throw new Error(`Cannot resume replay session ${sessionId}`);
     }
 
     session.status = 'running';
-    session?.metrics?.resumedAt = Date.now();
+    if (session.metrics) {
+      session.metrics.resumedAt = Date.now();
+    }
 
     // Resume from last checkpoint
-    const lastCheckpoint = session.checkpoints[session?.checkpoints?.length - 1];
-    const config = this?.replayConfigs?.get(session.configId)!;
+    const lastCheckpoint = session.checkpoints[session.checkpoints.length - 1];
+    const config = this.replayConfigs.get(session.configId)!
     
     this.executeReplay(sessionId, config, lastCheckpoint?.position);
     
@@ -330,35 +334,37 @@ export class EventReplayManager extends EventEmitter {
   }
 
   public async stopReplay(sessionId: string): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId);
+    const session = this.activeSessions.get(sessionId);
     if (!session || (session.status !== 'running' && session.status !== 'paused')) {
       throw new Error(`Cannot stop replay session ${sessionId}`);
     }
 
     session.status = 'cancelled';
-    session?.metrics?.completedAt = Date.now();
+    if (session.metrics) {
+      session.metrics.completedAt = Date.now();
+    }
 
     // Clear timers
-    const timer = this?.sessionTimers?.get(sessionId);
+    const timer = this.sessionTimers.get(sessionId);
     if (timer) {
       clearTimeout(timer);
-      this?.sessionTimers?.delete(sessionId);
+      this.sessionTimers.delete(sessionId);
     }
 
     this.emit('replay_stopped', { sessionId });
   }
 
   public getReplaySession(sessionId: string): ReplaySession | null {
-    return this?.activeSessions?.get(sessionId) || null;
+    return this.activeSessions.get(sessionId) || null;
   }
 
   public listActiveSessions(): ReplaySession[] {
-    return Array.from(this?.activeSessions?.values());
+    return Array.from(this.activeSessions.values());
   }
 
   // Core replay execution
   private async executeReplay(sessionId: string, config: ReplayConfig, startPosition?: string): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId);
+    const session = this.activeSessions.get(sessionId);
     if (!session) return;
 
     try {
@@ -368,39 +374,45 @@ export class EventReplayManager extends EventEmitter {
       const query = this.buildEventQuery(config, startPosition);
       
       // Get events to replay
-      const events = await this?.eventStore?.getEvents(query);
-      session?.progress?.totalEvents = events?.length || 0;
+      const events = await this.eventStore.getEvents(query);
+      if (session.progress) {
+        session.progress.totalEvents = events.length;
+      }
 
       this.emit('replay_events_loaded', {
         sessionId,
-        totalEvents: events?.length || 0,
+        totalEvents: events.length,
         query
       });
 
-      if (config?.options?.dryRun) {
-        await this.performDryRunReplay(sessionId, events, config);
+      if (config.options?.dryRun) {
+      await this.performDryRunReplay(sessionId, events, config);
       } else {
-        await this.performActualReplay(sessionId, events, config);
+      await this.performActualReplay(sessionId, events, config);
       }
 
       // Complete session
       session.status = 'completed';
-      session?.metrics?.completedAt = Date.now();
+      if (session.metrics) {
+        session.metrics.completedAt = Date.now();
+      }
       
       this.emit('replay_completed', {
         sessionId,
-        totalEvents: session?.progress?.totalEvents,
-        processedEvents: session?.progress?.processedEvents,
-        duration: session?.metrics?.completedAt - session?.metrics?.startedAt
+        totalEvents: session.progress?.totalEvents || 0,
+        processedEvents: session.progress?.processedEvents || 0,
+        duration: (session.metrics?.completedAt || Date.now()) - (session.metrics?.startedAt || Date.now())
       });
 
     } catch (error) {
       session.status = 'failed';
-      session?.metrics?.completedAt = Date.now();
+      if (session.metrics) {
+        session.metrics.completedAt = Date.now();
+      }
       
       this.emit('replay_failed', {
         sessionId,
-        error,
+        error: error instanceof Error ? error.message : String(error),
         progress: session.progress
       });
       
@@ -409,11 +421,11 @@ export class EventReplayManager extends EventEmitter {
   }
 
   private async performActualReplay(sessionId: string, events: BaseEvent[], config: ReplayConfig): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId)!;
-    const batchSize = config?.options?.batchSize;
+    const session = this.activeSessions.get(sessionId)!;
+    const batchSize = config.options.batchSize;
     let processedCount = 0;
 
-    for (let i = 0; i < events?.length || 0; i += batchSize) {
+    for (let i = 0; i < events.length; i += batchSize) {
       // Check if session was cancelled or paused
       if (session.status !== 'running') {
         break;
@@ -423,33 +435,37 @@ export class EventReplayManager extends EventEmitter {
       
       try {
         await this.processBatch(sessionId, batch, config);
-        processedCount += batch?.length || 0;
+        processedCount += batch.length;
 
         // Update progress
-        session?.progress?.processedEvents = processedCount;
-        session?.metrics?.processingRate = this.calculateProcessingRate(session);
+        if (session.progress) {
+          session.progress.processedEvents = processedCount;
+        }
+        if (session.metrics) {
+          session.metrics.processingRate = this.calculateProcessingRate(session);
+        }
 
         // Create checkpoint
-        if (config?.options?.createCheckpoints && processedCount % (batchSize * 10) === 0) {
+        if (config.options.createCheckpoints && processedCount % (batchSize * 10) === 0) {
           await this.createCheckpoint(sessionId, `batch_${Math.floor(i / batchSize)}`);
         }
 
         // Delay between batches if configured
-        if (config?.options?.delayBetweenBatches > 0) {
-          await this.sleep(config?.options?.delayBetweenBatches);
+        if (config.options.delayBetweenBatches > 0) {
+          await this.sleep(config.options.delayBetweenBatches);
         }
 
         this.emit('replay_progress', {
           sessionId,
           processed: processedCount,
-          total: events?.length || 0,
-          rate: session?.metrics?.processingRate
+          total: events.length,
+          rate: session.metrics?.processingRate || 0
         });
 
       } catch (error) {
         console.error(`Batch processing failed for session ${sessionId}:`, error);
         
-        if (config?.recovery?.onError === 'stop') {
+        if (config.recovery.onError === 'stop') {
           throw error;
         }
         // For other error strategies, continue with next batch
@@ -458,7 +474,7 @@ export class EventReplayManager extends EventEmitter {
   }
 
   private async performDryRunReplay(sessionId: string, events: BaseEvent[], config: ReplayConfig): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId)!;
+    const session = this.activeSessions.get(sessionId)!;
     
     // Simulate processing
     for (const event of events) {
@@ -466,35 +482,43 @@ export class EventReplayManager extends EventEmitter {
 
       // Apply filters
       if (!(await this.shouldReplayEvent(event, config))) {
-        session?.progress?.skippedEvents++;
+        if (session.progress && session.progress.skippedEvents !== undefined) {
+          session.progress.skippedEvents++;
+        }
         continue;
       }
 
       // Simulate processing delay
       await this.sleep(1);
       
-      session?.progress?.processedEvents++;
-      session?.progress?.successfulEvents++;
+      if (session.progress) {
+        if (session.progress.processedEvents !== undefined) {
+          session.progress.processedEvents++;
+        }
+        if (session.progress.successfulEvents !== undefined) {
+          session.progress.successfulEvents++;
+        }
+      }
     }
 
     this.emit('dry_run_completed', {
       sessionId,
-      wouldProcess: session?.progress?.successfulEvents,
-      wouldSkip: session?.progress?.skippedEvents
+      wouldProcess: session.progress?.successfulEvents || 0,
+      wouldSkip: session.progress?.skippedEvents || 0
     });
   }
 
   private async processBatch(sessionId: string, events: BaseEvent[], config: ReplayConfig): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId)!;
-    const concurrency = config?.options?.maxConcurrency;
+    const session = this.activeSessions.get(sessionId)!;
+    const concurrency = config.options.maxConcurrency;
     
     // Process events with controlled concurrency
     const promises: Promise<void>[] = [];
     
-    for (let i = 0; i < events?.length || 0; i += concurrency) {
+    for (let i = 0; i < events.length; i += concurrency) {
       const batch = events.slice(i, i + concurrency);
       
-      const batchPromises = batch?.map(event => this.processEvent(sessionId, event, config));
+      const batchPromises = batch.map(event => this.processEvent(sessionId, event, config));
       promises.push(...batchPromises);
       
       // Wait for this batch to complete before starting next
@@ -503,12 +527,14 @@ export class EventReplayManager extends EventEmitter {
   }
 
   private async processEvent(sessionId: string, event: BaseEvent, config: ReplayConfig): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId)!;
+    const session = this.activeSessions.get(sessionId)!;
 
     try {
       // Apply filters
       if (!(await this.shouldReplayEvent(event, config))) {
-        session?.progress?.skippedEvents++;
+        if (session.progress && session.progress.skippedEvents !== undefined) {
+          session.progress.skippedEvents++;
+        }
         return;
       }
 
@@ -518,11 +544,15 @@ export class EventReplayManager extends EventEmitter {
       for (const service of targetServices) {
         try {
           await this.replayEventToService(event, service, config);
-          session?.progress?.successfulEvents++;
+          if (session.progress && session.progress.successfulEvents !== undefined) {
+            session.progress.successfulEvents++;
+          }
           
         } catch (error) {
-          session?.progress?.failedEvents++;
-          session?.errors?.push({
+          if (session.progress && session.progress.failedEvents !== undefined) {
+            session.progress.failedEvents++;
+          }
+          session.errors.push({
             eventId: event.id,
             error: String(error),
             timestamp: Date.now(),
@@ -530,29 +560,31 @@ export class EventReplayManager extends EventEmitter {
             resolved: false
           });
 
-          if (config?.recovery?.enableRecovery && config?.recovery?.onError === 'retry') {
+          if (config.recovery.enableRecovery && config.recovery.onError === 'retry') {
             // Schedule retry (simplified)
             setTimeout(() => {
               this.retryEventProcessing(sessionId, event, service, config);
-            }, config?.recovery?.retryDelay);
+            }, config.recovery.retryDelay);
           }
         }
       }
 
     } catch (error) {
-      session?.progress?.failedEvents++;
+      if (session.progress && session.progress.failedEvents !== undefined) {
+        session.progress.failedEvents++;
+      }
       console.error(`Event processing failed: ${event.id}`, error);
     }
   }
 
   private async retryEventProcessing(sessionId: string, event: BaseEvent, service: any, config: ReplayConfig): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId);
+    const session = this.activeSessions.get(sessionId);
     if (!session) return;
 
-    const errorEntry = session?.errors?.find(e => e.eventId === event.id);
+    const errorEntry = session.errors.find(e => e.eventId === event.id);
     if (!errorEntry) return;
 
-    if (errorEntry.retryCount >= config?.recovery?.maxRetries) {
+    if (errorEntry.retryCount >= config.recovery.maxRetries) {
       console.error(`Max retries exceeded for event ${event.id}`);
       return;
     }
@@ -562,15 +594,21 @@ export class EventReplayManager extends EventEmitter {
       
       // Mark as resolved
       errorEntry.resolved = true;
-      session?.progress?.successfulEvents++;
-      session?.progress?.failedEvents--;
+      if (session.progress) {
+        if (session.progress.successfulEvents !== undefined) {
+          session.progress.successfulEvents++;
+        }
+        if (session.progress.failedEvents !== undefined) {
+          session.progress.failedEvents--;
+        }
+      }
 
     } catch (error) {
       errorEntry.retryCount++;
       errorEntry.error = String(error);
       
       // Schedule next retry with backoff
-      const delay = config?.recovery?.retryDelay * Math.pow(config?.recovery?.backoffMultiplier, errorEntry.retryCount);
+      const delay = config.recovery.retryDelay * Math.pow(config.recovery.backoffMultiplier, errorEntry.retryCount);
       setTimeout(() => {
         this.retryEventProcessing(sessionId, event, service, config);
       }, delay);
@@ -581,7 +619,7 @@ export class EventReplayManager extends EventEmitter {
     // This would implement the actual event replay to the target service
     // For now, simulate the operation
     
-    if (config?.options?.respectOriginalTiming && event.timestamp) {
+    if (config.options.respectOriginalTiming && event.timestamp) {
       // Calculate delay to respect original timing (simplified)
       const timeSinceEvent = Date.now() - event.timestamp;
       if (timeSinceEvent > 0) {
@@ -597,23 +635,23 @@ export class EventReplayManager extends EventEmitter {
   private buildEventQuery(config: ReplayConfig, startPosition?: string): EventQuery {
     const query: EventQuery = {};
 
-    if (config?.target?.eventTypes?.length || 0 > 0) {
-      query.eventTypes = config?.target?.eventTypes;
+    if (config.target.eventTypes.length > 0) {
+      query.eventTypes = config.target.eventTypes;
     }
 
     if (config.timeRange) {
-      query.fromTimestamp = config?.timeRange?.fromTimestamp;
-      query.toTimestamp = config?.timeRange?.toTimestamp;
-      query.fromVersion = config?.timeRange?.fromVersion;
-      query.toVersion = config?.timeRange?.toVersion;
+      query.fromTimestamp = config.timeRange.fromTimestamp;
+      query.toTimestamp = config.timeRange.toTimestamp;
+      query.fromVersion = config.timeRange.fromVersion;
+      query.toVersion = config.timeRange.toVersion;
     }
 
     // Add start position logic
     if (startPosition) {
       // Parse checkpoint position (simplified)
       const parts = startPosition.split('_');
-      if (parts?.length || 0 > 1) {
-        query.offset = parseInt(parts[1]) * config?.options?.batchSize;
+      if (parts.length > 1 && parts[1]) {
+        query.offset = parseInt(parts[1]) * config.options.batchSize;
       }
     }
 
@@ -624,8 +662,8 @@ export class EventReplayManager extends EventEmitter {
     // Apply filters
     if (config.filters) {
       // Include patterns
-      if (config?.filters?.includePatterns?.length || 0 > 0) {
-        const included = config?.filters?.includePatterns.some(pattern => {
+      if (config.filters.includePatterns.length > 0) {
+        const included = config.filters.includePatterns.some(pattern => {
           const regex = new RegExp(pattern);
           return regex.test(event.type) || regex.test(event.source);
         });
@@ -633,8 +671,8 @@ export class EventReplayManager extends EventEmitter {
       }
 
       // Exclude patterns
-      if (config?.filters?.excludePatterns?.length || 0 > 0) {
-        const excluded = config?.filters?.excludePatterns.some(pattern => {
+      if (config.filters.excludePatterns.length > 0) {
+        const excluded = config.filters.excludePatterns.some(pattern => {
           const regex = new RegExp(pattern);
           return regex.test(event.type) || regex.test(event.source);
         });
@@ -642,9 +680,9 @@ export class EventReplayManager extends EventEmitter {
       }
 
       // Custom filter
-      if (config?.filters?.customFilter) {
+      if (config.filters.customFilter) {
         try {
-          const result = this.evaluateJavaScript(config?.filters?.customFilter, { event });
+          const result = this.evaluateJavaScript(config.filters.customFilter, { event });
           if (!result) return false;
         } catch (error) {
           console.error('Custom filter evaluation failed:', error);
@@ -657,45 +695,45 @@ export class EventReplayManager extends EventEmitter {
   }
 
   private async getTargetServices(config: ReplayConfig): Promise<any[]> {
-    if (config?.target?.services?.length || 0 > 0) {
+    if (config.target.services.length > 0) {
       // Get specific services by ID
       const services = [];
-      for (const serviceId of config?.target?.services) {
-        const service = await this?.serviceRegistry?.getService(serviceId);
+      for (const serviceId of config.target.services) {
+        const service = await this.serviceRegistry.getService(serviceId);
         if (service) services.push(service);
       }
       return services;
     }
 
     // Get all healthy services that can handle the event types
-    const allServices = await this?.serviceRegistry?.discoverServices({ status: 'healthy' });
-    return allServices?.filter(service => 
-      config?.target?.eventTypes?.length || 0 === 0 || 
-      config?.target?.eventTypes.some(eventType => 
-        service?.eventTypes?.subscribes.includes(eventType)
+    const allServices = await this.serviceRegistry.discoverServices({ status: 'healthy' });
+    return allServices.filter(service => 
+      config.target.eventTypes.length === 0 || 
+      config.target.eventTypes.some(eventType => 
+        service.eventTypes.subscribes.includes(eventType)
       )
     );
   }
 
   private async createCheckpoint(sessionId: string, position: string): Promise<void> {
-    const session = this?.activeSessions?.get(sessionId);
+    const session = this.activeSessions.get(sessionId);
     if (!session) return;
 
     const checkpoint = {
       position,
       timestamp: Date.now(),
-      eventsProcessed: session?.progress?.processedEvents,
+      eventsProcessed: session.progress?.processedEvents || 0,
       metadata: {
-        successRate: session?.progress?.successfulEvents / Math.max(1, session?.progress?.processedEvents),
-        processingRate: session?.metrics?.processingRate
+        successRate: (session.progress?.successfulEvents || 0) / Math.max(1, session.progress?.processedEvents || 0),
+        processingRate: session.metrics?.processingRate || 0
       }
     };
 
-    session?.checkpoints?.push(checkpoint);
+    session.checkpoints.push(checkpoint);
 
     // Keep only last 10 checkpoints
-    if (session?.checkpoints?.length > 10) {
-      session.checkpoints = session?.checkpoints?.slice(-10);
+    if (session.checkpoints.length > 10) {
+      session.checkpoints = session.checkpoints.slice(-10);
     }
 
     this.emit('checkpoint_created', {
@@ -706,10 +744,10 @@ export class EventReplayManager extends EventEmitter {
   }
 
   private calculateProcessingRate(session: ReplaySession): number {
-    const duration = Date.now() - session?.metrics?.startedAt;
+    const duration = Date.now() - (session.metrics?.startedAt || Date.now());
     if (duration === 0) return 0;
     
-    return (session?.progress?.processedEvents / duration) * 1000; // events per second
+    return ((session.progress?.processedEvents || 0) / duration) * 1000; // events per second
   }
 
   private evaluateJavaScript(expression: string, context: Record<string, any>): any {
@@ -727,10 +765,10 @@ export class EventReplayManager extends EventEmitter {
   }
 
   private async checkAutoRecoveryTriggers(eventType: string, data: any): Promise<void> {
-    for (const [planId, plan] of this.recoveryPlans) {
-      if (plan.triggers?.automatic && plan?.triggers?.conditions?.length || 0 > 0) {
+    for (const [planId, plan] of Array.from(this.recoveryPlans)) {
+      if (plan.triggers && plan.triggers.automatic && plan.triggers.conditions && plan.triggers.conditions.length > 0) {
         // Evaluate trigger conditions (simplified)
-        const shouldTrigger = plan?.triggers?.conditions.some(condition => {
+        const shouldTrigger = plan.triggers.conditions.some(condition => {
           try {
             return this.evaluateJavaScript(condition, { eventType, data });
           } catch {
@@ -754,25 +792,25 @@ export class EventReplayManager extends EventEmitter {
     totalEventsReplayed: number;
     averageProcessingRate: number;
   } {
-    const activeSessions = Array.from(this?.activeSessions?.values());
-    const completedSessions = activeSessions?.filter(s => s.status === 'completed');
+    const activeSessions = Array.from(this.activeSessions.values());
+    const completedSessions = activeSessions.filter(s => s.status === 'completed');
     
-    const totalEventsReplayed = activeSessions.reduce((sum: any, s: any) => sum + s?.progress?.processedEvents, 0);
-    const averageRate = activeSessions?.length || 0 > 0 
-      ? activeSessions.reduce((sum: any, s: any) => sum + s?.metrics?.processingRate, 0) / activeSessions?.length || 0
-      : 0;
+    const totalEventsReplayed = activeSessions.reduce((sum: number, s) => sum + (s.progress?.processedEvents || 0), 0);
+    const averageRate = activeSessions.length > 0 
+    ? activeSessions.reduce((sum: number, s) => sum + (s.metrics?.processingRate || 0), 0) / activeSessions.length
+    : 0;
 
     return {
-      totalConfigs: this?.replayConfigs?.size,
-      activeSessions: activeSessions?.filter(s => s.status === 'running').length,
-      completedSessions: completedSessions?.length || 0,
+      totalConfigs: this.replayConfigs.size,
+      activeSessions: activeSessions.filter(s => s.status === 'running').length,
+      completedSessions: completedSessions.length,
       totalEventsReplayed,
       averageProcessingRate: averageRate
     };
   }
 
   public async executeRecoveryPlan(planId: string): Promise<void> {
-    const plan = this?.recoveryPlans?.get(planId);
+    const plan = this.recoveryPlans.get(planId);
     if (!plan) {
       throw new Error(`Recovery plan ${planId} not found`);
     }
@@ -805,17 +843,17 @@ export class EventReplayManager extends EventEmitter {
     this.isShuttingDown = true;
 
     // Cancel all active sessions
-    for (const [sessionId, session] of this.activeSessions) {
+    for (const [sessionId, session] of Array.from(this.activeSessions)) {
       if (session.status === 'running' || session.status === 'paused') {
         await this.stopReplay(sessionId);
       }
     }
 
     // Clear all timers
-    for (const timer of this?.sessionTimers?.values()) {
+    for (const timer of Array.from(this.sessionTimers.values())) {
       clearTimeout(timer);
     }
-    this?.sessionTimers?.clear();
+    this.sessionTimers.clear();
 
     this.emit('shutdown');
   }

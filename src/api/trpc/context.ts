@@ -223,14 +223,14 @@ function validateRequest(req: any) {
   return { ip, userAgent };
 }
 
-type TRPCContext = {
+export type TRPCContext = {
   req: Request;
   res: Response;
-  user: User;
+  user: User | null;
   requestId: string;
   timestamp: Date;
-  batchId: string | undefined;
-  validatedInput: unknown;
+  batchId?: string;
+  validatedInput?: unknown;
   csrfToken?: string;
   rateLimits?: Map<string, { count: number; resetTime: number }>;
   masterOrchestrator: MasterOrchestrator;
@@ -301,17 +301,19 @@ export async function createContext({
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  return {
+  const context: TRPCContext = {
     req,
     res,
     user,
     requestId: Math.random().toString(36).substring(7),
     timestamp: new Date(),
-    batchId: undefined as string | undefined, // Will be set by batch middleware when needed
-    validatedInput: undefined as unknown, // Will be set by input validation middleware when needed
-    csrfToken, // Properly extracted CSRF token from cookies
+    batchId: undefined,
+    validatedInput: undefined,
+    csrfToken,
     ...services,
   };
+  
+  return context;
 }
 
 export type Context = inferAsyncReturnType<typeof createContext>;

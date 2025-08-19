@@ -2,15 +2,16 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { StatusIndicator, StatusBadge, StatusLegend } from '../StatusIndicator.js';
-import type { EmailStatus } from '../../../../types/email-dashboard?.interfaces.js';
+import '@testing-library/jest-dom';
+import { StatusIndicator, StatusBadge, StatusLegend } from '../StatusIndicator';
+import type { EmailStatus } from '../../../../types/email-dashboard.interfaces';
 
 // Mock dependencies
-vi.mock('../../../../lib/utils.js', () => ({
+vi.mock('../../../../lib/utils', () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(' '),
 }));
 
-vi.mock('../../../../components/ui/tooltip.js', () => ({
+vi.mock('../../../../components/ui/tooltip', () => ({
   Tooltip: ({ children }: any) => <div data-testid="tooltip">{children}</div>,
   TooltipContent: ({ children }: any) => <div data-testid="tooltip-content">{children}</div>,
   TooltipProvider: ({ children }: any) => <div data-testid="tooltip-provider">{children}</div>,

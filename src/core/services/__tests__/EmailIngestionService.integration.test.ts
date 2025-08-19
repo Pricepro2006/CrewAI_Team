@@ -11,23 +11,23 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } 
 vi.setConfig({ testTimeout: 30000 });
 import { Redis } from 'ioredis';
 import { Queue, Worker, QueueEvents } from 'bullmq';
-import { EmailIngestionServiceImpl } from '../EmailIngestionServiceImpl.js';
-import { EmailIngestionServiceFactory } from '../EmailIngestionServiceFactory.js';
+import { EmailIngestionServiceImpl } from '../EmailIngestionServiceImpl';
+import { EmailIngestionServiceFactory } from '../EmailIngestionServiceFactory';
 import {
   IngestionMode,
   IngestionSource,
   EmailIngestionConfig,
   RawEmailData
-} from '../EmailIngestionService.js';
-import { EmailRepository } from '../../../database/repositories/EmailRepository.js';
-import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService.js';
+} from '../EmailIngestionService';
+import { EmailRepository } from '../../../database/repositories/EmailRepository';
+import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService';
 
 // Mock only external dependencies, use real Redis/BullMQ
-vi.mock('../../../database/repositories/EmailRepository.js');
-vi.mock('../../../api/services/UnifiedEmailService.js');
-vi.mock('../../../utils/logger.js');
-vi.mock('../../../api/monitoring/metrics.js');
-vi.mock('../../../api/websocket/index.js');
+vi.mock('../../../database/repositories/EmailRepository');
+vi.mock('../../../api/services/UnifiedEmailService');
+vi.mock('../../../utils/logger');
+vi.mock('../../../api/monitoring/metrics');
+vi.mock('../../../api/websocket/index');
 
 describe('EmailIngestionService Integration Tests', () => {
   let redis: Redis;
@@ -240,12 +240,12 @@ describe('EmailIngestionService Integration Tests', () => {
       // First ingestion should succeed
       const result1 = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result1.success).toBe(true);
-      expect(result1.data?.status).not.toBe('duplicate');
+      expect(result1.data?.length).not.toBe('duplicate');
 
       // Second ingestion should detect duplicate
       const result2 = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result2.success).toBe(true);
-      expect(result2.data?.status).toBe('duplicate');
+      expect(result2.data?.length).toBe('duplicate');
 
       // Verify Redis has the key
       const serviceRedis = (service as any).redis;
@@ -300,9 +300,9 @@ describe('EmailIngestionService Integration Tests', () => {
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?.emailId).toBeDefined();
-      expect(result.data?.messageId).toBe(testEmail.messageId);
-      expect(result.data?.status).toBe('processed');
+      expect(result.data?.length).toBeDefined();
+      expect(result.data?.length).toBe(testEmail.messageId);
+      expect(result.data?.length).toBe('processed');
 
       // Verify the email was processed through UnifiedEmailService
       expect(mockUnifiedEmailService.processIncomingEmail).toHaveBeenCalledWith(testEmail);
@@ -377,7 +377,7 @@ describe('EmailIngestionService Integration Tests', () => {
         const throughput = emailCount / durationMinutes;
 
         expect(result.success).toBe(true);
-        expect(result.data?.processed).toBe(emailCount);
+        expect(result.data?.length).toBe(emailCount);
         expect(throughput).toBeGreaterThan(100); // Should be much higher with real queue
       } finally {
         await highThroughputService.shutdown();
@@ -529,7 +529,7 @@ describe('EmailIngestionService Integration Tests', () => {
         const endTime = performance.now();
 
         expect(result.success).toBe(true);
-        expect(result.data?.processed).toBe(batchSize);
+        expect(result.data?.length).toBe(batchSize);
 
         performanceResults.push(endTime - startTime);
       }
@@ -599,7 +599,7 @@ describe('EmailIngestionService Integration Tests', () => {
         const result = await factoryService.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
         expect(result.success).toBe(true);
-        expect(result.data?.messageId).toBe(testEmail.messageId);
+        expect(result.data?.length).toBe(testEmail.messageId);
       } finally {
         await factoryService.shutdown();
         EmailIngestionServiceFactory.reset();

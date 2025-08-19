@@ -167,9 +167,9 @@ class InMemoryDiscoveryBackend implements DiscoveryBackend {
   }
 
   async updateHeartbeat(serviceId: string): Promise<void> {
-    const service = this?.services?.get(serviceId);
-    if (service) {
-      service?.metadata?.lastHeartbeat = Date.now();
+    const service = this.services?.get(serviceId);
+    if (service && service.metadata) {
+      service.metadata.lastHeartbeat = Date.now();
       
       logger.debug('Heartbeat updated in memory', 'SERVICE_DISCOVERY', {
         serviceId
@@ -180,7 +180,8 @@ class InMemoryDiscoveryBackend implements DiscoveryBackend {
   async discover(serviceName: string): Promise<ServiceInstance[]> {
     const instances: ServiceInstance[] = [];
     
-    for (const service of this?.services?.values()) {
+    if (this.services) {
+      for (const service of Array.from(this.services.values())) {
       if (service.name === serviceName) {
         instances.push({
           id: service.id,
@@ -193,6 +194,7 @@ class InMemoryDiscoveryBackend implements DiscoveryBackend {
           lastSeen: service?.metadata?.lastHeartbeat,
           metadata: service.metadata
         });
+      }
       }
     }
     
@@ -473,7 +475,7 @@ export class ServiceDiscovery extends EventEmitter {
    * Clean up all watches
    */
   private cleanupWatches(): void {
-    for (const [serviceName, cleanup] of this.watchCleanupFunctions) {
+    for (const [serviceName, cleanup] of Array.from(this.watchCleanupFunctions)) {
       cleanup();
       logger.debug('Service watch cleaned up', 'SERVICE_DISCOVERY', {
         serviceName

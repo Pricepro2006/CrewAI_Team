@@ -2,10 +2,10 @@
  * Integration tests for security headers in the actual server
  */
 
-import { describe, test, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // Commented out due to missing supertest dependency
 // import request from 'supertest';
-// import { app, server } from '../../../server.js';
+// import { app, server } from '../../../server';
 
 // Mock the missing dependencies for tests
 const createMockChain = () => ({

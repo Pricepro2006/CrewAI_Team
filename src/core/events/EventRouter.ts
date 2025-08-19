@@ -255,7 +255,7 @@ export class EventRouter extends EventEmitter {
       // Apply filters first
       const filterResult = await this.applyFilters(event);
       if (!filterResult.passed) {
-        if (this.metrics.filteredEvents) { this.metrics.filteredEvents++ };
+        this.metrics.filteredEvents++;
         return {
           matched: false,
           routes: [],
@@ -267,8 +267,8 @@ export class EventRouter extends EventEmitter {
       }
 
       transformedEvent = filterResult.event;
-      if (filterResult?.metadata?.transformations?.length || 0 > 0) {
-        if (this.metrics.transformedEvents) { this.metrics.transformedEvents++ };
+      if ((filterResult.metadata?.transformations?.length || 0) > 0) {
+        this.metrics.transformedEvents++;
       }
 
       // Route through specific table or all tables
@@ -282,48 +282,48 @@ export class EventRouter extends EventEmitter {
 
           if (await this.evaluateRule(rule, transformedEvent)) {
             matchedRule = rule;
-            routes.push(...rule?.actions?.route);
+            routes.push(...rule.actions.route);
 
             // Apply rule transformations
-            if (rule?.actions?.transform) {
+            if (rule.actions.transform) {
               transformedEvent = await this.applyTransformation(
                 transformedEvent,
-                rule?.actions?.transform
+                rule.actions.transform
               );
             }
 
             // Apply enrichment
-            if (rule?.actions?.enrich) {
+            if (rule.actions.enrich) {
               transformedEvent = {
                 ...transformedEvent,
                 metadata: {
                   ...transformedEvent.metadata,
-                  ...rule?.actions?.enrich
+                  ...rule.actions.enrich
                 }
               };
             }
 
             // If not allowing duplicates, stop at first match
-            if (!rule?.actions?.duplicate) {
+            if (!rule.actions.duplicate) {
               break;
             }
           }
         }
 
-        if (routes?.length || 0 > 0 && !matchedRule?.actions.duplicate) {
+        if (routes.length > 0 && !matchedRule?.actions.duplicate) {
           break;
         }
       }
 
       // Use default routes if no matches
-      if (routes?.length || 0 === 0) {
+      if (routes.length === 0) {
         for (const table of tablesToCheck) {
           routes.push(...table.defaultRoute);
         }
       }
 
       const result: RoutingResult = {
-        matched: routes?.length || 0 > 0,
+        matched: routes.length > 0,
         routes: [...new Set(routes)], // Remove duplicates
         transformedEvent: transformedEvent !== event ? transformedEvent : undefined,
         metadata: {
@@ -335,25 +335,25 @@ export class EventRouter extends EventEmitter {
       };
 
       // Cache the result
-      if (this?.routingCache?.size < 1000) { // Limit cache size
-        this?.routingCache?.set(cacheKey, result);
+      if (this.routingCache.size < 1000) { // Limit cache size
+      this.routingCache.set(cacheKey, result);
       }
 
-      if (this.metrics.routedEvents) { this.metrics.routedEvents++ };
-      this.updateAverageRoutingTime(result?.metadata?.processingTime);
+      this.metrics.routedEvents++;
+      this.updateAverageRoutingTime(result.metadata.processingTime);
 
       this.emit('event_routed', {
         eventId: event.id,
         eventType: event.type,
         routes: result.routes,
         ruleMatched: !!matchedRule,
-        processingTime: result?.metadata?.processingTime
+        processingTime: result.metadata.processingTime
       });
 
       return result;
 
     } catch (error) {
-      if (this.metrics.routingErrors) { this.metrics.routingErrors++ };
+      this.metrics.routingErrors++;
       this.emit('routing_error', {
         eventId: event.id,
         error,
@@ -375,7 +375,7 @@ export class EventRouter extends EventEmitter {
       // Event type matching
       if (conditions.eventType) {
         if (Array.isArray(conditions.eventType)) {
-          if (!conditions?.eventType?.includes(event.type)) {
+          if (!conditions.eventType.includes(event.type)) {
             return false;
           }
         } else {
@@ -396,7 +396,7 @@ export class EventRouter extends EventEmitter {
       // Source matching
       if (conditions.source) {
         if (Array.isArray(conditions.source)) {
-          if (!conditions?.source?.includes(event.source)) {
+          if (!conditions.source.includes(event.source)) {
             return false;
           }
         } else {
@@ -631,19 +631,10 @@ export class EventRouter extends EventEmitter {
   }
 
   private updateAverageRoutingTime(newTime: number): void {
-    if (this?.metrics?.routedEvents === 1) {
-      if (this.metrics) {
-
-        this.metrics.averageRoutingTime = newTime;
-
-      }
-    } else {
-      if (this.metrics) {
-
-        this.metrics.averageRoutingTime = (this?.metrics?.averageRoutingTime * (this?.metrics?.routedEvents - 1) + newTime) / 
-        this?.metrics?.routedEvents;
-
-      }
+    if (this.metrics.routedEvents === 1) {
+      this.metrics.averageRoutingTime = newTime;
+    } else if (this.metrics.routedEvents > 1) {
+      this.metrics.averageRoutingTime = (this.metrics.averageRoutingTime * (this.metrics.routedEvents - 1) + newTime) / this.metrics.routedEvents;
     }
   }
 
@@ -651,10 +642,10 @@ export class EventRouter extends EventEmitter {
   public getMetrics() {
     return {
       ...this.metrics,
-      routingTables: this?.routingTables?.size,
-      filters: this?.filters?.size,
-      handlers: this?.handlers?.size,
-      cacheSize: this?.routingCache?.size
+      routingTables: this.routingTables.size,
+      filters: this.filters.size,
+      handlers: this.handlers.size,
+      cacheSize: this.routingCache.size
     };
   }
 
@@ -690,9 +681,9 @@ export class EventRouter extends EventEmitter {
     // This would track routing statistics over time
     // For now, return current metrics
     return {
-      totalRouted: this?.metrics?.routedEvents,
-      averageTime: this?.metrics?.averageRoutingTime,
-      errorRate: this?.metrics?.routingErrors / Math.max(1, this?.metrics?.routedEvents),
+      totalRouted: this.metrics.routedEvents,
+      averageTime: this.metrics.averageRoutingTime,
+      errorRate: this.metrics.routingErrors / Math.max(1, this.metrics.routedEvents),
       topRoutes: []
     };
   }

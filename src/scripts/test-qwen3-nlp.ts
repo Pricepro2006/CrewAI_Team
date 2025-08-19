@@ -5,8 +5,8 @@
  */
 
 import axios from "axios";
-import { logger } from "../../utils/logger.js";
-import { walmartConfig } from "../config/walmart.config.js";
+import { logger } from "../utils/logger";
+import { walmartConfig } from "../config/walmart.config";
 
 interface TestQuery {
   input: string;

@@ -3,7 +3,7 @@
  * Implements safe parsing with validation and fallback values
  */
 
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import type {
   LlamaAnalysisData,
   Phi4AnalysisData,
@@ -227,7 +227,7 @@ export class PipelineJsonParser {
       errors.push("action_items must be an array");
     }
 
-    return { isValid: errors?.length || 0 === 0, errors, warnings };
+    return { isValid: errors.length === 0, errors, warnings };
   }
 
   private validatePhi4Analysis(data: unknown): ValidationResult {
@@ -255,7 +255,7 @@ export class PipelineJsonParser {
       errors.push("deep_insights must be an array");
     }
 
-    return { isValid: errors?.length || 0 === 0, errors, warnings };
+    return { isValid: errors.length === 0, errors, warnings };
   }
 
   private normalizeLlamaAnalysis(data: unknown): Partial<LlamaAnalysisData> {

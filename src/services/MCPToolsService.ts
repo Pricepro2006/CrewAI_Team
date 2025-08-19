@@ -1,4 +1,4 @@
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 
 /**
  * Service to manage MCP (Model Context Protocol) tools integration
@@ -168,11 +168,11 @@ export class MCPToolsService {
           throw new Error(`Unknown tool category: ${toolCategory}`);
       }
 
-      if (!tool || !tool[toolName]) {
+      if (!tool || !(tool as any)[toolName]) {
         throw new Error(`Tool not found: ${toolCategory}.${toolName}`);
       }
 
-      const result = await tool[toolName](params);
+      const result = await (tool as any)[toolName](params);
 
       logger.info("MCP tool executed successfully", "MCP_TOOLS", {
         category: toolCategory,

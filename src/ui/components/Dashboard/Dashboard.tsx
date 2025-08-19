@@ -1,8 +1,7 @@
 import React from "react";
-import { api } from "../../../lib/trpc.js";
+import { api } from "../../lib/api";
 import "./Dashboard.css";
-import { logger } from "../../../utils/logger.js";
-import { createSafeQueryConfig, handleAPIError } from "../../utils/api-error-handler.js";
+// Note: Removed non-existent imports for utils/logger and api-error-handler
 
 interface StatsCardProps {
   title: string;
@@ -44,56 +43,42 @@ const AgentCard: React.FC<AgentCardProps> = ({ name, status, specialty }) => (
 );
 
 export const Dashboard: React.FC = () => {
-  // Fix: Use correct tRPC endpoint calls with proper error handling and graceful degradation
-  const { data: health, error: healthError } = api.health.status.useQuery(
-    undefined, 
-    createSafeQueryConfig('health.status', { 
-      logLevel: 'warn',
-      showToUser: false // Health errors are handled by the UI state
-    })
-  );
+  // Fix: Use correct tRPC endpoint calls with graceful error handling
+  const { data: health, error: healthError } = api?.health?.status?.useQuery?.(undefined, {
+    retry: false,
+    staleTime: 30000
+  }) || { data: null, error: null };
   
-  const { data: agentStats, error: agentError } = api.agent.list.useQuery(
-    undefined, 
-    createSafeQueryConfig('agent.list', {
-      logLevel: 'warn',
-      showToUser: false
-    })
-  );
+  // Safely handle optional agent queries
+  const { data: agentStats, error: agentError } = api?.agent?.list?.useQuery?.(undefined, {
+    retry: false,
+    staleTime: 30000
+  }) || { data: null, error: null };
   
-  const { data: conversationStats, error: chatError } = api.chat.stats.useQuery(
-    undefined, 
-    createSafeQueryConfig('chat.stats', {
-      logLevel: 'warn', 
-      showToUser: false
-    })
-  );
+  const { data: conversationStats, error: chatError } = api?.chat?.stats?.useQuery?.(undefined, {
+    retry: false,
+    staleTime: 30000
+  }) || { data: null, error: null };
   
-  const { data: ragStats, error: ragError } = api.rag.stats.useQuery(
-    undefined, 
-    createSafeQueryConfig('rag.stats', {
-      logLevel: 'warn',
-      showToUser: false
-    })
-  );
+  // Safely handle optional rag queries  
+  const { data: ragStats, error: ragError } = api?.rag?.stats?.useQuery?.(undefined, {
+    retry: false,
+    staleTime: 30000
+  }) || { data: null, error: null };
 
   // Handle API errors with graceful degradation
   React.useEffect(() => {
     if (healthError) {
-      const errorInfo = handleAPIError(healthError, 'health.status', { logLevel: 'warn' });
-      // Health error is already handled by the safe query config
+      console.warn('Health API error:', healthError.message);
     }
     if (agentError) {
-      const errorInfo = handleAPIError(agentError, 'agent.list', { logLevel: 'warn' });
-      // Agent error is handled with fallback data
+      console.warn('Agent API error:', agentError.message);
     }
     if (chatError) {
-      const errorInfo = handleAPIError(chatError, 'chat.stats', { logLevel: 'warn' });
-      // Chat error is handled with fallback data
+      console.warn('Chat API error:', chatError.message);
     }
     if (ragError) {
-      const errorInfo = handleAPIError(ragError, 'rag.stats', { logLevel: 'warn' });
-      // RAG error is handled with fallback data
+      console.warn('RAG API error:', ragError.message);
     }
   }, [healthError, agentError, chatError, ragError]);
 
@@ -258,11 +243,11 @@ export const Dashboard: React.FC = () => {
 
   // Get agent list from real data or fallback to known agents
   const availableAgents = React.useMemo(() => {
-    if (agentStats?.agents) {
+    if (agentStats?.agents && Array.isArray(agentStats.agents)) {
       return agentStats.agents.map((agent: any) => ({
-        name: agent.name || agent.type,
-        status: agent.status,
-        specialty: agent.specialty || agent.description,
+        name: agent.name || agent.type || 'Unknown Agent',
+        status: (agent.status === 'active' || agent.status === 'idle' || agent.status === 'busy') ? agent.status : 'idle' as const,
+        specialty: agent.specialty || agent.description || "General",
       }));
     }
     
@@ -297,7 +282,7 @@ export const Dashboard: React.FC = () => {
   }, [health, healthError]);
   
   const isLlamaConnected = React.useMemo(() => {
-    return llamaStatus === "healthy" || llamaStatus === "connected";
+    return llamaStatus === "healthy";
   }, [llamaStatus]);
 
   return (
@@ -344,13 +329,13 @@ export const Dashboard: React.FC = () => {
           <div className="agents-section">
             <h2>Available Agents</h2>
             <div className="agent-grid">
-              {availableAgents?.map((agent: any, index: number) => (
+              {availableAgents?.map((agent, index) => (
                 <AgentCard key={index} {...agent} />
               ))}
             </div>
             <p className="agents-count">
               {agentStats?.activeAgents ||
-                availableAgents?.filter((a: any) => a.status === "active")
+                availableAgents?.filter((a) => a.status === "active")
                   .length}{" "}
               of {agentStats?.totalAgents || availableAgents?.length || 0} agents
               available

@@ -3,10 +3,10 @@
  * Addresses: No indexes, single connection bottleneck, 200-500ms search times
  */
 
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 
-export function up(db: Database.Database): void {
+export function up(db: DatabaseInstance): void {
   logger.info("Adding performance indexes to database", "MIGRATION");
   
   try {
@@ -187,7 +187,7 @@ export function up(db: Database.Database): void {
   }
 }
 
-export function down(db: Database.Database): void {
+export function down(db: DatabaseInstance): void {
   logger.warn("Removing performance indexes - this will degrade performance", "MIGRATION");
   
   // Drop all custom indexes (keep automatic ones)

@@ -235,4 +235,53 @@ export class AdaptiveVectorStore implements IVectorStore {
       };
     }
   }
+
+  // Optional methods from IVectorStore
+  async getDocumentCount(): Promise<number> {
+    try {
+      return await this?.store?.getDocumentCount?.() || 0;
+    } catch (error) {
+      if (!this.fallbackUsed) {
+        await this.switchToFallback();
+        return await this?.store?.getDocumentCount?.() || 0;
+      }
+      return 0;
+    }
+  }
+
+  async getChunkCount(): Promise<number> {
+    try {
+      return await this?.store?.getChunkCount?.() || 0;
+    } catch (error) {
+      if (!this.fallbackUsed) {
+        await this.switchToFallback();
+        return await this?.store?.getChunkCount?.() || 0;
+      }
+      return 0;
+    }
+  }
+
+  async getCollections(): Promise<string[]> {
+    try {
+      return await this?.store?.getCollections?.() || [];
+    } catch (error) {
+      if (!this.fallbackUsed) {
+        await this.switchToFallback();
+        return await this?.store?.getCollections?.() || [];
+      }
+      return [];
+    }
+  }
+
+  async clear(): Promise<void> {
+    try {
+      await this?.store?.clear?.();
+    } catch (error) {
+      if (!this.fallbackUsed) {
+        await this.switchToFallback();
+        await this?.store?.clear?.();
+      }
+      // Silently ignore errors on clear
+    }
+  }
 }

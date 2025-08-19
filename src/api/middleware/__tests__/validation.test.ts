@@ -3,7 +3,7 @@
  * Tests validation functionality and error handling
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock validation functions that might exist in the middleware
 const mockValidation = {

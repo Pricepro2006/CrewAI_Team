@@ -383,7 +383,7 @@ export const EmailList: React.FC<EmailListProps> = ({
     );
   }
 
-  if (!emails || emails?.length || 0 === 0) {
+  if (!emails || (emails?.length || 0) === 0) {
     return (
       <div className="email-list">
         <div className="email-list__header">
@@ -395,9 +395,9 @@ export const EmailList: React.FC<EmailListProps> = ({
   }
 
   const isAllSelected =
-    emails?.length || 0 > 0 && selectedEmails?.length || 0 === emails?.length || 0;
+    (emails?.length || 0) > 0 && (selectedEmails?.length || 0) === (emails?.length || 0);
   const isPartialSelected =
-    selectedEmails?.length || 0 > 0 && selectedEmails?.length || 0 < emails?.length || 0;
+    (selectedEmails?.length || 0) > 0 && (selectedEmails?.length || 0) < (emails?.length || 0);
 
   return (
     <div className="email-list">
@@ -420,7 +420,7 @@ export const EmailList: React.FC<EmailListProps> = ({
           </div>
 
           <div className="email-list__count">
-            {emails?.length || 0} email{emails?.length || 0 !== 1 ? "s" : ""}
+            {emails?.length || 0} email{(emails?.length || 0) !== 1 ? "s" : ""}
             {filters && Object.keys(filters).length > 0 && " (filtered)"}
           </div>
         </div>
@@ -439,7 +439,7 @@ export const EmailList: React.FC<EmailListProps> = ({
         ))}
       </div>
 
-      {emails?.length || 0 >= 50 && (
+      {(emails?.length || 0) >= 50 && (
         <div className="email-list__footer">
           <p>Showing first 50 emails. Use filters to narrow results.</p>
         </div>

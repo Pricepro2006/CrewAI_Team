@@ -63,7 +63,7 @@ interface SystemMetrics {
 class PerformanceMonitor {
   private results: BenchmarkResult[] = [];
   private systemMetrics: SystemMetrics[] = [];
-  private logStream: any;
+  private logStream: NodeJS.WritableStream | null = null;
 
   constructor() {
     this.setupResultsDirectory();
@@ -84,18 +84,18 @@ class PerformanceMonitor {
     const timestamped = `[${new Date().toISOString()}] ${message}`;
     console.log(timestamped);
     if (this.logStream) {
-      this?.logStream?.write(timestamped + '\n');
+      this.logStream.write(timestamped + '\n');
     }
   }
 
   private calculatePercentile(values: number[], percentile: number): number {
     const sorted = values.sort((a, b) => a - b);
-    const index = Math.ceil((percentile / 100) * sorted?.length || 0) - 1;
+    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
     return sorted[Math.max(0, index)] || 0;
   }
 
   private async getSystemMetrics(): Promise<SystemMetrics> {
-    return new Promise((resolve: any) => {
+    return new Promise<SystemMetrics>((resolve) => {
       const metrics: SystemMetrics = {
         cpu: 0,
         memory: { used: 0, total: 0, percentage: 0 },
@@ -106,30 +106,30 @@ class PerformanceMonitor {
       const memInfo = spawn('free', ['-m']);
       let memOutput = '';
       
-      memInfo?.stdout?.on('data', (data: any) => {
+      memInfo.stdout?.on('data', (data: Buffer) => {
         memOutput += data.toString();
       });
 
       memInfo.on('close', () => {
         const memLines = memOutput.split('\n');
-        if (memLines?.length || 0 > 1) {
+        if (memLines.length > 1 && memLines[1]) {
           const memData = memLines[1].split(/\s+/);
-          if (memData?.length || 0 >= 3) {
-            metrics?.memory?.total = parseInt(memData[1]);
-            metrics?.memory?.used = parseInt(memData[2]);
-            metrics?.memory?.percentage = (metrics?.memory?.used / metrics?.memory?.total) * 100;
+          if (memData.length >= 3) {
+            metrics.memory.total = parseInt(memData[1] || '0');
+            metrics.memory.used = parseInt(memData[2] || '0');
+            metrics.memory.percentage = (metrics.memory.used / metrics.memory.total) * 100;
           }
         }
 
         // Get process counts
         const processCount = spawn('pgrep', ['-c', 'node']);
-        processCount?.stdout?.on('data', (data: any) => {
-          metrics?.processes?.node = parseInt(data.toString().trim()) || 0;
+        processCount.stdout?.on('data', (data: Buffer) => {
+          metrics.processes.node = parseInt(data.toString().trim()) || 0;
         });
 
         const ollamaCount = spawn('pgrep', ['-c', 'ollama']);
-        ollamaCount?.stdout?.on('data', (data: any) => {
-          metrics?.processes?.ollama = parseInt(data.toString().trim()) || 0;
+        ollamaCount.stdout?.on('data', (data: Buffer) => {
+          metrics.processes.ollama = parseInt(data.toString().trim()) || 0;
         });
 
         setTimeout(() => resolve(metrics), 100);
@@ -137,7 +137,7 @@ class PerformanceMonitor {
     });
   }
 
-  private async checkServiceHealth(service: any): Promise<boolean> {
+  private async checkServiceHealth(service: typeof SERVICES[keyof typeof SERVICES]): Promise<boolean> {
     try {
       const response = await axios.get(`${service.url}/health`, { 
         timeout: 2000,
@@ -166,7 +166,7 @@ class PerformanceMonitor {
     }
   }
 
-  private async warmupService(service: any, endpoint: string): Promise<void> {
+  private async warmupService(service: typeof SERVICES[keyof typeof SERVICES], endpoint: string): Promise<void> {
     this.log(`Warming up ${service.name}...`);
     
     for (let i = 0; i < BENCHMARK_CONFIG.warmupRequests; i++) {
@@ -182,10 +182,10 @@ class PerformanceMonitor {
   }
 
   private async benchmarkEndpoint(
-    service: any,
+    service: typeof SERVICES[keyof typeof SERVICES],
     endpoint: string,
     method: "GET" | "POST" = "GET",
-    data?: any,
+    data?: unknown,
     requests: number = BENCHMARK_CONFIG.testRequests
   ): Promise<BenchmarkResult> {
     
@@ -237,7 +237,7 @@ class PerformanceMonitor {
       
       // Progress indicator
       if ((i + 1) % Math.max(1, Math.floor(requests / 10)) === 0) {
-        process?.stdout?.write(`  Progress: ${i + 1}/${requests}\r`);
+        process.stdout?.write(`  Progress: ${i + 1}/${requests}\r`);
       }
     }
     
@@ -252,9 +252,9 @@ class PerformanceMonitor {
       endpoint,
       timestamp: new Date().toISOString(),
       requests,
-      avgLatency: latencies.reduce((sum: any, l: any) => sum + l, 0) / latencies?.length || 0,
+      avgLatency: latencies.reduce((sum, l) => sum + l, 0) / (latencies.length || 1),
       minLatency: latencies[0] || 0,
-      maxLatency: latencies[latencies?.length || 0 - 1] || 0,
+      maxLatency: latencies[latencies.length - 1] || 0,
       p50Latency: this.calculatePercentile(latencies, 50),
       p90Latency: this.calculatePercentile(latencies, 90),
       p95Latency: this.calculatePercentile(latencies, 95),
@@ -262,14 +262,14 @@ class PerformanceMonitor {
       successRate: (successes / requests) * 100,
       throughput: (successes / totalTime) * 1000,
       memoryUsage: process.memoryUsage(),
-      errors: [...new Set(errors)].slice(0, 5) // Unique errors, max 5
+      errors: Array.from(new Set(errors)).slice(0, 5) // Unique errors, max 5
     };
     
-    this?.results?.push(result);
+    this.results.push(result);
     return result;
   }
 
-  private async concurrentLoadTest(service: any, endpoint: string, concurrentUsers: number): Promise<BenchmarkResult> {
+  private async concurrentLoadTest(service: typeof SERVICES[keyof typeof SERVICES], endpoint: string, concurrentUsers: number): Promise<BenchmarkResult> {
     this.log(`Load testing ${service.name} with ${concurrentUsers} concurrent users...`);
     
     const startTime = performance.now();
@@ -304,9 +304,9 @@ class PerformanceMonitor {
     const results = await Promise.all(promises);
     const totalTime = performance.now() - startTime;
     
-    const latencies = results?.map(r => r.latency);
-    const successes = results?.filter(r => r.success).length;
-    const errors = results?.filter(r => r.error).map(r => r.error!);
+    const latencies = results.map(r => r.latency);
+    const successes = results.filter(r => r.success).length;
+    const errors = results.filter(r => r.error).map(r => r.error!);
     
     latencies.sort((a, b) => a - b);
     
@@ -315,16 +315,16 @@ class PerformanceMonitor {
       endpoint: `${endpoint} (${concurrentUsers} concurrent)`,
       timestamp: new Date().toISOString(),
       requests: concurrentUsers,
-      avgLatency: latencies.reduce((sum: any, l: any) => sum + l, 0) / latencies?.length || 0,
-      minLatency: latencies[0],
-      maxLatency: latencies[latencies?.length || 0 - 1],
+      avgLatency: latencies.reduce((sum, l) => sum + l, 0) / (latencies.length || 1),
+      minLatency: latencies[0] || 0,
+      maxLatency: latencies[latencies.length - 1] || 0,
       p50Latency: this.calculatePercentile(latencies, 50),
       p90Latency: this.calculatePercentile(latencies, 90),
       p95Latency: this.calculatePercentile(latencies, 95),
       p99Latency: this.calculatePercentile(latencies, 99),
       successRate: (successes / concurrentUsers) * 100,
       throughput: (successes / totalTime) * 1000,
-      errors: [...new Set(errors)].slice(0, 5)
+      errors: Array.from(new Set(errors)).slice(0, 5)
     };
   }
 
@@ -334,9 +334,9 @@ class PerformanceMonitor {
     console.log('='.repeat(80));
     
     // Group results by service
-    const serviceResults = this?.results?.reduce((acc: any, result: any) => {
+    const serviceResults = this.results.reduce((acc, result) => {
       if (!acc[result.service]) acc[result.service] = [];
-      acc[result.service].push(result);
+      acc[result.service]!.push(result);
       return acc;
     }, {} as Record<string, BenchmarkResult[]>);
     
@@ -344,16 +344,16 @@ class PerformanceMonitor {
       console.log(`\n📊 ${serviceName.toUpperCase()}`);
       console.log('-'.repeat(50));
       
-      results.forEach(result => {
+      (results as BenchmarkResult[]).forEach(result => {
         console.log(`\n🔹 ${result.endpoint}`);
-        console.log(`   Avg Latency: ${result?.avgLatency?.toFixed(2)}ms`);
-        console.log(`   P95 Latency: ${result?.p95Latency?.toFixed(2)}ms`);
-        console.log(`   P99 Latency: ${result?.p99Latency?.toFixed(2)}ms`);
-        console.log(`   Success Rate: ${result?.successRate?.toFixed(1)}%`);
-        console.log(`   Throughput: ${result?.throughput?.toFixed(2)} req/s`);
+        console.log(`   Avg Latency: ${result.avgLatency.toFixed(2)}ms`);
+        console.log(`   P95 Latency: ${result.p95Latency.toFixed(2)}ms`);
+        console.log(`   P99 Latency: ${result.p99Latency.toFixed(2)}ms`);
+        console.log(`   Success Rate: ${result.successRate.toFixed(1)}%`);
+        console.log(`   Throughput: ${result.throughput.toFixed(2)} req/s`);
         
-        if (result?.errors?.length > 0) {
-          console.log(`   ⚠️  Errors: ${result?.errors?.join(', ')}`);
+        if (result.errors.length > 0) {
+          console.log(`   ⚠️  Errors: ${result.errors.join(', ')}`);
         }
       });
     }
@@ -373,14 +373,14 @@ class PerformanceMonitor {
     };
     
     for (const [serviceName, target] of Object.entries(performanceTargets)) {
-      const serviceResults = this?.results?.filter(r => r.service === serviceName);
-      if (serviceResults?.length || 0 === 0) {
+      const serviceResults = this.results.filter(r => r.service === serviceName);
+      if (serviceResults.length === 0) {
         console.log(`\n❌ ${serviceName}: NO DATA (Service not running)`);
         continue;
       }
       
-      const avgP95 = serviceResults.reduce((sum: any, r: any) => sum + r.p95Latency, 0) / serviceResults?.length || 0;
-      const avgSuccessRate = serviceResults.reduce((sum: any, r: any) => sum + r.successRate, 0) / serviceResults?.length || 0;
+      const avgP95 = serviceResults.reduce((sum, r) => sum + r.p95Latency, 0) / serviceResults.length;
+      const avgSuccessRate = serviceResults.reduce((sum, r) => sum + r.successRate, 0) / serviceResults.length;
       
       const latencyStatus = avgP95 <= target.p95 ? '✅' : '❌';
       const reliabilityStatus = avgSuccessRate >= 99 ? '✅' : avgSuccessRate >= 95 ? '⚠️' : '❌';
@@ -405,7 +405,7 @@ class PerformanceMonitor {
         recommendations.push({
           priority: 'HIGH',
           service: result.service,
-          issue: `P95 latency (${result?.p95Latency?.toFixed(2)}ms) exceeds target by 50%`,
+          issue: `P95 latency (${result.p95Latency.toFixed(2)}ms) exceeds target by 50%`,
           recommendation: this.getOptimizationRecommendation(result.service, 'latency')
         });
       }
@@ -414,7 +414,7 @@ class PerformanceMonitor {
         recommendations.push({
           priority: 'CRITICAL',
           service: result.service,
-          issue: `Low success rate: ${result?.successRate?.toFixed(1)}%`,
+          issue: `Low success rate: ${result.successRate.toFixed(1)}%`,
           recommendation: this.getOptimizationRecommendation(result.service, 'reliability')
         });
       }
@@ -423,8 +423,8 @@ class PerformanceMonitor {
     // Display recommendations by priority
     const priorities = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
     for (const priority of priorities) {
-      const priorityRecs = recommendations?.filter(r => r.priority === priority);
-      if (priorityRecs?.length || 0 === 0) continue;
+      const priorityRecs = recommendations.filter(r => r.priority === priority);
+      if (priorityRecs.length === 0) continue;
       
       console.log(`\n🔴 ${priority} PRIORITY:`);
       priorityRecs.forEach((rec, index) => {
@@ -433,19 +433,19 @@ class PerformanceMonitor {
       });
     }
     
-    if (recommendations?.length || 0 === 0) {
+    if (recommendations.length === 0) {
       console.log('\n✅ All services are performing within acceptable ranges!');
     }
     
     // Memory analysis
-    const memoryResults = this?.results?.filter(r => r.memoryUsage);
-    if (memoryResults?.length || 0 > 0) {
+    const memoryResults = this.results.filter(r => r.memoryUsage);
+    if (memoryResults.length > 0) {
       console.log('\n' + '='.repeat(80));
       console.log('MEMORY USAGE ANALYSIS');
       console.log('='.repeat(80));
       
-      const avgMemory = memoryResults.reduce((sum: any, r: any) => sum + (r.memoryUsage?.heapUsed || 0), 0) / memoryResults?.length || 0;
-      const maxMemory = Math.max(...memoryResults?.map(r => r.memoryUsage?.heapUsed || 0));
+      const avgMemory = memoryResults.reduce((sum, r) => sum + (r.memoryUsage?.heapUsed || 0), 0) / memoryResults.length;
+      const maxMemory = Math.max(...memoryResults.map(r => r.memoryUsage?.heapUsed || 0));
       
       console.log(`\nAverage Heap Usage: ${(avgMemory / 1024 / 1024).toFixed(2)} MB`);
       console.log(`Peak Heap Usage: ${(maxMemory / 1024 / 1024).toFixed(2)} MB`);
@@ -498,10 +498,10 @@ class PerformanceMonitor {
       systemMetrics: this.systemMetrics,
       results: this.results,
       summary: {
-        totalTests: this?.results?.length,
-        servicesActive: [...new Set(this?.results?.map(r => r.service))].length,
-        avgLatency: this?.results?.reduce((sum: any, r: any) => sum + r.avgLatency, 0) / this?.results?.length,
-        avgSuccessRate: this?.results?.reduce((sum: any, r: any) => sum + r.successRate, 0) / this?.results?.length
+        totalTests: this.results.length,
+        servicesActive: Array.from(new Set(this.results.map(r => r.service))).length,
+        avgLatency: this.results.reduce((sum, r) => sum + r.avgLatency, 0) / this.results.length,
+        avgSuccessRate: this.results.reduce((sum, r) => sum + r.successRate, 0) / this.results.length
       }
     };
     
@@ -514,7 +514,7 @@ class PerformanceMonitor {
     
     // 1. Check service health
     this.log('\n🔍 Checking service health...');
-    const healthResults = {};
+    const healthResults: Record<string, boolean> = {};
     for (const [key, service] of Object.entries(SERVICES)) {
       const isHealthy = await this.checkServiceHealth(service);
       healthResults[key] = isHealthy;
@@ -522,7 +522,7 @@ class PerformanceMonitor {
     }
     
     // 2. Collect initial system metrics
-    this?.systemMetrics?.push(await this.getSystemMetrics());
+    this.systemMetrics.push(await this.getSystemMetrics());
     
     // 3. Frontend performance tests (if running)
     if (healthResults['frontend']) {
@@ -564,17 +564,17 @@ class PerformanceMonitor {
     for (const users of BENCHMARK_CONFIG.concurrentUsers) {
       if (healthResults['api']) {
         const loadResult = await this.concurrentLoadTest(SERVICES.api, '/health', users);
-        this?.results?.push(loadResult);
+        this.results.push(loadResult);
       }
       
       if (healthResults['nlp']) {
         const nlpLoadResult = await this.concurrentLoadTest(SERVICES.nlp, '/health', Math.min(users, 10)); // Limit NLP concurrency
-        this?.results?.push(nlpLoadResult);
+        this.results.push(nlpLoadResult);
       }
     }
     
     // 8. Final system metrics
-    this?.systemMetrics?.push(await this.getSystemMetrics());
+    this.systemMetrics.push(await this.getSystemMetrics());
     
     // 9. Display and save results
     this.displayResults();
@@ -583,7 +583,7 @@ class PerformanceMonitor {
     this.log('\n✅ Performance benchmark completed!');
     
     if (this.logStream) {
-      this?.logStream?.end();
+      this.logStream.end();
     }
   }
 }
@@ -612,9 +612,9 @@ process.on('SIGTERM', () => {
 });
 
 // Run if this is the main module
-const isMainModule = process.argv[1] === new URL(import.meta.url).pathname;
-if (isMainModule) {
+if (require.main === module) {
   main();
 }
 
-export { PerformanceMonitor, BenchmarkResult, SystemMetrics };
+export { PerformanceMonitor };
+export type { BenchmarkResult, SystemMetrics };

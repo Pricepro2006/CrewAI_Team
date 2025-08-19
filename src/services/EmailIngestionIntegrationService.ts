@@ -92,7 +92,7 @@ export class EmailIngestionIntegrationService {
       // Start monitoring and scheduling
       await this.startMonitoring();
       
-      if (this?.config?.autoStartScheduler) {
+      if (this.config.autoStartScheduler) {
         await this.startScheduler();
       }
 
@@ -121,7 +121,7 @@ export class EmailIngestionIntegrationService {
   private async initializeCoreServices(): Promise<void> {
     // Create EmailIngestionService with production configuration
     this.ingestionService = await EmailIngestionServiceFactory.create({
-      mode: this?.config?.mode || IngestionMode.HYBRID,
+      mode: this.config.mode || IngestionMode.HYBRID,
       processing: {
         batchSize: parseInt(process.env.EMAIL_PROCESSING_BATCH_SIZE || '50'),
         concurrency: parseInt(process.env.EMAIL_PROCESSING_CONCURRENCY || '10'),
@@ -151,12 +151,12 @@ export class EmailIngestionIntegrationService {
    * Set up integrations between services
    */
   private async setupIntegrations(): Promise<void> {
-    if (this?.config?.enableAnalysisIntegration) {
+    if (this.config.enableAnalysisIntegration) {
       // Connect ingestion completion to analysis pipeline
       this.setupAnalysisIntegration();
     }
 
-    if (this?.config?.enableWebSocketUpdates) {
+    if (this.config.enableWebSocketUpdates) {
       // Connect to WebSocket for real-time updates
       this.setupWebSocketIntegration();
     }
@@ -169,13 +169,13 @@ export class EmailIngestionIntegrationService {
    */
   private setupAnalysisIntegration(): void {
     // Override ingestion completion handler to trigger analysis
-    const originalIngestBatch = this?.ingestionService?.ingestBatch?.bind(this.ingestionService);
+    const originalIngestBatch = this.ingestionService?.ingestBatch?.bind(this.ingestionService);
     
     if (this.ingestionService && originalIngestBatch && typeof originalIngestBatch === 'function') {
       (this.ingestionService as any).ingestBatch = async (emails: RawEmailData[], source: IngestionSource) => {
         const result = await originalIngestBatch(emails, source);
         
-        if (result.success && this?.config?.enableAnalysisIntegration) {
+        if (result.success && this.config.enableAnalysisIntegration) {
           // Trigger adaptive 3-phase analysis for newly ingested emails
           this.triggerAnalysisForNewEmails(result.data.processed).catch(error => {
             logger.error('Failed to trigger analysis for new emails', 
@@ -249,11 +249,11 @@ export class EmailIngestionIntegrationService {
    * Start health monitoring
    */
   private async startMonitoring(): Promise<void> {
-    if (!this?.config?.enableHealthMonitoring) {
+    if (!this.config.enableHealthMonitoring) {
       return;
     }
 
-    const checkInterval = this?.config?.enableHealthMonitoring ? 30000 : 60000;
+    const checkInterval = this.config.enableHealthMonitoring ? 30000 : 60000;
     
     this.healthCheckInterval = setInterval(async () => {
       try {
@@ -265,7 +265,7 @@ export class EmailIngestionIntegrationService {
             { health });
           
           // Emit health status via WebSocket if enabled
-          if (this?.config?.enableWebSocketUpdates && io) {
+          if (this.config.enableWebSocketUpdates && io) {
             io.emit('email:ingestion:health', {
               ...health,
               timestamp: new Date().toISOString()
@@ -291,20 +291,20 @@ export class EmailIngestionIntegrationService {
    * Start auto-pull scheduler
    */
   private async startScheduler(): Promise<void> {
-    if (this?.config?.mode === IngestionMode.MANUAL) {
+    if (this.config.mode === IngestionMode.MANUAL) {
       logger.info('Scheduler not started - running in manual mode only');
       return;
     }
 
-    const intervalMs = this?.config?.schedulerIntervalMinutes * 60 * 1000;
+    const intervalMs = this.config.schedulerIntervalMinutes * 60 * 1000;
     
     this.schedulerInterval = setInterval(async () => {
-      if (this.operationSemaphore >= this?.config?.maxConcurrentOperations) {
+      if (this.operationSemaphore >= this.config.maxConcurrentOperations) {
         logger.warn('Skipping scheduled auto-pull - too many concurrent operations', 
           'EmailIngestionIntegrationService',
           {
             current: this.operationSemaphore,
-            max: this?.config?.maxConcurrentOperations
+            max: this.config.maxConcurrentOperations
           });
         return;
       }
@@ -333,7 +333,7 @@ export class EmailIngestionIntegrationService {
     logger.info('Auto-pull scheduler started', 
       'EmailIngestionIntegrationService',
       { 
-        intervalMinutes: this?.config?.schedulerIntervalMinutes 
+        intervalMinutes: this.config.schedulerIntervalMinutes 
       });
   }
 
@@ -416,13 +416,13 @@ export class EmailIngestionIntegrationService {
         {
           filePaths,
           source,
-          fileCount: filePaths?.length || 0
+          fileCount: filePaths.length || 0
         });
 
       const results: IngestionBatchResult[] = [];
       
       for (const filePath of filePaths) {
-        const result = await this?.ingestionService?.ingestFromJsonFile(filePath);
+        const result = await this.ingestionService?.ingestFromJsonFile(filePath);
         
         if (result.success) {
           results.push(result.data);
@@ -441,14 +441,14 @@ export class EmailIngestionIntegrationService {
       const aggregatedResult: IngestionBatchResult = {
         batchId: `batch_${Date.now()}`,
         source,
-        totalEmails: results.reduce((sum: any, r: any) => sum + r.totalEmails || 0, 0),
-        processed: results.reduce((sum: any, r: any) => sum + r.processed, 0),
-        duplicates: results.reduce((sum: any, r: any) => sum + r.duplicates, 0),
-        failed: results.reduce((sum: any, r: any) => sum + r.failed, 0),
+        totalEmails: results.reduce((sum: number, r: IngestionBatchResult) => sum + (r.totalEmails || 0), 0),
+        processed: results.reduce((sum: number, r: IngestionBatchResult) => sum + (r.processed || 0), 0),
+        duplicates: results.reduce((sum: number, r: IngestionBatchResult) => sum + (r.duplicates || 0), 0),
+        failed: results.reduce((sum: number, r: IngestionBatchResult) => sum + (r.failed || 0), 0),
         results: results.flatMap(r => r.results || []),
         startTime: new Date(),
         endTime: new Date(),
-        throughput: results.reduce((sum: any, r: any) => sum + (r.throughput || 0), 0) / (results?.length || 1)
+        throughput: results.reduce((sum: number, r: IngestionBatchResult) => sum + (r.throughput || 0), 0) / (results.length || 1)
       };
 
       logger.info('Manual batch loading completed', 
@@ -477,7 +477,7 @@ export class EmailIngestionIntegrationService {
    */
   async getMetrics(): Promise<IngestionMetrics> {
     this.ensureInitialized();
-    const metrics = await this?.ingestionService?.getMetrics();
+    const metrics = await this.ingestionService?.getMetrics();
     if (!metrics) {
       // Return a default IngestionMetrics object
       const defaultMetrics: IngestionMetrics = {
@@ -504,7 +504,7 @@ export class EmailIngestionIntegrationService {
    */
   async getQueueStatus(): Promise<QueueStatus> {
     this.ensureInitialized();
-    const status = await this?.ingestionService?.getQueueStatus();
+    const status = await this.ingestionService?.getQueueStatus();
     if (!status) {
       // Return a default QueueStatus object
       const defaultStatus: QueueStatus = {
@@ -525,7 +525,7 @@ export class EmailIngestionIntegrationService {
    */
   async getHealthStatus(): Promise<HealthStatus> {
     this.ensureInitialized();
-    const health = await this?.ingestionService?.healthCheck();
+    const health = await this.ingestionService?.healthCheck();
     if (!health) {
       // Return a default HealthStatus object
       const defaultHealth: HealthStatus = {

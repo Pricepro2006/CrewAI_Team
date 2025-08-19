@@ -169,7 +169,7 @@ export function rateLimitMiddleware(
     }
 
     // Clean old entries
-    for (const [key, value] of store.entries()) {
+    for (const [key, value] of Array.from(store.entries())) {
       if (value.resetTime < windowStart) {
         store.delete(key);
       }

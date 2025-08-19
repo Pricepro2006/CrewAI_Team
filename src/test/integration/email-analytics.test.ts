@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 // Commented out due to missing supertest dependency
 // import request from 'supertest';
-// import { createApp } from '../../api/app.js';
-import { EmailAnalyticsService } from '../../core/database/EmailAnalyticsService.js';
+// import { createApp } from '../../api/app';
+import { EmailAnalyticsService } from '../../core/database/EmailAnalyticsService';
 import Database from 'better-sqlite3';
 import type { Express } from 'express';
 

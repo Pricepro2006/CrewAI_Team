@@ -3,7 +3,7 @@
  * Analyzes various signals to determine response confidence
  */
 
-import type { ScoredDocument } from "./types.js";
+import type { ScoredDocument } from "./types";
 
 export interface ConfidenceSignals {
   modelLogProbs?: number[];

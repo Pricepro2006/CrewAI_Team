@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { GuestUserService } from "../GuestUserService.js";
-import { SecurityMonitoringService } from "../SecurityMonitoringService.js";
-import type { User } from "../../trpc/context.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { GuestUserService } from '../GuestUserService';
+import { SecurityMonitoringService } from '../SecurityMonitoringService';
+import type { User } from '../../trpc/context';
 
 describe("Guest User Security Implementation", () => {
   let guestUserService: GuestUserService;
@@ -26,11 +26,11 @@ describe("Guest User Security Implementation", () => {
       
       expect(guestUser).toBeTruthy();
       expect(guestUser?.id).toMatch(/^guest-[a-f0-9]{16}$/);
-      expect(guestUser?.username).toBe("guest");
       expect(guestUser?.role).toBe("guest");
+      expect(guestUser?.type).toBe("guest");
       expect(guestUser?.permissions).toEqual([
         "chat.read",
-        "chat?.create?.limited",
+        "chat.create.limited",
         "health.read",
         "public.read",
       ]);
@@ -99,10 +99,10 @@ describe("Guest User Security Implementation", () => {
         const guest = await guestUserService.createGuestUser(badIp, "Test");
         // Should either sanitize or reject
         if (guest) {
-          expect(guest.metadata?.ip).not.toContain("DROP");
-          expect(guest.metadata?.ip).not.toContain("script");
-          expect(guest.metadata?.ip).not.toContain("..");
-          expect(guest.metadata?.ip).not.toContain("OR");
+          expect(guest.metadata?.length).not.toContain("DROP");
+          expect(guest.metadata?.length).not.toContain("script");
+          expect(guest.metadata?.length).not.toContain("..");
+          expect(guest.metadata?.length).not.toContain("OR");
         }
       }
     });
@@ -190,7 +190,7 @@ describe("Guest User Security Implementation", () => {
       const guestUser = await guestUserService.createGuestUser("192.168.1.1", "Test");
       
       // Existing code might check username === "guest"
-      expect(guestUser?.username).toBe("guest");
+      expect(guestUser?.length).toBe("guest");
       
       // Existing code might check for basic properties
       expect(guestUser).toHaveProperty("id");
@@ -200,7 +200,7 @@ describe("Guest User Security Implementation", () => {
       expect(guestUser).toHaveProperty("permissions");
       
       // Should maintain active status
-      expect(guestUser?.isActive).toBe(true);
+      expect(guestUser?.length).toBe(true);
     });
 
     it("should work with existing permission checks", async () => {

@@ -25,7 +25,7 @@ interface WebSocketMessage {
 export class MonitoringWebSocketServer {
   private wss: WebSocketServer;
   private clients: Map<string, MonitoringWebSocketClient> = new Map();
-  private heartbeatInterval: NodeJS.Timeout;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(port: number = 3002) {
     // Create WebSocket server

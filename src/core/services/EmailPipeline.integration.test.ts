@@ -20,16 +20,16 @@
  * operate together in the complete email analysis pipeline.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import axios from "axios";
-import { EmailThreePhaseAnalysisService } from "./EmailThreePhaseAnalysisService.js";
-import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
-import { RedisService } from "../cache/RedisService.js";
+import { EmailThreePhaseAnalysisService } from './EmailThreePhaseAnalysisService';
+import { EmailChainAnalyzer } from './EmailChainAnalyzer';
+import { RedisService } from '../cache/RedisService';
 
 // Mock dependencies
 vi.mock("axios");
-vi.mock("../cache/RedisService.js");
-vi.mock("../../database/ConnectionPool.js", () => ({
+vi.mock('../cache/RedisService');
+vi.mock('../../database/ConnectionPool', () => ({
   getDatabaseConnection: vi.fn(),
   executeQuery: vi.fn((callback: any) => callback(mockDb)),
   executeTransaction: vi.fn((callback: any) => callback(mockDb)),
@@ -162,7 +162,7 @@ This is clearly a critical emergency that requires our highest priority response
       expect(analysis.workflow_validation).toBe(
         "EMERGENCY_ESCALATION confirmed - critical system failure",
       );
-      expect(analysis?.missed_entities?.project_names).toEqual([
+      expect(analysis?.missed_entities).toEqual([
         "System Recovery",
       ]);
       expect(analysis.confidence).toBe(0.98);
@@ -171,19 +171,19 @@ This is clearly a critical emergency that requires our highest priority response
       expect(analysis.action_items[0].revenue_impact).toBe("$500000");
 
       // CRITICAL VALIDATION: Chain Scoring Fix Working
-      expect(analysis.chain_analysis?.completeness_score).toBeLessThan(100); // Single email never 100%
-      expect(analysis.chain_analysis?.completeness_score).toBeLessThanOrEqual(
+      expect(analysis.chain_analysis?.length).toBeLessThan(100); // Single email never 100%
+      expect(analysis.chain_analysis?.length).toBeLessThanOrEqual(
         30,
       ); // Should be low
-      expect(analysis.chain_analysis?.is_complete_chain).toBe(false);
-      expect(analysis.chain_analysis?.chain_length).toBe(1);
-      expect(analysis.chain_analysis?.missing_elements).toContain(
+      expect(analysis.chain_analysis?.length).toBe(false);
+      expect(analysis.chain_analysis?).toHaveLength(1);
+      expect(analysis.chain_analysis?.length).toContain(
         "Multiple emails for context",
       );
 
       // Should complete with Phase 2 only (incomplete chain)
       expect(analysis.phase2_processing_time).toBeGreaterThan(0);
-      expect(analysis?.strategic_insights?.opportunity).toContain(
+      expect(analysis?.strategic_insights?.length).toContain(
         "Incomplete chain",
       );
 
@@ -315,7 +315,7 @@ This is clearly a critical emergency that requires our highest priority response
       );
       expect(analysis.confidence).toBe(0.94);
       expect(analysis.business_process).toBe("ENTERPRISE_PROJECT_EXECUTION");
-      expect(analysis?.missed_entities?.project_names).toEqual([
+      expect(analysis?.missed_entities).toEqual([
         "Data Center Modernization",
       ]);
 
@@ -323,13 +323,13 @@ This is clearly a critical emergency that requires our highest priority response
       expect(
         analysis.chain_analysis?.completeness_score,
       ).toBeGreaterThanOrEqual(75); // Complete chain should score high
-      expect(analysis.chain_analysis?.completeness_score).toBeLessThanOrEqual(
+      expect(analysis.chain_analysis?.length).toBeLessThanOrEqual(
         100,
       );
-      expect(analysis.chain_analysis?.is_complete_chain).toBe(true);
-      expect(analysis.chain_analysis?.chain_length).toBe(4);
-      expect(analysis.chain_analysis?.chain_type).toBe("quote_request");
-      expect(analysis.chain_analysis?.missing_elements).toHaveLength(0); // Complete chain
+      expect(analysis.chain_analysis?.length).toBe(true);
+      expect(analysis.chain_analysis?).toHaveLength(4);
+      expect(analysis.chain_analysis?.length).toBe("quote_request");
+      expect(analysis.chain_analysis?.length).toHaveLength(0); // Complete chain
 
       // Should trigger Phase 3 (complete chain)
       expect(analysis.strategic_insights).toBeDefined();
@@ -415,16 +415,16 @@ This is clearly a critical emergency that requires our highest priority response
       expect(analysis.business_process).toBe("PARSING_ERROR");
 
       // CRITICAL VALIDATION: Intermediate Chain Scoring Working
-      expect(analysis.chain_analysis?.completeness_score).toBeGreaterThan(30); // Not at binary extremes
-      expect(analysis.chain_analysis?.completeness_score).toBeLessThan(80); // Moderate chain
-      expect(analysis.chain_analysis?.is_complete_chain).toBe(false); // Incomplete (no resolution)
-      expect(analysis.chain_analysis?.chain_length).toBe(3);
-      expect(analysis.chain_analysis?.missing_elements).toContain(
+      expect(analysis.chain_analysis?.length).toBeGreaterThan(30); // Not at binary extremes
+      expect(analysis.chain_analysis?.length).toBeLessThan(80); // Moderate chain
+      expect(analysis.chain_analysis?.length).toBe(false); // Incomplete (no resolution)
+      expect(analysis.chain_analysis?).toHaveLength(3);
+      expect(analysis.chain_analysis?.length).toContain(
         "Completion/resolution confirmation",
       );
 
       // Should complete with Phase 2 fallback (incomplete chain)
-      expect(analysis?.strategic_insights?.opportunity).toContain(
+      expect(analysis?.strategic_insights?.length).toContain(
         "Incomplete chain",
       );
       expect(analysis.phase3_processing_time).toBe(0); // No Phase 3
@@ -531,10 +531,10 @@ This is clearly a critical emergency that requires our highest priority response
 
       // Validate parsing metrics were tracked
       const stats = await analysisService.getAnalysisStats();
-      expect(stats?.parsingMetrics?.totalAttempts).toBeGreaterThan(3);
-      expect(stats?.parsingMetrics?.successfulParses).toBeGreaterThanOrEqual(2);
-      expect(stats?.parsingMetrics?.retrySuccesses).toBeGreaterThanOrEqual(1);
-      expect(stats?.parsingMetrics?.fallbackUses).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics).toBeGreaterThan(3);
+      expect(stats?.parsingMetrics).toBeGreaterThanOrEqual(2);
+      expect(stats?.parsingMetrics).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics).toBeGreaterThanOrEqual(1);
 
       // Validate chain scoring diversity
       const chainScores = results

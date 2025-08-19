@@ -3,7 +3,7 @@
  * Handles product information, pricing, and substitutions
  */
 
-import type Database from "better-sqlite3";
+type DatabaseInstance = any;
 import { BaseRepository, type BaseEntity } from "./BaseRepository.js";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger.js";
@@ -100,7 +100,7 @@ export interface UserPreferences extends BaseEntity {
 }
 
 export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "walmart_products");
   }
 
@@ -390,7 +390,7 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
 }
 
 export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "grocery_substitutions");
   }
 
@@ -484,7 +484,7 @@ export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> 
 }
 
 export class UserPreferencesRepository extends BaseRepository<UserPreferences> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "grocery_user_preferences");
   }
 

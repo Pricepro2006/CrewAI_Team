@@ -3,7 +3,7 @@
  * Tests email type definitions and validation
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock email types that might exist in the codebase
 interface EmailStatus {

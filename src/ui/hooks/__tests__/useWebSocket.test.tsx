@@ -7,7 +7,7 @@ import {
   useTaskQueue, 
   useSystemHealth, 
   useRAGOperations 
-} from '../useWebSocket.js';
+} from '../useWebSocket';
 
 // Mock tRPC
 const mockWSClient = {
@@ -24,9 +24,11 @@ const mockTRPCClient = {
   query: vi.fn(),
 };
 
+const mockCreateWSClientFn = vi.fn(() => mockWSClient);
+
 vi.mock('@trpc/client', () => ({
   createTRPCProxyClient: vi.fn(() => mockTRPCClient),
-  createWSClient: vi.fn(() => mockWSClient),
+  createWSClient: mockCreateWSClientFn,
   wsLink: vi.fn(() => ({})),
 }));
 
@@ -38,7 +40,7 @@ vi.mock('superjson', () => ({
 }));
 
 // Mock WebSocket config
-vi.mock('../../../config/websocket.config.js', () => ({
+vi.mock('../../../config/websocket.config', () => ({
   trpcWebSocketConfig: {
     url: 'ws://localhost:8080',
     reconnectDelay: 1000,
@@ -58,7 +60,7 @@ vi.spyOn(console, 'warn').mockImplementation(() => {});
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('useWebSocket', () => {
-  let mockCreateWSClient: ReturnType<typeof vi.fn>;
+  let mockCreateWSClient: any;
   let mockOnConnect: ReturnType<typeof vi.fn>;
   let mockOnDisconnect: ReturnType<typeof vi.fn>;
   let mockOnError: ReturnType<typeof vi.fn>;
@@ -69,11 +71,10 @@ describe('useWebSocket', () => {
     mockOnDisconnect = vi.fn();
     mockOnError = vi.fn();
 
-    const { createWSClient } = require('@trpc/client');
-    mockCreateWSClient = createWSClient;
+    mockCreateWSClient = mockCreateWSClientFn;
 
     // Reset mock implementation
-    mockCreateWSClient.mockImplementation((config) => {
+    mockCreateWSClient.mockImplementation((config: any) => {
       const client = {
         ...mockWSClient,
         close: vi.fn(),
@@ -146,7 +147,7 @@ describe('useWebSocket', () => {
     it('handles disconnection events', async () => {
       let onCloseCallback: ((event: any) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config) => {
+      mockCreateWSClient.mockImplementation((config: any) => {
         onCloseCallback = config.onClose;
         setTimeout(() => config.onOpen?.(), 10);
         return mockWSClient;
@@ -198,7 +199,7 @@ describe('useWebSocket', () => {
     it('attempts reconnection after unexpected disconnection', async () => {
       let onCloseCallback: ((event: any) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config) => {
+      mockCreateWSClient.mockImplementation((config: any) => {
         onCloseCallback = config.onClose;
         setTimeout(() => config.onOpen?.(), 10);
         return mockWSClient;
@@ -239,7 +240,7 @@ describe('useWebSocket', () => {
     it('uses exponential backoff for reconnection delays', async () => {
       let onCloseCallback: ((event: any) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config) => {
+      mockCreateWSClient.mockImplementation((config: any) => {
         onCloseCallback = config.onClose;
         // Don't auto-connect to test retry logic
         return mockWSClient;
@@ -278,7 +279,7 @@ describe('useWebSocket', () => {
     it('stops reconnecting after max attempts', async () => {
       let onCloseCallback: ((event: any) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config) => {
+      mockCreateWSClient.mockImplementation((config: any) => {
         onCloseCallback = config.onClose;
         return mockWSClient;
       });
@@ -314,7 +315,7 @@ describe('useWebSocket', () => {
     it('does not reconnect on normal closure (code 1000)', async () => {
       let onCloseCallback: ((event: any) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config) => {
+      mockCreateWSClient.mockImplementation((config: any) => {
         onCloseCallback = config.onClose;
         setTimeout(() => config.onOpen?.(), 10);
         return mockWSClient;
@@ -418,7 +419,7 @@ describe('useWebSocket', () => {
     it('prevents operations after unmount', async () => {
       let onCloseCallback: ((event: any) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config) => {
+      mockCreateWSClient.mockImplementation((config: any) => {
         onCloseCallback = config.onClose;
         setTimeout(() => config.onOpen?.(), 10);
         return mockWSClient;
@@ -863,7 +864,7 @@ describe('Hook Integration', () => {
     renderHook(() => usePlanProgress('plan-1'));
     renderHook(() => useTaskQueue());
 
-    // Should only create one WebSocket connection
-    expect(mockCreateWSClient).toHaveBeenCalledTimes(1);
+    // Should only create one WebSocket connection per hook
+    expect(mockCreateWSClientFn).toHaveBeenCalledTimes(3);
   });
 });

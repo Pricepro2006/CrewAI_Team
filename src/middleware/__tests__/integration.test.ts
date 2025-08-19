@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   describe,
   it,
@@ -13,10 +14,10 @@ import {
 import express from "express";
 import { WebSocketServer } from "ws";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { authenticateToken } from "../auth.js";
-import { AdvancedRateLimit } from "../advancedRateLimit.js";
-import { generateToken } from "../auth.js";
-import { appRouter } from "../../api/trpc/router.js";
+import { authenticateToken } from '../auth';
+import { AdvancedRateLimit } from '../advancedRateLimit';
+import { generateToken } from '../auth';
+import { appRouter } from '../../api/trpc/router';
 
 // Mock dependencies
 vi.mock("ioredis", () => {

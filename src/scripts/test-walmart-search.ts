@@ -5,7 +5,7 @@
  */
 
 import { getWalmartDatabaseManager } from "../database/WalmartDatabaseManager.js";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger";
 
 async function testSearch() {
   logger.info("Testing Walmart database search functionality...", "TEST_SEARCH");

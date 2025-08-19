@@ -11,7 +11,7 @@ export const queryClient = new QueryClient({
       // Retry failed requests 3 times
       retry: 3,
       // Retry with exponential backoff
-      retryDelay: (attemptIndex: any) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
       // Don't refetch on window focus by default (can be overridden per query)
       refetchOnWindowFocus: false,
       // Don't refetch on mount if data is fresh
@@ -42,38 +42,38 @@ export const queryMetrics = {
     }
   },
   
-  trackFailedQuery: (queryKey: string, error: any) => {
-    const count = queryMetrics?.failedQueries?.get(queryKey) || 0;
-    queryMetrics?.failedQueries?.set(queryKey, count + 1);
+  trackFailedQuery: (queryKey: string, error: unknown) => {
+    const count = queryMetrics.failedQueries.get(queryKey) || 0;
+    queryMetrics.failedQueries.set(queryKey, count + 1);
     console.error(`❌ Query failed: ${queryKey}`, error);
   },
   
-  getSlowQueries: () => Array.from(queryMetrics?.slowQueries?.entries()),
-  getFailedQueries: () => Array.from(queryMetrics?.failedQueries?.entries()),
+  getSlowQueries: () => Array.from(queryMetrics.slowQueries.entries()),
+  getFailedQueries: () => Array.from(queryMetrics.failedQueries.entries()),
   
   reset: () => {
-    queryMetrics?.slowQueries?.clear();
-    queryMetrics?.failedQueries?.clear();
+    queryMetrics.slowQueries.clear();
+    queryMetrics.failedQueries.clear();
   }
 };
 
 // Add global error handling and performance monitoring
-queryClient.getQueryCache().subscribe((event: any) => {
-  if (event.type === "observerResultsUpdated") {
-    const query = event?.query;
+queryClient.getQueryCache().subscribe((event) => {
+  if (event.type === "observerResultsUpdated" && 'query' in event) {
+    const query = event.query;
     const queryKey = JSON.stringify(query.queryKey);
     
     // Track query performance
-    if (query?.state?.fetchStatus === "idle" && query?.state?.dataUpdateCount > 0) {
-      const duration = Date.now() - (query?.state?.dataUpdatedAt || 0);
+    if (query.state.fetchStatus === "idle" && query.state.dataUpdateCount > 0) {
+      const duration = Date.now() - (query.state.dataUpdatedAt || 0);
       if (duration > 0) {
         queryMetrics.trackSlowQuery(queryKey, duration);
       }
     }
     
     // Track query errors
-    if (query?.state?.error) {
-      queryMetrics.trackFailedQuery(queryKey, query?.state?.error);
+    if (query.state.error) {
+      queryMetrics.trackFailedQuery(queryKey, query.state.error);
     }
   }
 });
@@ -170,12 +170,12 @@ export const cacheUtils = {
     const queries = cache.getAll();
     
     return {
-      totalQueries: queries?.length || 0,
-      activeQueries: queries?.filter(q => q.getObserversCount() > 0).length,
-      staleQueries: queries?.filter(q => q.isStale()).length,
-      errorQueries: queries?.filter(q => q?.state?.error).length,
-      cacheSize: queries.reduce((size: any, query: any) => {
-        const dataSize = JSON.stringify(query?.state?.data || {}).length;
+      totalQueries: queries.length,
+      activeQueries: queries.filter(q => q.getObserversCount() > 0).length || 0,
+      staleQueries: queries.filter(q => q.isStale()).length || 0,
+      errorQueries: queries.filter(q => q.state.error !== null).length || 0,
+      cacheSize: queries.reduce((size, query) => {
+        const dataSize = JSON.stringify(query.state.data || {}).length;
         return size + dataSize;
       }, 0),
     };

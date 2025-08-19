@@ -59,7 +59,7 @@ export class WebSocketManager {
    * Connect to WebSocket server
    */
   connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.CONNECTING)) {
         logger.warn("WebSocket connection already in progress", "WEBSOCKET_MANAGER");
         return;
@@ -88,7 +88,7 @@ export class WebSocketManager {
           }
         }, this.timeout);
 
-        this.ws.onopen = () => {
+        this.ws.onopen = (event: Event) => {
           this.isConnecting = false;
           this.reconnectAttempts = 0;
           
@@ -106,7 +106,7 @@ export class WebSocketManager {
           resolve();
         };
 
-        this.ws.onmessage = (event) => {
+        this.ws.onmessage = (event: MessageEvent) => {
           try {
             const message: WebSocketMessage = JSON.parse(event.data);
             
@@ -132,7 +132,7 @@ export class WebSocketManager {
           }
         };
 
-        this.ws.onclose = (event) => {
+        this.ws.onclose = (event: CloseEvent) => {
           this.isConnecting = false;
           
           if (this.connectionTimeoutId) {
@@ -158,7 +158,7 @@ export class WebSocketManager {
           }
         };
 
-        this.ws.onerror = (error) => {
+        this.ws.onerror = (error: Event) => {
           logger.error("WebSocket error occurred", "WEBSOCKET_MANAGER", { error });
           
           if (this.onError) {
@@ -323,10 +323,14 @@ export function getWebSocketManager(options?: WebSocketManagerOptions): WebSocke
  * React hook for WebSocket connection
  */
 export function useWebSocket(options?: WebSocketManagerOptions) {
-  const [status, setStatus] = React.useState({
+  const [status, setStatus] = React.useState<{
+    connected: boolean;
+    connecting: boolean;
+    error: Error | null;
+  }>({
     connected: false,
     connecting: false,
-    error: null as Error | null
+    error: null
   });
 
   const manager = React.useMemo(() => getWebSocketManager({

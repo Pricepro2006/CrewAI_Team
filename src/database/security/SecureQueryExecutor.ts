@@ -3,7 +3,7 @@
  * Wraps database query execution with SQL injection protection
  */
 
-import Database from "better-sqlite3";
+import type * as Database from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 import { sqlSecurity, SqlInjectionError } from "./SqlInjectionProtection.js";
 import { executeQuery as rawExecuteQuery, executeTransaction as rawExecuteTransaction } from "../ConnectionPool.js";
@@ -102,7 +102,7 @@ export async function executeSecureTransaction<T>(
 function createSecureDatabase(
   db: Database.Database,
   options: SecureQueryOptions
-): Partial<Database.Database> {
+): any {
   return {
     ...db,
     prepare: (sql: string) => {

@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { ShoppingCartIcon, ClipboardIcon, TruckIcon, ChartBarIcon, SparklesIcon } from "@heroicons/react/24/outline";
-import { WalmartProductSearch } from "./WalmartProductSearch.js";
-import { WalmartNLPSearch } from "./WalmartNLPSearch.js";
-import { WalmartShoppingCart } from "./WalmartShoppingCart.js";
-import { WalmartDealAlert } from "./WalmartDealAlert.js";
-import { WalmartBudgetTracker } from "./WalmartBudgetTracker.js";
+import { WalmartProductSearch } from "./WalmartProductSearch";
+import { WalmartNLPSearch } from "./WalmartNLPSearch";
+import { WalmartShoppingCart } from "./WalmartShoppingCart";
+import { WalmartDealAlert } from "./WalmartDealAlert";
+import { WalmartBudgetTracker } from "./WalmartBudgetTracker";
 
 type ViewType = "dashboard" | "search" | "nlp-search" | "cart" | "deals" | "budget" | "orders";
 
 export const WalmartDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>("dashboard");
 
-  const renderContent = () => {
+  const renderContent = (): React.ReactNode => {
     switch (activeView) {
       case "search":
         return <WalmartProductSearch />;
@@ -88,7 +88,7 @@ interface DashboardOverviewProps {
   onNavigate: (view: ViewType) => void;
 }
 
-const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => {
+const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }): React.ReactElement => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {/* Quick Actions */}

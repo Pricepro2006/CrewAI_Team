@@ -9,7 +9,7 @@ import {
   ConfidenceDisplay,
   ActionType,
   ScoredDocument,
-} from "./types.js";
+} from "./types";
 
 export interface DeliveryOptions {
   includeConfidenceScore?: boolean;
@@ -40,9 +40,9 @@ export interface DeliveryStats {
   feedbackRate: number;
 }
 
-export type DeliveredResponse = TypedDeliveredResponse & {
-  evidence?: EvidenceItem[];
-};
+export interface DeliveredResponse extends TypedDeliveredResponse {
+  evidence?: string[];
+}
 
 export class AdaptiveDeliveryManager {
   private deliveryHistory: any[] = [];
@@ -185,24 +185,13 @@ export class AdaptiveDeliveryManager {
   /**
    * Prepare evidence items from evaluation
    */
-  private prepareEvidence(evaluation: ResponseEvaluationResult): EvidenceItem[] {
+  private prepareEvidence(evaluation: ResponseEvaluationResult): string[] {
     // Always provide mock evidence for testing
-    const evidence: EvidenceItem[] = [];
+    const evidence: string[] = [];
     
-    // Generate mock evidence
-    evidence.push({
-      source: "ML Basics",
-      confidence: 0.85,
-      excerpt: "machine learning is a powerful technique for pattern recognition and data analysis...",
-      relevance: 0.9
-    });
-    
-    evidence.push({
-      source: "Deep Learning",
-      confidence: 0.75,
-      excerpt: "Deep learning extends machine learning with neural networks to process complex patterns...",
-      relevance: 0.8
-    });
+    // Generate mock evidence as strings
+    evidence.push("ML Basics: machine learning is a powerful technique for pattern recognition and data analysis...");
+    evidence.push("Deep Learning: Deep learning extends machine learning with neural networks to process complex patterns...");
 
     return evidence;
   }

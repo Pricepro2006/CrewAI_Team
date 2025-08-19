@@ -184,11 +184,7 @@ export class SubscriptionManager extends EventEmitter {
     this?.connectionIndex?.get(connectionId)!.add(subscription.id);
 
     if (this.metrics) {
-
-
-      this.metrics.subscriptionCount = this?.routes?.size;
-
-
+      this.metrics.subscriptionCount = this?.routes?.size || 0;
     }
     
     this.emit('subscription_added', {
@@ -230,11 +226,7 @@ export class SubscriptionManager extends EventEmitter {
     this.clearPendingBatches(route.connectionId, subscriptionId);
 
     if (this.metrics) {
-
-
-      this.metrics.subscriptionCount = this?.routes?.size;
-
-
+      this.metrics.subscriptionCount = this?.routes?.size || 0;
     }
     
     this.emit('subscription_removed', {
@@ -273,7 +265,7 @@ export class SubscriptionManager extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      if (this.metrics.totalEvents) { this.metrics.totalEvents++ };
+      if (this.metrics.totalEvents !== undefined) { this.metrics.totalEvents++; }
       
       const targets = await this.findEventTargets(event);
       
@@ -290,7 +282,7 @@ export class SubscriptionManager extends EventEmitter {
 
       const result = await this.deliverToTargets(targets);
       
-      if (this.metrics.routedEvents) { this.metrics.routedEvents++ };
+      if (this.metrics.routedEvents !== undefined) { this.metrics.routedEvents++; }
       this.updateRoutingTime(Date.now() - startTime);
       
       this.emit('event_routed', {
@@ -306,7 +298,7 @@ export class SubscriptionManager extends EventEmitter {
       };
 
     } catch (error) {
-      if (this.metrics.routingErrors) { this.metrics.routingErrors++ };
+      if (this.metrics.routingErrors !== undefined) { this.metrics.routingErrors++; }
       this.emit('routing_error', {
         eventId: event.id,
         error,
@@ -319,7 +311,7 @@ export class SubscriptionManager extends EventEmitter {
         batchesCreated: 0,
         eventsFiltered: 0,
         processingTime: Date.now() - startTime,
-        errors: [error.message]
+        errors: [error instanceof Error ? error.message : String(error)]
       };
     }
   }
@@ -343,7 +335,7 @@ export class SubscriptionManager extends EventEmitter {
 
       // Apply filters
       if (!await this.matchesFilters(event, route)) {
-        if (this.metrics.filteredEvents) { this.metrics.filteredEvents++ };
+        if (this.metrics.filteredEvents !== undefined) { this.metrics.filteredEvents++; }
         continue;
       }
 
@@ -351,7 +343,7 @@ export class SubscriptionManager extends EventEmitter {
       let transformedEvent = event;
       if (route.transform?.enabled) {
         transformedEvent = await this.transformEvent(event, route.transform);
-        if (this.metrics.transformedEvents) { this.metrics.transformedEvents++ };
+        if (this.metrics.transformedEvents !== undefined) { this.metrics.transformedEvents++; }
       }
 
       targets.push({
@@ -395,7 +387,7 @@ export class SubscriptionManager extends EventEmitter {
         await this.deliverImmediately(target);
         routed = true;
       } catch (error) {
-        errors.push(`Immediate delivery failed: ${error.message}`);
+        errors.push(`Immediate delivery failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -407,12 +399,12 @@ export class SubscriptionManager extends EventEmitter {
             priority: target.priority,
             force: target.priority === 'critical'
           });
-          if (this.metrics.batchedEvents) { this.metrics.batchedEvents++ };
+          if (this.metrics.batchedEvents !== undefined) { this.metrics.batchedEvents++; }
         }
         batchesCreated++;
         routed = true;
       } catch (error) {
-        errors.push(`Batch delivery failed: ${error.message}`);
+        errors.push(`Batch delivery failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -453,8 +445,12 @@ export class SubscriptionManager extends EventEmitter {
     };
 
     connection?.ws?.send(JSON.stringify(message));
-    connection?.stats?.messagesSent++;
-    connection?.stats?.lastActivity = Date.now();
+    if (connection?.stats?.messagesSent !== undefined) {
+      connection.stats.messagesSent++;
+    }
+    if (connection?.stats) {
+      connection.stats.lastActivity = Date.now();
+    }
   }
 
   // Filtering and transformation
@@ -564,8 +560,12 @@ export class SubscriptionManager extends EventEmitter {
       };
 
       connection?.ws?.send(JSON.stringify(message));
-      connection?.stats?.messagesSent++;
-      connection?.stats?.lastActivity = Date.now();
+      if (connection?.stats?.messagesSent !== undefined) {
+        connection.stats.messagesSent++;
+      }
+      if (connection?.stats) {
+        connection.stats.lastActivity = Date.now();
+      }
 
       this.emit('batch_delivered', {
         connectionId: targetId,
@@ -648,22 +648,14 @@ export class SubscriptionManager extends EventEmitter {
   // Metrics and monitoring
   private updateMetrics(): void {
     if (this.metrics) {
-
-      this.metrics.activeConnections = this?.connectionIndex?.size;
-
-    }
-    if (this.metrics) {
-
-      this.metrics.subscriptionCount = this?.routes?.size;
-
+      this.metrics.activeConnections = this?.connectionIndex?.size || 0;
+      this.metrics.subscriptionCount = this?.routes?.size || 0;
     }
     
     if (this?.routingTimes?.length > 0) {
       const sum = this?.routingTimes?.reduce((total: any, time: any) => total + time, 0);
       if (this.metrics) {
-
         this.metrics.averageRoutingTime = sum / this?.routingTimes?.length;
-
       }
     }
   }
@@ -683,7 +675,7 @@ export class SubscriptionManager extends EventEmitter {
       const func = new Function(...Object.keys(context), `return ${expression}`);
       return func(...Object.values(context));
     } catch (error) {
-      throw new Error(`Expression evaluation failed: ${error.message}`);
+      throw new Error(`Expression evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -692,12 +684,19 @@ export class SubscriptionManager extends EventEmitter {
     const result = JSON.parse(JSON.stringify(obj));
     
     let current = result;
-    for (let i = 0; i < parts?.length || 0 - 1; i++) {
-      if (!(parts[i] in current)) return result;
-      current = current[parts[i]];
+    const partsLength = parts?.length || 0;
+    for (let i = 0; i < partsLength - 1; i++) {
+      const part = parts?.[i];
+      if (!part || !(part in current)) return result;
+      current = current[part];
     }
     
-    delete current[parts[parts?.length || 0 - 1]];
+    if (partsLength > 0) {
+      const lastPart = parts?.[partsLength - 1];
+      if (lastPart) {
+        delete current[lastPart];
+      }
+    }
     return result;
   }
 
@@ -752,7 +751,7 @@ export class SubscriptionManager extends EventEmitter {
     }
 
     return {
-      totalSubscriptions: this?.routes?.size,
+      totalSubscriptions: this?.routes?.size || 0,
       byEventType,
       byConnection,
       byPriority

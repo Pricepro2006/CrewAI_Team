@@ -5,7 +5,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { SafeContent, SafeText, SafeLink, useSanitize } from '../SafeContent.js';
+import '@testing-library/jest-dom';
+import { SafeContent, SafeText, SafeLink, useSanitize } from '../SafeContent';
 import { renderHook } from '@testing-library/react';
 
 // Mock DOMPurify for consistent test results
@@ -74,7 +75,7 @@ describe('SafeContent Component', () => {
         <SafeContent content="" />
       );
       
-      expect(container.firstChild?.textContent).toBe('');
+      expect((container.firstChild as HTMLElement)?.textContent).toBe('');
     });
 
     it('should handle null/undefined content', () => {
@@ -82,7 +83,7 @@ describe('SafeContent Component', () => {
         <SafeContent content={null as any} />
       );
       
-      expect(container.firstChild?.textContent).toBe('');
+      expect((container.firstChild as HTMLElement)?.textContent).toBe('');
     });
   });
 
@@ -128,7 +129,7 @@ describe('SafeContent Component', () => {
         <SafeContent content="<p>Content</p>" as="section" />
       );
       
-      expect(container.firstChild?.nodeName).toBe('SECTION');
+      expect((container.firstChild as HTMLElement)?.tagName).toBe('SECTION');
     });
 
     it('should apply className', () => {

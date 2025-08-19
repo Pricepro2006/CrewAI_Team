@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { EmbeddingService } from "./EmbeddingService.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmbeddingService } from './EmbeddingService';
 import axios from "axios";
 
 // Mock axios
@@ -8,7 +8,10 @@ const mockedAxios = vi.mocked(axios);
 
 describe("EmbeddingService", () => {
   let service: EmbeddingService;
-  let mockAxiosInstance: unknown;
+  let mockAxiosInstance: {
+    get: any;
+    post: any;
+  };
 
   beforeEach(() => {
     // Create mock axios instance
@@ -152,7 +155,7 @@ describe("EmbeddingService", () => {
       const result = await service.embedBatch(texts);
 
       expect(result).toHaveLength(150);
-      expect(result.every((emb: any) => emb?.length || 0 === 768)).toBe(true);
+      expect(result.every((emb: any) => (emb?.length || 0) === 768)).toBe(true);
     });
   });
 

@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from "events";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import { ConnectionState } from "../database/vector/ChromaDBConnectionManager.js";
 
 export interface ChromaDBMetrics {
@@ -57,7 +57,7 @@ export class ChromaDBMonitor extends EventEmitter {
   private responseTimes: number[] = [];
   private metricsHistory: MetricEvent[] = [];
   private maxHistorySize: number = 1000;
-  private metricsInterval?: NodeJS.Timer;
+  private metricsInterval?: NodeJS.Timeout;
 
   private constructor() {
     super();
@@ -99,22 +99,18 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record a connection attempt
    */
   recordConnectionAttempt(success: boolean, duration: number, error?: string): void {
-    if (this.metrics) {
-      this.metrics.connectionAttempts++;
-    }
+    if (!this.metrics) return;
+    
+    this.metrics.connectionAttempts++;
     
     if (success) {
-      if (this.metrics) {
-        this.metrics.successfulConnections++;
-        this.metrics.lastConnectionTime = new Date();
-        this.metrics.currentState = ConnectionState.CONNECTED;
-      }
+      this.metrics.successfulConnections++;
+      this.metrics.lastConnectionTime = new Date();
+      this.metrics.currentState = ConnectionState.CONNECTED;
     } else {
-      if (this.metrics) {
-        this.metrics.failedConnections++;
-        this.metrics.lastFailureTime = new Date();
-        this.metrics.currentState = ConnectionState.FAILED;
-      }
+      this.metrics.failedConnections++;
+      this.metrics.lastFailureTime = new Date();
+      this.metrics.currentState = ConnectionState.FAILED;
     }
     
     this.updateUptimePercentage();
@@ -135,11 +131,11 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record a request to ChromaDB
    */
   recordRequest(success: boolean, duration: number, operation?: string): void {
-    if (this.metrics) {
-      this.metrics.totalRequests++;
-    }
+    if (!this.metrics) return;
     
-    if (!success && this.metrics) {
+    this.metrics.totalRequests++;
+    
+    if (!success) {
       this.metrics.failedRequests++;
     }
     
@@ -166,10 +162,10 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record fallback activation
    */
   recordFallbackActivation(reason: string): void {
-    if (this.metrics) {
-      this.metrics.fallbackActivations++;
-      this.metrics.currentMode = "in-memory";
-    }
+    if (!this.metrics) return;
+    
+    this.metrics.fallbackActivations++;
+    this.metrics.currentMode = "in-memory";
     
     const event: MetricEvent = {
       type: "fallback",
@@ -188,9 +184,9 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record mode change
    */
   recordModeChange(mode: "chromadb" | "in-memory" | "hybrid"): void {
-    if (this.metrics) {
-      this.metrics.currentMode = mode;
-    }
+    if (!this.metrics) return;
+    
+    this.metrics.currentMode = mode;
     
     logger.info(`ChromaDB mode changed to: ${mode}`, "CHROMADB_MONITOR");
   }
@@ -199,7 +195,9 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record document sync
    */
   recordDocumentSync(count: number, success: boolean, duration: number): void {
-    if (success && this.metrics) {
+    if (!this.metrics) return;
+    
+    if (success) {
       this.metrics.documentsSynced += count;
       this.metrics.pendingSyncCount = Math.max(0, this.metrics.pendingSyncCount - count);
     }
@@ -220,13 +218,13 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record circuit breaker event
    */
   recordCircuitBreakerEvent(state: "closed" | "open" | "half-open"): void {
-    if (this.metrics) {
-      this.metrics.circuitBreakerState = state;
-      
-      if (state === "open") {
-        this.metrics.circuitBreakerTrips++;
-        this.metrics.lastCircuitBreakerTrip = new Date();
-      }
+    if (!this.metrics) return;
+    
+    this.metrics.circuitBreakerState = state;
+    
+    if (state === "open") {
+      this.metrics.circuitBreakerTrips++;
+      this.metrics.lastCircuitBreakerTrip = new Date();
     }
     
     const event: MetricEvent = {
@@ -246,27 +244,27 @@ export class ChromaDBMonitor extends EventEmitter {
    * Update in-memory document count
    */
   updateInMemoryCount(count: number): void {
-    if (this.metrics) {
-      this.metrics.documentsInMemory = count;
-    }
+    if (!this.metrics) return;
+    
+    this.metrics.documentsInMemory = count;
   }
 
   /**
    * Update pending sync count
    */
   updatePendingSyncCount(count: number): void {
-    if (this.metrics) {
-      this.metrics.pendingSyncCount = count;
-    }
+    if (!this.metrics) return;
+    
+    this.metrics.pendingSyncCount = count;
   }
 
   /**
    * Update connection state
    */
   updateConnectionState(state: ConnectionState): void {
-    if (this.metrics) {
-      this.metrics.currentState = state;
-    }
+    if (!this.metrics) return;
+    
+    this.metrics.currentState = state;
   }
 
   /**
@@ -421,16 +419,16 @@ export class ChromaDBMonitor extends EventEmitter {
    * Reset metrics
    */
   resetMetrics(): void {
-    if (this.metrics) {
-      this.metrics.connectionAttempts = 0;
-      this.metrics.successfulConnections = 0;
-      this.metrics.failedConnections = 0;
-      this.metrics.totalRequests = 0;
-      this.metrics.failedRequests = 0;
-      this.metrics.fallbackActivations = 0;
-      this.metrics.documentsSynced = 0;
-      this.metrics.circuitBreakerTrips = 0;
-    }
+    if (!this.metrics) return;
+    
+    this.metrics.connectionAttempts = 0;
+    this.metrics.successfulConnections = 0;
+    this.metrics.failedConnections = 0;
+    this.metrics.totalRequests = 0;
+    this.metrics.failedRequests = 0;
+    this.metrics.fallbackActivations = 0;
+    this.metrics.documentsSynced = 0;
+    this.metrics.circuitBreakerTrips = 0;
     this.responseTimes = [];
     this.metricsHistory = [];
     
@@ -443,31 +441,29 @@ export class ChromaDBMonitor extends EventEmitter {
   private startMetricsCollection(): void {
     // Collect memory metrics every 30 seconds
     this.metricsInterval = setInterval(() => {
-      const memUsage = process.memoryUsage();
-      if (this.metrics) {
-        this.metrics.memoryUsage = memUsage.heapUsed;
-      }
+      if (!this.metrics) return;
+      
+      const memUsage = process.memoryUsage ? process.memoryUsage() : { heapUsed: 0 };
+      this.metrics.memoryUsage = memUsage.heapUsed;
     }, 30000);
   }
 
   private updateUptimePercentage(): void {
-    if (this.metrics && this.metrics.connectionAttempts > 0) {
-      this.metrics.uptimePercentage = 
-        (this.metrics.successfulConnections / this.metrics.connectionAttempts) * 100;
-    }
+    if (!this.metrics || this.metrics.connectionAttempts === 0) return;
+    
+    this.metrics.uptimePercentage = 
+      (this.metrics.successfulConnections / this.metrics.connectionAttempts) * 100;
   }
 
   private updateResponseTimeMetrics(): void {
-    if (this.responseTimes.length === 0) return;
+    if (!this.metrics || this.responseTimes.length === 0) return;
     
     const sorted = [...this.responseTimes].sort((a, b) => a - b);
-    const sum = sorted.reduce((a: any, b: any) => a + b, 0);
+    const sum = sorted.reduce((a: number, b: number) => a + b, 0);
     
-    if (this.metrics) {
-      this.metrics.averageResponseTime = sum / sorted.length;
-      this.metrics.p95ResponseTime = sorted[Math.floor(sorted.length * 0.95)] || 0;
-      this.metrics.p99ResponseTime = sorted[Math.floor(sorted.length * 0.99)] || 0;
-    }
+    this.metrics.averageResponseTime = sum / sorted.length;
+    this.metrics.p95ResponseTime = sorted[Math.floor(sorted.length * 0.95)] || 0;
+    this.metrics.p99ResponseTime = sorted[Math.floor(sorted.length * 0.99)] || 0;
   }
 
   private addMetricEvent(event: MetricEvent): void {

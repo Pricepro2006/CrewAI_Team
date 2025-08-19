@@ -12,7 +12,7 @@ import {
   isDatabaseEmailStatus,
   isDatabaseWorkflowState,
   sanitizeEmailRecord,
-} from '../email-status-validator.js';
+} from '../email-status-validator';
 
 describe('Email Status Validators', () => {
   describe('DatabaseEmailStatusSchema', () => {

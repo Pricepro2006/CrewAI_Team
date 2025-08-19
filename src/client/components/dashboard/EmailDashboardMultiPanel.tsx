@@ -4,18 +4,18 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card.js";
-import { Badge } from "../../../components/ui/badge.js";
-import { Button } from "../../../components/ui/button.js";
-import { EmailTable } from "../email/EmailTable.js";
-import { StatusIndicator } from "../email/StatusIndicator.js";
-import { cn } from "../../../lib/utils.js";
-import { TEAM_MEMBERS } from "../../../config/team-members?.config.js";
+} from "../../../components/ui/card";
+import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
+import { EmailTable } from "../email/EmailTable";
+import { StatusIndicator } from "../email/StatusIndicator";
+import { cn } from "../../../lib/utils";
+import { TEAM_MEMBERS } from "../../../config/team-members.config";
 import type {
   EmailRecord,
   EmailStatus,
   Priority,
-} from "../../../types/email-dashboard?.interfaces.js";
+} from "../../../types/email-dashboard.interfaces";
 
 interface EmailDashboardMultiPanelProps {
   emails: EmailRecord[];

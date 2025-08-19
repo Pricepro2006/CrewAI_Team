@@ -308,8 +308,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         // Track performance with defensive programming
         const totalTime = Date.now() - startTime;
         try {
-          if (this.performanceMonitor && typeof this?.performanceMonitor?.trackOperation === 'function') {
-            this?.performanceMonitor?.trackOperation(
+          if (this.performanceMonitor && typeof this.performanceMonitor?.trackOperation === 'function') {
+            this.performanceMonitor?.trackOperation(
               "three_phase_analysis",
               totalTime,
               true,
@@ -368,8 +368,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         // Track performance with defensive programming
         const totalTime = Date.now() - startTime;
         try {
-          if (this.performanceMonitor && typeof this?.performanceMonitor?.trackOperation === 'function') {
-            this?.performanceMonitor?.trackOperation(
+          if (this.performanceMonitor && typeof this.performanceMonitor?.trackOperation === 'function') {
+            this.performanceMonitor?.trackOperation(
               "two_phase_analysis",
               totalTime,
               true,
@@ -396,8 +396,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       
       // Track performance with defensive programming
       try {
-        if (this.performanceMonitor && typeof this?.performanceMonitor?.trackOperation === 'function') {
-          this?.performanceMonitor?.trackOperation(
+        if (this.performanceMonitor && typeof this.performanceMonitor?.trackOperation === 'function') {
+          this.performanceMonitor?.trackOperation(
             "email_analysis",
             Date.now() - startTime,
             false,
@@ -428,9 +428,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const startTime = Date.now();
 
     // Check cache first
-    if (!options.skipCache && this?.phase1Cache?.has(email.id)) {
+    if (!options.skipCache && this.phase1Cache?.has(email.id)) {
       logger.debug("Phase 1 cache hit", COMPONENT);
-      return this?.phase1Cache?.get(email.id)!;
+      return this.phase1Cache?.get(email.id)!;
     }
 
     const subject = (email.subject || "").toLowerCase();
@@ -508,7 +508,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     };
 
     // Cache results
-    this?.phase1Cache?.set(email.id, results);
+    this.phase1Cache?.set(email.id, results);
 
     return results;
   }
@@ -527,8 +527,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
     // Determine email characteristics for prompt enhancement
     const emailCharacteristics = {
-      hasOrderReferences: phase1Results?.entities?.po_numbers?.length || 0 > 0,
-      hasQuoteRequests: phase1Results?.workflow_state?.includes("QUOTE"),
+      hasOrderReferences: (phase1Results.entities?.po_numbers?.length ?? 0) > 0,
+      hasQuoteRequests: phase1Results.workflow_state?.includes("QUOTE"),
       isEscalation: phase1Results.priority === "critical",
       isFromKeyCustomer: phase1Results.sender_category === "key_customer",
       hasTechnicalIssues: false, // Could be enhanced with keyword detection
@@ -610,13 +610,13 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         // Log quality decision if enabled
         if (
           options.enableQualityLogging ??
-          this?.qualityConfig?.enableQualityLogging
+          this.qualityConfig?.enableQualityLogging
         ) {
           logger.info(
             `Quality assessment: Score=${qualityAssessment.score}/10, UseFallback=${qualityAssessment.useFallback}, UseHybrid=${qualityAssessment.useHybrid}`,
           );
           logger.debug(
-            `Quality reasons: ${qualityAssessment?.reasons?.join(", ")}`,
+            `Quality reasons: ${qualityAssessment.reasons?.join(", ")}`,
           );
         }
 
@@ -728,8 +728,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // Use enhanced prompt for retries with safe fallbacks
     const basePrompt =
       attempt === 0 
-        ? (PHASE_2_PROMPT.template || "Analyze this email: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1 results: {PHASE1_RESULTS}")
-        : (PHASE_2_PROMPT.template || "Retry analysis of email: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1 results: {PHASE1_RESULTS}");
+        ? (PHASE_2_PROMPT.user || "Analyze this email: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1 results: {PHASE1_RESULTS}")
+        : (PHASE_2_PROMPT.user || "Retry analysis of email: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1 results: {PHASE1_RESULTS}");
 
     let prompt;
     try {
@@ -795,7 +795,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     }
 
     // Use NLP queue to prevent bottlenecks from concurrent requests
-    const responseData = await this?.nlpQueue?.enqueue(
+    const responseData = await this.nlpQueue?.enqueue(
       async () => {
         const response = await axios.post(
           "http://localhost:11434/api/generate",
@@ -827,7 +827,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           throw new Error("Empty response from LLM");
         }
 
-        return response?.data?.response;
+        return response.data?.response;
       },
       "normal", // priority
       timeout,
@@ -982,7 +982,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       // Build comprehensive prompt with all context using safe content
       let prompt;
       try {
-        const baseTemplate = PHASE_3_PROMPT.template || "Provide strategic analysis for: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1: {PHASE1_RESULTS}. Phase 2: {PHASE2_RESULTS}";
+        const baseTemplate = PHASE_3_PROMPT.user || "Provide strategic analysis for: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1: {PHASE1_RESULTS}. Phase 2: {PHASE2_RESULTS}";
         prompt = baseTemplate
           .replace("{PHASE1_RESULTS}", JSON.stringify(phase1Results, null, 2))
           .replace("{PHASE2_RESULTS}", JSON.stringify(phase2Results, null, 2))
@@ -1016,7 +1016,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       }
 
       // Call Phi-4 through NLP queue to prevent bottlenecks
-      const responseData = await this?.nlpQueue?.enqueue(
+      const responseData = await this.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post(
             "http://localhost:11434/api/generate",
@@ -1045,7 +1045,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
             throw new Error(`LLM request failed with status ${response.status}`);
           }
 
-          return response?.data?.response;
+          return response.data?.response;
         },
         "high", // priority - phase 3 is highest quality so high priority
         options.timeout || 60000,
@@ -1439,17 +1439,17 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const patterns: string[] = [];
 
     // Multi-item patterns
-    if (entities?.part_numbers?.length > 5) {
+    if ((entities.part_numbers?.length ?? 0) > 5) {
       patterns.push("bulk_order");
     }
 
     // Urgency patterns
-    if (content.match(/urgent|asap|critical/gi)?.length || 0 > 2) {
+    if ((content.match(/urgent|asap|critical/gi)?.length ?? 0) > 2) {
       patterns.push("high_urgency");
     }
 
     // Financial patterns
-    if (entities?.dollar_amounts?.length > 0) {
+    if ((entities.dollar_amounts?.length ?? 0) > 0) {
       const total = this.calculateFinancialImpact(entities.dollar_amounts);
       if (total > 50000) patterns.push("high_value");
       if (total > 100000) patterns.push("enterprise_deal");
@@ -1490,7 +1490,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
    */
   private parseJsonResponse(response: string, attemptNumber: number = 0, maxRetries: number = 2): Record<string, unknown> {
     try {
-      logger.info(`Parsing JSON response (${response?.length || 0} chars):`, response.substring(0, 200) + '...');
+      logger.info(`Parsing JSON response (${response?.length ?? 0} chars):`, response.substring(0, 200) + '...');
       
       // Clean and normalize the response
       const cleaned = this.extractJsonFromResponse(response, attemptNumber > 0);
@@ -1500,7 +1500,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         throw new Error("No JSON content found in response");
       }
 
-      logger.info(`Cleaned JSON (${cleaned?.length || 0} chars):`, cleaned.substring(0, 200) + '...');
+      logger.info(`Cleaned JSON (${cleaned?.length ?? 0} chars):`, cleaned.substring(0, 200) + '...');
       
       // Parse and validate JSON
       const parsed = JSON.parse(cleaned);
@@ -1551,7 +1551,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
   private extractJsonFromResponse(response: string, isRetryAttempt: boolean = false): string | null {
     let cleaned = response.trim();
     
-    logger.info(`Original response length: ${response?.length || 0}`);
+    logger.info(`Original response length: ${response?.length ?? 0}`);
     
     // First, try a quick comment removal in case it's just comments blocking parsing
     const quickCleaned = cleaned.replace(/\s*\/\/[^\n\r]*/g, "");
@@ -1598,9 +1598,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     cleaned = cleaned.replace(/\}[^}]*$/s, "}");
 
     // Step 4: Remove inline comments (// comments) - already tried above but do again after other processing
-    logger.info(`Before comment removal: ${cleaned?.length || 0} chars`);
+    logger.info(`Before comment removal: ${cleaned?.length ?? 0} chars`);
     cleaned = cleaned.replace(/\s*\/\/[^\n\r]*/g, "");
-    logger.info(`After comment removal: ${cleaned?.length || 0} chars`);
+    logger.info(`After comment removal: ${cleaned?.length ?? 0} chars`);
     
     // Step 5: Fix common JSON formatting issues (only if needed)
     // First try to parse as-is to see if it's already valid JSON
@@ -1636,7 +1636,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       let depth = 0;
       let endIndex = -1;
       
-      for (let i = firstBrace; i < cleaned?.length || 0; i++) {
+      for (let i = firstBrace; i < (cleaned?.length ?? 0); i++) {
         if (cleaned[i] === '{') {
           depth++;
         } else if (cleaned[i] === '}') {
@@ -1749,7 +1749,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
               // Remove quotes if present
               cleaned = cleaned.replace(/^["']+|["']+$/g, '');
               return cleaned;
-            }).filter(item => item?.length || 0 > 0);
+            }).filter(item => (item?.length ?? 0) > 0);
             result[key] = items;
           }
         }
@@ -1837,19 +1837,19 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         /["']?workflow[_\s]*validation["']?\s*:\s*["']([^"'\n,/]+)["']?/i,
       );
       if (workflowMatch) {
-        sections.workflow_validation = workflowMatch[1].trim();
+        sections.workflow_validation = workflowMatch[1]?.trim();
       }
 
       // Extract confidence
       const confidenceMatch = response.match(/["']?confidence["']?\s*:\s*([0-9.]+)/i);
       if (confidenceMatch) {
-        sections.confidence = parseFloat(confidenceMatch[1]);
+        sections.confidence = parseFloat(confidenceMatch[1] || '0');
       }
 
       // Extract risk assessment
       const riskMatch = response.match(/["']?risk[_\s]*assessment["']?\s*:\s*["']([^"'\n,]+(?:\s+[^"'\n,]+)*)["']?/i);
       if (riskMatch) {
-        sections.risk_assessment = riskMatch[1].trim();
+        sections.risk_assessment = riskMatch[1]?.trim();
       }
 
       // Extract business process
@@ -1857,7 +1857,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         /["']?business[_\s]*process["']?\s*:\s*["']([^"'\n,/]+)["']?/i,
       );
       if (processMatch) {
-        sections.business_process = processMatch[1].trim();
+        sections.business_process = processMatch[1]?.trim();
       }
 
       // If we found at least 2 sections, use this as fallback
@@ -1867,7 +1867,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
       return null;
     } catch (error) {
-      logger.debug("Fallback extraction failed:", error);
+      logger.debug("Fallback extraction failed:", error as string);
       return null;
     }
   }
@@ -1993,7 +1993,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       }
     } catch (error) {
       logger.error("Failed to cache analysis results in Redis", COMPONENT, { 
-        error: error.message,
+        error: (error instanceof Error) ? error.message : String(error),
         emailId: email.id 
       });
       // Don't throw - this is not critical for the main functionality
@@ -2051,27 +2051,27 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     emails: EmailInput[],
     options: AnalysisOptions = {},
   ): Promise<Phase3Results[]> {
-    logger.info(`Starting batch analysis for ${emails?.length || 0} emails`);
+    logger.info(`Starting batch analysis for ${emails?.length ?? 0} emails`);
 
     const results: Phase3Results[] = [];
     const batchSize = 5; // Process 5 emails concurrently
 
-    for (let i = 0; i < emails?.length || 0; i += batchSize) {
+    for (let i = 0; i < (emails?.length ?? 0); i += batchSize) {
       const batch = emails.slice(i, i + batchSize);
       const batchResults = await Promise.all(
-        batch?.map((email: any) => this.analyzeEmail(email, options)),
+        batch.map((email: any) => this.analyzeEmail(email, options)),
       );
       results.push(...(batchResults as Phase3Results[]));
 
       // Emit progress
       this.emit("batch:progress", {
-        processed: i + batch?.length || 0,
-        total: emails?.length || 0,
-        percentage: ((i + batch?.length || 0) / emails?.length || 0) * 100,
+        processed: i + (batch?.length ?? 0),
+        total: emails?.length ?? 0,
+        percentage: ((i + (batch?.length ?? 0)) / (emails?.length ?? 1)) * 100,
       });
     }
 
-    logger.info(`Batch analysis complete for ${emails?.length || 0} emails`);
+    logger.info(`Batch analysis complete for ${emails?.length ?? 0} emails`);
     return results;
   }
 
@@ -2081,7 +2081,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
   async getAnalysisStats(
     startDate?: Date,
     endDate?: Date,
-  ): Promise<AnalysisStats & { parsingMetrics: typeof this.parsingMetrics }> {
+  ): Promise<AnalysisStats & { parsingMetrics: any }> {
     const dateFilter =
       startDate && endDate
         ? `WHERE created_at BETWEEN '${startDate.toISOString()}' AND '${endDate.toISOString()}'`
@@ -2107,9 +2107,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
     // Add parsing metrics
     const successRate =
-      this?.parsingMetrics?.totalAttempts > 0
-        ? this?.parsingMetrics?.successfulParses /
-          this?.parsingMetrics?.totalAttempts
+      (this.parsingMetrics?.totalAttempts ?? 0) > 0
+        ? (this.parsingMetrics?.successfulParses ?? 0) /
+          (this.parsingMetrics?.totalAttempts ?? 1)
         : 0;
 
     return {
@@ -2118,18 +2118,18 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         ...this.parsingMetrics,
         successRate: Math.round(successRate * 10000) / 100, // Percentage with 2 decimal places
         retryRate:
-          this?.parsingMetrics?.totalAttempts > 0
+          (this.parsingMetrics?.totalAttempts ?? 0) > 0
             ? Math.round(
-                (this?.parsingMetrics?.retrySuccesses /
-                  this?.parsingMetrics?.totalAttempts) *
+                ((this.parsingMetrics?.retrySuccesses ?? 0) /
+                  (this.parsingMetrics?.totalAttempts ?? 1)) *
                   10000,
               ) / 100
             : 0,
         fallbackRate:
-          this?.parsingMetrics?.totalAttempts > 0
+          (this.parsingMetrics?.totalAttempts ?? 0) > 0
             ? Math.round(
-                (this?.parsingMetrics?.fallbackUses /
-                  this?.parsingMetrics?.totalAttempts) *
+                ((this.parsingMetrics?.fallbackUses ?? 0) /
+                  (this.parsingMetrics?.totalAttempts ?? 1)) *
                   10000,
               ) / 100
             : 0,
@@ -2533,7 +2533,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
    */
   updateQualityConfig(newConfig: Partial<typeof this.qualityConfig>): void {
     this.qualityConfig = { ...this.qualityConfig, ...newConfig };
-    logger.info("Quality configuration updated:", newConfig);
+    logger.info("Quality configuration updated:", JSON.stringify(newConfig));
   }
 
   /**
@@ -2546,12 +2546,12 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     this.logQualityMetrics();
 
     // Clear caches
-    this?.phase1Cache?.clear();
+    this.phase1Cache?.clear();
 
     // Connection pool will handle database cleanup automatically
 
     // Close Redis connection
-    await this?.redisService?.close();
+    await this.redisService?.close();
 
     // Remove all listeners
     this.removeAllListeners();

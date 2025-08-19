@@ -8,7 +8,7 @@ import {
 import type {
   IEMSEmail,
   EmailStatus,
-} from "../../../types/iems-email?.types.js";
+} from "../../../types/iems-email.types.js";
 import "./VMwareTDSynnexSection.css";
 
 interface VMwareTDSynnexSectionProps {
@@ -30,6 +30,8 @@ export const VMwareTDSynnexSection: React.FC<VMwareTDSynnexSectionProps> = ({
         return <ClockIcon className="status-icon status-icon--yellow" />;
       case "green":
         return <CheckCircleIcon className="status-icon status-icon--green" />;
+      default:
+        return <ClockIcon className="status-icon status-icon--yellow" />;
     }
   };
 

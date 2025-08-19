@@ -3,7 +3,7 @@
  * Analyzes response structure, consistency, and readability
  */
 
-import type { TokenConfidence } from "../types.js";
+import type { TokenConfidence } from "../types";
 
 export interface CoherenceResult {
   score: number;

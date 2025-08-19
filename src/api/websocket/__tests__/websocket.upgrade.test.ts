@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { createServer, Server, IncomingMessage } from 'http';
 import { Socket } from 'net';
-import { WalmartWebSocketServer } from '../WalmartWebSocketServer.js';
+import { WalmartWebSocketServer } from '../WalmartWebSocketServer';
 import { WebSocketServer } from 'ws';
 import { createHash } from 'crypto';
 

@@ -215,15 +215,15 @@ export class OllamaOptimizer extends EventEmitter {
     }
 
     // Direct inference through queue
-    return this?.inferenceQueue?.add(async () => {
+    const result = this.inferenceQueue?.add(async () => {
       try {
         const response = await this.performInference(prompt, model, options);
         this.recordLatency(model, performance.now() - startTime);
         return response;
       } catch (error) {
         // Try fallback models if enabled
-        if (this?.config?.enableFallback) {
-          for (const fallbackModel of this?.config?.fallbackModels) {
+        if (this.config?.enableFallback) {
+          for (const fallbackModel of this.config?.fallbackModels ?? []) {
             try {
               logger.warn(
                 `Falling back to ${fallbackModel}`,
@@ -244,6 +244,8 @@ export class OllamaOptimizer extends EventEmitter {
         throw error;
       }
     });
+    
+    return result ?? Promise.resolve('');
   }
 
   /**
@@ -259,8 +261,8 @@ export class OllamaOptimizer extends EventEmitter {
       // Optimization settings
       num_ctx: options.num_ctx || 2048, // Reduce context for speed
       num_batch: 512, // Larger batch size
-      num_threads: this?.config?.numThreads,
-      num_gpu: this?.config?.enableGPU ? this?.config?.numGPULayers || 35 : 0,
+      num_threads: this.config?.numThreads,
+      num_gpu: this.config?.enableGPU ? (this.config?.numGPULayers ?? 35) : 0,
       f16_kv: true, // Use 16-bit for key/value cache
       use_mlock: true, // Lock model in memory
       use_mmap: true, // Memory-mapped files for efficiency
@@ -275,7 +277,7 @@ export class OllamaOptimizer extends EventEmitter {
     };
 
     try {
-      const response = await this?.axiosInstance?.post(
+      const response = await this.axiosInstance?.post(
         "/api/generate",
         {
           model,
@@ -311,7 +313,7 @@ export class OllamaOptimizer extends EventEmitter {
   private shouldBatch(prompt: string, options: any): boolean {
     // Don't batch if prompt is too long or has specific requirements
     return (
-      prompt?.length || 0 < 1000 &&
+      (prompt?.length ?? 0) < 1000 &&
       !options.stream &&
       (!options.temperature || options.temperature < 0.3)
     );

@@ -163,13 +163,13 @@ export const useReportGeneration = (
   const [error, setError] = useState<string | null>(null);
 
   // Generate unique ID
-  const generateId = useCallback(() => {
+  const generateId = useCallback((): string => {
     return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }, []);
 
   // Create new report template
   const createTemplate = useCallback(
-    (templateData: Omit<ReportTemplate, "id" | "metadata">) => {
+    (templateData: Omit<ReportTemplate, "id" | "metadata">): ReportTemplate => {
       const template: ReportTemplate = {
         ...templateData,
         id: generateId(),
@@ -182,7 +182,7 @@ export const useReportGeneration = (
         },
       };
 
-      setTemplates((prev: any) => [...prev, template]);
+      setTemplates((prev: ReportTemplate[]) => [...prev, template]);
       return template;
     },
     [generateId],
@@ -190,9 +190,9 @@ export const useReportGeneration = (
 
   // Update template
   const updateTemplate = useCallback(
-    (templateId: string, updates: Partial<ReportTemplate>) => {
-      setTemplates((prev: any) =>
-        prev?.map((template: any) =>
+    (templateId: string, updates: Partial<ReportTemplate>): void => {
+      setTemplates((prev: ReportTemplate[]) =>
+        prev.map((template: ReportTemplate) =>
           template.id === templateId
             ? {
                 ...template,
@@ -200,7 +200,7 @@ export const useReportGeneration = (
                 metadata: {
                   ...template.metadata,
                   updatedAt: new Date().toISOString(),
-                  version: incrementVersion(template?.metadata?.version),
+                  version: incrementVersion(template.metadata.version),
                 },
               }
             : template,
@@ -211,21 +211,21 @@ export const useReportGeneration = (
   );
 
   // Delete template
-  const deleteTemplate = useCallback((templateId: string) => {
-    setTemplates((prev: any) =>
-      prev?.filter((template: any) => template.id !== templateId),
+  const deleteTemplate = useCallback((templateId: string): void => {
+    setTemplates((prev: ReportTemplate[]) =>
+      prev.filter((template: ReportTemplate) => template.id !== templateId),
     );
 
     // Also remove associated schedules
-    setSchedules((prev: any) =>
-      prev?.filter((schedule: any) => schedule.reportId !== templateId),
+    setSchedules((prev: ReportSchedule[]) =>
+      prev.filter((schedule: ReportSchedule) => schedule.reportId !== templateId),
     );
   }, []);
 
   // Clone template
   const cloneTemplate = useCallback(
-    (templateId: string, newName?: string) => {
-      const original = templates.find((t: any) => t.id === templateId);
+    (templateId: string, newName?: string): ReportTemplate | null => {
+      const original = templates.find((t: ReportTemplate) => t.id === templateId);
       if (!original) return null;
 
       const cloned: ReportTemplate = {
@@ -241,7 +241,7 @@ export const useReportGeneration = (
         isDefault: false,
       };
 
-      setTemplates((prev: any) => [...prev, cloned]);
+      setTemplates((prev: ReportTemplate[]) => [...prev, cloned]);
       return cloned;
     },
     [templates, generateId],
@@ -249,13 +249,13 @@ export const useReportGeneration = (
 
   // Add section to template
   const addSection = useCallback(
-    (templateId: string, section: Omit<ReportSection, "id" | "order">) => {
-      setTemplates((prev: any) =>
-        prev?.map((template: any) => {
+    (templateId: string, section: Omit<ReportSection, "id" | "order">): void => {
+      setTemplates((prev: ReportTemplate[]) =>
+        prev.map((template: ReportTemplate) => {
           if (template.id !== templateId) return template;
 
           const maxOrder = Math.max(
-            ...template?.sections?.map((s: any) => s.order),
+            ...template.sections.map((s: ReportSection) => s.order),
             0,
           );
           const newSection: ReportSection = {
@@ -284,14 +284,14 @@ export const useReportGeneration = (
       templateId: string,
       sectionId: string,
       updates: Partial<ReportSection>,
-    ) => {
-      setTemplates((prev: any) =>
-        prev?.map((template: any) => {
+    ): void => {
+      setTemplates((prev: ReportTemplate[]) =>
+        prev.map((template: ReportTemplate) => {
           if (template.id !== templateId) return template;
 
           return {
             ...template,
-            sections: template?.sections?.map((section: any) =>
+            sections: template.sections.map((section: ReportSection) =>
               section.id === sectionId ? { ...section, ...updates } : section,
             ),
             metadata: {
@@ -306,15 +306,15 @@ export const useReportGeneration = (
   );
 
   // Remove section
-  const removeSection = useCallback((templateId: string, sectionId: string) => {
-    setTemplates((prev: any) =>
-      prev?.map((template: any) => {
+  const removeSection = useCallback((templateId: string, sectionId: string): void => {
+    setTemplates((prev: ReportTemplate[]) =>
+      prev.map((template: ReportTemplate) => {
         if (template.id !== templateId) return template;
 
         return {
           ...template,
-          sections: template?.sections?.filter(
-            (section: any) => section.id !== sectionId,
+          sections: template.sections.filter(
+            (section: ReportSection) => section.id !== sectionId,
           ),
           metadata: {
             ...template.metadata,
@@ -327,17 +327,17 @@ export const useReportGeneration = (
 
   // Reorder sections
   const reorderSections = useCallback(
-    (templateId: string, sectionIds: string[]) => {
-      setTemplates((prev: any) =>
-        prev?.map((template: any) => {
+    (templateId: string, sectionIds: string[]): void => {
+      setTemplates((prev: ReportTemplate[]) =>
+        prev.map((template: ReportTemplate) => {
           if (template.id !== templateId) return template;
 
           const reorderedSections = sectionIds
-            .map((id, index) => {
-              const section = template?.sections?.find((s: any) => s.id === id);
+            .map((id: string, index: number) => {
+              const section = template.sections.find((s: ReportSection) => s.id === id);
               return section ? { ...section, order: index } : null;
             })
-            .filter(Boolean) as ReportSection[];
+            .filter((section): section is ReportSection => section !== null);
 
           return {
             ...template,
@@ -390,11 +390,11 @@ export const useReportGeneration = (
         },
       };
 
-      setGeneratedReports((prev: any) => [report, ...prev.slice(0, maxHistory - 1)]);
+      setGeneratedReports((prev: GeneratedReport[]) => [report, ...prev.slice(0, maxHistory - 1)]);
 
       try {
         // Process each section
-        const processedSections = await Promise.all(
+        const processedSections = (await Promise.all(
           template.sections
             .filter((section: any) => section.visible)
             .sort((a, b) => a.order - b.order)
@@ -430,7 +430,7 @@ export const useReportGeneration = (
                   return null;
               }
             }),
-        );
+        )).filter((section): section is ProcessedSection => section !== null);
 
         // Generate file based on format
         let downloadUrl: string;
@@ -476,20 +476,20 @@ export const useReportGeneration = (
           fileSize,
         };
 
-        setGeneratedReports((prev: any) =>
-          prev?.map((r: any) => (r.id === report.id ? completedReport : r)),
+        setGeneratedReports((prev: GeneratedReport[]) =>
+          prev.map((r: GeneratedReport) => (r.id === report.id ? completedReport : r)),
         );
 
         return completedReport;
       } catch (error) {
         console.error("Report generation failed:", error);
 
-        setGeneratedReports((prev: any) =>
-          prev?.map((r: any) =>
+        setGeneratedReports((prev: GeneratedReport[]) =>
+          prev.map((r: GeneratedReport) =>
             r.id === report.id
               ? {
                   ...r,
-                  status: "failed",
+                  status: "failed" as const,
                   error:
                     error instanceof Error ? error.message : "Unknown error",
                 }
@@ -510,7 +510,7 @@ export const useReportGeneration = (
 
   // Schedule management
   const createSchedule = useCallback(
-    (scheduleData: Omit<ReportSchedule, "id" | "createdAt" | "updatedAt">) => {
+    (scheduleData: Omit<ReportSchedule, "id" | "createdAt" | "updatedAt">): ReportSchedule => {
       if (!enableScheduling) {
         throw new Error("Scheduling is not enabled");
       }
@@ -522,7 +522,7 @@ export const useReportGeneration = (
         updatedAt: new Date().toISOString(),
       };
 
-      setSchedules((prev: any) => [...prev, schedule]);
+      setSchedules((prev: ReportSchedule[]) => [...prev, schedule]);
       return schedule;
     },
     [enableScheduling, generateId],
@@ -530,9 +530,9 @@ export const useReportGeneration = (
 
   // Update schedule
   const updateSchedule = useCallback(
-    (scheduleId: string, updates: Partial<ReportSchedule>) => {
-      setSchedules((prev: any) =>
-        prev?.map((schedule: any) =>
+    (scheduleId: string, updates: Partial<ReportSchedule>): void => {
+      setSchedules((prev: ReportSchedule[]) =>
+        prev.map((schedule: ReportSchedule) =>
           schedule.id === scheduleId
             ? { ...schedule, ...updates, updatedAt: new Date().toISOString() }
             : schedule,
@@ -543,17 +543,17 @@ export const useReportGeneration = (
   );
 
   // Delete schedule
-  const deleteSchedule = useCallback((scheduleId: string) => {
-    setSchedules((prev: any) =>
-      prev?.filter((schedule: any) => schedule.id !== scheduleId),
+  const deleteSchedule = useCallback((scheduleId: string): void => {
+    setSchedules((prev: ReportSchedule[]) =>
+      prev.filter((schedule: ReportSchedule) => schedule.id !== scheduleId),
     );
   }, []);
 
   // Get reports by template
   const getReportsByTemplate = useCallback(
-    (templateId: string) => {
-      return generatedReports?.filter(
-        (report: any) => report.templateId === templateId,
+    (templateId: string): GeneratedReport[] => {
+      return generatedReports.filter(
+        (report: GeneratedReport) => report.templateId === templateId,
       );
     },
     [generatedReports],
@@ -561,8 +561,8 @@ export const useReportGeneration = (
 
   // Export template
   const exportTemplate = useCallback(
-    (templateId: string) => {
-      const template = templates.find((t: any) => t.id === templateId);
+    (templateId: string): void => {
+      const template = templates.find((t: ReportTemplate) => t.id === templateId);
       if (!template) return;
 
       const exportData = {
@@ -578,10 +578,10 @@ export const useReportGeneration = (
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${template?.name?.replace(/\s+/g, "_")}_template.json`;
-      document?.body?.appendChild(link);
+      link.download = `${template.name.replace(/\s+/g, "_")}_template.json`;
+      document.body?.appendChild(link);
       link.click();
-      document?.body?.removeChild(link);
+      document.body?.removeChild(link);
       URL.revokeObjectURL(url);
     },
     [templates],
@@ -589,20 +589,33 @@ export const useReportGeneration = (
 
   // Import template
   const importTemplate = useCallback(
-    (templateData: Partial<ReportTemplate> & { template?: ReportTemplate }) => {
+    (templateData: Partial<ReportTemplate> & { template?: ReportTemplate }): ReportTemplate => {
       try {
         const imported = templateData.template || templateData;
+        if (!imported.name || !imported.sections || !imported.category || !imported.layout || !imported.styling) {
+          throw new Error("Missing required template fields");
+        }
+        
         const template: ReportTemplate = {
-          ...imported,
+          name: imported.name,
+          description: imported.description || "",
+          category: imported.category,
+          sections: imported.sections,
+          layout: imported.layout,
+          styling: imported.styling,
+          isPublic: imported.isPublic || false,
+          isDefault: imported.isDefault || false,
           id: generateId(),
           metadata: {
-            ...imported.metadata,
+            author: imported.metadata?.author || "Unknown",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            version: imported.metadata?.version || "1.0.0",
+            tags: imported.metadata?.tags || [],
           },
         };
 
-        setTemplates((prev: any) => [...prev, template]);
+        setTemplates((prev: ReportTemplate[]) => [...prev, template]);
         return template;
       } catch (error) {
         console.error("Template import failed:", error);
@@ -695,7 +708,7 @@ export const useReportGeneration = (
 // Helper functions
 function incrementVersion(version: string): string {
   const parts = version.split(".");
-  const patch = parseInt(parts[2] || "0") + 1;
+  const patch = parseInt(parts[2] || "0", 10) + 1;
   return `${parts[0]}.${parts[1]}.${patch}`;
 }
 
@@ -717,6 +730,12 @@ function sortData(
     for (const sort of sortBy) {
       const aVal = a[sort.field];
       const bVal = b[sort.field];
+      
+      // Handle null/undefined values
+      if (aVal == null && bVal == null) continue;
+      if (aVal == null) return sort.direction === "asc" ? -1 : 1;
+      if (bVal == null) return sort.direction === "asc" ? 1 : -1;
+      
       const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
       if (comparison !== 0) {
         return sort.direction === "asc" ? comparison : -comparison;
@@ -727,20 +746,20 @@ function sortData(
 }
 
 // Section processors (simplified - would be more complex in real implementation)
-async function processTableSection(section: ReportSection, data: ReportDataSet) {
-  return { type: "table", data, fields: section.fields };
+async function processTableSection(section: ReportSection, data: ReportDataSet): Promise<ProcessedSection> {
+  return { type: "table" as const, data, fields: section.fields };
 }
 
-async function processChartSection(section: ReportSection, data: ReportDataSet) {
-  return { type: "chart", data, config: section.chartConfig };
+async function processChartSection(section: ReportSection, data: ReportDataSet): Promise<ProcessedSection> {
+  return { type: "chart" as const, data, config: section.chartConfig };
 }
 
-async function processMetricSection(section: ReportSection, data: ReportDataSet) {
-  return { type: "metric", data, config: section.metricConfig };
+async function processMetricSection(section: ReportSection, data: ReportDataSet): Promise<ProcessedSection> {
+  return { type: "metric" as const, data, config: section.metricConfig };
 }
 
-async function processTextSection(section: ReportSection) {
-  return { type: "text", content: section.textContent };
+async function processTextSection(section: ReportSection): Promise<ProcessedSection> {
+  return { type: "text" as const, content: section.textContent };
 }
 
 // Report generators (simplified - would use actual libraries)
@@ -748,7 +767,7 @@ async function generatePDFReport(
   template: ReportTemplate,
   sections: ProcessedSection[],
   options: ReportGenerationOptions,
-) {
+): Promise<{ downloadUrl: string; fileSize: number }> {
   // Would use jsPDF or similar
   return { downloadUrl: "mock-pdf-url", fileSize: 1024 };
 }
@@ -757,7 +776,7 @@ async function generateExcelReport(
   template: ReportTemplate,
   sections: ProcessedSection[],
   options: ReportGenerationOptions,
-) {
+): Promise<{ downloadUrl: string; fileSize: number }> {
   // Would use XLSX or similar
   return { downloadUrl: "mock-excel-url", fileSize: 2048 };
 }
@@ -766,7 +785,7 @@ async function generateCSVReport(
   template: ReportTemplate,
   sections: ProcessedSection[],
   options: ReportGenerationOptions,
-) {
+): Promise<{ downloadUrl: string; fileSize: number }> {
   // Would generate CSV content
   return { downloadUrl: "mock-csv-url", fileSize: 512 };
 }
@@ -775,7 +794,7 @@ async function generateHTMLReport(
   template: ReportTemplate,
   sections: ProcessedSection[],
   options: ReportGenerationOptions,
-) {
+): Promise<{ downloadUrl: string; fileSize: number }> {
   // Would generate HTML content
   return { downloadUrl: "mock-html-url", fileSize: 1536 };
 }

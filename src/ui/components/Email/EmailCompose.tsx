@@ -166,7 +166,7 @@ TD SYNNEX Support Team`,
   const handleAttachmentRemove = (index: number) => {
     setEmailData((prev: any) => ({
       ...prev,
-      attachments: prev.attachments?.filter((_, i) => i !== index),
+      attachments: prev.attachments?.filter((_: File, i: number) => i !== index),
     }));
   };
 
