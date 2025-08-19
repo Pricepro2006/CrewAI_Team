@@ -14,7 +14,7 @@ import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
 import { promisify } from 'node:util';
 import * as os from 'node:os';
-import * as process from 'node:process';
+import process from 'node:process';
 import { logger } from '../utils/logger.js';
 import { metricsCollector } from './MetricsCollector.js';
 import Database from 'better-sqlite3';
@@ -1161,9 +1161,18 @@ export class HealthCheckService extends EventEmitter {
       this.emit('service:shutdown');
     };
 
-    process.once('SIGTERM', shutdown);
-    process.once('SIGINT', shutdown);
-    process.once('SIGUSR2', shutdown); // nodemon restart
+    // Use process.on instead of process.once for compatibility
+    // Add flag to ensure shutdown only runs once
+    let shutdownCalled = false;
+    const shutdownOnce = async () => {
+      if (shutdownCalled) return;
+      shutdownCalled = true;
+      await shutdown();
+    };
+    
+    process.on('SIGTERM', shutdownOnce);
+    process.on('SIGINT', shutdownOnce);
+    process.on('SIGUSR2', shutdownOnce); // nodemon restart
   }
 
   /**

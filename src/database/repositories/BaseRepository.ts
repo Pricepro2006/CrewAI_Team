@@ -4,8 +4,8 @@
  * Enhanced with comprehensive SQL injection protection
  */
 
-const Database = require("better-sqlite3");
-type DatabaseInstance = any;
+import Database from 'better-sqlite3';
+type DatabaseInstance = Database.Database;
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger.js";
 import {

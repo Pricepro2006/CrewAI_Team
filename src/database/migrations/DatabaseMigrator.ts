@@ -8,8 +8,9 @@ import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { logger } from "../../utils/logger.js";
 
-// Use __dirname for Node.js compatibility without import.meta
-const __dirname = dirname(__filename || process.cwd());
+// Use import.meta.url for ES modules
+const __filename = new URL(import.meta.url).pathname;
+const __dirname = dirname(__filename);
 
 export interface Migration {
   version: string;

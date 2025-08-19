@@ -3,8 +3,8 @@
  * Implements advanced connection pooling with performance monitoring
  */
 
-const Database = require('better-sqlite3');
-type DatabaseInstance = any;
+import Database from 'better-sqlite3';
+type DatabaseInstance = ReturnType<typeof Database>;
 import { EventEmitter } from 'events';
 
 interface ConnectionPoolConfig {
