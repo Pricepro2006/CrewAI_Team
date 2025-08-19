@@ -81,10 +81,11 @@ const createMockEmail = (overrides: Partial<EmailRecord> = {}): EmailRecord => (
   email_alias: 'test@example.com',
   status: 'yellow' as EmailStatus,
   status_text: 'In Progress',
+  summary: 'Test email summary content',
+  workflow_state: 'IN_PROGRESS' as const,
   priority: 'medium' as const,
   timestamp: new Date().toISOString(),
-  assigned_to: null,
-  chain_id: null,
+  assignedTo: undefined,
   ...overrides,
 });
 
@@ -573,7 +574,6 @@ describe('EmailDashboardMultiPanel', () => {
           priority: 'medium' as const,
           timestamp: '',
           assigned_to: null,
-          chain_id: null,
         } as any,
       ];
       

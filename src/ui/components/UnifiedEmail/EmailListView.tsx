@@ -10,7 +10,7 @@ interface UnifiedEmailData {
   from: string;
   to: string[];
   receivedAt: string;
-  workflowState: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION" | "FAILED";
   isWorkflowComplete: boolean;
   priority: "low" | "medium" | "high" | "critical";
   status: "pending" | "processing" | "completed" | "failed";

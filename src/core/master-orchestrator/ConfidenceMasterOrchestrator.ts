@@ -3,7 +3,7 @@
  * Replaces the 6-step planning approach with a streamlined 4-step confidence workflow
  */
 
-import { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
+import { LLMProviderManager } from "../llm/LLMProviderManager.js";
 import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
 import { RAGSystem } from "../rag/RAGSystem.js";
 import { PlanExecutor } from "./PlanExecutor.js";
@@ -75,7 +75,7 @@ export interface ConfidenceOrchestratorResult extends ExecutionResult {
 }
 
 export class ConfidenceMasterOrchestrator extends EventEmitter {
-  private llm: LlamaCppProvider;
+  private llm: LLMProviderManager;
   public agentRegistry: AgentRegistry;
   public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
@@ -124,16 +124,8 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     // Initialize performance optimizer first
     this.performanceOptimizer = new PerformanceOptimizer();
 
-    // Initialize LLM with model selection based on configuration
-    // Default to complex model (granite3.3:2b) for main orchestrator
-    const defaultModel = MODEL_CONFIGS?.COMPLEX?.model;
-    this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${defaultModel}.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
+    // Initialize LLM using the modern LLMProviderManager singleton pattern
+    this.llm = new LLMProviderManager();
 
     // Initialize core systems
     this.agentRegistry = new AgentRegistry();
@@ -232,26 +224,20 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         systemLoad,
       );
 
-      // Switch model if different from current
-      if (adjustedModelConfig.model !== this?.llm?.getConfig().modelPath) {
-        logger.info(
-          "Switching model based on complexity and system load",
-          "CONFIDENCE_ORCHESTRATOR",
-          {
-            from: this?.llm?.getConfig().modelPath,
-            to: adjustedModelConfig.model,
-            complexity: complexity.score,
-            systemLoad,
-          },
-        );
-        this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${adjustedModelConfig.model}.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
-      }
+      // Get current model info from LLMProviderManager
+      const currentModelInfo = this?.llm?.getModelInfo();
+      
+      // Log model info for debugging - note: LLMProviderManager handles model switching internally
+      logger.info(
+        "Using LLMProviderManager for model selection",
+        "CONFIDENCE_ORCHESTRATOR",
+        {
+          currentModel: currentModelInfo?.model,
+          targetModel: adjustedModelConfig.model,
+          complexity: complexity.score,
+          systemLoad,
+        },
+      );
 
       // Step 3: Route based on complexity
       let result: ConfidenceOrchestratorResult;
@@ -302,17 +288,11 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
   ): Promise<ConfidenceOrchestratorResult> {
     logger.info("Handling simple query", "CONFIDENCE_ORCHESTRATOR");
 
-    // Use simple model for quick responses
-    const simpleModel = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${MODEL_CONFIGS.SIMPLE.model}.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
+    // Use the existing LLM provider for quick responses
+    // Note: LLMProviderManager already handles model optimization based on system load
 
     // Generate direct response
-    const response = await simpleModel.generate(
+    const response = await this.llm.generate(
       `Answer this simple question concisely: ${query.text}`,
       {
         temperature: MODEL_CONFIGS?.SIMPLE?.temperature,

@@ -153,7 +153,7 @@ export const HealthDashboard: React.FC = (): React.ReactElement => {
   });
 
   const health = healthData?.health as AggregatedHealth | undefined;
-  const history = (historyData?.history || []) as HealthCheckResult[];
+  const history = (historyData?.history || []) as any;
   const trends = trendsData?.trends;
 
   const getSystemStatusColor = (status?: string): string => {
@@ -317,7 +317,7 @@ export const HealthDashboard: React.FC = (): React.ReactElement => {
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(trends.serviceFailures || {}).map(([service, count]: [string, unknown]) => (
                     <span key={service} className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">
-                      {service}: {count}
+                      {service}: {String(count)}
                     </span>
                   ))}
                 </div>
@@ -342,7 +342,7 @@ export const HealthDashboard: React.FC = (): React.ReactElement => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {history.slice(0, 10).map((check, index) => (
+                  {history.slice(0, 10).map((check: any, index: number) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">
                         {check.lastCheck ? new Date(check.lastCheck).toLocaleTimeString() : 'N/A'}

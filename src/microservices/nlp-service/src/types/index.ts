@@ -108,8 +108,8 @@ export interface ServiceStatus {
   startedAt: number;
   lastHealthCheck: number;
   dependencies: {
-    ollama: 'healthy' | 'unhealthy' | 'unknown';
-    redis: 'healthy' | 'unhealthy' | 'unknown';
+    llamacpp: 'healthy' | 'unhealthy' | 'unknown';
+    model: 'healthy' | 'unhealthy' | 'unknown';
     queue: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
   };
   resources: {
@@ -355,15 +355,16 @@ export interface ServiceMetrics {
     };
   };
   dependencies: {
-    ollama: {
+    llamacpp: {
       status: 'healthy' | 'unhealthy';
       responseTime?: number;
       lastCheck: number;
     };
-    redis: {
+    model: {
       status: 'healthy' | 'unhealthy';
       responseTime?: number;
       lastCheck: number;
+      modelName?: string;
     };
   };
 }

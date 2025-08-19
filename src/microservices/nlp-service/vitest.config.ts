@@ -26,9 +26,8 @@ export default defineConfig({
       }
     },
     setupFiles: ['./src/__tests__/setup.ts'],
-    timeout: 10000,
-    hookTimeout: 10000,
-    teardownTimeout: 5000
+    testTimeout: 10000,
+    hookTimeout: 10000
   },
   resolve: {
     alias: {

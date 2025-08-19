@@ -475,7 +475,7 @@ export class CachedEmailRepository extends EmailRepository {
 
     try {
       // Generate cache keys
-      const cacheKeys = emailIds?.map(id => this.generateEmailCacheKey(id));
+      const cacheKeys = emailIds?.map(id => this.generateEmailCacheKey(id)) || [];
       
       // Try to get from cache
       const cachedResults = await cacheManager.mget<any>(cacheKeys, this.cacheNamespace);
@@ -485,16 +485,19 @@ export class CachedEmailRepository extends EmailRepository {
 
       // Separate hits and misses
       for (let i = 0; i < (emailIds?.length || 0); i++) {
-        const emailId = emailIds[i];
-        const cacheKey = cacheKeys[i];
+        const emailId = emailIds?.[i];
+        const cacheKey = cacheKeys?.[i];
         
-        if (cachedResults.has(cacheKey)) {
-          results.set(emailId, cachedResults.get(cacheKey));
-          metrics.increment('cached_email_repository.bulk_get_cache_hit');
-        } else {
-          missedIds.push(emailId);
-          missedKeys.push(cacheKey);
-          metrics.increment('cached_email_repository.bulk_get_cache_miss');
+        // Ensure emailId and cacheKey are defined before using
+        if (emailId && cacheKey) {
+          if (cachedResults.has(cacheKey)) {
+            results.set(emailId, cachedResults.get(cacheKey));
+            metrics.increment('cached_email_repository.bulk_get_cache_hit');
+          } else {
+            missedIds.push(emailId);
+            missedKeys.push(cacheKey);
+            metrics.increment('cached_email_repository.bulk_get_cache_miss');
+          }
         }
       }
 

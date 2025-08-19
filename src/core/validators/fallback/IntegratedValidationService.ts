@@ -272,7 +272,9 @@ export class IntegratedValidationService {
         phoneMap.set(p.normalized, p);
       }
     });
-    merged?.contactInfo?.phones = Array.from(phoneMap.values());
+    if (merged.contactInfo) {
+      merged.contactInfo.phones = Array.from(phoneMap.values());
+    }
 
     // Similar merging for other fields...
     // (Abbreviated for brevity)

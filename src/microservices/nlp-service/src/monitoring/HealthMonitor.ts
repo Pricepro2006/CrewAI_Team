@@ -255,27 +255,30 @@ export class HealthMonitor extends EventEmitter {
     const results: HealthCheckResult[] = [];
     const status = this?.nlpService?.getStatus();
     
-    // Check Ollama
+    // Check LlamaCpp
     results.push({
-      component: 'ollama',
-      status: status?.dependencies?.ollama === 'healthy' ? 'healthy' : 'unhealthy',
-      message: `Ollama status: ${status?.dependencies?.ollama}`,
+      component: 'llamacpp',
+      status: status?.dependencies?.llamacpp === 'healthy' ? 'healthy' : 'unhealthy',
+      message: `LlamaCpp status: ${status?.dependencies?.llamacpp}`,
       timestamp: Date.now(),
       metadata: {
         lastCheck: status.lastHealthCheck
       }
     });
     
-    // Check Redis
-    results.push({
-      component: 'redis',
-      status: status?.dependencies?.redis === 'healthy' ? 'healthy' : 'unhealthy',
-      message: `Redis status: ${status?.dependencies?.redis}`,
-      timestamp: Date.now(),
-      metadata: {
-        lastCheck: status.lastHealthCheck
-      }
-    });
+    // Check Redis (if exists - conditional check for optional dependency)
+    const redisStatus = (status?.dependencies as any)?.redis;
+    if (redisStatus !== undefined) {
+      results.push({
+        component: 'redis',
+        status: redisStatus === 'healthy' ? 'healthy' : 'unhealthy',
+        message: `Redis status: ${redisStatus}`,
+        timestamp: Date.now(),
+        metadata: {
+          lastCheck: status.lastHealthCheck
+        }
+      });
+    }
     
     return results;
   }

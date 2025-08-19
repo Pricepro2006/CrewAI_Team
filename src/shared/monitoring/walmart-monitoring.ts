@@ -217,7 +217,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
   createAlert(
     alert: Omit<WalmartAlert, "id" | "timestamp" | "resolved">,
   ): string {
-    const alertId = `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const alertId = `alert_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     const fullAlert: WalmartAlert = {
       ...alert,
       id: alertId,
@@ -225,7 +225,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
       resolved: false,
     };
 
-    this?.alerts?.set(alertId, fullAlert);
+    this.alerts.set(alertId, fullAlert);
     this.emit("alert", fullAlert);
 
     logger.warn("Alert created", "WALMART_MONITORING", {
@@ -239,7 +239,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
   }
 
   resolveAlert(alertId: string, resolvedBy?: string): boolean {
-    const alert = this?.alerts?.get(alertId);
+    const alert = this.alerts.get(alertId);
     if (!alert || alert.resolved) {
       return false;
     }
@@ -247,13 +247,13 @@ export class WalmartMonitoringSystem extends EventEmitter {
     alert.resolved = true;
     if (alert.metadata) {
       alert.metadata.resolvedAt = new Date().toISOString();
-        alert.metadata.resolvedBy = resolvedBy;
-      } else {
-        alert.metadata = {
-          resolvedAt: new Date().toISOString(),
-          resolvedBy: resolvedBy
-        };
-      }
+      alert.metadata.resolvedBy = resolvedBy;
+    } else {
+      alert.metadata = {
+        resolvedAt: new Date().toISOString(),
+        resolvedBy: resolvedBy
+      };
+    }
 
     this.emit("alert_resolved", alert);
 
@@ -279,7 +279,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
     for (const [ruleName, rule] of Array.from(this.alertRules.entries())) {
       if (rule.metricName !== metric.name) continue;
 
-      const shouldAlert = rule?.conditions?.every((condition) => {
+      const shouldAlert = rule.conditions?.every((condition) => {
         switch (condition.operator) {
           case "gt":
             return metric.value > condition.threshold;
@@ -534,16 +534,16 @@ export class WalmartMonitoringSystem extends EventEmitter {
           aggregatedValue = values.length;
           break;
         default:
-          aggregatedValue = values[0];
+          aggregatedValue = values[0] || 0;
       }
 
       aggregated.push({
-        name,
+        name: name || 'unknown',
         value: aggregatedValue,
-        timestamp: interval,
-        tags: groupMetrics[0].tags,
-        type: groupMetrics[0].type,
-        unit: groupMetrics[0].unit,
+        timestamp: interval || new Date().toISOString(),
+        tags: groupMetrics[0]?.tags || {},
+        type: groupMetrics[0]?.type || 'counter',
+        unit: groupMetrics[0]?.unit || 'count',
       });
     }
 

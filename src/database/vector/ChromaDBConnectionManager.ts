@@ -319,7 +319,7 @@ export class ChromaDBConnectionManager extends EventEmitter {
       }
       
       logger.error(
-        `Circuit breaker opened after ${this?.circuitBreaker?.failures} failures. Will retry at ${this?.circuitBreaker?.nextRetryTime.toISOString()}`,
+        `Circuit breaker opened after ${this?.circuitBreaker?.failures} failures. Will retry at ${this?.circuitBreaker?.nextRetryTime?.toISOString() || 'unknown'}`,
         "CHROMADB_CONNECTION"
       );
     }

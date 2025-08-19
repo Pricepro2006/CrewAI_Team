@@ -5,7 +5,7 @@
  * Integration Coordinator: Robust error management system
  */
 
-import React from "react";
+import * as React from "react";
 import { logger } from "../../utils/logger.js";
 import type {
   WalmartError,
@@ -186,7 +186,7 @@ export class WalmartErrorHandler {
     }
 
     // Execute global handlers
-    for (const globalHandler of this.globalHandlers) {
+    for (const globalHandler of Array.from(this.globalHandlers)) {
       await globalHandler(walmartError, context, result);
     }
 
@@ -546,12 +546,12 @@ export class WalmartErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
+  public override state: ErrorBoundaryState = { hasError: false };
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
   }
 
-  static override getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     const handler = WalmartErrorHandler.getInstance();
     const walmartError =
       error instanceof WalmartBaseError
@@ -572,7 +572,7 @@ export class WalmartErrorBoundary extends React.Component<
     });
   }
 
-  render(): React.ReactNode {
+  override render(): React.ReactNode {
     if (this?.state?.hasError) {
       if (this?.props?.fallback) {
         const FallbackComponent = this?.props?.fallback;
@@ -608,7 +608,7 @@ export function createErrorFromResponse(response: Record<string, unknown>): Walm
   if (response.error && typeof response.error === 'object' && response.error !== null) {
     const errorObj = response.error as Record<string, unknown>;
     return new WalmartBaseError(
-      (errorObj.code as string) || "SERVER_ERROR",
+      (errorObj.code as WalmartErrorCode) || "SERVER_ERROR",
       (errorObj.message as string) || "Unknown error",
       {
         details: errorObj.details as Record<string, unknown>,
@@ -618,7 +618,7 @@ export function createErrorFromResponse(response: Record<string, unknown>): Walm
     );
   }
 
-  return new WalmartBaseError("SERVER_ERROR", "Invalid response from server");
+  return new WalmartBaseError("SERVER_ERROR" as WalmartErrorCode, "Invalid response from server");
 }
 
 // =====================================================
@@ -633,7 +633,7 @@ export function mapWebSocketError(wsError: WebSocketError): WalmartBaseError {
     TIMEOUT: "SERVER_ERROR",
   };
 
-  const code = mapping[wsError.code] || "SERVER_ERROR";
+  const code = (mapping[wsError.code] as WalmartErrorCode) || ("SERVER_ERROR" as WalmartErrorCode);
 
   return new WalmartBaseError(code, wsError.message, {
     details: wsError.details,

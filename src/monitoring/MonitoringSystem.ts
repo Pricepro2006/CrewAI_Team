@@ -456,7 +456,7 @@ export class MonitoringSystem extends EventEmitter {
       );
 
       // Check for alert storms (many alerts in short time)
-      if (last30Minutes?.length || 0 > 20) {
+      if ((last30Minutes?.length || 0) > 20) {
         alertSystem.createAlert(
           'alert_storm_detected',
           'warning',
@@ -477,7 +477,7 @@ export class MonitoringSystem extends EventEmitter {
       }, {} as Record<string, number>);
 
       Object.entries(componentAlertCounts).forEach(([component, count]) => {
-        if (count >= 5) {
+        if ((count as number) >= 5) {
           alertSystem.createAlert(
             'component_repeated_failures',
             'error',
@@ -504,9 +504,9 @@ export class MonitoringSystem extends EventEmitter {
     }, {} as Record<string, number>);
 
     return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([component, count]) => ({ component, count }));
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .slice(0, 5)
+    .map(([component, count]) => ({ component, count: count as number }));
   }
 
   private setupGracefulShutdown(): void {

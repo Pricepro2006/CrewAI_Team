@@ -201,6 +201,7 @@ export const VirtualizedProductList: React.FC<VirtualizedProductListProps> = Rea
     <div className="w-full">
       <List
         height={height}
+        width="100%"
         itemCount={items?.length || 0}
         itemSize={itemHeight}
         itemData={listData}

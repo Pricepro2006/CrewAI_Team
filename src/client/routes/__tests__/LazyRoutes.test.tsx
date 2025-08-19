@@ -1,3 +1,5 @@
+/// <reference types="react" />
+/// <reference types="react-dom" />
 import React, { Suspense } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -28,44 +30,44 @@ const createMockLazyComponent = (name: string, shouldError = false) => {
 };
 
 // Mock all lazy-loaded components
-vi.mock('../pages/EmailDashboardDemo', () => ({
-  default: createMockLazyComponent('EmailDashboardDemo'),
+vi.mock('../../pages/EmailDashboardDemo', () => ({
+  EmailDashboardDemo: createMockLazyComponent('EmailDashboardDemo'),
 }));
 
-vi.mock('../components/dashboard/EmailDashboardMultiPanel', () => ({
-  default: createMockLazyComponent('EmailDashboardMultiPanel'),
+vi.mock('../../components/dashboard/EmailDashboardMultiPanel', () => ({
+  EmailDashboardMultiPanel: createMockLazyComponent('EmailDashboardMultiPanel'),
 }));
 
-vi.mock('../components/dashboard/AdvancedEmailDashboard', () => ({
-  default: createMockLazyComponent('AdvancedEmailDashboard'),
+vi.mock('../../components/dashboard/AdvancedEmailDashboard', () => ({
+  AdvancedEmailDashboard: createMockLazyComponent('AdvancedEmailDashboard'),
 }));
 
-vi.mock('../components/walmart/WalmartDashboard', () => ({
-  default: createMockLazyComponent('WalmartDashboard'),
+vi.mock('../../components/walmart/WalmartDashboard', () => ({
+  WalmartDashboard: createMockLazyComponent('WalmartDashboard'),
 }));
 
-vi.mock('../components/walmart/WalmartProductSearch', () => ({
-  default: createMockLazyComponent('WalmartProductSearch'),
+vi.mock('../../components/walmart/WalmartProductSearch', () => ({
+  WalmartProductSearch: createMockLazyComponent('WalmartProductSearch'),
 }));
 
-vi.mock('../components/walmart/WalmartShoppingCart', () => ({
-  default: createMockLazyComponent('WalmartShoppingCart'),
+vi.mock('../../components/walmart/WalmartShoppingCart', () => ({
+  WalmartShoppingCart: createMockLazyComponent('WalmartShoppingCart'),
 }));
 
-vi.mock('../components/walmart/WalmartOrderHistory', () => ({
-  default: createMockLazyComponent('WalmartOrderHistory'),
+vi.mock('../../components/walmart/WalmartOrderHistory', () => ({
+  WalmartOrderHistory: createMockLazyComponent('WalmartOrderHistory'),
 }));
 
-vi.mock('../components/charts/StatusDistributionChart', () => ({
-  default: createMockLazyComponent('StatusDistributionChart'),
+vi.mock('../../components/charts/StatusDistributionChart', () => ({
+  StatusDistributionChart: createMockLazyComponent('StatusDistributionChart'),
 }));
 
-vi.mock('../components/charts/WorkflowTimelineChart', () => ({
-  default: createMockLazyComponent('WorkflowTimelineChart'),
+vi.mock('../../components/charts/WorkflowTimelineChart', () => ({
+  WorkflowTimelineChart: createMockLazyComponent('WorkflowTimelineChart'),
 }));
 
-vi.mock('../components/charts/SLATrackingDashboard', () => ({
-  default: createMockLazyComponent('SLATrackingDashboard'),
+vi.mock('../../components/charts/SLATrackingDashboard', () => ({
+  SLATrackingDashboard: createMockLazyComponent('SLATrackingDashboard'),
 }));
 
 // Simple fallback component for testing
@@ -200,7 +202,7 @@ describe('LazyRoutes - Walmart Components', () => {
 
     it('is properly lazy loaded', () => {
       expect(WalmartDashboard).toHaveProperty('$$typeof');
-      expect(WalmartDashboard._payload).toBeDefined();
+      expect((WalmartDashboard as any)._payload).toBeDefined();
     });
   });
 
@@ -303,13 +305,13 @@ describe('LazyRoutes - Error Handling', () => {
 
   it('handles component loading errors gracefully', async () => {
     // Mock a component that throws an error
-    vi.doMock('../pages/EmailDashboardDemo', () => ({
-      default: () => {
+    vi.doMock('../../pages/EmailDashboardDemo', () => ({
+      EmailDashboardDemo: () => {
         throw new Error('Component failed to load');
       },
     }));
 
-    const FailingComponent = React.lazy(() => import('../pages/EmailDashboardDemo').then(module => ({ default: module.EmailDashboardDemo })));
+    const FailingComponent = React.lazy(() => import('../../pages/EmailDashboardDemo').then(module => ({ default: module.EmailDashboardDemo })));
 
     render(
       <TestErrorBoundary>
@@ -483,7 +485,7 @@ describe('LazyRoutes - Integration Scenarios', () => {
     const NestedComponent = () => (
       <div>
         <Suspense fallback={<div data-testid="nested-loading">Nested Loading...</div>}>
-          <EmailDashboardMultiPanel />
+          <EmailDashboardMultiPanel emails={[]} loading={false} error={null} />
         </Suspense>
       </div>
     );
@@ -534,9 +536,15 @@ describe('LazyRoutes - Memory Management', () => {
       <TestErrorBoundary>
         <Suspense fallback={<LoadingFallback />}>
           <div>
-            {components.map((Component, index) => (
-              <Component key={index} />
-            ))}
+            {components.map((Component, index) => {
+              // StatusDistributionChart requires data and totalEmails props
+              if (Component === StatusDistributionChart) {
+                return <Component key={index} data={{ red: 1, yellow: 1, green: 1 }} totalEmails={3} />;
+              }
+              // Provide default props for components that might need them
+              const defaultProps: any = {};
+              return <Component key={index} {...defaultProps} />;
+            })}
           </div>
         </Suspense>
       </TestErrorBoundary>

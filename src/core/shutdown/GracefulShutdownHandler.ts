@@ -150,7 +150,7 @@ export class GracefulShutdownHandler extends EventEmitter {
 
     // Handle uncaught exceptions
     process.on("uncaughtException", async (error: Error) => {
-      logger.error("Uncaught exception, initiating emergency shutdown:", error);
+      logger.error("Uncaught exception, initiating emergency shutdown:", error.message);
       try {
         await this.shutdown({ timeout: 5000, forceAfterTimeout: true });
       } catch (shutdownError) {

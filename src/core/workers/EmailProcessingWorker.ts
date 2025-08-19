@@ -461,7 +461,7 @@ class EmailProcessingWorker {
         } catch (error) {
           logger.warn(
             `Phase 2 parsing failed for email ${emails[promptIndex]?.id || 'unknown'}:`,
-            error,
+            String(error),
           );
           results[promptIndex] = this.getPhase2Fallback(
             phase1Results[promptIndex],
@@ -512,7 +512,7 @@ class EmailProcessingWorker {
         const response = batchResults[j];
 
         try {
-          const parsed = JSON.parse(response);
+          const parsed = JSON.parse(response || '{}');
           const validated = Phase3ResponseSchema.parse(parsed);
 
           results[promptIndex] = {
@@ -522,7 +522,7 @@ class EmailProcessingWorker {
         } catch (error) {
           logger.warn(
             `Phase 3 parsing failed for email ${emails[promptIndex]?.id || 'unknown'}:`,
-            error,
+            String(error),
           );
           results[promptIndex] = this.getPhase3Fallback(
             phase2Results[promptIndex],

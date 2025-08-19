@@ -190,7 +190,7 @@ export class FallbackSearchManager {
     }
 
     // Remove duplicates and limit number of queries
-    return [...new Set(queries)].slice(0, 5);
+    return Array.from(new Set(queries)).slice(0, 5);
   }
 
   /**
@@ -278,14 +278,15 @@ export class FallbackSearchManager {
       );
 
     const commonIssues = Object.entries(issues)
-      .sort(([, a], [, b]) => b - a)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 3)
       .map(([issue]) => issue);
 
+    const feedbackLength = feedback?.length || 0;
     return {
-      totalFeedback: feedback?.length || 0,
+      totalFeedback: feedbackLength,
       helpfulPercentage:
-        feedback?.length || 0 > 0 ? (helpful / feedback?.length || 0) * 100 : 0,
+        feedbackLength > 0 ? (helpful / feedbackLength) * 100 : 0,
       commonIssues,
     };
   }

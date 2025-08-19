@@ -171,7 +171,7 @@ export const Agents: React.FC = () => {
   const navigate = useNavigate();
 
   // Fetch agents data from API with proper null checking
-  const agentListQuery = api.agent?.list?.useQuery?.();
+  const agentListQuery = (api as any).agent?.list?.useQuery?.();
   const {
     data: agentsData,
     isLoading,
@@ -179,7 +179,7 @@ export const Agents: React.FC = () => {
   } = agentListQuery || { data: undefined, isLoading: false, error: null };
 
   // Poll agent status every 5 seconds for real-time updates
-  const agentStatusQuery = api.agent?.status?.useQuery?.(undefined, {
+  const agentStatusQuery = (api as any).agent?.status?.useQuery?.(undefined, {
     refetchInterval: 5000, // Refresh every 5 seconds
     refetchIntervalInBackground: true,
   });

@@ -62,7 +62,7 @@ export class CircuitBreakerOllamaProvider extends OllamaProvider {
     );
   }
 
-  async listModels(): Promise<any[]> {
+  override async listModels(): Promise<any[]> {
     return circuitBreakerService.executeOllamaRequest(
       'listModels',
       () => super.listModels(),
@@ -166,7 +166,7 @@ export class CircuitBreakerDatabaseService {
   async query<T>(sql: string, params: any[] = []): Promise<T[]> {
     return circuitBreakerService.executeDatabaseQuery(
       'query',
-      () => this.db.prepare(sql).all(params) as T[],
+      async () => this.db.prepare(sql).all(params) as T[],
       [] as T[] // Empty array fallback
     );
   }
@@ -174,7 +174,7 @@ export class CircuitBreakerDatabaseService {
   async get<T>(sql: string, params: any[] = []): Promise<T | undefined> {
     return circuitBreakerService.executeDatabaseQuery(
       'get',
-      () => this.db.prepare(sql).get(params) as T | undefined,
+      async () => this.db.prepare(sql).get(params) as T | undefined,
       undefined
     );
   }

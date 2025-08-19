@@ -264,7 +264,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
           pollingTimerRef.current = setTimeout(poll, nextInterval);
         }
       } catch (error) {
-        logger.error('Polling error', 'CONNECTION', error);
+        logger.error('Polling error', 'CONNECTION', error as any);
         
         // Retry with backoff
         pollingTimerRef.current = setTimeout(poll, Math.min(pollingInterval * 2, 30000));
@@ -339,7 +339,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    */
   useEffect(() => {
     if (websocket.lastMessage) {
-      const latency = Date.now() - (websocket?.lastMessage?.timestamp || Date.now());
+      const latency = Date.now() - Number(websocket?.lastMessage?.timestamp || Date.now());
       updateMetrics(latency);
 
       lastDataRef.current = websocket?.lastMessage?.data;

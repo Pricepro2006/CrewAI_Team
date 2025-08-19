@@ -1017,8 +1017,10 @@ export async function authenticateUser(
 
   const token = response?.data?.token;
   context?.services?.http.setAuthToken(token);
-  context?.session?.user = user;
-  context?.session?.authToken = token;
+  if (context?.session) {
+    context.session.user = user;
+    context.session.authToken = token;
+  }
 
   return token;
 }

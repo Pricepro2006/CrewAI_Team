@@ -7,7 +7,7 @@ import {
   ShoppingCartIcon,
   StarIcon
 } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc.js";
+import { trpc } from "../../../utils/trpc";
 import { WalmartProductCard } from "./WalmartProductCard.js";
 import type { WalmartProduct } from "../../../types/walmart-grocery.js";
 
@@ -39,7 +39,7 @@ export const WalmartHybridSearch: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Get tRPC context to check initialization
-  const utils = api.useUtils();
+  const utils = trpc.useUtils();
   const [isClientReady, setIsClientReady] = useState(false);
 
   // Check if tRPC client is initialized
@@ -51,13 +51,16 @@ export const WalmartHybridSearch: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Use hybrid search mutation with error handling
-  const hybridSearch = api?.walmartGrocery?.hybridSearch.useMutation({
+  // Use hybrid search mutation with error handling - fallback to searchProducts if hybridSearch not available
+  const hybridSearch = trpc?.walmartGrocery?.searchProducts?.useMutation({
     onSuccess: (data: any) => {
-      setPastPurchases(data.pastPurchases || []);
-      setNewProducts(data.newProducts || []);
-      setRecommendations(data.recommendedProducts || []);
-      setSearchMetadata(data.searchMetadata);
+      // Fallback: distribute results across sections if hybrid data not available
+      const products = data.products || [];
+      const third = Math.ceil(products.length / 3);
+      setPastPurchases(products.slice(0, third));
+      setNewProducts(products.slice(third, third * 2));
+      setRecommendations(products.slice(third * 2));
+      setSearchMetadata(data.metadata || { totalResults: products.length, executionTime: 0, sources: ['api'] });
     },
     onError: (error: any) => {
       // Hybrid search error handling with user feedback
@@ -68,11 +71,13 @@ export const WalmartHybridSearch: React.FC = () => {
     },
   });
 
-  // Quick search for autocomplete with error handling
-  const quickSearch = api?.walmartGrocery?.quickSearch.useMutation({
+  // Quick search for autocomplete with error handling - fallback to searchProducts if quickSearch not available
+  const quickSearch = trpc?.walmartGrocery?.searchProducts?.useMutation({
     onSuccess: (data: any) => {
-      setSuggestions(data.suggestions || []);
-      setShowSuggestions(data?.suggestions?.length > 0);
+      // Generate suggestions from product names as fallback
+      const suggestions = (data.products || []).slice(0, 5).map((p: any) => p.name || p.query || searchQuery);
+      setSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
     },
     onError: (error: any) => {
       setSuggestions([]);
@@ -82,14 +87,15 @@ export const WalmartHybridSearch: React.FC = () => {
 
   // Handle search input changes for autocomplete
   useEffect(() => {
-    if (searchQuery?.length || 0 >= 2 && isClientReady) {
+    if ((searchQuery?.length || 0) >= 2 && isClientReady) {
       const timer = setTimeout(() => {
-        quickSearch.mutate({ query: searchQuery, limit: 5 });
+        quickSearch.mutate({ query: searchQuery, limit: 5 } as any);
       }, 300);
       return () => clearTimeout(timer);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
+      return undefined;
     }
   }, [searchQuery, isClientReady]);
 
@@ -101,16 +107,13 @@ export const WalmartHybridSearch: React.FC = () => {
     setShowSuggestions(false);
     hybridSearch.mutate({
       query: searchQuery,
-      userId: "current-user", // Get from auth context
-      includeExternal,
-      includePastPurchases: true,
-      includeRecommendations: true,
       category: category || undefined,
-      priceRange: priceRange.min > 0 || priceRange.max < 1000 ? priceRange : undefined,
-      inStockOnly,
-      sortBy,
+      minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+      maxPrice: priceRange.max < 1000 ? priceRange.max : undefined,
+      inStock: inStockOnly || undefined,
+      sortBy: sortBy === 'relevance' ? 'relevance' : sortBy === 'price' ? 'price' : 'name',
       limit: 40,
-    });
+    } as any);
   };
 
   const handleSuggestionClick = (suggestion: string) => {

@@ -1,4 +1,4 @@
-import type { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
+import type { LLMProvider } from "../llm/LLMProviderManager.js";
 import type { Query } from "./types.js";
 import type { QueryAnalysis, ResourceRequirements } from "./enhanced-types.js";
 import { logger } from "../../utils/logger.js";
@@ -8,11 +8,11 @@ import { logger } from "../../utils/logger.js";
  * Based on master_orchestrator_instructions.md patterns
  */
 export class EnhancedParser {
-  private llm: LlamaCppProvider;
+  private llm: LLMProvider;
   private entityPatterns: Map<string, RegExp> = new Map();
   private intentClassifier: Map<string, string[]> = new Map();
 
-  constructor(llm: LlamaCppProvider) {
+  constructor(llm: LLMProvider) {
     this.llm = llm;
     this.initializePatterns();
   }

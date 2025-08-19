@@ -1,9 +1,12 @@
 /**
- * NLP Service - Core service class with self-contained dependencies
- * Handles all NLP operations with 2-operation limit respect
+ * NLP Service - Core service class with llama.cpp integration
+ * Handles all NLP operations using Qwen3:0.6b model via llama.cpp
  */
 
 import { EventEmitter } from 'events';
+import { spawn, ChildProcess } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
 import { logger } from '../utils/logger';
 import type {
   NLPServiceConfig,
@@ -179,6 +182,12 @@ export class NLPService extends EventEmitter {
   private healthCheckInterval?: NodeJS.Timeout;
   private metricsInterval?: NodeJS.Timeout;
   private isShuttingDown = false;
+  private llamaProcess: ChildProcess | null = null;
+  private modelLoaded: boolean = false;
+  private llamaCppPath: string;
+  private modelPath: string;
+  private isProcessingRequest: boolean = false;
+  private currentResponseBuffer: string = '';
 
   constructor(config: NLPServiceConfig) {
     super();
@@ -186,6 +195,14 @@ export class NLPService extends EventEmitter {
     // Queue will be initialized on start
     this.queue = undefined;
     this.startedAt = Date.now();
+    
+    // Configure llama.cpp paths
+    this.llamaCppPath = process.env.LLAMA_CPP_PATH || 
+      path.join(process.cwd(), 'llama.cpp', 'build', 'bin', 'llama-cli');
+    
+    // Use Qwen3:0.6b model path
+    this.modelPath = process.env.QWEN3_MODEL_PATH || 
+      path.join(process.cwd(), 'models', 'qwen3-0.6b-instruct-q4_k_m.gguf');
     
     this.status = {
       service: 'nlp-service',
@@ -195,8 +212,8 @@ export class NLPService extends EventEmitter {
       startedAt: this.startedAt,
       lastHealthCheck: 0,
       dependencies: {
-        ollama: 'unknown',
-        redis: 'unknown',
+        llamacpp: 'unknown',
+        model: 'unknown',
         queue: 'unknown'
       },
       resources: {
@@ -308,14 +325,17 @@ export class NLPService extends EventEmitter {
       logger.debug('NLP query processed successfully', 'NLP_SERVICE', {
         requestId,
         processingTime,
-        entitiesFound: result?.entities?.length || 0,
-        confidence: result.confidence
+        entitiesFound: result && result.entities ? result.entities.length : 0,
+        confidence: result ? result.confidence : 0
       });
       
       return {
         ...result,
         processingMetadata: {
-          ...result.processingMetadata,
+          model: result.processingMetadata?.model || 'qwen3:0.6b',
+          version: result.processingMetadata?.version || '1.2.0',
+          cacheHit: result.processingMetadata?.cacheHit || false,
+          patterns: result.processingMetadata?.patterns || [],
           processingTime
         }
       };
@@ -499,13 +519,14 @@ export class NLPService extends EventEmitter {
         }
       },
       dependencies: {
-        ollama: {
-          status: this.status.dependencies.ollama === 'healthy' ? 'healthy' : 'unhealthy',
+        llamacpp: {
+          status: this.status.dependencies.llamacpp === 'healthy' ? 'healthy' : 'unhealthy',
           lastCheck: this.status.lastHealthCheck
         },
-        redis: {
-          status: this.status.dependencies.redis === 'healthy' ? 'healthy' : 'unhealthy',
-          lastCheck: this.status.lastHealthCheck
+        model: {
+          status: this.status.dependencies.model === 'healthy' ? 'healthy' : 'unhealthy',
+          lastCheck: this.status.lastHealthCheck,
+          modelName: 'qwen3:0.6b'
         }
       }
     };
@@ -557,6 +578,34 @@ export class NLPService extends EventEmitter {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
+      // Cleanup llama.cpp process
+      if (this.llamaProcess) {
+        logger.info('Shutting down llama.cpp process', 'NLP_SERVICE');
+        this.llamaProcess.stdin?.write('exit\n');
+        this.llamaProcess.kill('SIGTERM');
+        
+        // Wait for process to exit
+        await new Promise<void>((resolve) => {
+          if (!this.llamaProcess) {
+            resolve();
+            return;
+          }
+
+          const processTimeout = setTimeout(() => {
+            this.llamaProcess?.kill('SIGKILL');
+            resolve();
+          }, 5000);
+
+          this.llamaProcess.on('exit', () => {
+            clearTimeout(processTimeout);
+            resolve();
+          });
+        });
+        
+        this.llamaProcess = null;
+        this.modelLoaded = false;
+      }
+      
       // Final queue status
       const finalStatus = this.queue?.getStatus() || { 
         healthy: false, 
@@ -587,41 +636,236 @@ export class NLPService extends EventEmitter {
   }
 
   /**
-   * Perform actual NLP analysis (enhanced mock implementation)
+   * Perform actual NLP analysis using llama.cpp with Qwen3:0.6b
    */
   private async performNLPAnalysis(query: string, metadata?: Record<string, any>): Promise<GroceryNLPResult> {
     const startTime = Date.now();
     
-    // Simulate realistic processing delay (200-800ms for Qwen3:0.6b)
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 600 + 200));
-    
-    // Enhanced entity extraction
-    const entities: GroceryEntity[] = this.extractEntities(query);
-    
-    // Enhanced intent detection with 7 intent types
-    const intent: GroceryIntent = this.detectIntent(query, entities);
-    
-    // Enhanced normalization
-    const normalizedItems: NormalizedGroceryItem[] = this.normalizeItems(entities);
-    
-    // Calculate confidence using improved algorithm
-    const confidence = this.calculateConfidence(entities, intent);
-    
-    const processingTime = Date.now() - startTime;
-    
-    return {
-      entities,
-      intent,
-      normalizedItems,
-      confidence,
-      processingMetadata: {
-        model: 'qwen3:0.6b-standalone',
-        version: '1.2.0',
-        processingTime,
-        cacheHit: false,
-        patterns: this.getDetectedPatterns(query, entities, intent)
+    try {
+      // Use llama.cpp for enhanced NLP analysis
+      const llmResponse = await this.queryLlamaModel(query);
+      
+      // Parse LLM response for entities and intent
+      const { entities, intent } = await this.parseLLMResponse(llmResponse, query);
+      
+      // If LLM parsing fails, fall back to rule-based extraction
+      const finalEntities = entities.length > 0 ? entities : this.extractEntities(query);
+      const finalIntent = intent || this.detectIntent(query, finalEntities);
+      
+      // Enhanced normalization
+      const normalizedItems: NormalizedGroceryItem[] = this.normalizeItems(finalEntities);
+      
+      // Calculate confidence using improved algorithm
+      const confidence = this.calculateConfidence(finalEntities, finalIntent);
+      
+      const processingTime = Date.now() - startTime;
+      
+      return {
+        entities: finalEntities,
+        intent: finalIntent,
+        normalizedItems,
+        confidence,
+        processingMetadata: {
+          model: 'qwen3:0.6b-llama.cpp',
+          version: '1.2.0',
+          processingTime,
+          cacheHit: false,
+          patterns: this.getDetectedPatterns(query, finalEntities, finalIntent)
+        }
+      };
+    } catch (error) {
+      // Fallback to rule-based extraction if LLM fails
+      logger.warn('LLM analysis failed, falling back to rule-based', 'NLP_SERVICE', { error });
+      
+      const entities: GroceryEntity[] = this.extractEntities(query);
+      const intent: GroceryIntent = this.detectIntent(query, entities);
+      const normalizedItems: NormalizedGroceryItem[] = this.normalizeItems(entities);
+      const confidence = this.calculateConfidence(entities, intent) * 0.8; // Lower confidence for fallback
+      
+      const processingTime = Date.now() - startTime;
+      
+      return {
+        entities,
+        intent,
+        normalizedItems,
+        confidence,
+        processingMetadata: {
+          model: 'qwen3:0.6b-fallback',
+          version: '1.2.0',
+          processingTime,
+          cacheHit: false,
+          patterns: this.getDetectedPatterns(query, entities, intent)
+        }
+      };
+    }
+  }
+
+  /**
+   * Query the llama.cpp model with a prompt
+   */
+  private async queryLlamaModel(query: string): Promise<string> {
+    if (!this.llamaProcess || !this.modelLoaded) {
+      throw new Error('Llama.cpp process not initialized');
+    }
+
+    if (this.isProcessingRequest) {
+      // Wait for previous request to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return this.queryLlamaModel(query);
+    }
+
+    this.isProcessingRequest = true;
+    this.currentResponseBuffer = '';
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.isProcessingRequest = false;
+        reject(new Error('LLM query timeout'));
+      }, 10000); // 10 second timeout
+
+      // Build NLP-specific prompt for Qwen3
+      const prompt = `Analyze this grocery query and extract entities (products, quantities, units, actions) and intent.
+Query: "${query}"
+Response format: {"entities": [...], "intent": {"action": "...", "confidence": 0.X}}
+Analysis:`;
+
+      let responseText = '';
+      let isGenerating = false;
+
+      const responseHandler = (data: Buffer) => {
+        const output = data.toString();
+        
+        // Check if generation has started
+        if (!isGenerating && output.includes('>')) {
+          isGenerating = true;
+        }
+
+        if (isGenerating) {
+          responseText += output;
+
+          // Check for completion
+          if (output.includes('\n>') || output.includes('[end of text]')) {
+            // Clean up response
+            responseText = responseText
+              .replace(/\n>/g, '')
+              .replace(/\[end of text\]/g, '')
+              .replace(/>/g, '')
+              .trim();
+
+            // Remove handler
+            this.llamaProcess?.stdout?.removeListener('data', responseHandler);
+            
+            clearTimeout(timeout);
+            this.isProcessingRequest = false;
+            resolve(responseText);
+          }
+        }
+      };
+
+      // Attach handler
+      if (this.llamaProcess && this.llamaProcess.stdout) {
+        this.llamaProcess.stdout.on('data', responseHandler);
       }
+
+      // Send the prompt
+      if (this.llamaProcess && this.llamaProcess.stdin) {
+        this.llamaProcess.stdin.write(prompt + '\n');
+      }
+    });
+  }
+
+  /**
+   * Parse LLM response to extract entities and intent
+   */
+  private async parseLLMResponse(response: string, originalQuery: string): Promise<{
+    entities: GroceryEntity[];
+    intent: GroceryIntent | null;
+  }> {
+    try {
+      // Try to parse as JSON first
+      const jsonMatch = response.match(/\{[\s\S]*\}/g);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        
+        // Convert parsed entities to GroceryEntity format
+        const entities: GroceryEntity[] = [];
+        if (parsed.entities && Array.isArray(parsed.entities)) {
+          for (const entity of parsed.entities) {
+            entities.push({
+              type: entity.type || 'unknown',
+              value: entity.value || entity.text || '',
+              confidence: entity.confidence || 0.7,
+              startIndex: 0,
+              endIndex: originalQuery.length,
+              metadata: entity.metadata
+            });
+          }
+        }
+        
+        // Parse intent
+        let intent: GroceryIntent | null = null;
+        if (parsed.intent) {
+          intent = {
+            action: parsed.intent.action || 'list',
+            confidence: parsed.intent.confidence || 0.7,
+            modifiers: parsed.intent.modifiers || []
+          };
+        }
+        
+        return { entities, intent };
+      }
+    } catch (error) {
+      logger.debug('Failed to parse LLM response as JSON', 'NLP_SERVICE', { error });
+    }
+
+    // Fallback: extract from text response
+    const entities: GroceryEntity[] = [];
+    const lowerResponse = response.toLowerCase();
+    
+    // Look for mentioned products
+    const productKeywords = ['product', 'item', 'grocery'];
+    for (const keyword of productKeywords) {
+      if (lowerResponse.includes(keyword)) {
+        // Extract products mentioned after these keywords
+        const productMatch = response.match(new RegExp(`${keyword}[s]?:?\\s*([\\w\\s,]+)`, 'i'));
+        if (productMatch && productMatch[1]) {
+          const products = productMatch[1].split(',').map(p => p.trim());
+          for (const product of products) {
+            if (product) {
+              entities.push({
+                type: 'product',
+                value: product,
+                confidence: 0.6,
+                startIndex: 0,
+                endIndex: originalQuery.length
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    // Extract intent from response text
+    let intent: GroceryIntent | null = null;
+    const intentKeywords = {
+      'add': ['add', 'buy', 'purchase'],
+      'remove': ['remove', 'delete'],
+      'search': ['search', 'find', 'look'],
+      'list': ['list', 'show', 'display']
     };
+    
+    for (const [action, keywords] of Object.entries(intentKeywords)) {
+      if (keywords.some(kw => lowerResponse.includes(kw))) {
+        intent = {
+          action: action as any,
+          confidence: 0.6,
+          modifiers: []
+        };
+        break;
+      }
+    }
+    
+    return { entities, intent };
   }
 
   /**
@@ -669,7 +913,7 @@ export class NLPService extends EventEmitter {
     for (const pattern of quantityPatterns) {
       let match;
       while ((match = pattern.exec(query)) !== null) {
-        const quantity = this.parseQuantity(match[1]);
+        const quantity = this.parseQuantity(match[1] || '1');
         if (quantity > 0) {
           entities.push({
             type: 'quantity',
@@ -684,7 +928,7 @@ export class NLPService extends EventEmitter {
               type: 'unit',
               value: match[2].toLowerCase(),
               confidence: 0.9,
-              startIndex: match.index + (match[1]?.length || 0),
+              startIndex: match.index + (match[1] ? match[1].length : 0),
               endIndex: match.index + match[0].length
             });
           }
@@ -803,11 +1047,11 @@ export class NLPService extends EventEmitter {
     return products.map((product, index) => ({
       name: product.value,
       quantity: quantities[index] ? parseFloat(quantities[index].value) : 1,
-      unit: units[index]?.value,
-      category: product.metadata?.category,
-      brand: product.metadata?.brand,
+      unit: units[index] ? units[index].value : undefined,
+      category: product.metadata ? product.metadata.category : undefined,
+      brand: product.metadata ? product.metadata.brand : undefined,
       metadata: {
-        organic: product.metadata?.organic,
+        organic: product.metadata ? product.metadata.organic : false,
         urgent: false, // Would be detected from modifiers
         allowSubstitute: true
       }
@@ -847,8 +1091,12 @@ export class NLPService extends EventEmitter {
       'few': 3, 'several': 4, 'some': 2, 'many': 5
     };
     
-    if (typeof text === 'string' && textToNumber[text.toLowerCase()]) {
-      return textToNumber[text.toLowerCase()];
+    if (typeof text === 'string') {
+      const lowerText = text.toLowerCase();
+      const numberValue = textToNumber[lowerText];
+      if (numberValue !== undefined) {
+        return numberValue;
+      }
     }
     
     const num = parseFloat(text);
@@ -880,7 +1128,7 @@ export class NLPService extends EventEmitter {
     if (entities.some(e => e.type === 'quantity')) patterns.push('quantity_detection');
     if (entities.some(e => e.type === 'product')) patterns.push('product_detection');
     if (entities.some(e => e.type === 'action')) patterns.push('action_detection');
-    if (intent.modifiers.length > 0) patterns.push('modifier_detection');
+    if (intent.modifiers && intent.modifiers.length > 0) patterns.push('modifier_detection');
     
     return patterns;
   }
@@ -906,28 +1154,98 @@ export class NLPService extends EventEmitter {
    * Initialize dependencies
    */
   private async initializeDependencies(): Promise<void> {
-    // Check Ollama connectivity
+    // Initialize llama.cpp process
     try {
-      // Mock health check - in real implementation, this would ping Ollama
-      this.status.dependencies.ollama = 'healthy';
-      logger.debug('Ollama connection established', 'NLP_SERVICE');
+      await this.initializeLlamaProcess();
+      this.status.dependencies.llamacpp = 'healthy';
+      this.status.dependencies.model = 'healthy';
+      logger.debug('Llama.cpp process initialized with Qwen3:0.6b', 'NLP_SERVICE');
     } catch (error) {
-      this.status.dependencies.ollama = 'unhealthy';
-      logger.warn('Ollama connection failed', 'NLP_SERVICE', { error });
-    }
-    
-    // Check Redis connectivity
-    try {
-      // Mock health check - in real implementation, this would ping Redis
-      this.status.dependencies.redis = 'healthy';
-      logger.debug('Redis connection established', 'NLP_SERVICE');
-    } catch (error) {
-      this.status.dependencies.redis = 'unhealthy';
-      logger.warn('Redis connection failed', 'NLP_SERVICE', { error });
+      this.status.dependencies.llamacpp = 'unhealthy';
+      this.status.dependencies.model = 'unhealthy';
+      logger.error('Failed to initialize llama.cpp', 'NLP_SERVICE', { error });
+      throw error;
     }
     
     // Check queue health
-    this.status.dependencies.queue = this.queue?.isHealthy?.() ? 'healthy' : 'unhealthy';
+    this.status.dependencies.queue = (this.queue && this.queue.isHealthy && this.queue.isHealthy()) ? 'healthy' : 'unhealthy';
+  }
+
+  /**
+   * Initialize the llama.cpp process with Qwen3:0.6b model
+   */
+  private async initializeLlamaProcess(): Promise<void> {
+    if (this.llamaProcess && this.modelLoaded) {
+      return;
+    }
+
+    // Validate paths
+    if (!fs.existsSync(this.modelPath)) {
+      throw new Error(`Qwen3:0.6b model file not found: ${this.modelPath}`);
+    }
+
+    if (!fs.existsSync(this.llamaCppPath)) {
+      throw new Error(`llama.cpp executable not found: ${this.llamaCppPath}`);
+    }
+
+    return new Promise((resolve, reject) => {
+      const args = [
+        '-m', this.modelPath,
+        '-c', '2048',  // Context size for Qwen3:0.6b
+        '-t', '4',     // Threads
+        '--temp', '0.7',
+        '--top-p', '0.9',
+        '--top-k', '40',
+        '-n', '256',   // Max tokens for NLP tasks
+        '--repeat-penalty', '1.1',
+        '-i',          // Interactive mode
+        '--interactive-first'
+      ];
+
+      this.llamaProcess = spawn(this.llamaCppPath, args, {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      let initOutput = '';
+      const initTimeout = setTimeout(() => {
+        reject(new Error('Qwen3:0.6b model initialization timeout'));
+      }, 30000); // 30 second timeout for smaller model
+
+      this.llamaProcess.stdout?.on('data', (data: Buffer) => {
+        const output = data.toString();
+        initOutput += output;
+
+        // Check if model is loaded
+        if (output.includes('llama_model_load') || output.includes('system_info')) {
+          clearTimeout(initTimeout);
+          this.modelLoaded = true;
+          this.emit('model-loaded', { model: 'qwen3:0.6b' });
+          logger.info('Qwen3:0.6b model loaded successfully', 'NLP_SERVICE');
+          resolve();
+        }
+      });
+
+      this.llamaProcess.stderr?.on('data', (data: Buffer) => {
+        const error = data.toString();
+        if (!error.includes('sampling')) { // Ignore sampling warnings
+          logger.error('llama.cpp error:', 'NLP_SERVICE', { error });
+        }
+      });
+
+      this.llamaProcess.on('error', (error) => {
+        clearTimeout(initTimeout);
+        this.modelLoaded = false;
+        reject(error);
+      });
+
+      this.llamaProcess.on('exit', (code) => {
+        this.modelLoaded = false;
+        this.llamaProcess = null;
+        if (code !== 0) {
+          logger.error('llama.cpp process exited', 'NLP_SERVICE', { code });
+        }
+      });
+    });
   }
 
   /**
@@ -956,7 +1274,7 @@ export class NLPService extends EventEmitter {
     this.status.lastHealthCheck = Date.now();
     
     // Check queue health
-    const queueHealthy = this.queue?.isHealthy?.() ?? false;
+    const queueHealthy = this.queue && this.queue.isHealthy ? this.queue.isHealthy() : false;
     this.status.queue.health = queueHealthy ? 'healthy' : 'unhealthy';
     
     // Check memory usage
@@ -970,7 +1288,8 @@ export class NLPService extends EventEmitter {
     // Determine overall health
     const memoryPercentage = this.status.resources.memory.percentage;
     const isHealthy = queueHealthy && 
-      this.status.dependencies.ollama !== 'unhealthy' &&
+      this.status.dependencies.llamacpp !== 'unhealthy' &&
+      this.status.dependencies.model !== 'unhealthy' &&
       memoryPercentage < 90;
     
     this.status.status = isHealthy ? 'healthy' : 'degraded';

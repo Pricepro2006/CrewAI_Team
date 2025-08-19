@@ -280,7 +280,7 @@ class ResearchAgent extends BaseAgent {
 class CodeAgent extends BaseAgent {
   name = "CodeAgent";
 
-  async execute(params: any): Promise<any> {
+  async execute(params: AgentParams): Promise<AgentResult> {
     console.log("    💻 Code Agent: Generating implementation...");
 
     const response = await ollama.generate({
@@ -307,7 +307,7 @@ class CodeAgent extends BaseAgent {
 class DataAgent extends BaseAgent {
   name = "DataAgent";
 
-  async execute(params: any): Promise<any> {
+  async execute(params: AgentParams): Promise<AgentResult> {
     console.log("    📊 Data Agent: Analyzing data...");
 
     const response = await ollama.generate({
@@ -336,7 +336,7 @@ class DataAgent extends BaseAgent {
 class WriterAgent extends BaseAgent {
   name = "WriterAgent";
 
-  async execute(params: any): Promise<any> {
+  async execute(params: AgentParams): Promise<AgentResult> {
     console.log("    ✍️  Writer Agent: Creating documentation...");
 
     const response = await ollama.generate({
@@ -393,10 +393,14 @@ class MemoryManager {
 
   async getContext(agent: string): Promise<MemoryEntry[]> {
     // Get recent context for agent
-    const context = [];
+    const context: MemoryEntry[] = [];
     for (const [key, value] of this?.memory?.entries()) {
       if (key.startsWith(agent)) {
-        context.push(value);
+        // Convert any stored value to MemoryEntry format
+        const memoryEntry: MemoryEntry = typeof value === 'object' && value !== null 
+          ? value as MemoryEntry 
+          : { data: value };
+        context.push(memoryEntry);
       }
     }
     return context.slice(-5); // Last 5 entries

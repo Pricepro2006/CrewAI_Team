@@ -171,6 +171,8 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
             return "phase2_results IS NOT NULL";
           case AnalysisPhase.PHASE_3:
             return "phase3_results IS NOT NULL";
+          default:
+            return "1=1"; // Default case to avoid undefined
         }
       });
 

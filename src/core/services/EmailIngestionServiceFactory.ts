@@ -197,7 +197,7 @@ export class EmailIngestionServiceFactory {
         const targetValue = result[key];
 
         if (this.isObject(sourceValue) && this.isObject(targetValue)) {
-          (result as any)[key] = this.deepMerge(targetValue, sourceValue);
+          (result as any)[key] = this.deepMerge(targetValue as Partial<T[Extract<keyof T, string>] & Record<string, any>>, sourceValue as Partial<T[Extract<keyof T, string>] & Record<string, any>>);
         } else if (sourceValue !== undefined) {
           (result as any)[key] = sourceValue;
         }

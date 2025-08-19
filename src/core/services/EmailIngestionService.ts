@@ -14,8 +14,9 @@
  * - Real-time progress tracking
  */
 
-// Import bullmq components - using require for compatibility
-const { Queue, Worker, Job, QueueEvents } = require('bullmq');
+// Import bullmq components with proper typing
+// Import bullmq components with fallback types
+const { Queue, Worker, Job, QueueEvents } = require('bullmq') as any;
 import { createHash } from 'crypto';
 import { EmailRepository } from '../../database/repositories/EmailRepository.js';
 import { EmailQueueProcessor } from '../processors/EmailQueueProcessor.js';
@@ -80,6 +81,18 @@ export interface IngestionJob {
   messageIdHash: string;
 }
 
+export interface EmailAddress {
+  address: string;
+  name?: string;
+}
+
+export interface EmailAttachment {
+  id: string;
+  name: string;
+  contentType: string;
+  size: number;
+}
+
 export interface RawEmailData {
   id?: string;
   messageId: string;
@@ -88,30 +101,13 @@ export interface RawEmailData {
     content: string;
     contentType: 'text' | 'html';
   };
-  from: {
-    address: string;
-    name?: string;
-  };
-  to: Array<{
-    address: string;
-    name?: string;
-  }>;
-  cc?: Array<{
-    address: string;
-    name?: string;
-  }>;
-  bcc?: Array<{
-    address: string;
-    name?: string;
-  }>;
+  from: EmailAddress;
+  to: EmailAddress[];
+  cc?: EmailAddress[];
+  bcc?: EmailAddress[];
   receivedDateTime: string;
   hasAttachments: boolean;
-  attachments?: Array<{
-    id: string;
-    name: string;
-    contentType: string;
-    size: number;
-  }>;
+  attachments?: EmailAttachment[];
   importance?: 'low' | 'normal' | 'high';
   conversationId?: string;
   threadId?: string;
@@ -170,7 +166,7 @@ export interface IEmailIngestionService {
   
   // Source-specific ingestion
   ingestFromJsonFile(filePath: string): Promise<Result<IngestionBatchResult>>;
-  ingestFromDatabase(query: object, limit?: number): Promise<Result<IngestionBatchResult>>;
+  ingestFromDatabase(query: Record<string, unknown>, limit?: number): Promise<Result<IngestionBatchResult>>;
   ingestFromMicrosoftGraph(folderId?: string): Promise<Result<IngestionBatchResult>>;
   ingestFromGmailApi(labelId?: string): Promise<Result<IngestionBatchResult>>;
   
@@ -268,21 +264,23 @@ export const IngestionErrorCodes = {
   TIMEOUT: 'TIMEOUT'
 } as const;
 
+export type IngestionErrorCode = typeof IngestionErrorCodes[keyof typeof IngestionErrorCodes];
+
 // =====================================================
 // Queue Integration Pattern
 // =====================================================
 
 export interface QueueIntegration {
   // Queue setup
-  ingestionQueue: Queue;
-  deadLetterQueue: Queue;
-  worker: Worker;
-  events: QueueEvents;
+  ingestionQueue: any;
+  deadLetterQueue: any;
+  worker: any;
+  events: any;
   
   // Queue operations
-  addToQueue(job: IngestionJob): Promise<Job>;
-  processJob(job: Job): Promise<IngestionResult>;
-  handleFailedJob(job: Job, error: Error): Promise<void>;
+  addToQueue(job: IngestionJob): Promise<any>;
+  processJob(job: any): Promise<IngestionResult>;
+  handleFailedJob(job: any, error: Error): Promise<void>;
   
   // Queue monitoring
   monitorQueueHealth(): void;

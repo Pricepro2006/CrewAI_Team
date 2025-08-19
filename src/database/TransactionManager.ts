@@ -104,7 +104,7 @@ export class TransactionManager extends EventEmitter {
 
           const backoffTime = Math.min(1000 * Math.pow(2, attempts), 5000);
           logger.warn(
-            `Transaction failed with retryable error, attempt ${attempts}/${retries}. Retrying in ${backoffTime}ms...`,
+            `Transaction failed with retryable error instanceof Error ? error.message : String(error), attempt ${attempts}/${retries}. Retrying in ${backoffTime}ms...`,
           );
 
           await this.delay(backoffTime);
@@ -194,7 +194,7 @@ export class TransactionManager extends EventEmitter {
           // Rollback transaction
           db.prepare("ROLLBACK").run();
         } catch (rollbackError) {
-          logger.error("Failed to rollback transaction:", rollbackError);
+          logger.error("Failed to rollback transaction:", rollbackError instanceof Error ? rollbackError.message : String(rollbackError));
         }
       }
 
@@ -302,7 +302,7 @@ export class TransactionManager extends EventEmitter {
         const savepoint = await this.createSavepoint(tx, `batch_op_${i}`);
 
         try {
-          const result = await operations[i](tx);
+          const result = await operations?.[i]?.(tx);
           results.push(result as T);
           await this.releaseSavepoint(tx, savepoint);
         } catch (error) {
@@ -366,7 +366,7 @@ export class TransactionManager extends EventEmitter {
         } catch (error) {
           logger.error(
             `Failed to force rollback transaction ${transactionId}:`,
-            error,
+            error instanceof Error ? error.message : String(error),
           );
         }
       }

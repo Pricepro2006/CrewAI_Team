@@ -86,14 +86,14 @@ export class ServiceMeshExample {
 
         const success = await walmartServiceMesh.scaleService(serviceName, instances);
         
-        res.json({
+        return res.json({
           success,
           message: success 
             ? `Service ${serviceName} scaled to ${instances} instances`
             : `Failed to scale service ${serviceName}`,
         });
       } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -115,16 +115,17 @@ export class ServiceMeshExample {
 
         // Use the proxy middleware
         const proxyMiddleware = proxy.createHttpMiddleware();
-        await proxyMiddleware(req, res, (err: any) => {
+        return await proxyMiddleware(req, res, (err: any) => {
           if (err) {
-            res.status(500).json({
+            return res.status(500).json({
               success: false,
               error: err.message,
             });
           }
+          return; // Explicitly return void
         });
       } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : String(error),
         });

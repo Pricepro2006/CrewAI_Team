@@ -15,9 +15,8 @@
  * - Performance optimization
  */
 
-import Database, { type Database as DatabaseType } from "better-sqlite3";
-// Type definition for Database instance
-type DatabaseInstance = DatabaseType;
+import Database from "better-sqlite3";
+import type { Database as DatabaseInstance, Statement, Transaction } from "better-sqlite3";
 import { Worker, isMainThread, threadId } from "worker_threads";
 import { Logger } from "../utils/logger.js";
 import appConfig from "../config/app.config.js";

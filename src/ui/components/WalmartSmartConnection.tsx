@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useSmartWebSocket, ConnectionMode, ConnectionQuality } from '../hooks/useSmartWebSocket.js';
-import { ConnectionMonitor } from './ConnectionMonitor.js';
+import { useSmartWebSocket, ConnectionMode, ConnectionQuality } from '../hooks/useSmartWebSocket';
+import { ConnectionMonitor } from './ConnectionMonitor';
 // Using fallback toast implementation
 const toast = {
   success: (message: string) => console.log('Success:', message),
@@ -26,24 +26,6 @@ interface WalmartSmartConnectionProps {
   children?: React.ReactNode;
 }
 
-interface SmartWebSocketConnection {
-  mode: ConnectionMode;
-  quality: ConnectionQuality;
-  isConnected: boolean;
-  isConnecting: boolean;
-  reconnectAttempts: number;
-  lastError: Error | null;
-  lastMessage: Record<string, unknown> | null;
-  dataVersion: number;
-  connect: () => void;
-  disconnect: () => void;
-  reconnect: () => void;
-  sendMessage: (message: Record<string, unknown>) => boolean;
-  switchMode: (mode: ConnectionMode) => void;
-  trpcClient: unknown;
-  canSend: boolean;
-}
-
 export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
   userId = 'user123',
   sessionId,
@@ -51,9 +33,9 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
   children
 }) => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [messageHistory, setMessageHistory] = useState<any[]>([]);
+  const [messageHistory, setMessageHistory] = useState<Record<string, unknown>[]>([]);
 
-  const connection: SmartWebSocketConnection = useSmartWebSocket({
+  const connection = useSmartWebSocket({
     wsUrl: `ws://localhost:3001/ws/walmart`,
     userId,
     sessionId,
@@ -64,18 +46,12 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
     fallbackThreshold: 3,
     pollingInterval: 5000,
     onConnect: () => {
-      toast.success('Connected to Walmart service', {
-        icon: <CheckCircleIcon className="w-5 h-5" />,
-        duration: 3000
-      });
+      toast.success('Connected to Walmart service');
     },
     onDisconnect: () => {
-      toast.error('Disconnected from Walmart service', {
-        icon: <ExclamationCircleIcon className="w-5 h-5" />,
-        duration: 3000
-      });
+      toast.error('Disconnected from Walmart service');
     },
-    onMessage: (message: any) => {
+    onMessage: (message: Record<string, unknown>) => {
       setLastUpdate(new Date());
       setMessageHistory(prev => [...prev.slice(-9), message]);
       onDataReceived?.(message);
@@ -87,19 +63,13 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
         hybrid: 'Hybrid mode active',
         offline: 'Connection lost'
       };
-      
-      const modeIcons: Record<ConnectionMode, React.ReactNode> = {
-        websocket: <WifiIcon className="w-5 h-5" />,
-        polling: <ArrowPathIcon className="w-5 h-5" />,
-        hybrid: <ArrowPathIcon className="w-5 h-5" />,
-        offline: <ExclamationCircleIcon className="w-5 h-5" />
-      };
 
       if (mode !== 'offline') {
-        toast(modeMessages[mode] || 'Connection mode changed', {
-          icon: modeIcons[mode],
-          duration: 4000
-        });
+        if (mode === 'websocket') {
+          toast.success(modeMessages[mode] || 'Connection mode changed');
+        } else {
+          toast.loading(modeMessages[mode] || 'Connection mode changed');
+        }
       }
     }
   });
@@ -233,20 +203,20 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
         {connection.lastError && (
           <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded">
             <p className="text-sm text-red-700">
-              Error: {connection?.lastError?.message}
+              Error: {connection.lastError.message}
             </p>
           </div>
         )}
       </div>
 
       {/* Message History (Debug) */}
-      {process.env.NODE_ENV === 'development' && (messageHistory?.length || 0) > 0 && (
+      {process.env.NODE_ENV === 'development' && messageHistory.length > 0 && (
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Recent Messages ({messageHistory?.length || 0})
+            Recent Messages ({messageHistory.length})
           </h3>
           <div className="space-y-1 max-h-32 overflow-auto">
-            {messageHistory?.map((msg, idx) => (
+            {messageHistory.map((msg, idx) => (
               <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 font-mono">
                 {JSON.stringify(msg).substring(0, 100)}...
               </div>
@@ -287,6 +257,9 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
         sessionId={sessionId}
         position="bottom-right"
         expanded={false}
+        onModeChange={(mode: ConnectionMode) => {
+          connection.switchMode(mode);
+        }}
       />
     </div>
   );

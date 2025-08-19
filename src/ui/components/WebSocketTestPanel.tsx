@@ -225,10 +225,10 @@ export const WebSocketTestPanel: React.FC = () => {
               <span className="text-sm">{realTimeUpdates.connectionStatus}</span>
             </div>
             <div className="text-xs text-gray-500">
-              Active agents: {(realTimeUpdates.getActiveAgents()?.length || 0)}
+              Active agents: {(realTimeUpdates.getActiveAgents?.()?.length || 0)}
             </div>
             <div className="text-xs text-gray-500">
-              Active plans: {(realTimeUpdates.getActivePlans()?.length || 0)}
+              Active plans: {(realTimeUpdates.getActivePlans?.()?.length || 0)}
             </div>
           </div>
         </div>

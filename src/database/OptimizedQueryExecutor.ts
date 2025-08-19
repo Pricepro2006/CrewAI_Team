@@ -10,6 +10,7 @@
  */
 
 import Database from 'better-sqlite3';
+import type { Database as DatabaseType, Statement } from 'better-sqlite3';
 import { Logger } from '../utils/logger.js';
 import * as crypto from 'crypto';
 
@@ -45,9 +46,9 @@ interface QueryStats {
 }
 
 export class OptimizedQueryExecutor {
-  private db: Database.Database;
+  private db: DatabaseType;
   private queryCache = new Map<string, CachedResult>();
-  private preparedStatements = new Map<string, Database.Statement>();
+  private preparedStatements = new Map<string, Statement>();
   private queryMetrics: QueryMetrics[] = [];
   
   // Configuration
@@ -283,7 +284,7 @@ export class OptimizedQueryExecutor {
   /**
    * Get or create prepared statement
    */
-  private getPreparedStatement(sql: string): Database.Statement {
+  private getPreparedStatement(sql: string): Statement {
     if (!this.preparedStatements.has(sql)) {
       const stmt = this.db.prepare(sql);
       this.preparedStatements.set(sql, stmt);

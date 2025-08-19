@@ -12,7 +12,7 @@ import {
   CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 import { api } from "../../../client/lib/api";
-import { useWebSocket } from "../hooks/useWebSocket";
+import { useWebSocket } from "../../hooks/useWebSocket";
 import { MetricsBar } from "./MetricsBar";
 import { EmailListView } from "./EmailListView";
 import { EmailDashboardView } from "./EmailDashboardView";
@@ -20,29 +20,7 @@ import { AnalyticsView } from "./AnalyticsView";
 import { AgentView } from "./AgentView";
 import { StatusLegend } from "./StatusLegend";
 import { BusinessIntelligenceDashboard } from "./BusinessIntelligenceDashboard";
-
-// Define local interfaces to avoid import issues
-type ViewMode = "dashboard" | "list" | "analytics" | "business-intelligence" | "workflows" | "agents" | "settings";
-type WorkflowState = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
-type EmailPriority = "low" | "medium" | "high" | "critical";
-type EmailStatus = "pending" | "processing" | "completed" | "failed";
-
-interface UnifiedEmailData {
-  id: string;
-  messageId: string;
-  subject: string;
-  bodyText: string;
-  from: string;
-  to: string[];
-  receivedAt: string;
-  workflowState: WorkflowState;
-  isWorkflowComplete: boolean;
-  priority: EmailPriority;
-  status: EmailStatus;
-  tags: string[];
-  hasAttachments: boolean;
-  isRead: boolean;
-}
+import type { UnifiedEmailData, ViewMode, WorkflowState, EmailPriority, EmailStatus } from "../../../types/index";
 
 interface FilterConfig {
   search: string;
@@ -107,11 +85,11 @@ const convertToUnifiedEmailData = (apiEmail: any): UnifiedEmailData => ({
   from: apiEmail.requested_by,
   to: [apiEmail.email_alias],
   receivedAt: apiEmail.received_date,
-  workflowState: apiEmail.workflow_state as WorkflowState,
-  isWorkflowComplete: apiEmail.workflow_state === 'COMPLETED',
-  priority: apiEmail.priority as EmailPriority,
-  status: apiEmail.status as EmailStatus,
-  tags: [],
+  workflowState: apiEmail.workflow_state as any,
+  isWorkflowComplete: apiEmail.workflow_state === 'COMPLETION',
+  priority: apiEmail.priority as any,
+  status: apiEmail.status as any,
+  tags: undefined,
   hasAttachments: apiEmail.has_attachments || false,
   isRead: apiEmail.is_read || false,
 });
@@ -322,9 +300,9 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
         {viewMode === "list" && (
           <EmailListView
-            emails={Array.isArray(emailData?.data?.emails) 
+            emails={(Array.isArray(emailData?.data?.emails) 
               ? emailData?.data?.emails?.map(convertToUnifiedEmailData) 
-              : []
+              : []) as any
             }
             onEmailSelect={(email: any) => setSelectedEmails([email.id])}
             selectedEmailId={selectedEmails[0]}
@@ -345,9 +323,9 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
             <EmailListView
               emails={(Array.isArray(emailData?.data?.emails) ? emailData?.data?.emails : [])
                 .filter((e: any) => e.workflow_state === "IN_PROGRESS")
-                .map(convertToUnifiedEmailData)
+                .map(convertToUnifiedEmailData) as any
               }
-              onEmailSelect={(email: UnifiedEmailData) =>
+              onEmailSelect={(email: any) =>
                 setSelectedEmails([email.id])
               }
               selectedEmailId={selectedEmails[0]}

@@ -36,8 +36,8 @@ class PerformanceTracker {
 
   getAverageRenderTime(componentName?: string): number {
     const relevantMetrics = componentName 
-      ? this.metrics?.filter((m: PerformanceMetrics) => m.componentName === componentName) || []
-      : this.metrics || [];
+      ? this.metrics.filter((m: PerformanceMetrics) => m.componentName === componentName)
+      : this.metrics;
     
     if (relevantMetrics.length === 0) return 0;
     
@@ -52,11 +52,14 @@ class PerformanceTracker {
       if (!componentTimes[metric.componentName]) {
         componentTimes[metric.componentName] = [];
       }
-      componentTimes[metric.componentName].push(metric.renderTime);
+      const componentArray = componentTimes[metric.componentName];
+      if (componentArray) {
+        componentArray.push(metric.renderTime);
+      }
     });
 
     return Object.entries(componentTimes)
-      .filter(([_, times]: [string, number[]]) => {
+      .filter(([, times]: [string, number[]]) => {
         if (!times || times.length === 0) return false;
         const avg = times.reduce((sum: number, time: number) => sum + time, 0) / times.length;
         return avg > threshold;

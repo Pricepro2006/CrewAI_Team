@@ -1,6 +1,7 @@
-import jwt, { type SignOptions, type Secret } from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
+import type { SignOptions, Secret } from "jsonwebtoken";
 import type { StringValue } from "ms";
-import crypto from "crypto";
+import * as crypto from "crypto";
 import {
   type JWTPayload,
   type RefreshTokenPayload,
@@ -211,7 +212,7 @@ export class JWTManager {
     if (!authHeader) return null;
 
     const parts = authHeader.split(" ");
-    if (parts?.length || 0 !== 2 || parts[0] !== "Bearer") {
+    if (parts.length !== 2 || parts[0] !== "Bearer") {
       return null;
     }
 

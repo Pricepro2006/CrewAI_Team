@@ -222,7 +222,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
     };
   }, []);
 
-  if (commands?.length || 0 === 0) {
+  if ((commands?.length ?? 0) === 0) {
     return (
       <div className={`command-history empty ${className}`}>
         <div className="empty-state">
@@ -242,11 +242,11 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
           <div className="title-section">
             <Clock size={20} />
             <h3>Recent Commands</h3>
-            <span className="command-count">({filteredCommands?.length || 0})</span>
+            <span className="command-count">({filteredCommands?.length ?? 0})</span>
           </div>
           
           <div className="header-actions">
-            {onClear && commands?.length || 0 > 0 && (
+            {onClear && (commands?.length ?? 0) > 0 && (
               <button
                 type="button"
                 onClick={onClear}
@@ -285,7 +285,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
               />
             </div>
             
-            {showCategories && availableCategories?.length || 0 > 0 && (
+            {showCategories && (availableCategories?.length ?? 0) > 0 && (
               <select
                 value={selectedCategory}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCategory(e?.target?.value || '')}
@@ -327,7 +327,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
                 <div className="group-header">
                   <Calendar size={16} />
                   <h4>{groupName}</h4>
-                  <span className="group-count">({groupCommands?.length || 0})</span>
+                  <span className="group-count">({groupCommands?.length ?? 0})</span>
                 </div>
               )}
               
@@ -476,7 +476,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
             </div>
           ))}
           
-          {filteredCommands?.length || 0 === 0 && (
+          {(filteredCommands?.length ?? 0) === 0 && (
             <div className="no-results">
               <Search size={32} />
               <h4>No commands found</h4>

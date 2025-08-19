@@ -29,7 +29,7 @@ interface Connection {
   isConnected: boolean;
   isTransitioning: boolean;
   dataVersion: number;
-  lastUpdate?: Date;
+  lastUpdate: number | null;
   metrics: ConnectionMetrics;
   websocket?: WebSocketConnection;
   forceMode: (mode: ConnectionMode) => void;
@@ -65,7 +65,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
   const [expanded, setExpanded] = useState(initialExpanded);
   const [showDetails, setShowDetails] = useState(false);
 
-  const connection: Connection = useConnectionWithFallback({
+  const connection = useConnectionWithFallback({
     userId,
     sessionId,
     preferWebSocket: true,

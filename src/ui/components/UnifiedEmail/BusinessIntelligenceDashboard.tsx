@@ -44,7 +44,7 @@ interface StatusDistributionChartProps {
   title: string;
   showPercentages?: boolean;
   chartType?: 'doughnut' | 'pie' | 'bar';
-  onClick?: () => void;
+  onClick?: (status?: any, count?: any) => void;
   refreshKey?: number;
   className?: string;
 }
@@ -142,7 +142,7 @@ interface WorkflowTimelineChartProps {
   title: string;
   showProcessingTime?: boolean;
   chartType?: "line" | "bar";
-  onClick?: () => void;
+  onClick?: (dataPoint?: any) => void;
   refreshKey?: number;
   className?: string;
 }

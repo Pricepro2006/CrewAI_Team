@@ -62,14 +62,14 @@ export function useOptimizedEmails(filters?: Record<string, unknown>) {
   }), [filters]);
 
   // Use real tRPC query for table data with proper error handling
-  const query = trpc.emails?.getTableData?.useQuery?.(tableParams as any, {
+  const query = trpc.emails.getTableData.useQuery(tableParams as any, {
     staleTime: 30000, // 30 seconds
     refetchOnWindowFocus: false,
-  }) || { data: null, isLoading: false, error: null, isError: false, refetch: async () => ({}) };
+  });
 
   // Real mutation for updating email status with error handling
   const utils = trpc.useUtils();
-  const updateEmailMutation = trpc.emails?.updateStatus?.useMutation?.({
+  const updateEmailMutation = trpc.emails.updateStatus.useMutation({
     onSuccess: async () => {
       try {
         // Invalidate queries to refresh data
@@ -91,7 +91,7 @@ export function useOptimizedEmails(filters?: Record<string, unknown>) {
       }
       return false;
     },
-  }) || { mutate: () => {}, mutateAsync: async () => ({}), isPending: false, error: null };
+  });
 
   const prefetchEmailDetail = useCallback(async (emailId: string) => {
     if (!emailId) {
@@ -100,7 +100,7 @@ export function useOptimizedEmails(filters?: Record<string, unknown>) {
     }
     
     try {
-      await utils.emails?.getById?.prefetch?.({ id: emailId });
+      await utils.emails.getById.prefetch({ id: emailId });
     } catch (error: unknown) {
       console.warn('Failed to prefetch email:', emailId, handleTrpcError(error));
     }
@@ -126,13 +126,13 @@ export function useOptimizedEmails(filters?: Record<string, unknown>) {
 // Dashboard metrics with intelligent caching
 export function useOptimizedDashboardMetrics(timeRange: string = "24h") {
   // Use real tRPC query for dashboard stats
-  const statsQuery = trpc.emails?.getDashboardStats?.useQuery?.({
+  const statsQuery = trpc.emails.getDashboardStats.useQuery({
     refreshKey: Date.now(),
   }, {
     staleTime: 60000, // 1 minute
     refetchInterval: 120000, // 2 minutes
     refetchOnWindowFocus: false,
-  }) || { data: null, isLoading: false, error: null, isError: false, refetch: async () => ({}) };
+  });
 
   // Transform stats to match expected format
   const data = useMemo(() => {
@@ -176,16 +176,15 @@ export function useOptimizedEmailSearch(searchTerm: string, enabled: boolean = t
   // Use real tRPC search query with proper validation
   const isSearchValid = enabled && searchTerm && searchTerm.trim().length > 2;
   
-  const searchQuery = trpc.emails?.searchAdvanced?.useQuery?.({
+  const searchQuery = trpc.emails.searchAdvanced.useQuery({
     query: searchTerm.trim(),
     page: 1,
     pageSize: 20,
-    sortBy: "relevance" as any,
-    includeHighlight: true,
+    searchFields: ["subject", "summary", "requestedBy", "emailAlias", "entities"],
   }, {
-    enabled: isSearchValid,
+    enabled: Boolean(isSearchValid),
     staleTime: 30000, // 30 seconds
-  } as any) || { data: null, isLoading: false, error: null, isError: false, refetch: async () => ({}) };
+  });
 
   return {
     data: (searchQuery.data as any)?.data?.emails || [],
@@ -205,7 +204,7 @@ export function useOptimizedEmailBatch() {
   const utils = trpc.useUtils();
   
   // Real batch update mutation with proper error handling
-  const batchUpdateMutation = trpc.emails?.bulkUpdate?.useMutation?.({
+  const batchUpdateMutation = trpc.emails.bulkUpdate.useMutation({
     onSuccess: async () => {
       try {
         await Promise.all([
@@ -219,10 +218,10 @@ export function useOptimizedEmailBatch() {
     onError: (error: unknown) => {
       console.error('Batch update failed:', handleTrpcError(error));
     },
-  }) || { mutate: () => {}, mutateAsync: async () => ({}), isPending: false, error: null };
+  });
 
   // Real batch delete mutation with proper error handling
-  const batchDeleteMutation = trpc.emails?.batchDelete?.useMutation?.({
+  const batchDeleteMutation = trpc.emails.batchDelete.useMutation({
     onSuccess: async () => {
       try {
         await Promise.all([
@@ -236,7 +235,7 @@ export function useOptimizedEmailBatch() {
     onError: (error: unknown) => {
       console.error('Batch delete failed:', handleTrpcError(error));
     },
-  }) || { mutate: () => {}, mutateAsync: async () => ({}), isPending: false, error: null };
+  });
 
   return {
     batchUpdate: batchUpdateMutation.mutate,
@@ -255,11 +254,11 @@ export function useOptimizedEmailBatch() {
 // Walmart/grocery optimized hooks
 export function useOptimizedWalmartProducts(searchQuery: string, filters?: Record<string, unknown>) {
   // Use real tRPC query for Walmart products with error handling
-  const productsQuery = trpc.walmartGrocery?.searchProducts?.useMutation?.({
+  const productsQuery = trpc.walmartGrocery.searchProducts.useMutation({
     onError: (error: unknown) => {
       console.error('Walmart product search failed:', handleTrpcError(error));
     },
-  }) || { mutateAsync: async () => ({ success: false, products: [] }), data: null, isPending: false, error: null, isError: false };
+  });
 
   // Trigger search when query changes with validation
   const searchProducts = useCallback(async (query: string) => {
@@ -331,8 +330,8 @@ export function useTRPCPerformanceMonitor() {
     // Prefetch critical dashboard data
     try {
       await Promise.all([
-        trpcContext.emails?.getDashboardStats?.prefetch?.({ refreshKey: Date.now() }),
-        trpcContext.emails?.getTableData?.prefetch?.({
+        trpcContext.emails.getDashboardStats.prefetch({ refreshKey: Date.now() }),
+        trpcContext.emails.getTableData.prefetch({
           page: 1,
           pageSize: 10,
           sortBy: "received_date",

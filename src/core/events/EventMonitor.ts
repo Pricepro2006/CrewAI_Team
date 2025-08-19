@@ -717,10 +717,10 @@ export class EventMonitor extends EventEmitter {
   }
 
   private calculatePercentile(sortedArray: number[], percentile: number): number {
-    if (sortedArray.length === 0) return 0;
+    if (!sortedArray || sortedArray.length === 0) return 0;
     
     const index = Math.ceil(sortedArray.length * percentile) - 1;
-    return sortedArray[Math.max(0, Math.min(index, sortedArray.length - 1))];
+    return sortedArray[Math.max(0, Math.min(index, sortedArray.length - 1))] || 0;
   }
 
   private logEvent(event: BaseEvent, context: any): void {

@@ -134,8 +134,6 @@ export class GroceryDataService {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       status: 'active',
-      total_items: 0,
-      completed_items: 0,
       estimated_total: 0,
       actual_total: 0
     });

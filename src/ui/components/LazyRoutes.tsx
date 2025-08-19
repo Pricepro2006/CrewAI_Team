@@ -1,19 +1,27 @@
 import * as React from 'react';
 import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { SkeletonLoader as Skeleton } from '../../client/components/loading/SkeletonLoader';
+import { Skeleton } from '../../client/components/loading/SkeletonLoader';
+import { ErrorBoundary } from './ErrorBoundary/ErrorBoundary';
 
-// Define types locally to avoid import issues
-type EmailStatus = "pending" | "processing" | "completed" | "failed";
-type StatusUpdateEmailStatus = "pending" | "in_progress" | "completed" | "cancelled" | "on_hold";
+// Import proper types from status manager and interfaces
+import type { EmailStatus } from '../../client/components/status/StatusUpdateManager';
+import type { EmailRecord as ImportedEmailRecord } from '../../types/email-dashboard.interfaces';
 
-interface EmailRecord {
+// Create adapter type to bridge between component expectations and imported types
+type EmailRecord = Omit<ImportedEmailRecord, 'email_alias' | 'requested_by'> & {
+  emailAlias: string;
+  requestedBy: string;
+};
+
+// Type alias for AdvancedEmailDashboard's EmailRecord to avoid conflicts
+type AdvancedEmailRecord = {
   id: string;
   emailAlias: string;
   requestedBy: string;
   subject: string;
   summary: string;
-  status: StatusUpdateEmailStatus;
+  status: EmailStatus;
   priority: "low" | "medium" | "high" | "critical";
   assignedTo?: string;
   dueDate?: string;
@@ -21,13 +29,13 @@ interface EmailRecord {
   updatedAt: string;
   tags: string[];
   metadata: Record<string, any>;
-}
+};
 
 // Lazy load major route components to reduce initial bundle
 const LazyWalmartDashboard = lazy(async () => {
   try {
     const module = await import('../../client/components/walmart/WalmartDashboard');
-    return { default: (module as any).WalmartDashboard || module.default };
+    return { default: module.WalmartDashboard };
   } catch {
     return { default: () => React.createElement('div', {}, 'Component loading failed') };
   }
@@ -36,7 +44,7 @@ const LazyWalmartDashboard = lazy(async () => {
 const LazyWalmartGroceryList = lazy(async () => {
   try {
     const module = await import('../../client/components/walmart/WalmartGroceryList');
-    return { default: (module as any).WalmartGroceryList || module.default };
+    return { default: module.WalmartGroceryList };
   } catch {
     return { default: () => React.createElement('div', {}, 'Component loading failed') };
   }
@@ -49,20 +57,17 @@ const LazyWalmartLivePricing = lazy(() =>
 const LazyWalmartOrderHistory = lazy(async () => {
   try {
     const module = await import('../../client/components/walmart/WalmartOrderHistory');
-    return { default: (module as any).WalmartOrderHistory || module.default };
+    return { default: module.WalmartOrderHistory };
   } catch {
     return { default: () => React.createElement('div', {}, 'Component loading failed') };
   }
 });
 
-const LazyEmailDashboard = lazy(async () => {
-  try {
-    const module = await import('../../client/components/dashboard/EmailDashboardMultiPanel');
-    return { default: (module as any).EmailDashboardMultiPanel || module.default };
-  } catch {
-    return { default: () => React.createElement('div', {}, 'Component loading failed') };
-  }
-});
+const LazyEmailDashboard = lazy(() => 
+  import('../../client/components/dashboard/EmailDashboardMultiPanel').then(module => ({
+    default: module.EmailDashboardMultiPanel
+  }))
+);
 
 const LazyAdvancedEmailDashboard = lazy(() => 
   import('../../client/components/dashboard/AdvancedEmailDashboard')
@@ -71,7 +76,7 @@ const LazyAdvancedEmailDashboard = lazy(() =>
 // Wrapper components to provide default props
 const EmailDashboardWrapper: React.FC = () => {
   // Provide default props for the email dashboard
-  const defaultEmails: EmailRecord[] = [];
+  const defaultEmails: ImportedEmailRecord[] = [];
   
   return (
     <LazyEmailDashboard 
@@ -83,8 +88,8 @@ const EmailDashboardWrapper: React.FC = () => {
 };
 
 const AdvancedEmailDashboardWrapper: React.FC = () => {
-  // Provide default props for the advanced email dashboard
-  const defaultEmails: EmailRecord[] = [];
+  // Use specific type for AdvancedEmailDashboard
+  const defaultEmails: AdvancedEmailRecord[] = [];
   
   const defaultUser = {
     id: 'guest',
@@ -95,8 +100,8 @@ const AdvancedEmailDashboardWrapper: React.FC = () => {
   
   const handleEmailStatusUpdate = async (
     emailId: string,
-    fromStatus: StatusUpdateEmailStatus,
-    toStatus: StatusUpdateEmailStatus,
+    fromStatus: EmailStatus,
+    toStatus: EmailStatus,
     comment?: string
   ): Promise<void> => {
     // Default implementation - could integrate with actual API
@@ -121,7 +126,7 @@ const AdvancedEmailDashboardWrapper: React.FC = () => {
 const LazyMonitoringDashboard = lazy(async () => {
   try {
     const module = await import('../../client/components/monitoring/MonitoringDashboard');
-    return { default: (module as any).MonitoringDashboard || module.default };
+    return { default: module.MonitoringDashboard };
   } catch {
     return { default: () => React.createElement('div', {}, 'Component loading failed') };
   }
@@ -130,7 +135,7 @@ const LazyMonitoringDashboard = lazy(async () => {
 const LazyPerformanceDashboard = lazy(async () => {
   try {
     const module = await import('../../client/components/dev/PerformanceDashboard');
-    return { default: (module as any).PerformanceDashboard || module.default };
+    return { default: module.PerformanceDashboard };
   } catch {
     return { default: () => React.createElement('div', {}, 'Component loading failed') };
   }
@@ -143,22 +148,28 @@ interface RouteWrapperProps {
 }
 
 const RouteWrapper: React.FC<RouteWrapperProps> = ({ children, title }): React.ReactElement => (
-  <Suspense 
-    fallback={
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
-          </div>
-          <Skeleton height="600px" />
-        </div>
-      </div>
-    }
+  <ErrorBoundary 
+    onError={(error, errorInfo) => {
+      console.error(`Route loading error for ${title}:`, error, errorInfo);
+    }}
   >
-    <div className="page-content" data-page={title}>
-      {children}
-    </div>
-  </Suspense>
+    <Suspense 
+      fallback={
+        <div className="min-h-screen bg-gray-50">
+          <div className="container mx-auto px-4 py-8">
+            <div className="mb-4">
+              <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+            </div>
+            <Skeleton height="600px" />
+          </div>
+        </div>
+      }
+    >
+      <div className="page-content" data-page={title}>
+        {children}
+      </div>
+    </Suspense>
+  </ErrorBoundary>
 );
 
 // Optimized routing with preload hints

@@ -49,7 +49,7 @@ export interface StatementResult {
 /**
  * Prepared statement type
  */
-export type PreparedStatement<T = any> = Database.Statement<T>;
+export type PreparedStatement<T extends {} | unknown[] = any> = Database.Statement<T>;
 
 // ============================================================================
 // Query Result Types
@@ -199,7 +199,7 @@ export interface AggregateResult {
  * Database transaction interface
  */
 export interface DatabaseTransaction {
-  prepare<T = any>(sql: string): PreparedStatement<T>;
+  prepare<T extends {} | unknown[] = any>(sql: string): PreparedStatement<T>;
   exec(sql: string): void;
   pragma(sql: string, simple?: boolean): any;
   backup(destination: string): Promise<void>;

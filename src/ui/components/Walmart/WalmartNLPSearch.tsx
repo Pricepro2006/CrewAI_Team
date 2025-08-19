@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MagnifyingGlassIcon, SparklesIcon, ShoppingCartIcon, WifiIcon } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc.js";
+import { trpc } from "../../../utils/trpc";
 import { WalmartProductCard } from "./WalmartProductCard.js";
 import type { WalmartProduct } from "../../../types/walmart-grocery.js";
 import { useWalmartWebSocket } from "../../hooks/useWalmartWebSocket.js";
@@ -39,7 +39,7 @@ export const WalmartNLPSearch: React.FC = () => {
     error: wsError
   } = useWalmartWebSocket();
 
-  const searchProducts = api?.walmartGrocery?.searchProducts.useMutation({
+  const searchProducts = trpc?.walmartGrocery?.searchProducts?.useMutation({
     onSuccess: (data: any) => {
       setSearchResults(data.products || []);
     },
@@ -77,7 +77,7 @@ export const WalmartNLPSearch: React.FC = () => {
         case "add_items":
           // For add_items, we get products directly from NLP
           if (nlpData.products && nlpData?.products?.length > 0) {
-            const walmartProducts: WalmartProduct[] = nlpData?.products?.map(p => ({
+            const walmartProducts: WalmartProduct[] = nlpData?.products?.map((p: any) => ({
               id: p.id,
               walmartId: p.id,
               name: p.name,
@@ -208,10 +208,10 @@ export const WalmartNLPSearch: React.FC = () => {
 
   // Update product matches from WebSocket
   useEffect(() => {
-    if (productMatches && productMatches?.length || 0 > 0) {
-      const walmartProducts: WalmartProduct[] = productMatches?.map(p => ({
-        id: p.id || p.product_id,
-        walmartId: p.id || p.product_id,
+    if (productMatches && (productMatches?.length || 0) > 0) {
+      const walmartProducts: WalmartProduct[] = (Array.isArray(productMatches) ? productMatches : []).map((p: any) => ({
+        id: p.id || p.product_id || `product-${Date.now()}`,
+        walmartId: p.id || p.product_id || `walmart-${Date.now()}`,
         name: p.name,
         brand: p.brand,
         price: {
@@ -236,7 +236,7 @@ export const WalmartNLPSearch: React.FC = () => {
         },
         description: "",
         metadata: {
-          source: "websocket" as const,
+          source: "api" as const,
           confidence: 0.9
         },
         createdAt: new Date().toISOString(),

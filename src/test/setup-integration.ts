@@ -14,7 +14,9 @@ import {
   handleTestError,
   testErrorReporter,
 } from "./utils/error-handling.js";
-import { logger } from "../../utils/logger.js";
+import { Logger } from "../utils/logger.js";
+
+const logger = new Logger("test:setup-integration");
 
 // Set up test environment variables
 process.env['NODE_ENV'] = "test";

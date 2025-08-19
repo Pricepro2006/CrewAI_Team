@@ -22,13 +22,13 @@ const Collapsible = React.forwardRef<HTMLDivElement, CollapsibleProps>(
         {React?.Children?.map(children, (child: any) => {
           if (React.isValidElement(child)) {
             if (child.type === CollapsibleTrigger) {
-              return React.cloneElement(child, {
+              return React.cloneElement(child as React.ReactElement<CollapsibleTriggerProps>, {
                 onClick: () => setOpen(!open),
                 "aria-expanded": open,
               });
             }
             if (child.type === CollapsibleContent) {
-              return React.cloneElement(child, { open });
+              return React.cloneElement(child as React.ReactElement<CollapsibleContentProps>, { open });
             }
           }
           return child;
@@ -43,12 +43,13 @@ interface CollapsibleTriggerProps {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
+  "aria-expanded"?: boolean;
 }
 
 const CollapsibleTrigger = React.forwardRef<
   HTMLButtonElement,
   CollapsibleTriggerProps
->(({ className, children, onClick, ...props }, ref) => {
+>(({ className, children, onClick, "aria-expanded": ariaExpanded, ...props }, ref) => {
   return (
     <button
       ref={ref}
@@ -57,6 +58,7 @@ const CollapsibleTrigger = React.forwardRef<
         className,
       )}
       onClick={onClick}
+      aria-expanded={ariaExpanded}
       {...props}
     >
       {children}

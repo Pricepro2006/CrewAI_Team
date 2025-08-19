@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, type SetStateAction } from "react";
 import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "../../api/trpc/router";
@@ -550,8 +550,8 @@ export function useRAGOperations() {
           const statuses = ['started', 'completed', 'failed'] as const;
           
           const mockOperation = {
-            operation: operations[Math.floor(Math.random() * operations.length)],
-            status: statuses[Math.floor(Math.random() * statuses.length)],
+            operation: operations[Math.floor(Math.random() * operations.length)]!,
+            status: statuses[Math.floor(Math.random() * statuses.length)]!,
             details: {
               documentCount: Math.floor(Math.random() * 1000),
               chunkCount: Math.floor(Math.random() * 5000),
@@ -560,7 +560,10 @@ export function useRAGOperations() {
             timestamp: new Date(),
           };
           
-          setOperations((prev) => [...prev, mockOperation].slice(-20)); // Keep last 20 operations
+          setOperations((prev) => {
+            const newOperations = [...prev, mockOperation];
+            return newOperations.slice(-20); // Keep last 20 operations
+          });
         }, 4000);
 
         unsubscribeRef.current = {

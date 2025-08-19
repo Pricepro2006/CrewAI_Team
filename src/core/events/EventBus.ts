@@ -33,6 +33,28 @@ export const EventEnvelopeSchema = z.object({
 export type BaseEvent = z.infer<typeof BaseEventSchema>;
 export type EventEnvelope = z.infer<typeof EventEnvelopeSchema>;
 
+// Type utilities for safe operations
+type RedisStreamResult = [string, Array<[string, string[]]>];
+
+// Safe utility functions
+const getHandlerName = (handler: EventHandler): string => {
+  return handler?.constructor?.name || 'UnknownHandler';
+};
+
+const isError = (error: unknown): error is Error => {
+  return error instanceof Error || (typeof error === 'object' && error !== null && 'message' in error);
+};
+
+const parseStreamEntry = (fields: string[]): string | null => {
+  if (!Array.isArray(fields) || fields.length < 2) return null;
+  return fields[1] || null; // fields = ['envelope', '{...}']
+};
+
+const isValidStreamResult = (result: unknown): result is RedisStreamResult => {
+  return Array.isArray(result) && result.length >= 2 && 
+         typeof result[0] === 'string' && Array.isArray(result[1]);
+};
+
 // Event handler interface
 export interface EventHandler<T = any> {
   eventType: string;
@@ -86,9 +108,9 @@ export type EventBusConfig = z.infer<typeof EventBusConfigSchema>;
  */
 export class EventBus extends EventEmitter {
   private config: EventBusConfig;
-  private publisherClient: Redis;
-  private subscriberClient: Redis;
-  private eventStoreClient: Redis;
+  private publisherClient!: Redis;
+  private subscriberClient!: Redis;
+  private eventStoreClient!: Redis;
   
   private handlers: Map<string, EventHandler[]> = new Map();
   private subscriptions: Set<string> = new Set();
@@ -344,7 +366,7 @@ export class EventBus extends EventEmitter {
         }
       }
 
-      this.emit('subscription:created', { eventType: type, handler: handler?.constructor?.name });
+      this.emit('subscription:created', { eventType: type, handler: getHandlerName(handler) });
     }
 
     // Start consuming if not already started
@@ -374,7 +396,7 @@ export class EventBus extends EventEmitter {
       this.subscriptions.delete(channelKey);
     }
 
-    this.emit('subscription:removed', { eventType, handler: handler?.constructor.name });
+    this.emit('subscription:removed', { eventType, handler: handler ? getHandlerName(handler) : undefined });
   }
 
   private async startConsuming(options: {
@@ -421,34 +443,43 @@ export class EventBus extends EventEmitter {
 
           if (results && Array.isArray(results) && results.length > 0) {
             const streamResult = results[0];
-            if (Array.isArray(streamResult) && streamResult.length >= 2) {
-              const [, entries] = streamResult as [string, Array<[string, string[]]>];
+            
+            if (isValidStreamResult(streamResult)) {
+              const [, entries] = streamResult;
               
               if (Array.isArray(entries)) {
                 for (const [streamId, fields] of entries) {
-              try {
-                if (Array.isArray(fields) && fields.length > 1) {
-                  const envelopeData = fields[1]; // fields = ['envelope', '{...}']
+                  try {
+                    const envelopeData = parseStreamEntry(fields);
+                    if (!envelopeData) {
+                      this.emit('consumption:error', { 
+                        streamKey, 
+                        streamId, 
+                        error: new Error('Invalid stream entry format') 
+                      });
+                      continue;
+                    }
+                    
                     const envelope = JSON.parse(envelopeData) as EventEnvelope;
-                
-                await this.processEvent({
-                  ...envelope,
-                  deliveryInfo: {
-                    ...envelope.deliveryInfo,
-                    streamId
-                  }
-                }, 'stream');
+                    
+                    await this.processEvent({
+                      ...envelope,
+                      deliveryInfo: {
+                        ...envelope.deliveryInfo,
+                        streamId
+                      }
+                    }, 'stream');
 
                     // Acknowledge processing
                     await this.subscriberClient.xack(streamKey, consumerGroup, streamId);
+                    
+                  } catch (error) {
+                    this.emit('consumption:error', { streamKey, streamId, error });
                   }
-                } catch (error) {
-                  this.emit('consumption:error', { streamKey, streamId, error });
                 }
               }
             }
           }
-        }
         }
       } catch (error) {
         if (!this.isShuttingDown) {
@@ -498,7 +529,7 @@ export class EventBus extends EventEmitter {
         this.emit('event:handler_success', {
           eventId: event.id,
           eventType,
-          handler: handler.constructor?.name || 'UnknownHandler',
+          handler: getHandlerName(handler),
           processingTime: Date.now() - startTime
         });
         
@@ -515,20 +546,20 @@ export class EventBus extends EventEmitter {
         this.emit('event:handler_error', {
           eventId: event.id,
           eventType,
-          handler: handler.constructor?.name || 'UnknownHandler',
+          handler: getHandlerName(handler),
           error,
           processingTime
         });
 
         // Call error handler if available
-        if (handler.onError) {
+        if (handler.onError && isError(error)) {
           try {
-            await handler.onError(event as BaseEvent & { payload: any }, error as Error);
+            await handler.onError(event as BaseEvent & { payload: any }, error);
           } catch (errorHandlerError) {
             this.emit('event:error_handler_failed', {
               eventId: event.id,
               eventType,
-              handler: handler.constructor?.name || 'UnknownHandler',
+              handler: getHandlerName(handler),
               originalError: error,
               errorHandlerError
             });
@@ -546,11 +577,25 @@ export class EventBus extends EventEmitter {
     });
 
     try {
-      await Promise.allSettled(processingPromises);
+      const results = await Promise.allSettled(processingPromises);
+      
+      // Check if any handler failed
+      const failures = results.filter(result => result.status === 'rejected');
+      const successes = results.filter(result => result.status === 'fulfilled');
+      
       this.metrics.consumed++;
       this.metrics.lastActivity = Date.now();
       
-      this.emit('event:processing_completed', { eventId: event.id, eventType });
+      if (failures.length > 0) {
+        this.emit('event:processing_partial', { 
+          eventId: event.id, 
+          eventType, 
+          successes: successes.length,
+          failures: failures.length
+        });
+      } else {
+        this.emit('event:processing_completed', { eventId: event.id, eventType });
+      }
       
     } catch (error) {
       this.emit('event:processing_failed', { eventId: event.id, eventType, error });
@@ -577,30 +622,37 @@ export class EventBus extends EventEmitter {
   }
 
   private recordCircuitBreakerFailure(eventType: string): void {
-    const breaker = this.circuitBreakers.get(eventType) || {
+    const existing = this.circuitBreakers.get(eventType);
+    const breaker = existing || {
       failures: 0,
       lastFailure: 0,
       state: 'closed' as const
     };
 
-    breaker.failures++;
-    breaker.lastFailure = Date.now();
+    const updatedBreaker = {
+      ...breaker,
+      failures: breaker.failures + 1,
+      lastFailure: Date.now()
+    };
 
-    if (breaker.failures >= 5) { // Open circuit after 5 failures
-      breaker.state = 'open';
-      this.emit('circuit_breaker:opened', { eventType, failures: breaker.failures });
+    if (updatedBreaker.failures >= 5) { // Open circuit after 5 failures
+      updatedBreaker.state = 'open';
+      this.emit('circuit_breaker:opened', { eventType, failures: updatedBreaker.failures });
     }
 
-    this.circuitBreakers.set(eventType, breaker);
+    this.circuitBreakers.set(eventType, updatedBreaker);
   }
 
   private resetCircuitBreaker(eventType: string): void {
     const breaker = this.circuitBreakers.get(eventType);
     if (breaker && breaker.state !== 'closed') {
-      breaker.failures = 0;
-      breaker.state = 'closed';
-      this.circuitBreakers.set(eventType, breaker);
+      const resetBreaker = {
+        ...breaker,
+        failures: 0,
+        state: 'closed' as const
+      };
       
+      this.circuitBreakers.set(eventType, resetBreaker);
       this.emit('circuit_breaker:closed', { eventType });
     }
   }

@@ -232,7 +232,7 @@ class CacheWarmerService {
         return res.json({ success: true });
       } catch (error) {
         logger.error('Failed to record Ollama query', 'CACHE_WARMER_SERVICE', { error });
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'
         });
@@ -256,7 +256,7 @@ class CacheWarmerService {
         return res.json({ success: true });
       } catch (error) {
         logger.error('Failed to record access', 'CACHE_WARMER_SERVICE', { error });
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'
         });
@@ -270,7 +270,7 @@ class CacheWarmerService {
         return res.json({ success: true });
       } catch (error) {
         logger.error('Failed to clear cache', 'CACHE_WARMER_SERVICE', { error });
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'
         });

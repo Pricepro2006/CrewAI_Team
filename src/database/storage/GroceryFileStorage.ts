@@ -52,7 +52,7 @@ export class GroceryFileStorage {
   constructor(baseStoragePath?: string) {
     this.baseStoragePath =
       baseStoragePath ||
-      path.join(appConfig.storage?.basePath || "./storage", "grocery");
+      path.join(process.env.STORAGE_BASE_PATH || "./storage", "grocery");
   }
 
   /**

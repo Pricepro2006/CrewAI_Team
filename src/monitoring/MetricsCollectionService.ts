@@ -491,9 +491,9 @@ export class MetricsCollectionService extends EventEmitter {
       
       // Load average
       const loadAvg = os.loadavg();
-      this.recordGauge('system_load_average_1m', loadAvg[0]);
-      this.recordGauge('system_load_average_5m', loadAvg[1]);
-      this.recordGauge('system_load_average_15m', loadAvg[2]);
+      this.recordGauge('system_load_average_1m', loadAvg[0] || 0);
+      this.recordGauge('system_load_average_5m', loadAvg[1] || 0);
+      this.recordGauge('system_load_average_15m', loadAvg[2] || 0);
       
       // Process metrics
       const processMemory = process.memoryUsage();
@@ -637,7 +637,7 @@ export class MetricsCollectionService extends EventEmitter {
     
     // Clean up old traces (older than 5 minutes)
     const cutoff = Date.now() - 5 * 60 * 1000;
-    for (const [id, traces] of this.correlationMap) {
+    for (const [id, traces] of Array.from(this.correlationMap.entries())) {
       const recentTraces = traces?.filter(t => t.timestamp > cutoff);
       if (recentTraces?.length || 0 === 0) {
         this?.correlationMap?.delete(id);
@@ -784,7 +784,7 @@ export class MetricsCollectionService extends EventEmitter {
    * Aggregate metrics over time windows
    */
   private aggregateMetrics(): void {
-    for (const [metricName, history] of this.metricHistory) {
+    for (const [metricName, history] of Array.from(this.metricHistory.entries())) {
       for (const [windowName, windowSize] of Object.entries(this.aggregationWindows)) {
         const cutoff = Date.now() - windowSize;
         const windowData = history?.filter(h => h.timestamp > cutoff);
@@ -862,13 +862,13 @@ export class MetricsCollectionService extends EventEmitter {
     const lines: string[] = [];
     
     // Export counters
-    for (const [name, labelMap] of this.counters) {
+    for (const [name, labelMap] of Array.from(this.counters.entries())) {
       const definition = this?.metricDefinitions?.get(name);
       if (definition) {
         lines.push(`# HELP ${name} ${definition.help}`);
         lines.push(`# TYPE ${name} counter`);
         
-        for (const [labels, value] of labelMap) {
+        for (const [labels, value] of Array.from(labelMap.entries())) {
           const labelStr = labels ? `{${labels}}` : '';
           lines.push(`${name}${labelStr} ${value}`);
         }
@@ -876,13 +876,13 @@ export class MetricsCollectionService extends EventEmitter {
     }
     
     // Export gauges
-    for (const [name, labelMap] of this.gauges) {
+    for (const [name, labelMap] of Array.from(this.gauges.entries())) {
       const definition = this?.metricDefinitions?.get(name);
       if (definition) {
         lines.push(`# HELP ${name} ${definition.help}`);
         lines.push(`# TYPE ${name} gauge`);
         
-        for (const [labels, value] of labelMap) {
+        for (const [labels, value] of Array.from(labelMap.entries())) {
           const labelStr = labels ? `{${labels}}` : '';
           lines.push(`${name}${labelStr} ${value}`);
         }
@@ -890,13 +890,13 @@ export class MetricsCollectionService extends EventEmitter {
     }
     
     // Export histograms
-    for (const [name, labelMap] of this.histograms) {
+    for (const [name, labelMap] of Array.from(this.histograms.entries())) {
       const definition = this?.metricDefinitions?.get(name);
       if (definition) {
         lines.push(`# HELP ${name} ${definition.help}`);
         lines.push(`# TYPE ${name} histogram`);
         
-        for (const [labels, data] of labelMap) {
+        for (const [labels, data] of Array.from(labelMap.entries())) {
           const labelStr = labels ? `{${labels}}` : '';
           
           // Export buckets
@@ -1007,7 +1007,7 @@ export class MetricsCollectionService extends EventEmitter {
     const statusCodes: Record<string, Record<number, number>> = {};
     
     // Calculate request rates per endpoint
-    for (const [labels, count] of this?.counters?.get('http_requests_total') || new Map()) {
+    for (const [labels, count] of Array.from((this?.counters?.get('http_requests_total') || new Map()).entries())) {
       const labelMatch = labels.match(/endpoint="([^"]+)"/);
       if (labelMatch) {
         const endpoint = labelMatch[1];
@@ -1116,7 +1116,7 @@ export class MetricsCollectionService extends EventEmitter {
   private getTraceMetrics(): Record<string, any> {
     const traces: Record<string, any> = {};
     
-    for (const [correlationId, serviceLatencies] of this.correlationMap) {
+    for (const [correlationId, serviceLatencies] of Array.from(this.correlationMap.entries())) {
       const totalLatency = serviceLatencies.reduce((sum: any, sl: any) => sum + sl.latency, 0);
       const serviceBreakdown = serviceLatencies?.map(sl => ({
         service: sl.serviceName,
