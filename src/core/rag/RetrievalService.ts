@@ -10,17 +10,17 @@ export class RetrievalService {
     enhanced = this.filterByScore(enhanced);
 
     // Apply reranking if enabled
-    if (this?.config?.reranking) {
+    if (this.config.reranking) {
       enhanced = await this.rerank(query, enhanced);
     }
 
     // Apply diversity if configured
-    if (this?.config?.diversityFactor && this?.config?.diversityFactor > 0) {
+    if (this.config.diversityFactor && this.config.diversityFactor > 0) {
       enhanced = this.diversify(enhanced);
     }
 
     // Boost recent documents if enabled
-    if (this?.config?.boostRecent) {
+    if (this.config.boostRecent) {
       enhanced = this.boostRecentDocuments(enhanced);
       // Re-sort after boosting to maintain score order
       enhanced = enhanced.sort((a, b) => b.score - a.score);
@@ -30,7 +30,7 @@ export class RetrievalService {
   }
 
   private filterByScore(results: QueryResult[]): QueryResult[] {
-    return results?.filter((r: any) => r.score >= this?.config?.minScore);
+    return results?.filter((r: any) => r.score >= this.config.minScore);
   }
 
   private async rerank(
@@ -47,7 +47,7 @@ export class RetrievalService {
       const contentTerms = this.extractTerms(result.content);
 
       // Calculate term overlap
-      for (const term of queryTerms) {
+      for (const term of Array.from(queryTerms)) {
         if (contentTerms.has(term)) {
           boost += 0.1;
         }
@@ -55,12 +55,12 @@ export class RetrievalService {
 
       // Boost if query terms appear in metadata
       if (result?.metadata?.title) {
-        const titleTerms = this.extractTerms(result?.metadata?.title);
-        for (const term of queryTerms) {
-          if (titleTerms.has(term)) {
-            boost += 0.2;
-          }
-        }
+      const titleTerms = this.extractTerms(result.metadata.title);
+      for (const term of Array.from(queryTerms)) {
+      if (titleTerms.has(term)) {
+      boost += 0.2;
+      }
+      }
       }
 
       return {
@@ -74,7 +74,8 @@ export class RetrievalService {
   }
 
   private diversify(results: QueryResult[]): QueryResult[] {
-    if (results?.length || 0 <= 1) return results;
+    const resultsLength = results?.length ?? 0;
+    if (resultsLength <= 1) return results;
 
     const diversified: QueryResult[] = [];
     const used = new Set<number>();
@@ -88,13 +89,13 @@ export class RetrievalService {
 
     // Add diverse results
     while (
-      diversified?.length || 0 < results?.length || 0 &&
-      diversified?.length || 0 < this?.config?.topK
+      diversified.length < resultsLength &&
+      diversified.length < this.config.topK
     ) {
       let bestIndex = -1;
       let bestDiversity = -1;
 
-      for (let i = 1; i < results?.length || 0; i++) {
+      for (let i = 1; i < resultsLength; i++) {
         if (used.has(i)) continue;
 
         const result = results[i];
@@ -135,14 +136,15 @@ export class RetrievalService {
     }
 
     // Higher score means more diverse (less overlap)
-    return 1 - totalOverlap / selected?.length || 0;
+    const selectedLength = selected?.length ?? 0;
+    return selectedLength > 0 ? 1 - totalOverlap / selectedLength : 1;
   }
 
   private calculateOverlap(set1: Set<string>, set2: Set<string>): number {
     if (set1.size === 0 || set2.size === 0) return 0;
 
     let overlap = 0;
-    for (const term of set1) {
+    for (const term of Array.from(set1)) {
       if (set2.has(term)) {
         overlap++;
       }
@@ -190,7 +192,7 @@ export class RetrievalService {
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter((term: any) => term?.length || 0 > 2); // Filter out short words
+      .filter((term: any) => (term?.length ?? 0) > 2); // Filter out short words
 
     return new Set(terms);
   }
@@ -224,14 +226,14 @@ export class RetrievalService {
 
     return results?.map((result: any) => {
       const highlights: string[] = [];
-      const sentences = result?.content?.split(/[.!?]+/);
+      const sentences = result?.content?.split(/[.!?]+/) || [];
 
       for (const sentence of sentences) {
         const sentenceTerms = this.extractTerms(sentence);
 
         // Check if sentence contains query terms
         let hasMatch = false;
-        for (const term of queryTerms) {
+        for (const term of Array.from(queryTerms)) {
           if (sentenceTerms.has(term)) {
             hasMatch = true;
             break;

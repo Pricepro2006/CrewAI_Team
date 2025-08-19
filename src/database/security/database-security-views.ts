@@ -3,7 +3,7 @@
  * Implements secure views and access patterns for SQLite
  */
 
-import Database from "better-sqlite3";
+import type * as Database from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 
 export class DatabaseSecurityViews {

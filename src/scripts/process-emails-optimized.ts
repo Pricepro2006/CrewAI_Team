@@ -6,11 +6,11 @@
 
 import { program } from "commander";
 import { performance } from "perf_hooks";
-import { logger } from "../../utils/logger.js";
-import { executeQuery } from "../database/ConnectionPool.js";
-import { OllamaOptimizer } from "../core/services/OllamaOptimizer.js";
-import { OptimizedEmailProcessor } from "../core/services/OptimizedEmailProcessor.js";
-import { redisService } from "../core/cache/RedisService.js";
+import { logger } from "../utils/logger";
+import { executeQuery } from "../database/ConnectionPool";
+import { OllamaOptimizer } from "../core/services/OllamaOptimizer";
+import { OptimizedEmailProcessor } from "../core/services/OptimizedEmailProcessor";
+import { redisService } from "../core/cache/RedisService";
 
 interface ProcessingOptions {
   mode: "speed" | "balanced" | "quality";
@@ -25,7 +25,7 @@ interface ProcessingOptions {
 class OptimizedEmailProcessingScript {
   private optimizer: OllamaOptimizer;
   private processor: OptimizedEmailProcessor;
-  private monitorInterval?: NodeJS.Timer;
+  private monitorInterval?: NodeJS.Timeout;
 
   constructor() {
     // Initialize with optimized settings
@@ -45,15 +45,15 @@ class OptimizedEmailProcessingScript {
   async run(options: ProcessingOptions): Promise<void> {
     const startTime = performance.now();
     
-    logger.info("Starting optimized email processing", {
+    logger.info("Starting optimized email processing", JSON.stringify({
       mode: options.mode,
       batchSize: options.batchSize,
       limit: options.limit || "all"
-    });
+    }));
 
     try {
       // Connect to Redis
-      await redisService.connect();
+      // Redis service connection handled internally
 
       // Update processor mode
       this?.processor?.updateMode(options.mode);

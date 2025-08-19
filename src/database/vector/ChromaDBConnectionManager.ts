@@ -55,8 +55,8 @@ export class ChromaDBConnectionManager extends EventEmitter {
   private state: ConnectionState = ConnectionState.DISCONNECTED;
   private config: Required<ConnectionConfig>;
   private retryCount: number = 0;
-  private healthCheckTimer?: NodeJS.Timer;
-  private connectionTimer?: NodeJS.Timer;
+  private healthCheckTimer?: NodeJS.Timeout;
+  private connectionTimer?: NodeJS.Timeout;
   private circuitBreaker: CircuitBreakerState;
   private metrics: ConnectionMetrics;
   private connectionStartTime?: Date;
@@ -337,7 +337,7 @@ export class ChromaDBConnectionManager extends EventEmitter {
     
     this.healthCheckTimer = setInterval(async () => {
       await this.performHealthCheck();
-    }, this?.config?.healthCheckInterval);
+    }, this?.config?.healthCheckInterval) as NodeJS.Timeout;
     
     // Perform immediate health check
     this.performHealthCheck();
@@ -407,7 +407,7 @@ export class ChromaDBConnectionManager extends EventEmitter {
     // Schedule reconnection
     this.connectionTimer = setTimeout(async () => {
       await this.connect();
-    }, this.calculateRetryDelay());
+    }, this.calculateRetryDelay()) as NodeJS.Timeout;
   }
 
   /**

@@ -284,7 +284,9 @@ export function ErrorHandlingDemo() {
           {
             label: "Contact Support",
             onClick: () => {
-              window?.location?.href = "mailto:support@example.com";
+              if (window?.location) {
+                window.location.href = "mailto:support@example.com";
+              }
             },
             variant: "outline",
           },

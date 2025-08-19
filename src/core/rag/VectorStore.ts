@@ -7,7 +7,7 @@ import type {
   VectorStoreConfig,
   ProcessedDocument,
 } from "./types.js";
-import type { DocumentMetadata } from "../shared/types.js";
+// Note: DocumentMetadata is now defined in local types.ts
 import { logger } from "../../utils/logger.js";
 
 export class VectorStore {
@@ -46,17 +46,17 @@ export class VectorStore {
   async initialize(): Promise<void> {
     try {
       // First check if ChromaDB is running using v2 API
-      await this?.client?.version();
+      await this.client.version();
 
       // Try to get existing collection first
       try {
-        this.collection = await this?.client?.getCollection({
-          name: this?.config?.collectionName,
+        this.collection = await this.client.getCollection({
+          name: this.config.collectionName,
         } as any);
       } catch (getError) {
         // Collection doesn't exist, create it
-        this.collection = await this?.client?.createCollection({
-          name: this?.config?.collectionName,
+        this.collection = await this.client.createCollection({
+          name: this.config.collectionName,
           metadata: {
             description: "Knowledge base for AI agents",
             created_at: new Date().toISOString(),
@@ -90,7 +90,7 @@ export class VectorStore {
     if (!documents || documents.length === 0) return;
 
     // Generate embeddings
-    const embeddings = await this?.embeddingService?.embedBatch(
+    const embeddings = await this.embeddingService.embedBatch(
       documents?.map((d: any) => d.content),
     );
 
@@ -98,13 +98,13 @@ export class VectorStore {
     const ids = documents?.map((d: any) => d.id);
     const metadatas = documents?.map((d: any) => ({
       ...d.metadata,
-      content_length: d?.content?.length,
+      content_length: d?.content?.length ?? 0,
       indexed_at: new Date().toISOString(),
     }));
     const contents = documents?.map((d: any) => d.content);
 
     // Add to collection
-    await this?.collection?.add({
+    await this.collection!.add({
       ids,
       embeddings,
       metadatas: metadatas as any[], // ChromaDB type mismatch
@@ -118,10 +118,10 @@ export class VectorStore {
     }
 
     // Generate query embedding
-    const queryEmbedding = await this?.embeddingService?.embed(query);
+    const queryEmbedding = await this.embeddingService.embed(query);
 
     // Search in collection
-    const results = await this?.collection?.query({
+    const results = await this.collection!.query({
       queryEmbeddings: [queryEmbedding],
       nResults: limit,
       include: ["metadatas", "documents", "distances"] as any,
@@ -139,12 +139,12 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    const queryEmbedding = await this?.embeddingService?.embed(query);
+    const queryEmbedding = await this.embeddingService.embed(query);
 
     // Convert filter to ChromaDB where clause
     const whereClause = this.buildWhereClause(filter);
 
-    const results = await this?.collection?.query({
+    const results = await this.collection!.query({
       queryEmbeddings: [queryEmbedding],
       nResults: limit,
       where: whereClause,
@@ -160,7 +160,7 @@ export class VectorStore {
     }
 
     try {
-      const result = await this?.collection?.get({
+      const result = await this.collection!.get({
         ids: [documentId],
         include: ["metadatas", "documents"] as any,
       });
@@ -174,9 +174,9 @@ export class VectorStore {
         id: result.ids[0] || "",
         content: result.documents?.[0] || "",
         metadata: {
-          sourceId: metadata.sourceId || result.ids[0] || "",
+          sourceId: String(metadata.sourceId || result.ids[0] || ""),
           ...metadata,
-        } as DocumentMetadata,
+        },
       };
     } catch (error) {
       console.error("Failed to get document:", error);
@@ -190,13 +190,13 @@ export class VectorStore {
     }
 
     // Find all chunks for this source
-    const results = await this?.collection?.get({
+    const results = await this.collection!.get({
       where: { sourceId },
       include: ["ids"] as any,
     });
 
-    if (results?.ids?.length > 0) {
-      await this?.collection?.delete({
+    if (results?.ids?.length && results.ids.length > 0) {
+      await this.collection!.delete({
         ids: results.ids,
       });
     }
@@ -211,20 +211,21 @@ export class VectorStore {
     }
 
     // Note: ChromaDB doesn't have native pagination, so we get all and slice
-    const results = await this?.collection?.get({
+    const results = await this.collection!.get({
       include: ["metadatas", "documents"] as any,
     });
 
     const documents: Document[] = [];
-    for (let i = 0; i < results?.ids?.length; i++) {
+    const idsLength = results?.ids?.length ?? 0;
+    for (let i = 0; i < idsLength; i++) {
       const metadata = results.metadatas?.[i] || {};
       documents.push({
-        id: results.ids[i] || "",
+        id: results.ids![i] || "",
         content: results.documents?.[i] || "",
         metadata: {
-          sourceId: metadata.sourceId || results.ids[i] || "",
+          sourceId: String(metadata.sourceId || results.ids![i] || ""),
           ...metadata,
-        } as DocumentMetadata,
+        },
       });
     }
 
@@ -237,7 +238,7 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    const results = await this?.collection?.get({
+    const results = await this.collection.get({
       include: [],
     });
 
@@ -254,16 +255,16 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    const results = await this?.collection?.get({
+    const results = await this.collection.get({
       include: [],
     });
 
-    return results?.ids?.length || 0;
+    return results?.ids?.length ?? 0;
   }
 
   async getCollections(): Promise<string[]> {
-    const collections = await this?.client?.listCollections();
-    return collections?.map((c: any) => c.name);
+    const collections = await this.client.listCollections();
+    return collections?.map((c: any) => c.name) || [];
   }
 
   async clear(): Promise<void> {
@@ -272,8 +273,8 @@ export class VectorStore {
     }
 
     // Delete the collection
-    await this?.client?.deleteCollection({
-      name: this?.config?.collectionName,
+    await this.client.deleteCollection({
+      name: this.config.collectionName,
     });
 
     // Recreate it
@@ -294,8 +295,8 @@ export class VectorStore {
         content: chromaResults.documents?.[0]?.[i] || "",
         metadata: {
           ...metadata,
-          sourceId: metadata.sourceId || "",
-        } as DocumentMetadata,
+          sourceId: String(metadata.sourceId || ""),
+        },
         score: chromaResults.distances?.[0]?.[i]
           ? 1 - chromaResults.distances[0][i] // Convert distance to similarity score
           : 0,

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
-import { MasterOrchestrator } from "./MasterOrchestrator.js";
-import { createTestDatabase } from "../../test/utils/test-helpers.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { MasterOrchestrator } from './MasterOrchestrator';
+import { createTestDatabase } from '../../test/utils/test-helpers';
 import {
   isOllamaRunning,
   skipIfNoOllama,
@@ -10,8 +10,8 @@ import {
   getTestModel,
   createTestOllamaConfig,
   ensureModelAvailable,
-} from "../../test/utils/ollama-test-helper.js";
-import type { Plan } from "./types.js";
+} from '../../test/utils/ollama-test-helper';
+import type { Plan } from './types';
 
 describe("MasterOrchestrator Integration Tests", () => {
   let orchestrator: MasterOrchestrator;
@@ -147,7 +147,7 @@ describe("MasterOrchestrator Integration Tests", () => {
       // Verify plan structure
       expect(plan).toBeDefined();
       expect(plan.id).toMatch(/^plan-/);
-      expect(plan.metadata?.goal).toBe(userInput);
+      expect(plan.metadata?.length).toBe(userInput);
       expect(plan.steps).toBeInstanceOf(Array);
       expect(plan?.steps?.length).toBeGreaterThan(0);
 
@@ -245,7 +245,7 @@ describe("MasterOrchestrator Integration Tests", () => {
       });
 
       expect(response.success).toBe(true);
-      expect(response.plan?.metadata?.status).toBe("completed");
+      expect(response.plan?.metadata?.length).toBe("completed");
 
       // Verify all tasks completed
       const completedTasks =
@@ -432,9 +432,9 @@ describe("MasterOrchestrator Integration Tests", () => {
       });
 
       // Verify correct results
-      expect(responses[0]?.summary).toContain("4");
-      expect(responses[1]?.summary).toContain("6");
-      expect(responses[2]?.summary).toContain("8");
+      expect(responses[0]?.length).toContain("4");
+      expect(responses[1]?.length).toContain("6");
+      expect(responses[2]?.length).toContain("8");
     });
   });
 
@@ -464,8 +464,8 @@ describe("MasterOrchestrator Integration Tests", () => {
 
       // Check if replanning occurred
       if (response.metadata?.replanCount) {
-        expect(response?.metadata?.replanCount).toBeGreaterThanOrEqual(0);
-        expect(response?.metadata?.replanCount).toBeLessThanOrEqual(3);
+        expect(response?.metadata?.length).toBeGreaterThanOrEqual(0);
+        expect(response?.metadata?.length).toBeLessThanOrEqual(3);
       }
     });
   });

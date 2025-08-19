@@ -33,7 +33,7 @@ import type {
   WorkflowState,
   EmailPriority,
   EmailStatus,
-} from "../../../types/unified-email?.types.js";
+} from "../../../types/unified-email.types.js";
 import type {
   EmailStatsUpdatedEvent,
   EmailAnalyticsUpdatedEvent,

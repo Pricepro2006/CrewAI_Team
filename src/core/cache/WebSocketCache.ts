@@ -44,6 +44,16 @@ const RoomDataSchema = z.object({
 
 export type RoomData = z.infer<typeof RoomDataSchema>;
 
+// Schema for user presence data
+const PresenceDataSchema = z.object({
+  userId: z.string(),
+  connections: z.array(z.string()),
+  isOnline: z.boolean(),
+  lastSeen: z.date(),
+});
+
+export type PresenceData = z.infer<typeof PresenceDataSchema>;
+
 // Schema for real-time data
 const RealtimeDataSchema = z.object({
   key: z.string(),
@@ -557,24 +567,28 @@ export class WebSocketCache {
     try {
       const presenceKey = this.generatePresenceKey(userId);
       
-      let presence = await cacheManager.get(presenceKey, this.cacheNamespace) || {
-        userId,
-        connections: [],
-        isOnline: false,
-        lastSeen: new Date(),
-      };
+      let presence = await cacheManager.get(presenceKey, this.cacheNamespace) as PresenceData | null;
+      
+      if (!presence) {
+        presence = {
+          userId,
+          connections: [],
+          isOnline: false,
+          lastSeen: new Date(),
+        };
+      }
 
       if (isOnline) {
-        if (!presence?.connections?.includes(connectionId)) {
-          presence?.connections?.push(connectionId);
+        if (!presence.connections.includes(connectionId)) {
+          presence.connections.push(connectionId);
         }
         presence.isOnline = true;
       } else {
-        const index = presence?.connections?.indexOf(connectionId);
+        const index = presence.connections.indexOf(connectionId);
         if (index > -1) {
-          presence?.connections?.splice(index, 1);
+          presence.connections.splice(index, 1);
         }
-        presence.isOnline = presence?.connections?.length > 0;
+        presence.isOnline = presence.connections.length > 0;
         if (!presence.isOnline) {
           presence.lastSeen = new Date();
         }
@@ -597,7 +611,7 @@ export class WebSocketCache {
           userId,
           connectionId,
           isOnline,
-          connectionCount: presence?.connections?.length,
+          connectionCount: presence.connections.length,
         });
       }
 
@@ -615,10 +629,10 @@ export class WebSocketCache {
   /**
    * Get user presence
    */
-  async getUserPresence(userId: string): Promise<any> {
+  async getUserPresence(userId: string): Promise<PresenceData | null> {
     try {
       const presenceKey = this.generatePresenceKey(userId);
-      const presence = await cacheManager.get(presenceKey, this.cacheNamespace);
+      const presence = await cacheManager.get(presenceKey, this.cacheNamespace) as PresenceData | null;
 
       if (presence) {
         metrics.increment('websocket_cache.presence_hit');
@@ -626,7 +640,7 @@ export class WebSocketCache {
         logger.debug('User presence retrieved', 'WEBSOCKET_CACHE', {
           userId,
           isOnline: presence.isOnline,
-          connectionCount: presence.connections?.length || 0,
+          connectionCount: presence.connections.length,
         });
       } else {
         metrics.increment('websocket_cache.presence_miss');

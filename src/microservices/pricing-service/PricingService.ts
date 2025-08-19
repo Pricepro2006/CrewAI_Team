@@ -75,7 +75,7 @@ export class PricingService extends EventEmitter {
   constructor(config: {
     cache?: Partial<CacheConfig>;
     api?: Partial<WalmartAPIConfig>;
-    redis?: Redis.RedisOptions;
+    redis?: any; // Redis options - use any to avoid namespace issues
     sqlitePath?: string;
   } = {}) {
     super();
@@ -496,8 +496,8 @@ export class PricingService extends EventEmitter {
     criteria: { productId?: string; storeId?: string }
   ): boolean {
     const parts = key.split(':');
-    if (criteria.productId && !parts[0].includes(criteria.productId)) return false;
-    if (criteria.storeId && !parts[1].includes(criteria.storeId)) return false;
+    if (criteria.productId && parts[0] && !parts[0].includes(criteria.productId)) return false;
+    if (criteria.storeId && parts[1] && !parts[1].includes(criteria.storeId)) return false;
     return true;
   }
 

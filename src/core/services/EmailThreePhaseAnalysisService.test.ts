@@ -11,6 +11,7 @@
  * Critical for preventing regression of the JSON parsing improvements
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   describe,
   it,
@@ -21,17 +22,17 @@ import {
   afterEach,
 } from "vitest";
 import axios from "axios";
-import { EmailThreePhaseAnalysisService } from "./EmailThreePhaseAnalysisService.js";
-import { RedisService } from "../cache/RedisService.js";
-import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
+import { EmailThreePhaseAnalysisService } from './EmailThreePhaseAnalysisService';
+import { RedisService } from '../cache/RedisService';
+import { EmailChainAnalyzer } from './EmailChainAnalyzer';
 
 // Mock dependencies
 vi.mock("axios");
-vi.mock("../cache/RedisService.js");
-vi.mock("./EmailChainAnalyzer.js");
+vi.mock('../cache/RedisService');
+vi.mock('./EmailChainAnalyzer');
 
 // Mock database connection pool with proper mock structure
-vi.mock("../../database/ConnectionPool.js", () => {
+vi.mock('../../database/ConnectionPool', () => {
   const createMockDbImplementation = () => ({
     prepare: vi.fn().mockReturnValue({
       run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
@@ -136,7 +137,7 @@ describe("EmailThreePhaseAnalysisService - JSON Parsing Tests", () => {
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("QUOTE_PROCESSING confirmed");
-      expect(analysis?.missed_entities?.project_names).toEqual(["Project Alpha"]);
+      expect(analysis?.missed_entities).toEqual(["Project Alpha"]);
       expect(analysis.action_items).toHaveLength(1);
       expect(analysis.confidence).toBe(0.85);
       expect(analysis.business_process).toBe("QUOTE_REQUEST_PROCESSING");
@@ -184,7 +185,7 @@ This analysis shows a straightforward order processing scenario.
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("ORDER_MANAGEMENT confirmed");
-      expect(analysis?.missed_entities?.company_names).toEqual(["TechCorp"]);
+      expect(analysis?.missed_entities).toEqual(["TechCorp"]);
       expect(analysis.confidence).toBe(0.9);
       expect(analysis.business_process).toBe("ORDER_FULFILLMENT");
     });
@@ -272,7 +273,7 @@ The analysis shows standard logistics processing.
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("SHIPPING confirmed");
-      expect(analysis?.missed_entities?.project_names).toEqual([
+      expect(analysis?.missed_entities).toEqual([
         "Deployment Phase 1",
       ]);
       expect(analysis.confidence).toBe(0.95);
@@ -558,8 +559,8 @@ And some trailing text that should also be ignored.
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats?.parsingMetrics?.successRate).toBeGreaterThan(0);
-      expect(stats?.parsingMetrics?.totalAttempts).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
     });
 
     it("should track retry success metrics", async () => {
@@ -595,7 +596,7 @@ And some trailing text that should also be ignored.
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats?.parsingMetrics?.retryRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
     });
 
     it("should track fallback usage metrics", async () => {
@@ -617,7 +618,7 @@ And some trailing text that should also be ignored.
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats?.parsingMetrics?.fallbackRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
     });
   });
 

@@ -298,7 +298,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
     return {
       score,
-      is_complete: missingStages?.length || 0 === 0,
+      is_complete: (missingStages?.length || 0) === 0,
       missing_stages: missingStages,
       confidence: score / 100,
     };

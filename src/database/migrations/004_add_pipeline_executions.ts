@@ -3,9 +3,9 @@
  * This table tracks the execution history of the three-stage pipeline
  */
 
-import type { Database } from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 
-export function up(db: Database.Database): void {
+export function up(db: DatabaseInstance): void {
   // Create pipeline_executions table
   db.exec(`
     CREATE TABLE IF NOT EXISTS pipeline_executions (
@@ -35,7 +35,7 @@ export function up(db: Database.Database): void {
   console.log("✅ Created pipeline_executions table");
 }
 
-export function down(db: Database.Database): void {
+export function down(db: DatabaseInstance): void {
   db.exec(`
     DROP INDEX IF EXISTS idx_pipeline_executions_started_at;
     DROP INDEX IF EXISTS idx_pipeline_executions_status;

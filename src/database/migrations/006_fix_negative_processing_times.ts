@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -16,7 +16,7 @@ import { logger } from "../../utils/logger.js";
  * - Add triggers for automatic validation
  */
 
-export function up(db: Database.Database): void {
+export function up(db: DatabaseInstance): void {
   logger.info("Starting migration: fix_negative_processing_times");
 
   try {
@@ -146,7 +146,7 @@ export function up(db: Database.Database): void {
   }
 }
 
-export function down(db: Database.Database): void {
+export function down(db: DatabaseInstance): void {
   logger.info("Rolling back migration: fix_negative_processing_times");
 
   try {
@@ -196,3 +196,5 @@ export const migration = {
   up,
   down,
 };
+
+export default migration;

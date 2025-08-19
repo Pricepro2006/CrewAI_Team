@@ -1,13 +1,14 @@
 import { EventEmitter } from 'events';
 import Redis from 'ioredis';
 import { z } from 'zod';
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { LLMResponseCache } from './LLMResponseCache.js';
 import { RedisCacheManager } from './RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
 import Database from 'better-sqlite3';
-import path from 'path';
+import { join } from 'path';
+import { createHash } from 'crypto';
 
 /**
  * IntelligentCacheWarmer - Proactive cache warming for frequently accessed items
@@ -619,7 +620,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
    */
   private initializeSQLite(): void {
     try {
-      const dbPath = path.join(process.cwd(), 'data', 'cache-analytics.db');
+      const dbPath = join(process.cwd(), 'data', 'cache-analytics.db');
       this.sqliteDb = new Database(dbPath);
       
       // Create analytics tables
@@ -906,8 +907,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
   }
   
   private hashQuery(query: string): string {
-    return require('crypto')
-      .createHash('sha256')
+    return createHash('sha256')
       .update(query.toLowerCase().trim())
       .digest('hex')
       .substring(0, 16);

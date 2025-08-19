@@ -12,6 +12,18 @@ export {
   type SqlSecurityConfig,
 } from "./SqlInjectionProtection.js";
 
+// Import for internal use
+import {
+  SqlInjectionProtection,
+  SqlInjectionError,
+  createSqlInjectionProtection,
+} from "./SqlInjectionProtection.js";
+
+import {
+  DatabaseErrorHandler,
+  type DatabaseError,
+} from "./DatabaseErrorHandler.js";
+
 export {
   DatabaseErrorHandler,
   DatabaseSecurityError,
@@ -108,7 +120,8 @@ class SecurityViolationCounter {
       this?.violations?.delete(`${type}:${identifier}`);
     } else if (type) {
       // Reset all violations of this type
-      for (const key of this?.violations?.keys()) {
+      const keys = Array.from(this?.violations?.keys() || []);
+      for (const key of keys) {
         if (key.startsWith(`${type}:`)) {
           this?.violations?.delete(key);
         }

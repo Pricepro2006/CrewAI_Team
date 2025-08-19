@@ -16,7 +16,7 @@ import { logger } from '../../utils/logger.js';
 export class ServiceMeshExample {
   private app: express.Express;
   private server: any;
-  private wsServer: WebSocket.Server | null = null;
+  private wsServer: any | null = null;
 
   constructor() {
     this.app = express();

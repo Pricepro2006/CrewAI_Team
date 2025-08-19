@@ -289,7 +289,7 @@ const CircuitBreakerDashboard: React.FC = () => {
                       {serviceName.charAt(0).toUpperCase() + serviceName.slice(1)} Service
                     </CardTitle>
                     <CardDescription>
-                      {circuitBreakers?.length || 0} Circuit Breaker{circuitBreakers?.length || 0 !== 1 ? 's' : ''}
+                      {circuitBreakers?.length || 0} Circuit Breaker{(circuitBreakers?.length || 0) !== 1 ? 's' : ''}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

@@ -150,9 +150,12 @@ export const useVoiceRecognition = (config: VoiceRecognitionConfig = {}) => {
       let interimTranscript = '';
       let bestConfidence = 0;
 
-      for (let i = event.resultIndex; i < event?.results?.length; i++) {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+        if (!result) continue;
+        
         const alternative = result[0];
+        if (!alternative) continue;
         
         if (result.isFinal) {
           finalTranscript += alternative.transcript;

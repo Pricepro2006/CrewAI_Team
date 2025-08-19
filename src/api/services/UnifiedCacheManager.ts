@@ -7,27 +7,39 @@ import { PricingService } from '../../microservices/pricing-service/PricingServi
 import { ListManagementService } from './ListManagementService.js';
 import { z } from 'zod';
 
-// Unified cache manager configuration
+// Unified cache manager configuration - matches CentralizedCacheService requirements
 const UnifiedCacheManagerConfigSchema = z.object({
   cache: z.object({
     memory: z.object({
-      maxSize: z.number().default(50000),
-      ttl: z.number().default(300) // 5 minutes
+      maxSize: z.number().min(100).default(50000),
+      ttl: z.number().min(10).default(300), // 5 minutes
+      checkInterval: z.number().min(1000).default(60000) // 1 minute
     }),
     redis: z.object({
       host: z.string().default('localhost'),
-      port: z.number().default(6379),
-      ttl: z.number().default(3600) // 1 hour
+      port: z.number().min(1).max(65535).default(6379),
+      password: z.string().optional(),
+      db: z.number().min(0).default(0),
+      ttl: z.number().min(60).default(3600), // 1 hour
+      keyPrefix: z.string().default('cache:'),
+      maxRetries: z.number().min(0).default(3)
     }),
     sqlite: z.object({
       path: z.string().default('./data/unified_cache.db'),
-      ttl: z.number().default(86400) // 24 hours
+      ttl: z.number().min(300).default(86400), // 24 hours
+      tableName: z.string().default('unified_cache'),
+      maxEntries: z.number().min(1000).default(1000000),
+      cleanupInterval: z.number().min(60000).default(3600000) // 1 hour
     })
   }),
   integration: z.object({
     enablePricingCache: z.boolean().default(true),
     enableListCache: z.boolean().default(true),
+    pricingCacheTtl: z.number().default(3600), // 1 hour
+    listCacheTtl: z.number().default(1800), // 30 minutes
+    enableCacheWarm: z.boolean().default(true),
     warmOnStartup: z.boolean().default(false),
+    cacheKeyPrefix: z.string().default('integrated:'),
     invalidationStrategy: z.enum(['immediate', 'lazy', 'periodic']).default('immediate')
   }),
   monitoring: z.object({

@@ -6,8 +6,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import WebSocket from 'ws';
 import { createServer, Server } from 'http';
-import { WalmartWebSocketServer } from '../WalmartWebSocketServer.js';
-import { EmailProcessingWebSocket } from '../EmailProcessingWebSocket.js';
+import { WalmartWebSocketServer } from '../WalmartWebSocketServer';
+import { EmailProcessingWebSocket } from '../EmailProcessingWebSocket';
 import { WebSocketServer } from 'ws';
 
 describe('WebSocket Error Handling and Reconnection Tests', () => {

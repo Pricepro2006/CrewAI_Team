@@ -102,24 +102,26 @@ export class DocumentProcessor {
     let currentLength = 0;
 
     for (const sentence of sentences) {
-      if (currentLength + sentence?.length || 0 > options.size && currentChunk) {
+      const sentenceLength = sentence?.length ?? 0;
+      if (currentLength + sentenceLength > options.size && currentChunk) {
         chunks.push(currentChunk.trim());
 
         // Handle overlap
         if (options.overlap > 0) {
+          const currentChunkLength = currentChunk?.length ?? 0;
           const overlapStart = Math.max(
             0,
-            currentChunk?.length || 0 - options.overlap,
+            currentChunkLength - options.overlap,
           );
           currentChunk = currentChunk.slice(overlapStart) + " " + sentence;
-          currentLength = currentChunk?.length || 0;
+          currentLength = currentChunk?.length ?? 0;
         } else {
           currentChunk = sentence;
-          currentLength = sentence?.length || 0;
+          currentLength = sentenceLength;
         }
       } else {
         currentChunk += (currentChunk ? " " : "") + sentence;
-        currentLength += sentence?.length || 0;
+        currentLength += sentenceLength;
       }
     }
 
@@ -138,7 +140,8 @@ export class DocumentProcessor {
     const tokensPerChunk = Math.floor(options.size / avgCharsPerToken);
     const overlapTokens = Math.floor(options.overlap / avgCharsPerToken);
 
-    for (let i = 0; i < words?.length || 0; i += tokensPerChunk - overlapTokens) {
+    const wordCount = words?.length ?? 0;
+    for (let i = 0; i < wordCount; i += tokensPerChunk - overlapTokens) {
       const chunk = words.slice(i, i + tokensPerChunk).join(" ");
       if (chunk.trim()) {
         chunks.push(chunk.trim());
@@ -151,7 +154,8 @@ export class DocumentProcessor {
   private chunkByCharacter(text: string, options: ChunkOptions): string[] {
     const chunks: string[] = [];
 
-    for (let i = 0; i < text?.length || 0; i += options.size - options.overlap) {
+    const textLength = text?.length ?? 0;
+    for (let i = 0; i < textLength; i += options.size - options.overlap) {
       const chunk = text.slice(i, i + options.size);
       if (chunk.trim()) {
         chunks.push(chunk.trim());
@@ -167,7 +171,8 @@ export class DocumentProcessor {
     const parts = text.split(sentenceEnders);
     const sentences: string[] = [];
 
-    for (let i = 0; i < parts?.length || 0; i += 2) {
+    const partsLength = parts?.length ?? 0;
+    for (let i = 0; i < partsLength; i += 2) {
       const sentence = parts[i] + (parts[i + 1] || "");
       if (sentence.trim()) {
         sentences.push(sentence.trim());
@@ -175,7 +180,8 @@ export class DocumentProcessor {
     }
 
     // Handle edge cases
-    if (sentences?.length || 0 === 0 && text.trim()) {
+    const sentencesLength = sentences?.length ?? 0;
+    if (sentencesLength === 0 && text.trim()) {
       sentences.push(text.trim());
     }
 

@@ -551,7 +551,7 @@ export class WalmartErrorBoundary extends React.Component<
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static override getDerivedStateFromError(error: Error): ErrorBoundaryState {
     const handler = WalmartErrorHandler.getInstance();
     const walmartError =
       error instanceof WalmartBaseError
@@ -564,7 +564,7 @@ export class WalmartErrorBoundary extends React.Component<
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     const handler = WalmartErrorHandler.getInstance();
     handler.handleError(error, {
       operation: "react_render",
@@ -605,14 +605,15 @@ export function isWalmartError(error: unknown): error is WalmartBaseError {
 }
 
 export function createErrorFromResponse(response: Record<string, unknown>): WalmartBaseError {
-  if (response.error) {
+  if (response.error && typeof response.error === 'object' && response.error !== null) {
+    const errorObj = response.error as Record<string, unknown>;
     return new WalmartBaseError(
-      response?.error?.code || "SERVER_ERROR",
-      response?.error?.message || "Unknown error",
+      (errorObj.code as string) || "SERVER_ERROR",
+      (errorObj.message as string) || "Unknown error",
       {
-        details: response?.error?.details,
-        retryable: response?.error?.retryable,
-        retryAfter: response?.error?.retryAfter,
+        details: errorObj.details as Record<string, unknown>,
+        retryable: errorObj.retryable as boolean,
+        retryAfter: errorObj.retryAfter as number,
       },
     );
   }

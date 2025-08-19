@@ -217,7 +217,7 @@ class EmailProcessingWorker {
           break;
 
         case "health":
-          parentPort.postMessage({
+          parentPort?.postMessage({
             type: "health-response",
             status: "healthy",
             workerId: this.workerId,
@@ -340,7 +340,7 @@ class EmailProcessingWorker {
       const phase1 = phase1Results[i];
       const phase2 = phase2Results[i];
 
-      const isPhase3Email = phase3Candidates.includes(email);
+      const isPhase3Email = email ? phase3Candidates.includes(email) : false;
       const result = isPhase3Email
         ? {
             ...phase2,
@@ -450,7 +450,7 @@ class EmailProcessingWorker {
         const response = batchResults[j];
 
         try {
-          const parsed = JSON.parse(response);
+          const parsed = JSON.parse(response || '{}');
           const validated = Phase2ResponseSchema.parse(parsed);
 
           results[promptIndex] = {
@@ -460,7 +460,7 @@ class EmailProcessingWorker {
           };
         } catch (error) {
           logger.warn(
-            `Phase 2 parsing failed for email ${emails[promptIndex].id}:`,
+            `Phase 2 parsing failed for email ${emails[promptIndex]?.id || 'unknown'}:`,
             error,
           );
           results[promptIndex] = this.getPhase2Fallback(
@@ -521,7 +521,7 @@ class EmailProcessingWorker {
           };
         } catch (error) {
           logger.warn(
-            `Phase 3 parsing failed for email ${emails[promptIndex].id}:`,
+            `Phase 3 parsing failed for email ${emails[promptIndex]?.id || 'unknown'}:`,
             error,
           );
           results[promptIndex] = this.getPhase3Fallback(

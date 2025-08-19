@@ -98,13 +98,13 @@ class WalmartCacheService {
    * Initialize IndexedDB
    */
   private async initIndexedDB(): Promise<void> {
-    if (!('indexedDB' in window)) {
+    if (typeof window === 'undefined' || !('indexedDB' in window)) {
       console.warn('IndexedDB not supported, using memory cache only');
       return;
     }
     
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this?.config?.indexedDB.dbName, this?.config?.indexedDB.version);
+      const request = indexedDB.open(this.config.indexedDB.dbName, this.config.indexedDB.version);
       
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
@@ -112,7 +112,7 @@ class WalmartCacheService {
         resolve();
       };
       
-      request.onupgradeneeded = (event: any) => {
+      request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
         // Create object stores
@@ -173,18 +173,19 @@ class WalmartCacheService {
   private updateStats(layer: 'memory' | 'indexedDB', type: 'hit' | 'miss'): void {
     const statKey = type === 'hit' ? 'hits' : 'misses';
     this.stats[layer][statKey]++;
-    this?.stats?.total[statKey]++;
+    
+    // Safe increment for total stats
+    if (this.stats?.total) {
+      this.stats.total[statKey]++;
+    }
     
     // Calculate hit rates
     const layerStats = this.stats[layer];
     layerStats.hitRate = layerStats.hits / (layerStats.hits + layerStats.misses);
     
-    if (this.stats && this.stats.total) {
-
-    
-      this.stats.total.hitRate = this?.stats?.total.hits / (this?.stats?.total.hits + this?.stats?.total.misses);
-
-    
+    if (this.stats?.total) {
+      const total = this.stats.total;
+      total.hitRate = total.hits / (total.hits + total.misses);
     }
   }
   
@@ -196,42 +197,37 @@ class WalmartCacheService {
     let totalSize = 0;
     
     // Remove expired entries
-    for (const [key, entry] of this?.memoryCache?.entries()) {
-      if (this.isExpired(entry)) {
-        this?.memoryCache?.delete(key);
-      } else {
-        totalSize += entry.size;
+    if (this.memoryCache) {
+      const entries = Array.from(this.memoryCache.entries());
+      for (const [key, entry] of entries) {
+        if (this.isExpired(entry)) {
+          this.memoryCache.delete(key);
+        } else {
+          totalSize += entry.size;
+        }
       }
     }
     
     // If still over limit, remove least recently used entries
-    const maxSizeBytes = this?.config?.memory.maxSize * 1024 * 1024;
-    if (totalSize > maxSizeBytes || this?.memoryCache?.size > this?.config?.memory.maxEntries) {
-      const entries = Array.from(this?.memoryCache?.entries())
+    const maxSizeBytes = this.config.memory.maxSize * 1024 * 1024;
+    if (this.memoryCache && (totalSize > maxSizeBytes || this.memoryCache.size > this.config.memory.maxEntries)) {
+      const entries = Array.from(this.memoryCache.entries())
         .map(([key, entry]) => ({ key, ...entry }))
         .sort((a, b) => (a.timestamp + a.hits) - (b.timestamp + b.hits));
       
       while (
-        (totalSize > maxSizeBytes || this?.memoryCache?.size > this?.config?.memory.maxEntries) &&
-        entries?.length || 0 > 0
+        (totalSize > maxSizeBytes || this.memoryCache.size > this.config.memory.maxEntries) &&
+        entries.length > 0
       ) {
         const entry = entries.shift()!;
-        this?.memoryCache?.delete(entry.key);
+        this.memoryCache.delete(entry.key);
         totalSize -= entry.size;
       }
     }
     
-    if (this.stats && this.stats.memory) {
-
-    
+    if (this.stats?.memory) {
       this.stats.memory.size = totalSize;
-
-    
-    }
-    if (this.stats && this.stats.memory) {
-
-      this.stats.memory.entries = this?.memoryCache?.size;
-
+      this.stats.memory.entries = this.memoryCache?.size || 0;
     }
   }
   
@@ -239,9 +235,14 @@ class WalmartCacheService {
    * Get item from memory cache
    */
   private getFromMemoryCache<T>(key: string): T | null {
-    const entry = this?.memoryCache?.get(key);
+    if (!this.memoryCache) {
+      this.updateStats('memory', 'miss');
+      return null;
+    }
+    
+    const entry = this.memoryCache.get(key);
     if (!entry || this.isExpired(entry)) {
-      if (entry) this?.memoryCache?.delete(key);
+      if (entry) this.memoryCache.delete(key);
       this.updateStats('memory', 'miss');
       return null;
     }
@@ -255,16 +256,18 @@ class WalmartCacheService {
    * Set item in memory cache
    */
   private setInMemoryCache<T>(key: string, data: T, ttl?: number): void {
+    if (!this.memoryCache) return;
+    
     const size = this.estimateSize(data);
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
-      ttl: ttl || this?.config?.memory.defaultTtl,
+      ttl: ttl || this.config.memory.defaultTtl,
       hits: 0,
       size
     };
     
-    this?.memoryCache?.set(key, entry);
+    this.memoryCache.set(key, entry);
     this.cleanupMemoryCache();
   }
   
@@ -278,7 +281,7 @@ class WalmartCacheService {
       return null;
     }
     
-    return new Promise((resolve: any) => {
+    return new Promise<T | null>((resolve) => {
       const transaction = this.indexedDB!.transaction(['cache'], 'readonly');
       const store = transaction.objectStore('cache');
       const request = store.get(key);
@@ -325,7 +328,7 @@ class WalmartCacheService {
       key,
       data,
       timestamp: Date.now(),
-      ttl: ttl || this?.config?.indexedDB.defaultTtl,
+      ttl: ttl || this.config.indexedDB.defaultTtl,
       hits: 0,
       size
     };
@@ -347,7 +350,7 @@ class WalmartCacheService {
     await this.ensureInitialized();
     if (!this.indexedDB) return;
     
-    return new Promise((resolve: any) => {
+    return new Promise<void>((resolve) => {
       const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');
       const store = transaction.objectStore('cache');
       const request = store.delete(key);
@@ -393,7 +396,9 @@ class WalmartCacheService {
    * Delete item from all cache layers
    */
   public async delete(key: string): Promise<void> {
-    this?.memoryCache?.delete(key);
+    if (this.memoryCache) {
+      this.memoryCache.delete(key);
+    }
     await this.deleteFromIndexedDBCache(key);
   }
   
@@ -444,9 +449,12 @@ class WalmartCacheService {
    */
   public async invalidatePattern(pattern: string): Promise<void> {
     // Invalidate memory cache
-    for (const key of this?.memoryCache?.keys()) {
-      if (key.includes(pattern)) {
-        this?.memoryCache?.delete(key);
+    if (this.memoryCache) {
+      const keys = Array.from(this.memoryCache.keys());
+      for (const key of keys) {
+        if (key.includes(pattern)) {
+          this.memoryCache.delete(key);
+        }
       }
     }
     
@@ -454,13 +462,13 @@ class WalmartCacheService {
     await this.ensureInitialized();
     if (!this.indexedDB) return;
     
-    return new Promise((resolve: any) => {
+    return new Promise<void>((resolve) => {
       const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');
       const store = transaction.objectStore('cache');
       const request = store.openCursor();
       
-      request.onsuccess = (event: any) => {
-        const cursor = (event.target as IDBRequest).result;
+      request.onsuccess = (event: Event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
         if (cursor) {
           if (cursor?.key?.toString().includes(pattern)) {
             cursor.delete();
@@ -496,7 +504,9 @@ class WalmartCacheService {
    */
   public async clear(): Promise<void> {
     // Clear memory cache
-    this?.memoryCache?.clear();
+    if (this.memoryCache) {
+      this.memoryCache.clear();
+    }
     
     // Clear IndexedDB cache
     await this.ensureInitialized();
@@ -536,10 +546,10 @@ class WalmartCacheService {
       const store = transaction.objectStore('cache');
       const request = store.openCursor();
       
-      request.onsuccess = (event: any) => {
-        const cursor = (event.target as IDBRequest).result;
+      request.onsuccess = (event: Event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
         if (cursor) {
-          const entry = cursor?.value;
+          const entry = cursor.value;
           if (this.isExpired(entry)) {
             cursor.delete();
           }
@@ -564,8 +574,10 @@ class WalmartCacheService {
    * Warm cache with frequently accessed data
    */
   public async warmCache(products: WalmartProduct[]): Promise<void> {
-    const promises = products?.map(product => 
-      this.setProduct(product, this?.config?.memory.defaultTtl)
+    if (!products || products.length === 0) return;
+    
+    const promises = products.map(product => 
+      this.setProduct(product, this.config.memory.defaultTtl)
     );
     
     await Promise.all(promises);
@@ -575,9 +587,11 @@ class WalmartCacheService {
 // Export singleton instance
 export const walmartCacheService = new WalmartCacheService();
 
-// Periodic cleanup
-setInterval(() => {
-  walmartCacheService.cleanup();
-}, 10 * 60 * 1000); // Cleanup every 10 minutes
+// Periodic cleanup (only in browser environment)
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    walmartCacheService.cleanup();
+  }, 10 * 60 * 1000); // Cleanup every 10 minutes
+}
 
 export default WalmartCacheService;

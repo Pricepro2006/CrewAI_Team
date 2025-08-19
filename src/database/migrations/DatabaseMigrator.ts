@@ -3,14 +3,13 @@
  * Handles database schema migrations with version control and rollback support
  */
 
-import type Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { readFileSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
 import { logger } from "../../utils/logger.js";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = join(fileURLToPath(import.meta.url), "..");
+// Use __dirname for Node.js compatibility without import.meta
+const __dirname = dirname(__filename || process.cwd());
 
 export interface Migration {
   version: string;
@@ -30,10 +29,10 @@ export interface MigrationResult {
 }
 
 export class DatabaseMigrator {
-  private db: Database.Database;
+  private db: DatabaseInstance;
   private migrationsPath: string;
 
-  constructor(db: Database.Database, migrationsPath?: string) {
+  constructor(db: DatabaseInstance, migrationsPath?: string) {
     this.db = db;
     this.migrationsPath = migrationsPath || join(__dirname, "./migrations");
     this.initializeMigrationsTable();
@@ -499,14 +498,14 @@ export const migration_${version.replace(/-/g, "_")} = {
         .prepare("PRAGMA foreign_key_check")
         .all() as Array<any>;
 
-      if (foreignKeyResult?.length || 0 > 0) {
+      if (foreignKeyResult.length > 0) {
         errors.push(
-          `Foreign key violations found: ${foreignKeyResult?.length || 0} issues`,
+          `Foreign key violations found: ${foreignKeyResult.length} issues`,
         );
       }
 
       return {
-        valid: errors?.length || 0 === 0,
+        valid: errors.length === 0,
         errors,
       };
     } catch (error) {

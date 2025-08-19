@@ -34,11 +34,38 @@ import { wsService } from "../../api/services/WebSocketService.js";
 import { VectorStore } from "../rag/VectorStore.js";
 import { EventEmitter } from "events";
 import { PerformanceOptimizer } from "../../api/services/PerformanceOptimizer.js";
-import {
-  selectModel,
-  getModelForSystemLoad,
-  MODEL_CONFIGS,
-} from "../../config/model-selection?.config.js";
+// Model configuration constants
+const MODEL_CONFIGS = {
+  SIMPLE: {
+    model: 'qwen2.5:0.5b',
+    temperature: 0.5,
+    maxTokens: 512
+  },
+  COMPLEX: {
+    model: 'granite3.3:2b',
+    temperature: 0.7,
+    maxTokens: 2048
+  }
+};
+
+// Simple model selection function
+function selectModel(queryText: string, options?: any) {
+  // Basic complexity assessment
+  const complexity = queryText.length > 200 || 
+    queryText.includes('analyze') || 
+    queryText.includes('complex') ? 'complex' : 'simple';
+    
+  return complexity === 'complex' ? MODEL_CONFIGS.COMPLEX : MODEL_CONFIGS.SIMPLE;
+}
+
+// System load adjustment function
+function getModelForSystemLoad(modelConfig: any, systemLoad: any) {
+  // For high load, prefer lighter models
+  if (systemLoad.cpu > 0.8 || systemLoad.memory > 0.8) {
+    return MODEL_CONFIGS.SIMPLE;
+  }
+  return modelConfig;
+}
 
 export interface ConfidenceOrchestratorResult extends ExecutionResult {
   confidence: number;
@@ -101,7 +128,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     // Default to complex model (granite3.3:2b) for main orchestrator
     const defaultModel = MODEL_CONFIGS?.COMPLEX?.model;
     this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/config?.model?.gguf`,
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${defaultModel}.gguf`,
       contextSize: 8192,
       threads: 8,
       temperature: 0.7,
@@ -218,7 +245,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
           },
         );
         this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/adjustedModelConfig?.model?.gguf`,
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${adjustedModelConfig.model}.gguf`,
       contextSize: 8192,
       threads: 8,
       temperature: 0.7,
@@ -277,7 +304,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
 
     // Use simple model for quick responses
     const simpleModel = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/MODEL_CONFIGS?.SIMPLE?.model.gguf`,
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${MODEL_CONFIGS.SIMPLE.model}.gguf`,
       contextSize: 8192,
       threads: 8,
       temperature: 0.7,

@@ -91,9 +91,9 @@ export class OptimizedQueryExecutor {
       let result;
       
       if (isReadQuery) {
-        result = params ? stmt.all(...params) : stmt.all();
+        result = params && params.length > 0 ? stmt.all(...params) : stmt.all();
       } else {
-        result = params ? stmt.run(...params) : stmt.run();
+        result = params && params.length > 0 ? stmt.run(...params) : stmt.run();
       }
       
       // Cache read query results
@@ -126,7 +126,12 @@ export class OptimizedQueryExecutor {
   /**
    * Get or create a synchronous prepared statement wrapper
    */
-  prepare(sql: string): any {
+  prepare(sql: string): {
+    run: (...params: any[]) => any;
+    get: (...params: any[]) => any;
+    all: (...params: any[]) => any;
+    iterate: (...params: any[]) => Iterator<any>;
+  } {
     const stmt = this.getPreparedStatement(sql);
     const self = this;
     
@@ -134,7 +139,7 @@ export class OptimizedQueryExecutor {
       run: (...params: any[]) => self.executeSync(sql, params),
       get: (...params: any[]) => {
         const stmt = self.getPreparedStatement(sql);
-        return params ? stmt.get(...params) : stmt.get();
+        return params.length > 0 ? stmt.get(...params) : stmt.get();
       },
       all: (...params: any[]) => self.executeSync(sql, params),
       iterate: function* (...params: any[]) {
@@ -199,7 +204,11 @@ export class OptimizedQueryExecutor {
   /**
    * Execute a synchronous transaction (for backwards compatibility)
    */
-  transaction<T = any>(fn: (db: any) => T): T {
+  transaction<T = any>(fn: (db: {
+    prepare: (sql: string) => any;
+    exec: (sql: string) => any;
+    pragma: (pragma: string, value?: any) => any;
+  }) => T): T {
     const wrappedDb = {
       prepare: (sql: string) => this.prepare(sql),
       exec: (sql: string) => this.db.exec(sql),
@@ -217,10 +226,10 @@ export class OptimizedQueryExecutor {
     const startTime = Date.now();
     const results: T[] = [];
 
-    const transaction = this.db.transaction((queries) => {
+    const transaction = this.db.transaction((queries: Array<{ sql: string; params?: any[] }>) => {
       for (const { sql, params } of queries) {
         const stmt = this.getPreparedStatement(sql);
-        const result = params ? stmt.all(...params) : stmt.all();
+        const result = params && params.length > 0 ? stmt.all(...params) : stmt.all();
         results.push(result as T);
       }
     });
@@ -248,7 +257,7 @@ export class OptimizedQueryExecutor {
   /**
    * Execute query with prepared statement
    */
-  private executeQuery(sql: string, params?: any[]): any {
+  private executeQuery(sql: string, params?: any[]): Promise<any> {
     const stmt = this.getPreparedStatement(sql);
     
     // Use setImmediate to avoid blocking the event loop
@@ -258,9 +267,9 @@ export class OptimizedQueryExecutor {
           let result;
           
           if (this.isReadQuery(sql)) {
-            result = params ? stmt.all(...params) : stmt.all();
+            result = params && params.length > 0 ? stmt.all(...params) : stmt.all();
           } else {
-            result = params ? stmt.run(...params) : stmt.run();
+            result = params && params.length > 0 ? stmt.run(...params) : stmt.run();
           }
           
           resolve(result);
@@ -416,7 +425,7 @@ export class OptimizedQueryExecutor {
     const now = Date.now();
     let cleaned = 0;
 
-    for (const [key, entry] of this.queryCache.entries()) {
+    for (const [key, entry] of Array.from(this.queryCache.entries())) {
       if (now - entry.timestamp > this.cacheTTL * 2) {
         this.queryCache.delete(key);
         cleaned++;
@@ -463,7 +472,8 @@ export class OptimizedQueryExecutor {
 
     // Analyze query plan
     try {
-      const explain = this.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...(params || []));
+      const explainParams = params || [];
+      const explain = this.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...explainParams);
       
       // Check for missing indexes
       const needsIndex = explain.some((row: any) => 
@@ -501,7 +511,7 @@ export class OptimizedQueryExecutor {
 
     // Calculate cache memory usage (rough estimate)
     let cacheMemoryUsage = 0;
-    for (const [key, value] of this.queryCache.entries()) {
+    for (const [key, value] of Array.from(this.queryCache.entries())) {
       cacheMemoryUsage += key.length + JSON.stringify(value.data).length;
     }
 

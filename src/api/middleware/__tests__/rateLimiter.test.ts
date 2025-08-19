@@ -3,11 +3,10 @@
  * Tests rate limiting implementation for security and performance
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { MockedFunction } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, type MockedFunction } from 'vitest';
 import type { Request } from "express";
 import { TRPCError } from "@trpc/server";
-import { rateLimitMiddleware } from "../rateLimiter.js";
+import { rateLimitMiddleware } from '../rateLimiter';
 
 // Mock Redis to test both Redis and in-memory implementations
 vi.mock("ioredis", () => ({

@@ -58,22 +58,34 @@ export async function setupRedisQueueSystem(app?: Express): Promise<{
     cache: {
       memory: {
         maxSize: 75000, // Increased for grocery data
-        ttl: 300
+        ttl: 300,
+        checkInterval: 60000 // Check for expired items every minute
       },
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
-        ttl: 3600
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_CACHE_DB || '2'), // Separate DB for cache
+        ttl: 3600,
+        keyPrefix: 'grocery:',
+        maxRetries: 3
       },
       sqlite: {
         path: './data/grocery_cache.db',
-        ttl: 86400
+        ttl: 86400,
+        tableName: 'grocery_cache',
+        maxEntries: 2000000, // 2M entries for grocery data
+        cleanupInterval: 3600000 // Clean up every hour
       }
     },
     integration: {
       enablePricingCache: true,
       enableListCache: true,
+      pricingCacheTtl: 3600, // 1 hour for pricing
+      listCacheTtl: 1800, // 30 minutes for lists
+      enableCacheWarm: true,
       warmOnStartup: false,
+      cacheKeyPrefix: 'grocery:',
       invalidationStrategy: 'immediate'
     },
     monitoring: {

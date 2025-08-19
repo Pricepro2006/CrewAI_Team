@@ -122,7 +122,7 @@ export const ChartBase: React.FC<ChartBaseProps> = ({
 
     // Destroy existing chart
     if (chartRef.current) {
-      chartRef?.current?.destroy();
+      chartRef.current.destroy();
     }
 
     // Create new chart
@@ -137,7 +137,7 @@ export const ChartBase: React.FC<ChartBaseProps> = ({
     // Cleanup function
     return () => {
       if (chartRef.current) {
-        chartRef?.current?.destroy();
+        chartRef.current.destroy();
         chartRef.current = null;
       }
     };
@@ -145,9 +145,9 @@ export const ChartBase: React.FC<ChartBaseProps> = ({
 
   // Update chart when data changes
   useEffect(() => {
-    if (chartRef.current && chartRef?.current?.data !== data) {
-      chartRef?.current?.data = data;
-      chartRef?.current?.update("active");
+    if (chartRef.current && chartRef.current.data !== data) {
+      chartRef.current.data = data;
+      chartRef.current.update("active");
     }
   }, [data]);
 

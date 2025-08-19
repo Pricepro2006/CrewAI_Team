@@ -22,7 +22,7 @@ export class SimplifiedQwenProcessor {
 
   private constructor() {
     this.ollamaClient = axios.create({
-      baseURL: `${walmartConfig?.nlp?.host}:${walmartConfig?.nlp?.port}`,
+      baseURL: `${walmartConfig?.nlp?.host || 'http://localhost'}:${walmartConfig?.nlp?.port || 11434}`,
       timeout: 30000, // Increased timeout for Qwen3:0.6b
     });
   }
@@ -119,7 +119,7 @@ export class SimplifiedQwenProcessor {
 
     commonItems.forEach(item => {
       if (lowerInput.includes(item)) {
-        result?.items?.push(item);
+        result.items.push(item);
       }
     });
 
@@ -127,18 +127,18 @@ export class SimplifiedQwenProcessor {
     const quantityPattern = /(\d+)\s*(gallons?|liters?|pounds?|lbs?|oz|ounces?|bottles?|cans?|boxes?|dozen|packs?|bags?|loaves?)/gi;
     const matches = input.match(quantityPattern);
     if (matches) {
-      result.quantities = matches?.map(m => m.trim());
+      result.quantities = matches.map(m => m.trim());
     }
 
     // Extract standalone numbers
     const numberPattern = /\b(\d+)\b/g;
     const numbers = input.match(numberPattern);
-    if (numbers && result?.quantities?.length === 0) {
+    if (numbers && result.quantities.length === 0) {
       result.quantities = numbers;
     }
 
     // Adjust confidence based on extraction success
-    if (result?.items?.length > 0) {
+    if (result.items.length > 0) {
       result.confidence = Math.min(result.confidence + 0.1, 0.9);
     }
 
@@ -155,8 +155,8 @@ Input: "${input}"
 List the grocery items mentioned:`;
 
     try {
-      const response = await this?.ollamaClient?.post("/api/generate", {
-        model: walmartConfig?.nlp?.model,
+      const response = await this.ollamaClient.post("/api/generate", {
+        model: walmartConfig?.nlp?.model || 'qwen3:0.6b',
         prompt: prompt,
         stream: false,
         options: {
@@ -166,7 +166,7 @@ List the grocery items mentioned:`;
         }
       });
 
-      const modelOutput = response?.data?.response;
+      const modelOutput = response?.data?.response || '';
       
       // Clean the output (remove thinking tags if present)
       const cleanOutput = modelOutput
@@ -175,13 +175,13 @@ List the grocery items mentioned:`;
         .trim();
 
       // Extract items from the cleaned output
-      const lines = cleanOutput.split('\n').filter(line => line.trim());
+      const lines = cleanOutput.split('\n').filter((line: string) => line.trim());
       const extractedItems: string[] = [];
 
-      lines.forEach(line => {
+      lines.forEach((line: string) => {
         // Remove bullets, numbers, dashes
         const cleanLine = line.replace(/^[-•*\d.)\s]+/, "").trim().toLowerCase();
-        if (cleanLine && cleanLine?.length || 0 > 1 && cleanLine?.length || 0 < 50) {
+        if (cleanLine && cleanLine.length > 1 && cleanLine.length < 50) {
           extractedItems.push(cleanLine);
         }
       });
@@ -196,7 +196,7 @@ List the grocery items mentioned:`;
       };
 
     } catch (error) {
-      logger.error(`Qwen processing error: ${error}`, "QWEN_PROCESSOR");
+      logger.error(`Qwen processing error: ${error instanceof Error ? error.message : String(error)}`, "QWEN_PROCESSOR");
       throw error;
     }
   }

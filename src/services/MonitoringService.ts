@@ -234,11 +234,11 @@ export class MonitoringService extends EventEmitter {
   }
 
   disconnectConnection(id: string, error?: string): void {
-    const connection = this?.connections?.get(id);
+    const connection = this.connections.get(id);
     if (connection) {
       connection.status = error ? 'error' : 'disconnected';
       if (error) {
-        connection?.metadata?.error = error;
+        connection.metadata.error = error;
       }
       
       this.emit('connection_change', connection);
@@ -250,11 +250,11 @@ export class MonitoringService extends EventEmitter {
   }
 
   getActiveConnections(): ConnectionInfo[] {
-    return Array.from(this?.connections?.values()).filter(conn => conn.status === 'connected');
+    return Array.from(this.connections.values()).filter(conn => conn.status === 'connected');
   }
 
   getConnectionsByType(type: ConnectionInfo['type']): ConnectionInfo[] {
-    return Array.from(this?.connections?.values()).filter(conn => conn.type === type);
+    return Array.from(this.connections.values()).filter(conn => conn.type === type);
   }
 
   // =====================================================

@@ -5,6 +5,8 @@
 
 import { EventEmitter } from 'events';
 
+// Environment variable detection
+
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'failed';
 
 interface ManagedConnection {
@@ -23,7 +25,7 @@ class WebSocketConnectionManager extends EventEmitter {
   private connectionLocks: Map<string, boolean> = new Map();
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
   private maxConnectionsPerUrl = 1;
-  private debugMode = process.env.NODE_ENV === 'development';
+  private debugMode = (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') || false;
 
   private constructor() {
     super();
@@ -55,13 +57,13 @@ class WebSocketConnectionManager extends EventEmitter {
     const connectionId = options.id || this.generateConnectionId(url);
     
     // Check if connection is locked (being created)
-    if (this?.connectionLocks?.get(connectionId)) {
+    if (this.connectionLocks.get(connectionId)) {
       this.log('warn', `Connection ${connectionId} is locked, waiting...`);
       await this.waitForLock(connectionId);
     }
 
     // Check for existing connection
-    const existing = this?.connections?.get(connectionId);
+    const existing = this.connections.get(connectionId);
     if (existing && !options.forceNew) {
       if (existing.ws?.readyState === WebSocket.OPEN) {
         this.log('info', `Reusing existing connection ${connectionId}`);
@@ -69,7 +71,7 @@ class WebSocketConnectionManager extends EventEmitter {
         return existing.ws;
       } else if (existing.ws?.readyState === WebSocket.CONNECTING) {
         this.log('info', `Connection ${connectionId} is already connecting`);
-        return new Promise((resolve: any) => {
+        return new Promise<WebSocket | null>((resolve) => {
           const checkInterval = setInterval(() => {
             if (existing.ws?.readyState === WebSocket.OPEN) {
               clearInterval(checkInterval);
@@ -90,17 +92,17 @@ class WebSocketConnectionManager extends EventEmitter {
     }
 
     // Check connection limit per URL
-    const urlConnections = Array.from(this?.connections?.values()).filter(
+    const urlConnections = Array.from(this.connections.values()).filter(
       conn => conn.url === url && conn.ws?.readyState === WebSocket.OPEN
     );
 
-    if (urlConnections?.length || 0 >= this.maxConnectionsPerUrl && !options.forceNew) {
+    if (urlConnections.length >= this.maxConnectionsPerUrl && !options.forceNew) {
       this.log('warn', `Max connections (${this.maxConnectionsPerUrl}) reached for ${url}`);
-      return urlConnections[0].ws;
+      return urlConnections[0]?.ws || null;
     }
 
     // Lock connection creation
-    this?.connectionLocks?.set(connectionId, true);
+    this.connectionLocks.set(connectionId, true);
 
     try {
       // Close existing connection if forcing new
@@ -122,10 +124,10 @@ class WebSocketConnectionManager extends EventEmitter {
         metadata: options.metadata
       };
 
-      this?.connections?.set(connectionId, managedConnection);
+      this.connections.set(connectionId, managedConnection);
       
       // Setup event handlers
-      ws.onopen = (event: any) => {
+      ws.onopen = (event: Event) => {
         this.log('info', `Connection ${connectionId} opened`);
         managedConnection.status = 'connected';
         managedConnection.attempts = 0;
@@ -136,7 +138,7 @@ class WebSocketConnectionManager extends EventEmitter {
         options.onOpen?.(event);
       };
 
-      ws.onclose = (event: any) => {
+      ws.onclose = (event: CloseEvent) => {
         this.log('info', `Connection ${connectionId} closed`, { code: event.code, reason: event.reason });
         managedConnection.status = 'disconnected';
         managedConnection.ws = null;
@@ -153,7 +155,7 @@ class WebSocketConnectionManager extends EventEmitter {
         }
       };
 
-      ws.onerror = (event: any) => {
+      ws.onerror = (event: Event) => {
         this.log('error', `Connection ${connectionId} error`);
         managedConnection.status = 'failed';
         
@@ -161,13 +163,13 @@ class WebSocketConnectionManager extends EventEmitter {
         options.onError?.(event);
       };
 
-      ws.onmessage = (event: any) => {
+      ws.onmessage = (event: MessageEvent) => {
         managedConnection.lastActivity = Date.now();
         options.onMessage?.(event);
       };
 
       // Wait for connection to open or fail
-      return new Promise((resolve: any) => {
+      return new Promise<WebSocket | null>((resolve) => {
         const timeout = setTimeout(() => {
           if (ws.readyState === WebSocket.CONNECTING) {
             ws.close();
@@ -188,7 +190,7 @@ class WebSocketConnectionManager extends EventEmitter {
 
     } finally {
       // Release lock
-      this?.connectionLocks?.delete(connectionId);
+      this.connectionLocks.delete(connectionId);
     }
   }
 
@@ -196,18 +198,18 @@ class WebSocketConnectionManager extends EventEmitter {
    * Close a specific connection
    */
   public closeConnection(connectionId: string, code: number = 1000, reason: string = 'Normal closure'): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     
     if (connection?.ws) {
-      if (connection?.ws?.readyState === WebSocket.OPEN || connection?.ws?.readyState === WebSocket.CONNECTING) {
-        connection?.ws?.close(code, reason);
+      if (connection.ws.readyState === WebSocket.OPEN || connection.ws.readyState === WebSocket.CONNECTING) {
+        connection.ws.close(code, reason);
       }
       connection.ws = null;
     }
 
     this.clearReconnectTimer(connectionId);
-    this?.connections?.delete(connectionId);
-    this?.connectionLocks?.delete(connectionId);
+    this.connections.delete(connectionId);
+    this.connectionLocks.delete(connectionId);
     
     this.log('info', `Connection ${connectionId} closed and removed`);
   }
@@ -218,7 +220,8 @@ class WebSocketConnectionManager extends EventEmitter {
   public closeAll(): void {
     this.log('info', 'Closing all connections');
     
-    for (const connectionId of this?.connections?.keys()) {
+    const connectionIds = Array.from(this.connections.keys());
+    for (const connectionId of connectionIds) {
       this.closeConnection(connectionId);
     }
   }
@@ -227,7 +230,7 @@ class WebSocketConnectionManager extends EventEmitter {
    * Get connection status
    */
   public getConnectionStatus(connectionId: string): ConnectionStatus {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     return connection?.status || 'disconnected';
   }
 
@@ -235,7 +238,7 @@ class WebSocketConnectionManager extends EventEmitter {
    * Get all active connections
    */
   public getActiveConnections(): Array<{ id: string; url: string; status: ConnectionStatus }> {
-    return Array.from(this?.connections?.values())
+    return Array.from(this.connections.values())
       .filter(conn => conn.ws?.readyState === WebSocket.OPEN)
       .map(conn => ({
         id: conn.id,
@@ -248,7 +251,7 @@ class WebSocketConnectionManager extends EventEmitter {
    * Check if a connection exists and is active
    */
   public isConnectionActive(connectionId: string): boolean {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     return connection?.ws?.readyState === WebSocket.OPEN || false;
   }
 
@@ -256,12 +259,12 @@ class WebSocketConnectionManager extends EventEmitter {
    * Send message through a managed connection
    */
   public sendMessage(connectionId: string, data: any): boolean {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     
     if (connection?.ws?.readyState === WebSocket.OPEN) {
       try {
         const message = typeof data === 'string' ? data : JSON.stringify(data);
-        connection?.ws?.send(message);
+        connection.ws.send(message);
         connection.lastActivity = Date.now();
         return true;
       } catch (error) {
@@ -280,9 +283,17 @@ class WebSocketConnectionManager extends EventEmitter {
   private scheduleReconnect(
     connectionId: string,
     url: string,
-    options: any
+    options: {
+      id?: string;
+      forceNew?: boolean;
+      metadata?: Record<string, any>;
+      onOpen?: (event: Event) => void;
+      onClose?: (event: CloseEvent) => void;
+      onMessage?: (event: MessageEvent) => void;
+      onError?: (event: Event) => void;
+    }
   ): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     if (!connection) return;
 
     connection.status = 'reconnecting';
@@ -293,24 +304,24 @@ class WebSocketConnectionManager extends EventEmitter {
     this.log('info', `Scheduling reconnect for ${connectionId} in ${delay}ms (attempt ${connection.attempts + 1})`);
     
     const timer = setTimeout(async () => {
-      this?.reconnectTimers?.delete(connectionId);
+      this.reconnectTimers.delete(connectionId);
       
-      if (this?.connections?.has(connectionId)) {
+      if (this.connections.has(connectionId)) {
         await this.getConnection(url, { ...options, id: connectionId });
       }
     }, delay);
 
-    this?.reconnectTimers?.set(connectionId, timer);
+    this.reconnectTimers.set(connectionId, timer);
   }
 
   /**
    * Clear reconnection timer
    */
   private clearReconnectTimer(connectionId: string): void {
-    const timer = this?.reconnectTimers?.get(connectionId);
+    const timer = this.reconnectTimers.get(connectionId);
     if (timer) {
       clearTimeout(timer);
-      this?.reconnectTimers?.delete(connectionId);
+      this.reconnectTimers.delete(connectionId);
     }
   }
 
@@ -320,9 +331,9 @@ class WebSocketConnectionManager extends EventEmitter {
   private async waitForLock(connectionId: string, timeout: number = 5000): Promise<void> {
     const startTime = Date.now();
     
-    return new Promise((resolve: any) => {
+    return new Promise<void>((resolve) => {
       const checkInterval = setInterval(() => {
-        if (!this?.connectionLocks?.get(connectionId) || Date.now() - startTime > timeout) {
+        if (!this.connectionLocks.get(connectionId) || Date.now() - startTime > timeout) {
           clearInterval(checkInterval);
           resolve();
         }
@@ -345,13 +356,14 @@ class WebSocketConnectionManager extends EventEmitter {
       const staleTimeout = 5 * 60 * 1000; // 5 minutes
       const now = Date.now();
 
-      for (const [connectionId, connection] of this?.connections?.entries()) {
+      const connections = Array.from(this.connections.entries());
+      for (const [connectionId, connection] of connections) {
         if (
           connection.status === 'disconnected' &&
           now - connection.lastActivity > staleTimeout
         ) {
           this.log('info', `Cleaning up stale connection ${connectionId}`);
-          this?.connections?.delete(connectionId);
+          this.connections.delete(connectionId);
         }
       }
     }, 60000); // Check every minute
@@ -386,13 +398,13 @@ class WebSocketConnectionManager extends EventEmitter {
     failedConnections: number;
     reconnectingConnections: number;
   } {
-    const connections = Array.from(this?.connections?.values());
+    const connections = Array.from(this.connections.values());
     
     return {
-      totalConnections: connections?.length || 0,
-      activeConnections: connections?.filter(c => c.status === 'connected').length,
-      failedConnections: connections?.filter(c => c.status === 'failed').length,
-      reconnectingConnections: connections?.filter(c => c.status === 'reconnecting').length
+      totalConnections: connections.length,
+      activeConnections: connections.filter(c => c.status === 'connected').length,
+      failedConnections: connections.filter(c => c.status === 'failed').length,
+      reconnectingConnections: connections.filter(c => c.status === 'reconnecting').length
     };
   }
 }

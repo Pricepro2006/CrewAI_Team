@@ -20,8 +20,8 @@ export class GroceryNLPQueueWebSocketManager {
   private static instance: GroceryNLPQueueWebSocketManager;
   private clients = new Map<string, GroceryNLPWebSocketClient>();
   private queue = getGroceryNLPQueue();
-  private heartbeatInterval: NodeJS.Timeout;
-  private metricsInterval: NodeJS.Timeout;
+  private heartbeatInterval!: NodeJS.Timeout;
+  private metricsInterval!: NodeJS.Timeout;
 
   private constructor() {
     this.setupQueueListeners();

@@ -83,6 +83,17 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 
 // Timestamp utilities
 export type Timestamp = string; // ISO 8601 string
+
+// Forward declaration for missing ApiError
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+  timestamp: Timestamp;
+  httpStatus: number;
+  path?: string;
+  method?: string;
+}
 export type UnixTimestamp = number;
 
 export interface TimestampedEntity {

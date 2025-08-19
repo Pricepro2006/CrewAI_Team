@@ -3,7 +3,7 @@
  * Handles grocery lists, items, and shopping sessions
  */
 
-import type Database from "better-sqlite3";
+type DatabaseInstance = any;
 import { BaseRepository } from "./BaseRepository.js";
 import type { BaseEntity } from "./BaseRepository.js";
 import { v4 as uuidv4 } from "uuid";
@@ -98,7 +98,7 @@ export interface ShoppingSession extends BaseEntity {
 }
 
 export class GroceryListRepository extends BaseRepository<GroceryList> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "grocery_lists");
   }
 
@@ -260,7 +260,7 @@ export class GroceryListRepository extends BaseRepository<GroceryList> {
 }
 
 export class GroceryItemRepository extends BaseRepository<GroceryItem> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "grocery_items");
   }
 
@@ -443,7 +443,7 @@ export class GroceryItemRepository extends BaseRepository<GroceryItem> {
 }
 
 export class ShoppingSessionRepository extends BaseRepository<ShoppingSession> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "shopping_sessions");
   }
 

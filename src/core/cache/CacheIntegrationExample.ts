@@ -244,7 +244,7 @@ export class CachedSessionManager {
       // Load from database (mock)
       const preferences = {
         userId,
-        theme: 'light',
+        theme: 'light' as 'light' | 'dark' | 'auto',
         language: 'en',
         timezone: 'UTC',
         emailNotifications: true,
@@ -494,11 +494,3 @@ export async function shutdownCaching(): Promise<void> {
     });
   }
 }
-
-// Export all examples
-export {
-  CachedLLMService,
-  CachedSessionManager,
-  CachedWebSocketHandler,
-  CacheInvalidationManager,
-};

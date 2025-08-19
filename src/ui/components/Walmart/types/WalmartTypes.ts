@@ -357,3 +357,68 @@ export interface SystemHealth {
   services: ServiceHealth[];
   timestamp: string;
 }
+
+// Performance and Monitoring Types
+export interface PerformanceMetrics {
+  responseTime: number;
+  throughput: number;
+  errorRate: number;
+  uptime: number;
+  memoryUsage: number;
+  cpuUsage: number;
+  connections: number;
+  requestsPerMinute: number;
+}
+
+// List Total Calculation Types
+export interface ListTotalCalculation {
+  subtotal: number;
+  tax: number;
+  fees: number;
+  discounts: number;
+  total: number;
+  itemCount: number;
+  estimatedWeight: number;
+  itemSavings?: number;
+  couponSavings?: number;
+  loyaltyDiscounts?: number;
+  bulkSavings?: number;
+}
+
+// Product Item Types for Lists
+export interface ProductItem extends WalmartProduct {
+  quantity?: number;
+  selected?: boolean;
+  notes?: string;
+  addedDate?: string;
+  priority?: 'low' | 'medium' | 'high';
+}
+
+// Additional utility types for enhanced components
+export interface ExtendedWalmartProduct extends WalmartProduct {
+  rating?: number;
+  reviewCount?: number;
+  deliveryInfo?: {
+    available: boolean;
+    estimatedDays: number;
+    cost?: number;
+  };
+  nutritionalInfo?: NutritionInfo;
+  substitutes?: WalmartProduct[];
+  trend?: 'up' | 'down' | 'stable';
+  priceChange?: number;
+  currentPrice?: number;
+}
+
+// Connection status types for WebSocket components
+export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
+
+// Enhanced search query types
+export interface EnhancedSearchQuery extends SearchQuery {
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  brand?: string;
+  minRating?: number;
+}

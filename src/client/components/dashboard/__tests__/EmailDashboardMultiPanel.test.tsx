@@ -1,12 +1,13 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import '@testing-library/jest-dom';
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { EmailDashboardMultiPanel } from "../EmailDashboardMultiPanel.js";
+import { EmailDashboardMultiPanel } from '../EmailDashboardMultiPanel';
 import type {
   EmailRecord,
   EmailStatus,
-} from "../../../../types/email-dashboard?.interfaces.js";
-import { vi } from "vitest";
+} from '../../../../types/email-dashboard.interfaces';
 
 // Mock the UI components
 vi.mock("@/components/ui/card", () => ({

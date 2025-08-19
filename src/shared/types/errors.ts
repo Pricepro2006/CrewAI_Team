@@ -5,6 +5,12 @@
 
 import type { Timestamp } from "./index.js";
 
+// Export ErrorContext for use in error-handler.ts
+export type ErrorContext = ExtendedErrorContext;
+
+// Re-export Timestamp for use in error-handler.ts
+export type { Timestamp };
+
 // =====================================================
 // Base Error Types
 // =====================================================

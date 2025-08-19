@@ -17,8 +17,8 @@ import {
   ArrowDown,
   CornerDownLeft,
 } from 'lucide-react';
-import useVoiceRecognition from '../../hooks/useVoiceRecognition.js';
-import useAutoSuggestions from '../../hooks/useAutoSuggestions.js';
+import useVoiceRecognition from '../../hooks/useVoiceRecognition';
+import useAutoSuggestions from '../../hooks/useAutoSuggestions';
 
 export interface NaturalLanguageInputProps {
   value?: string;
@@ -176,22 +176,24 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
   // Update suggestions context when commands change
   useEffect(() => {
-    updateContext({ recentCommands: commandHistory });
+    if (updateContext) {
+      updateContext({ recentCommands: commandHistory });
+    }
   }, [commandHistory, updateContext]);
 
   // Get suggestions when input changes
   useEffect(() => {
     if (showSuggestions && inputValue.trim()) {
-      getSuggestions(inputValue);
+      getSuggestions?.(inputValue);
     } else {
-      clearSuggestions();
+      clearSuggestions?.();
     }
   }, [inputValue, showSuggestions, getSuggestions, clearSuggestions]);
 
   // Auto-focus
   useEffect(() => {
     if (autoFocus && inputRef.current) {
-      inputRef?.current?.focus();
+      inputRef.current.focus();
     }
   }, [autoFocus]);
 
@@ -207,11 +209,11 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
       return { isValid: false, errors, warnings, suggestions };
     }
 
-    if (trimmed?.length || 0 < 3) {
+    if ((trimmed?.length || 0) < 3) {
       warnings.push('Command seems very short');
     }
 
-    if (trimmed?.length || 0 > 200) {
+    if ((trimmed?.length || 0) > 200) {
       warnings.push('Command is very long - consider breaking it down');
     }
 
@@ -229,7 +231,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     }
 
     return {
-      isValid: errors?.length || 0 === 0,
+      isValid: (errors?.length || 0) === 0,
       errors,
       warnings,
       suggestions,
@@ -238,7 +240,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
   // Handle input changes
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e?.target?.value;
+    const newValue = e?.target?.value || '';
     setInputValue(newValue);
     onChange?.(newValue);
 
@@ -268,7 +270,8 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
     // Add to command history
     setCommandHistory(prev => {
-      const updated = [trimmed, ...prev?.filter(cmd => cmd !== trimmed)].slice(0, 10);
+      const filteredPrev = prev?.filter(cmd => cmd !== trimmed) || [];
+      const updated = [trimmed, ...filteredPrev].slice(0, 10);
       return updated;
     });
 
@@ -294,7 +297,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     }
 
     // Navigate suggestions
-    if (suggestions?.length || 0 > 0) {
+    if ((suggestions?.length || 0) > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         selectNext();
@@ -317,7 +320,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     if (e.key === 'Escape') {
       clearSuggestions();
     }
-  }, [suggestions?.length || 0, selectedIndex, selectNext, selectPrevious, selectSuggestion, handleSubmit, onChange, clearSuggestions, onSuggestionSelected]);
+  }, [suggestions?.length, selectedIndex, selectNext, selectPrevious, selectSuggestion, handleSubmit, onChange, clearSuggestions, onSuggestionSelected]);
 
   // Handle voice toggle
   const handleVoiceToggle = useCallback(async () => {
@@ -347,20 +350,21 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     
     // Focus input and position cursor at end
     if (inputRef.current) {
-      inputRef?.current?.focus();
-      inputRef?.current?.setSelectionRange(template?.length || 0, template?.length || 0);
+      inputRef.current.focus();
+      const cursorPos = template?.length || 0;
+      inputRef.current.setSelectionRange(cursorPos, cursorPos);
     }
   }, [onChange]);
 
   // Handle suggestion click
-  const handleSuggestionClick = useCallback((suggestion: any) => {
+  const handleSuggestionClick = useCallback((suggestion: { text: string; id: string; type: string; confidence: number }) => {
     setInputValue(suggestion.text);
     onChange?.(suggestion.text);
     clearSuggestions();
     onSuggestionSelected?.(suggestion.text);
     
     if (inputRef.current) {
-      inputRef?.current?.focus();
+      inputRef.current.focus();
     }
   }, [onChange, clearSuggestions, onSuggestionSelected]);
 
@@ -373,7 +377,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     return 'default';
   }, [error, success, validationResult]);
 
-  const showSuggestionsDropdown = showSuggestions && suggestions?.length || 0 > 0 && inputValue.trim();
+  const showSuggestionsDropdown = showSuggestions && (suggestions?.length || 0) > 0 && inputValue.trim();
 
   return (
     <div className={`natural-language-input ${className}`}>
@@ -384,7 +388,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             <h3 className="input-title">What do you need?</h3>
             <div className="input-meta">
               <span className="help-text">
-                Use natural language like "{EXAMPLE_PHRASES[Math.floor(Math.random() * EXAMPLE_PHRASES?.length || 0)]}"
+                Use natural language like "{EXAMPLE_PHRASES[Math.floor(Math.random() * (EXAMPLE_PHRASES?.length || 1))]}"
               </span>
             </div>
           </div>
@@ -471,7 +475,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             <div className="input-actions">
               {/* Character count */}
               <div className="char-counter">
-                {inputValue?.length || 0}/500
+                {(inputValue?.length || 0)}/500
               </div>
 
               {/* Voice button */}
@@ -546,7 +550,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
                       <span className={`suggestion-type type-${suggestion.type}`}>
                         {suggestion.type}
                       </span>
-                      {suggestion.confidence > 0.8 && (
+                      {(suggestion.confidence || 0) > 0.8 && (
                         <span className="high-confidence">✨</span>
                       )}
                     </div>
@@ -558,10 +562,10 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
         )}
 
         {/* Validation Messages */}
-        {(validationResult?.errors?.length > 0 || validationResult?.warnings?.length > 0 || validationResult?.suggestions?.length > 0 || error || voiceError) && (
+        {((validationResult?.errors?.length || 0) > 0 || (validationResult?.warnings?.length || 0) > 0 || (validationResult?.suggestions?.length || 0) > 0 || error || voiceError) && (
           <div className="validation-messages">
             {/* Errors */}
-            {(validationResult?.errors?.length > 0 || error || voiceError) && (
+            {((validationResult?.errors?.length || 0) > 0 || error || voiceError) && (
               <div className="message-group error">
                 <AlertCircle size={16} />
                 <div className="messages">
@@ -575,7 +579,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             )}
 
             {/* Warnings */}
-            {validationResult?.warnings?.length > 0 && (
+            {(validationResult?.warnings?.length || 0) > 0 && (
               <div className="message-group warning">
                 <AlertCircle size={16} />
                 <div className="messages">
@@ -587,7 +591,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             )}
 
             {/* Suggestions */}
-            {validationResult?.suggestions?.length > 0 && (
+            {(validationResult?.suggestions?.length || 0) > 0 && (
               <div className="message-group suggestion">
                 <MessageCircle size={16} />
                 <div className="messages">
@@ -616,4 +620,3 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 };
 
 export default NaturalLanguageInput;
-export type { NaturalLanguageInputProps, ValidationResult };

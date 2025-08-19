@@ -10,19 +10,20 @@
  */
 
 import { LLMProviderManager } from './LLMProviderManager.js';
+import { LlamaCppResponse, LlamaCppGenerateOptions } from './SafeLlamaCppProvider.js';
 import { Logger } from '../../utils/logger.js';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 const logger = new Logger('CachedLLMProvider');
 
 interface CacheEntry {
-  response: string;
+  response: LlamaCppResponse;
   timestamp: number;
   hitCount: number;
 }
 
 interface PendingRequest {
-  promise: Promise<string>;
+  promise: Promise<LlamaCppResponse>;
   timestamp: number;
 }
 
@@ -60,7 +61,7 @@ export class CachedLLMProvider extends LLMProviderManager {
     // Periodic cache cleanup
     setInterval(() => this.cleanupCache(), 60000); // Every minute
     
-    logger.info('CachedLLMProvider initialized', {
+    logger.info('CachedLLMProvider initialized', undefined, {
       maxCacheSize: this.maxCacheSize,
       cacheTTL: this.cacheTTL,
       requestTimeout: this.requestTimeout
@@ -80,7 +81,7 @@ export class CachedLLMProvider extends LLMProviderManager {
   /**
    * Generate response with caching and deduplication
    */
-  async generate(prompt: string, options?: any): Promise<string> {
+  override async generate(prompt: string, options?: LlamaCppGenerateOptions): Promise<LlamaCppResponse> {
     const startTime = Date.now();
     const cacheKey = this.getCacheKey(prompt, options);
 
@@ -89,7 +90,7 @@ export class CachedLLMProvider extends LLMProviderManager {
       const cached = this.getFromCache(cacheKey);
       if (cached) {
         this.metrics.hits++;
-        logger.debug('Cache hit', {
+        logger.debug('Cache hit', undefined, {
           cacheKey: cacheKey.substring(0, 8),
           responseTime: Date.now() - startTime,
           hitCount: cached.hitCount
@@ -101,7 +102,7 @@ export class CachedLLMProvider extends LLMProviderManager {
       const pending = this.pendingRequests.get(cacheKey);
       if (pending && Date.now() - pending.timestamp < this.dedupeWindow) {
         this.metrics.dedupeCount++;
-        logger.debug('Request deduplication', {
+        logger.debug('Request deduplication', undefined, {
           cacheKey: cacheKey.substring(0, 8),
           age: Date.now() - pending.timestamp
         });
@@ -127,10 +128,10 @@ export class CachedLLMProvider extends LLMProviderManager {
       // Clean up pending request
       this.pendingRequests.delete(cacheKey);
 
-      logger.debug('Generated and cached response', {
+      logger.debug('Generated and cached response', undefined, {
         cacheKey: cacheKey.substring(0, 8),
         responseTime: Date.now() - startTime,
-        responseLength: response.length
+        responseLength: response.response ? response.response.length : 0
       });
 
       return response;
@@ -139,8 +140,8 @@ export class CachedLLMProvider extends LLMProviderManager {
       this.metrics.errors++;
       this.pendingRequests.delete(cacheKey);
       
-      logger.error('Generation failed', {
-        error: error.message,
+      logger.error('Generation failed', undefined, {
+        error: (error as Error).message,
         cacheKey: cacheKey.substring(0, 8),
         responseTime: Date.now() - startTime
       });
@@ -152,7 +153,7 @@ export class CachedLLMProvider extends LLMProviderManager {
   /**
    * Generate with timeout protection
    */
-  private async generateWithTimeout(prompt: string, options?: any): Promise<string> {
+  private async generateWithTimeout(prompt: string, options?: LlamaCppGenerateOptions): Promise<LlamaCppResponse> {
     return Promise.race([
       super.generate(prompt, options),
       new Promise<never>((_, reject) => {
@@ -168,7 +169,7 @@ export class CachedLLMProvider extends LLMProviderManager {
    * Generate cache key from prompt and options
    * Using SHA-256 for security (already updated from MD5)
    */
-  private getCacheKey(prompt: string, options?: any): string {
+  private getCacheKey(prompt: string, options?: LlamaCppGenerateOptions): string {
     const input = JSON.stringify({ prompt, options });
     return crypto.createHash('sha256').update(input).digest('hex');
   }
@@ -202,12 +203,14 @@ export class CachedLLMProvider extends LLMProviderManager {
   /**
    * Add response to cache with LRU eviction
    */
-  private addToCache(key: string, response: string): void {
+  private addToCache(key: string, response: LlamaCppResponse): void {
     // Evict oldest entries if cache is full
     if (this.cache.size >= this.maxCacheSize) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
-      this.metrics.evictions++;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+        this.metrics.evictions++;
+      }
     }
 
     this.cache.set(key, {
@@ -224,7 +227,7 @@ export class CachedLLMProvider extends LLMProviderManager {
     const now = Date.now();
     let cleaned = 0;
 
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of Array.from(this.cache.entries())) {
       if (now - entry.timestamp > this.cacheTTL) {
         this.cache.delete(key);
         cleaned++;
@@ -232,14 +235,14 @@ export class CachedLLMProvider extends LLMProviderManager {
     }
 
     // Clean up old pending requests
-    for (const [key, pending] of this.pendingRequests.entries()) {
+    for (const [key, pending] of Array.from(this.pendingRequests.entries())) {
       if (now - pending.timestamp > this.dedupeWindow * 2) {
         this.pendingRequests.delete(key);
       }
     }
 
     if (cleaned > 0) {
-      logger.debug('Cache cleanup completed', {
+      logger.debug('Cache cleanup completed', undefined, {
         entriesRemoved: cleaned,
         cacheSize: this.cache.size,
         pendingRequests: this.pendingRequests.size
@@ -282,13 +285,13 @@ export class CachedLLMProvider extends LLMProviderManager {
   /**
    * Warm up cache with common prompts
    */
-  async warmupCache(prompts: Array<{ prompt: string; options?: any }>): Promise<void> {
-    logger.info('Starting cache warmup', { promptCount: prompts.length });
+  async warmupCache(prompts: Array<{ prompt: string; options?: LlamaCppGenerateOptions }>): Promise<void> {
+    logger.info('Starting cache warmup', undefined, { promptCount: prompts.length });
     
     const results = await Promise.allSettled(
       prompts.map(({ prompt, options }) => 
         this.generate(prompt, options).catch(err => {
-          logger.warn('Warmup prompt failed', { error: err.message });
+          logger.warn('Warmup prompt failed', undefined, { error: (err as Error).message });
           return null;
         })
       )
@@ -296,7 +299,7 @@ export class CachedLLMProvider extends LLMProviderManager {
 
     const successful = results.filter(r => r.status === 'fulfilled').length;
     
-    logger.info('Cache warmup completed', {
+    logger.info('Cache warmup completed', undefined, {
       successful,
       failed: prompts.length - successful,
       cacheSize: this.cache.size

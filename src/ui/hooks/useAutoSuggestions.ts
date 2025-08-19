@@ -415,7 +415,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
     
     const suggestion = state.suggestions[index];
     setState(prev => ({ ...prev, selectedIndex: index }));
-    return suggestion;
+    return suggestion || null;
   }, [state.suggestions]);
 
   const addCustomSuggestion = useCallback((suggestion: Suggestion) => {

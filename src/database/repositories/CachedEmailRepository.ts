@@ -14,7 +14,7 @@ import type { EmailRepositoryConfig, CreateEmailParams, UpdateEmailParams, Email
 import { cacheManager } from '../../core/cache/RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 export class CachedEmailRepository extends EmailRepository {
   private cacheNamespace = 'email';
@@ -469,7 +469,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Bulk get emails by IDs with caching
    */
-  override async getEmailsByIds(emailIds: string[]): Promise<Map<string, any>> {
+  async getEmailsByIds(emailIds: string[]): Promise<Map<string, any>> {
     const startTime = Date.now();
     const results = new Map<string, any>();
 
@@ -484,7 +484,7 @@ export class CachedEmailRepository extends EmailRepository {
       const missedKeys: string[] = [];
 
       // Separate hits and misses
-      for (let i = 0; i < emailIds?.length || 0; i++) {
+      for (let i = 0; i < (emailIds?.length || 0); i++) {
         const emailId = emailIds[i];
         const cacheKey = cacheKeys[i];
         
@@ -499,8 +499,8 @@ export class CachedEmailRepository extends EmailRepository {
       }
 
       // Fetch missed emails from database
-      if (missedIds?.length || 0 > 0) {
-        const dbPromises = missedIds?.map(async (emailId, index) => {
+      if ((missedIds?.length || 0) > 0) {
+        const dbPromises = missedIds?.map(async (emailId) => {
           try {
             const email = await super.getEmailById(emailId);
             if (email) {
@@ -532,7 +532,7 @@ export class CachedEmailRepository extends EmailRepository {
       
       logger.debug('Bulk email fetch completed', 'CACHED_EMAIL_REPO', {
         totalRequested: emailIds?.length || 0,
-        cacheHits: emailIds?.length || 0 - missedIds?.length || 0,
+        cacheHits: (emailIds?.length || 0) - (missedIds?.length || 0),
         cacheMisses: missedIds?.length || 0,
         resultCount: results.size,
       });

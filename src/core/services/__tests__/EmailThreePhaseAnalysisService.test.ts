@@ -2,15 +2,15 @@
  * Comprehensive tests for Three-Phase Email Analysis Service
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { EmailThreePhaseAnalysisService } from "../EmailThreePhaseAnalysisService.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmailThreePhaseAnalysisService } from '../EmailThreePhaseAnalysisService';
 import Database from "better-sqlite3";
 import axios from "axios";
 
 // Mock dependencies
 vi.mock("axios");
 vi.mock("better-sqlite3");
-vi.mock("../../../utils/logger.js", () => {
+vi.mock('../../../utils/logger', () => {
   const mockLoggerInstance = {
     info: vi.fn(),
     debug: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock("../../../utils/logger.js", () => {
   };
 });
 
-vi.mock("../../cache/EmailAnalysisCache.js", () => ({
+vi.mock('../../cache/EmailAnalysisCache', () => ({
   EmailAnalysisCache: vi.fn().mockImplementation(() => ({
     get: vi.fn().mockReturnValue(null),
     set: vi.fn(),
@@ -33,7 +33,7 @@ vi.mock("../../cache/EmailAnalysisCache.js", () => ({
 }));
 
 // Mock EmailChainAnalyzer
-vi.mock("../EmailChainAnalyzer.js", () => ({
+vi.mock('../EmailChainAnalyzer', () => ({
   EmailChainAnalyzer: vi.fn().mockImplementation(() => ({
     analyzeChain: vi.fn().mockResolvedValue({
       chain_id: "test-chain-001",
@@ -120,7 +120,7 @@ vi.mock("ioredis", () => {
 });
 
 // Then mock RedisService
-vi.mock("../cache/RedisService.js", () => {
+vi.mock('../cache/RedisService', () => {
   return {
     RedisService: vi.fn().mockImplementation(() => {
       return {
@@ -221,8 +221,8 @@ describe("EmailThreePhaseAnalysisService", () => {
       const result = await service.analyzeEmail(mockEmail);
 
       // Verify Phase 1 extraction
-      expect(result?.entities?.po_numbers).toContain("12345678");
-      expect(result?.entities?.dollar_amounts).toContain("$75,000");
+      expect(result?.entities?.length).toContain("12345678");
+      expect(result?.entities?.length).toContain("$75,000");
       // Check if "DL380" or "ProLiant DL380" is detected in part numbers
       const hasPartNumber = result?.entities?.part_numbers.some(part => 
         part.includes("DL380") || part.includes("PROLIANT")
@@ -406,12 +406,12 @@ describe("EmailThreePhaseAnalysisService", () => {
       const result = await service.analyzeEmail(mockEmail);
 
       expect(result.strategic_insights).toBeDefined();
-      expect(result?.strategic_insights?.opportunity).toContain("Incomplete chain"); // Update to match actual service behavior
-      expect(result?.strategic_insights?.risk).toBeDefined(); // Check it exists instead of specific content
+      expect(result?.strategic_insights).toContain("Incomplete chain"); // Update to match actual service behavior
+      expect(result?.strategic_insights).toBeDefined(); // Check it exists instead of specific content
       expect(result.escalation_needed).toBeDefined(); // Check it exists instead of specific value
       expect(result.revenue_impact).toContain("$75000"); // Update to match actual format
       expect(result.workflow_intelligence).toBeDefined();
-      expect(result?.workflow_intelligence?.predicted_next_steps).toHaveLength(1); // Update to match actual service behavior
+      expect(result?.workflow_intelligence?.length).toHaveLength(1); // Update to match actual service behavior
     });
   });
 

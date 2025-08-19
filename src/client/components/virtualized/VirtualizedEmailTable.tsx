@@ -3,7 +3,7 @@ import { FixedSizeList as VirtualList } from "react-window";
 import { StatusIndicator } from "../email/StatusIndicator.js";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "../../../lib/utils.js";
-import type { EmailRecord } from "../../../types/email-dashboard?.interfaces.js";
+import type { EmailRecord } from "../../../types/email-dashboard.interfaces.js";
 
 interface VirtualizedEmailTableProps {
   emails: EmailRecord[];
@@ -192,12 +192,12 @@ export const VirtualizedEmailTable = React.memo<VirtualizedEmailTableProps>(
           itemData={itemData}
           overscanCount={5} // Render 5 extra items for smooth scrolling
         >
-          {EmailRow as React.ComponentType<RowProps>}
+          {EmailRow}
         </VirtualList>
 
         {/* Footer with row count */}
         <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-sm text-gray-500">
-          Showing {emails?.length || 0} email{emails?.length || 0 !== 1 ? "s" : ""}
+          Showing {emails?.length || 0} email{(emails?.length || 0) !== 1 ? "s" : ""}
         </div>
       </div>
     );

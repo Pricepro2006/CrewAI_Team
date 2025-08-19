@@ -23,11 +23,8 @@ export const WalmartProductSearch: React.FC = () => {
 
     searchProducts.mutate({
       query: searchQuery,
-      category: category || undefined,
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
-      inStock: inStockOnly,
       limit: 20,
+      // Additional filters would be supported by enhanced search
     });
   };
 

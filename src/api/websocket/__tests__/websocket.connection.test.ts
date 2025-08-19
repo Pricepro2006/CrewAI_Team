@@ -4,10 +4,10 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
-import WebSocket from 'ws';
+import * as WebSocket from 'ws';
 import { createServer, Server } from 'http';
-import { WalmartWebSocketServer } from '../WalmartWebSocketServer.js';
-import { EmailProcessingWebSocket } from '../EmailProcessingWebSocket.js';
+import { WalmartWebSocketServer } from '../WalmartWebSocketServer';
+import { EmailProcessingWebSocket } from '../EmailProcessingWebSocket';
 import { WebSocketServer } from 'ws';
 
 describe('WebSocket Connection Tests', () => {
@@ -17,15 +17,19 @@ describe('WebSocket Connection Tests', () => {
   let port: number;
   let serverUrl: string;
   
-  beforeAll((done) => {
+  beforeAll(async () => {
     port = 3000 + Math.floor(Math.random() * 1000);
     serverUrl = `ws://localhost:${port}`;
     server = createServer();
-    server.listen(port, done);
+    await new Promise<void>((resolve) => {
+      server.listen(port, resolve);
+    });
   });
   
-  afterAll((done) => {
-    server.close(done);
+  afterAll(async () => {
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+    });
   });
   
   beforeEach(() => {
@@ -39,20 +43,26 @@ describe('WebSocket Connection Tests', () => {
   });
 
   describe('Basic Connection Establishment', () => {
-    it('should accept WebSocket connections', (done) => {
+    it('should accept WebSocket connections', async () => {
       walmartWS.initialize(server, '/ws/walmart');
       
       const client = new WebSocket(`${serverUrl}/ws/walmart`);
       
-      client.on('open', () => {
-        expect(client.readyState).toBe(WebSocket.OPEN);
-        expect(walmartWS.getClientCount()).toBe(1);
-        client.close();
-        done();
-      });
-      
-      client.on('error', (error) => {
-        done(error);
+      await new Promise<void>((resolve, reject) => {
+        client.on('open', () => {
+          try {
+            expect(client.readyState).toBe(WebSocket.OPEN);
+            expect(walmartWS.getClientCount()).toBe(1);
+            client.close();
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        });
+        
+        client.on('error', (error) => {
+          reject(error);
+        });
       });
     });
 

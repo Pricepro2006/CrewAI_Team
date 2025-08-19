@@ -497,4 +497,66 @@ export class EmailQueueProcessor {
     await this?.queue?.close();
     logger.info("Email queue processor shutdown complete", "EMAIL_QUEUE");
   }
+
+  /**
+   * Initialize the queue processor (for compatibility)
+   */
+  async initialize(): Promise<void> {
+    logger.info("Initializing email queue processor", "EMAIL_QUEUE");
+    // Queue is already initialized in constructor
+    // This method exists for compatibility
+  }
+
+  /**
+   * Start the queue processor (for compatibility)
+   */
+  async start(): Promise<void> {
+    logger.info("Starting email queue processor", "EMAIL_QUEUE");
+    // Processing starts automatically when queue is created
+    // This method exists for compatibility
+    await this.resume();
+  }
+
+  /**
+   * Stop the queue processor
+   */
+  async stop(): Promise<void> {
+    logger.info("Stopping email queue processor", "EMAIL_QUEUE");
+    await this.shutdown();
+  }
+
+  /**
+   * Check if the queue is healthy
+   */
+  isHealthy(): boolean {
+    if (!this.queue) {
+      return false;
+    }
+    // Consider the queue healthy if it exists
+    return true;
+  }
+
+  /**
+   * Add an email processing job to the queue
+   */
+  async addEmailProcessingJob(jobData: any): Promise<string> {
+    if (!this.queue) {
+      throw new Error("Queue not initialized (Redis not connected)");
+    }
+
+    const job = await this.queue.add("process-email", jobData, {
+      attempts: this.config.maxRetries || 3,
+      backoff: {
+        type: "exponential",
+        delay: this.config.retryDelay || 5000,
+      },
+    });
+
+    logger.info("Email processing job added", "EMAIL_QUEUE", {
+      jobId: job.id,
+      data: jobData,
+    });
+
+    return job.id as string;
+  }
 }

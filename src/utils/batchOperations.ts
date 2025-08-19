@@ -65,7 +65,7 @@ export const batchOperationSchema = z.object({
 
 export const bulkCreateSchema = z.object({
   items: z.array(z.record(z.any())).min(1).max(1000),
-  config: batchOperationSchema?.shape?.config.optional(),
+  config: batchOperationSchema.shape.config.optional(),
 });
 
 export const bulkUpdateSchema = z.object({
@@ -73,12 +73,12 @@ export const bulkUpdateSchema = z.object({
     id: z.string(),
     data: z.record(z.any()),
   })).min(1).max(1000),
-  config: batchOperationSchema?.shape?.config.optional(),
+  config: batchOperationSchema.shape.config.optional(),
 });
 
 export const bulkDeleteSchema = z.object({
   ids: z.array(z.string()).min(1).max(1000),
-  config: batchOperationSchema?.shape?.config.optional(),
+  config: batchOperationSchema.shape.config.optional(),
 });
 
 export type BulkCreateInput = z.infer<typeof bulkCreateSchema>;
@@ -107,7 +107,7 @@ export class BatchProcessor<T = any> {
     const startTime = Date.now();
     
     logger.info("Starting batch processing", "BATCH_OPERATIONS", {
-      totalOperations: operations?.length || 0,
+      totalOperations: operations?.length ?? 0,
       batchSize: finalConfig.batchSize,
       maxConcurrency: finalConfig.maxConcurrency,
     });
@@ -124,7 +124,7 @@ export class BatchProcessor<T = any> {
     // Process batches with concurrency control
     const semaphore = new Semaphore(finalConfig.maxConcurrency);
     
-    const batchPromises = batches?.map(async (batch, batchIndex) => {
+    const batchPromises = batches.map(async (batch, batchIndex) => {
       const permit = await semaphore.acquire();
       
       try {
@@ -157,7 +157,7 @@ export class BatchProcessor<T = any> {
         });
         
         // Mark all items in this batch as failed
-        for (let i = 0; i < batch?.length || 0; i++) {
+        for (let i = 0; i < (batch?.length ?? 0); i++) {
           results.push({
             success: false,
             error: errorMessage,
@@ -192,7 +192,7 @@ export class BatchProcessor<T = any> {
     return {
       results: results.sort((a, b) => a.index - b.index), // Ensure order
       summary: {
-        total: operations?.length || 0,
+        total: operations?.length ?? 0,
         successful,
         failed,
         skipped,
@@ -222,7 +222,7 @@ export class BatchProcessor<T = any> {
         ]);
 
         // Convert results to BatchOperationResult format
-        return batchResults?.map((result, index) => ({
+        return (batchResults ?? []).map((result, index) => ({
           success: true,
           data: result,
           index: batchIndex * config.batchSize + index,
@@ -249,7 +249,7 @@ export class BatchProcessor<T = any> {
     // All retries failed
     const errorMessage = lastError?.message || 'Unknown error after retries';
     
-    return batch?.map((_, index) => ({
+    return (batch ?? []).map((_, index) => ({
       success: false,
       error: errorMessage,
       index: batchIndex * config.batchSize + index,
@@ -263,7 +263,7 @@ export class BatchProcessor<T = any> {
   private createBatches<T>(operations: T[], batchSize: number): T[][] {
     const batches: T[][] = [];
     
-    for (let i = 0; i < operations?.length || 0; i += batchSize) {
+    for (let i = 0; i < (operations?.length ?? 0); i += batchSize) {
       batches.push(operations.slice(i, i + batchSize));
     }
     
@@ -306,7 +306,7 @@ class Semaphore {
         this.permits--;
         resolve(() => this.release());
       } else {
-        this?.queue?.push(() => {
+        this.queue.push(() => {
           this.permits--;
           resolve(() => this.release());
         });
@@ -317,8 +317,8 @@ class Semaphore {
   release(permit?: () => void): void {
     this.permits++;
     
-    if (this?.queue?.length > 0) {
-      const next = this?.queue?.shift();
+    if (this.queue.length > 0) {
+      const next = this.queue.shift();
       if (next) {
         next();
       }
@@ -344,7 +344,7 @@ export class WalmartBatchOperations {
     repository: any,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
-    return this?.processor?.processBatch(
+    return this.processor.processBatch(
       products,
       async (batch: any) => {
         // Use repository transaction for consistency
@@ -369,7 +369,7 @@ export class WalmartBatchOperations {
     repository: any,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
-    return this?.processor?.processBatch(
+    return this.processor.processBatch(
       updates,
       async (batch: any) => {
         return repository.transaction(async () => {
@@ -401,15 +401,15 @@ export class WalmartBatchOperations {
     repository: any,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
-    return this?.processor?.processBatch(
+    return this.processor.processBatch(
       ids,
       async (batch: any) => {
         return repository.transaction(async () => {
           const results = [];
           for (const id of batch) {
             // Check for dependencies before deletion
-            const dependencies = await repository.checkDependencies(id);
-            if (dependencies?.length || 0 > 0) {
+            const dependencies = await repository.checkDependencies?.(id);
+            if ((dependencies?.length ?? 0) > 0) {
               throw new Error(`Cannot delete product ${id}: has dependencies`);
             }
             
@@ -431,14 +431,14 @@ export class WalmartBatchOperations {
     repository: any,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
-    return this?.processor?.processBatch(
+    return this.processor.processBatch(
       priceUpdates,
       async (batch: any) => {
         return repository.transaction(async () => {
           const results = [];
           for (const { productId, newPrice, reason } of batch) {
             // Get current price for history
-            const product = await repository.findById(productId);
+            const product = await repository.findById?.(productId);
             if (!product) {
               throw new Error(`Product not found: ${productId}`);
             }
@@ -446,10 +446,10 @@ export class WalmartBatchOperations {
             const oldPrice = product?.current_price;
             
             // Update price
-            await repository.updatePrice(productId, newPrice);
+            await repository.updatePrice?.(productId, newPrice);
             
             // Record price history
-            await repository.addPriceHistory({
+            await repository.addPriceHistory?.({
               product_id: productId,
               old_price: oldPrice,
               new_price: newPrice,
@@ -474,7 +474,7 @@ export class WalmartBatchOperations {
     repository: any,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
-    return this?.processor?.processBatch(
+    return this.processor.processBatch(
       inventoryUpdates,
       async (batch: any) => {
         const results: any[] = [];
@@ -489,8 +489,8 @@ export class WalmartBatchOperations {
         
         for (const [location, items] of Object.entries(byLocation)) {
           await repository.transaction(async () => {
-            for (const { productId, stockLevel } of items) {
-              const updated = await repository.updateInventory(productId, stockLevel, location);
+            for (const { productId, stockLevel } of (items as any[])) {
+              const updated = await repository.updateInventory?.(productId, stockLevel, location);
               results.push(updated);
             }
           });
@@ -518,27 +518,27 @@ export class BatchOperationMonitor {
    * Record batch operation metrics
    */
   static recordMetrics(operationType: string, result: BatchResult): void {
-    const existing = this?.metrics?.get(operationType) || {
+    const existing = this.metrics.get(operationType) || {
       totalOperations: 0,
       averageTime: 0,
       successRate: 0,
       lastRun: new Date(),
     };
 
-    const successRate = result?.summary?.successful / result?.summary?.total;
+    const successRate = (result?.summary?.successful ?? 0) / (result?.summary?.total ?? 1);
     
     // Update running averages
-    const newTotal = existing.totalOperations + result?.summary?.total;
+    const newTotal = existing.totalOperations + (result?.summary?.total ?? 0);
     const newAvgTime = (
-      (existing.averageTime * existing.totalOperations + result?.summary?.processingTime) / 
+      (existing.averageTime * existing.totalOperations + (result?.summary?.processingTime ?? 0)) / 
       newTotal
     );
     const newSuccessRate = (
-      (existing.successRate * existing.totalOperations + successRate * result?.summary?.total) / 
+      (existing.successRate * existing.totalOperations + successRate * (result?.summary?.total ?? 0)) / 
       newTotal
     );
 
-    this?.metrics?.set(operationType, {
+    this.metrics.set(operationType, {
       totalOperations: newTotal,
       averageTime: newAvgTime,
       successRate: newSuccessRate,
@@ -558,7 +558,7 @@ export class BatchOperationMonitor {
    */
   static getMetrics(operationType?: string): Record<string, any> | null {
     if (operationType) {
-      return this?.metrics?.get(operationType) || null;
+      return this.metrics.get(operationType) || null;
     }
     
     return Object.fromEntries(this.metrics);
@@ -568,7 +568,7 @@ export class BatchOperationMonitor {
    * Clear metrics
    */
   static clearMetrics(): void {
-    this?.metrics?.clear();
+    this.metrics.clear();
   }
 }
 
@@ -580,10 +580,10 @@ export const BatchUtils = {
    * Validate batch operation limits
    */
   validateBatchSize(operations: any[], maxSize: number = 1000): void {
-    if (operations?.length || 0 > maxSize) {
+    if ((operations?.length ?? 0) > maxSize) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Batch size exceeds maximum allowed (${maxSize}). Got ${operations?.length || 0}.`,
+        message: `Batch size exceeds maximum allowed (${maxSize}). Got ${operations?.length ?? 0}.`,
       });
     }
   },
@@ -607,7 +607,7 @@ export const BatchUtils = {
    */
   chunkOperations<T>(operations: T[], maxChunkSize: number): T[][] {
     const chunks: T[][] = [];
-    for (let i = 0; i < operations?.length || 0; i += maxChunkSize) {
+    for (let i = 0; i < (operations?.length ?? 0); i += maxChunkSize) {
       chunks.push(operations.slice(i, i + maxChunkSize));
     }
     return chunks;
@@ -628,7 +628,7 @@ export const BatchUtils = {
     for (const result of results) {
       mergedResults.push(...result.results);
       mergedErrors.push(...result.errors);
-      totalProcessingTime = Math.max(totalProcessingTime, result?.summary?.processingTime);
+      totalProcessingTime = Math.max(totalProcessingTime, result?.summary?.processingTime ?? 0);
       totalOperations += result?.summary?.total;
       totalSuccessful += result?.summary?.successful;
       totalFailed += result?.summary?.failed;

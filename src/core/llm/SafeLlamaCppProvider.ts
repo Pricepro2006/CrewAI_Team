@@ -231,7 +231,7 @@ export class SafeLlamaCppProvider extends EventEmitter {
           const vmRssMatch = status.match(/VmRSS:\s+(\d+)\s+kB/);
           
           if (vmRssMatch) {
-            const memoryKB = parseInt(vmRssMatch[1]);
+            const memoryKB = parseInt(vmRssMatch[1] || '0');
             const memoryBytes = memoryKB * 1024;
             
             if (memoryBytes > maxMemory) {
@@ -332,25 +332,25 @@ export class SafeLlamaCppProvider extends EventEmitter {
 
       // Track performance
       const duration = Date.now() - startTime;
-      if (performanceMonitor && typeof performanceMonitor.recordMetric === 'function') {
-        performanceMonitor.recordMetric("llama_cpp_generation_time", duration);
+      if (performanceMonitor && typeof performanceMonitor.measure === 'function') {
+        performanceMonitor.measure("llama_cpp_generation_time", { duration });
       }
-      if (metricsCollector && typeof metricsCollector.recordHistogram === 'function') {
-        metricsCollector.recordHistogram("llama_cpp.generation.duration", duration);
+      if (metricsCollector && typeof metricsCollector.histogram === 'function') {
+        metricsCollector.histogram("llama_cpp.generation.duration", duration);
       }
 
       // Sanitize output
       if (typeof sanitizeLLMOutput === 'function') {
-        response.response = sanitizeLLMOutput(response.response);
+        const sanitized = sanitizeLLMOutput(response.response);
+        response.response = sanitized.content;
       }
 
       return response;
     } catch (error) {
       // Track errors
-      if (errorTracker && typeof errorTracker.captureError === 'function') {
-        errorTracker.captureError(error as Error, {
-          context: "safe_llama_cpp_generation",
-          prompt: prompt.substring(0, 100),
+      if (errorTracker && typeof errorTracker.trackError === 'function') {
+        errorTracker.trackError(error as Error, {
+          endpoint: "safe_llama_cpp_generation",
         });
       } else {
         logger.error("llama.cpp generation error:", "LLAMA_CPP", { error });
@@ -374,8 +374,8 @@ export class SafeLlamaCppProvider extends EventEmitter {
     
     const args = [
       "-m", this.config.modelPath,
-      "-c", String(options.contextSize || this.config.contextSize),
-      "-t", String(options.threads || this.config.threads),
+      "-c", String(this.config.contextSize),
+      "-t", String(this.config.threads),
       "--temp", String(options.temperature || this.config.temperature),
       "--top-p", String(options.topP || this.config.topP),
       "--top-k", String(options.topK || this.config.topK),

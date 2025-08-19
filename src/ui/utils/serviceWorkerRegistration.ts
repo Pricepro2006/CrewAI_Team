@@ -1,7 +1,7 @@
 // Service Worker Registration and Management
 // Handles registration, updates, and communication with the service worker
 
-import React from 'react';
+import * as React from 'react';
 
 const isLocalhost = Boolean(
   window?.location?.hostname === 'localhost' ||
@@ -130,12 +130,15 @@ export async function getServiceWorkerMetrics(): Promise<any> {
   return new Promise((resolve: any) => {
     const messageChannel = new MessageChannel();
     
-    messageChannel?.port1?.onmessage = (event: any) => {
-      resolve(event.data);
-    };
+    // Fix: Cannot assign to optional property - use proper null check
+    if (messageChannel.port1) {
+      messageChannel.port1.onmessage = (event: any) => {
+        resolve(event.data);
+      };
+    }
 
-    if (navigator?.serviceWorker?.controller) {
-      navigator?.serviceWorker?.controller.postMessage(
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage(
         { type: 'GET_METRICS' },
         [messageChannel.port2]
       );

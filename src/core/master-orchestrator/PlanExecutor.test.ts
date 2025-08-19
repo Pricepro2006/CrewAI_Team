@@ -2,8 +2,8 @@
  * Unit tests for PlanExecutor
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PlanExecutor } from "./PlanExecutor.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { PlanExecutor } from './PlanExecutor';
 
 describe("PlanExecutor", () => {
   let planExecutor: PlanExecutor;

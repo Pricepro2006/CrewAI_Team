@@ -116,9 +116,10 @@ export class MetricsCollector extends EventEmitter {
         (m: any) => Date.now() - m?.timestamp?.getTime() < 300000, // Last 5 minutes
       );
 
-      if (recent?.length || 0 === 0) return;
+      if ((recent?.length || 0) === 0) return;
 
-      const type = recent[0].type;
+      const type = recent?.[0]?.type;
+      if (!type) return;
 
       switch (type) {
         case "counter":
@@ -130,13 +131,16 @@ export class MetricsCollector extends EventEmitter {
           break;
 
         case "gauge": {
-          const lastGauge = recent[recent?.length || 0 - 1];
+          const recentLength = recent?.length || 0;
+          if (recentLength === 0) break;
+          const lastGauge = recent?.[recentLength - 1];
+          if (!lastGauge) break;
           aggregated[name] = {
             type: "gauge",
             value: lastGauge.value,
             min: Math.min(...recent?.map((m: any) => m.value)),
             max: Math.max(...recent?.map((m: any) => m.value)),
-            avg: recent.reduce((sum: any, m: any) => sum + m.value, 0) / recent?.length || 0,
+            avg: recent.reduce((sum: any, m: any) => sum + m.value, 0) / recentLength,
           };
           break;
         }
@@ -147,9 +151,9 @@ export class MetricsCollector extends EventEmitter {
           aggregated[name] = {
             type: "histogram",
             count: values?.length || 0,
-            min: values[0],
-            max: values[values?.length || 0 - 1],
-            avg: values.reduce((sum: any, v: any) => sum + v, 0) / values?.length || 0,
+            min: values?.[0] || 0,
+            max: values?.[values.length - 1] || 0,
+            avg: values.reduce((sum: any, v: any) => sum + v, 0) / (values?.length || 1),
             p50: this.percentile(values, 0.5),
             p95: this.percentile(values, 0.95),
             p99: this.percentile(values, 0.99),
@@ -182,10 +186,10 @@ export class MetricsCollector extends EventEmitter {
     let totalIdle = 0;
     let totalTick = 0;
     cpus.forEach((cpu: any) => {
-      for (const type in cpu.times) {
-        totalTick += cpu.times[type as keyof typeof cpu.times];
-      }
-      totalIdle += cpu?.times?.idle;
+    for (const type in cpu.times) {
+    totalTick += cpu.times[type as keyof typeof cpu.times];
+    }
+    totalIdle += cpu?.times?.idle || 0;
     });
 
     const cpuUsage = 100 - (100 * totalIdle) / totalTick;
@@ -195,9 +199,9 @@ export class MetricsCollector extends EventEmitter {
         usage: cpuUsage.toFixed(2),
         count: cpus?.length || 0,
         loadAverage: {
-          "1m": loadAverage[0].toFixed(2),
-          "5m": loadAverage[1].toFixed(2),
-          "15m": loadAverage[2].toFixed(2),
+          "1m": loadAverage?.[0]?.toFixed(2) || '0.00',
+          "5m": loadAverage?.[1]?.toFixed(2) || '0.00',
+          "15m": loadAverage?.[2]?.toFixed(2) || '0.00',
         },
       },
       memory: {
@@ -266,9 +270,9 @@ export class MetricsCollector extends EventEmitter {
   }
 
   private percentile(values: number[], p: number): number {
-    if (values?.length || 0 === 0) return 0;
-    const index = Math.ceil(values?.length || 0 * p) - 1;
-    return values[Math.max(0, Math.min(index, values?.length || 0 - 1))];
+    if ((values?.length || 0) === 0) return 0;
+    const index = Math.ceil((values?.length || 0) * p) - 1;
+    return values[Math.max(0, Math.min(index, (values?.length || 0) - 1))] || 0;
   }
 
   private startCleanupInterval(): void {
@@ -278,7 +282,7 @@ export class MetricsCollector extends EventEmitter {
       this?.metrics?.forEach((metrics, name) => {
         const filtered = metrics?.filter((m: any) => m?.timestamp?.getTime() > cutoff);
 
-        if (filtered?.length || 0 === 0) {
+        if ((filtered?.length || 0) === 0) {
           this?.metrics?.delete(name);
           this?.histogramBuckets?.delete(name);
         } else {

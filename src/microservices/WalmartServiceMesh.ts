@@ -20,11 +20,9 @@ import {
 } from './config/WalmartServiceConfig.js';
 import { logger } from '../utils/logger.js';
 import { metrics } from '../api/monitoring/metrics.js';
-import express from 'express';
-import type { Express } from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import { Server } from 'http';
-import WebSocket from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
 
 export interface ServiceMeshOptions {
   autoStart: boolean;
@@ -55,7 +53,7 @@ export class WalmartServiceMesh {
   private deploymentErrors: string[] = [];
   private runningServices = new Set<string>();
   private expressApp: Express | null = null;
-  private wsServer: WebSocket.Server | null = null;
+  private wsServer: WebSocketServer | null = null;
 
   private constructor(private options: ServiceMeshOptions) {
     this.setupEventHandlers();
@@ -329,13 +327,13 @@ export class WalmartServiceMesh {
    * Setup WebSocket proxy server
    */
   setupWebSocketProxy(server: Server): void {
-    this.wsServer = new WebSocket.Server({ server });
+    this.wsServer = new WebSocketServer({ server });
     
-    this?.wsServer?.on('connection', async (ws, req) => {
-      const url = new URL(req.url!, `ws://${req?.headers?.host}`);
+    this?.wsServer?.on('connection', async (ws: WebSocket, req: any) => {
+      const url = new URL(req.url || '', `ws://${req.headers?.host || 'localhost'}`);
       const serviceName = url?.pathname?.split('/')[1];
       
-      const proxy = this.getServiceProxy(serviceName);
+      const proxy = serviceName ? this.getServiceProxy(serviceName) : undefined;
       if (proxy) {
         const wsProxyHandler = proxy.createWebSocketProxy();
         await wsProxyHandler(ws, req);
@@ -412,29 +410,37 @@ export class WalmartServiceMesh {
    */
   private setupEventHandlers(): void {
     // Service discovery events
-    serviceDiscovery.on('service:started', (serviceId, config) => {
-      metrics.increment('service_mesh?.service?.started', {
-        service_name: config.name,
-      });
+    serviceDiscovery.on('service:started', (serviceId: string, config: any) => {
+      if (metrics && typeof metrics.increment === 'function') {
+        metrics.increment('service_mesh.service.started', 1, {
+          service_name: config.name,
+        });
+      }
     });
 
-    serviceDiscovery.on('service:stopped', (serviceId, config) => {
+    serviceDiscovery.on('service:stopped', (serviceId: string, config: any) => {
       this?.runningServices?.delete(config.name);
-      metrics.increment('service_mesh?.service?.stopped', {
-        service_name: config.name,
-      });
+      if (metrics && typeof metrics.increment === 'function') {
+        metrics.increment('service_mesh.service.stopped', 1, {
+          service_name: config.name,
+        });
+      }
     });
 
     serviceDiscovery.on('service:health_degraded', (result: any) => {
-      metrics.increment('service_mesh?.service?.health_degraded', {
-        service_name: result.serviceName,
-      });
+      if (metrics && typeof metrics.increment === 'function') {
+        metrics.increment('service_mesh.service.health_degraded', 1, {
+          service_name: result.serviceName,
+        });
+      }
     });
 
     serviceDiscovery.on('service:recovered', (result: any) => {
-      metrics.increment('service_mesh?.service?.recovered', {
-        service_name: result.serviceName,
-      });
+      if (metrics && typeof metrics.increment === 'function') {
+        metrics.increment('service_mesh.service.recovered', 1, {
+          service_name: result.serviceName,
+        });
+      }
     });
   }
 

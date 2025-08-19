@@ -9,33 +9,33 @@ import {
 } from "@trpc/client";
 import superjson from "superjson";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { api } from "../lib/trpc.js";
-import { ChatInterface } from "./components/Chat/ChatInterface.js";
-import { MainLayout } from "./components/Layout/MainLayout.js";
-import { Dashboard } from "./components/Dashboard/Dashboard.js";
-import { EmailDashboard } from "./components/Email/EmailDashboard.js";
+import { api } from "../lib/trpc";
+import { ChatInterface } from "./components/Chat/ChatInterface";
+import { MainLayout } from "./components/Layout/MainLayout";
+import { Dashboard } from "./components/Dashboard/Dashboard";
+import { EmailDashboard } from "./components/Email/EmailDashboard";
 import { Navigate } from "react-router-dom";
-import { Agents } from "./components/Agents/Agents.js";
-import { WebScraping } from "./components/WebScraping/WebScraping.js";
-import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase.js";
-import { VectorSearch } from "./components/VectorSearch/VectorSearch.js";
-import { Settings } from "./components/Settings/Settings.js";
-import { WalmartGroceryAgent } from "./components/WalmartAgent/WalmartGroceryAgent.js";
-import { CSRFProvider, useCSRF } from "./hooks/useCSRF.js";
-import { CSRFErrorBoundary } from "./components/Security/CSRFMonitor.js";
-import { ErrorBoundary } from "./components/ErrorBoundary/index.js";
-import { setupGlobalErrorHandlers } from "./utils/error-handling.js";
-import { ToastContainer } from "./components/Toast/index.js";
-import { NetworkStatus } from "./components/NetworkStatus/index.js";
-import { webSocketConfig, getApiBaseUrl } from "../config/websocket.config.js";
-import { ErrorProvider } from "./contexts/ErrorContext.js";
+import { Agents } from "./components/Agents/Agents";
+import { WebScraping } from "./components/WebScraping/WebScraping";
+import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase";
+import { VectorSearch } from "./components/VectorSearch/VectorSearch";
+import { Settings } from "./components/Settings/Settings";
+import { WalmartGroceryAgent } from "./components/WalmartAgent/WalmartGroceryAgent";
+import { CSRFProvider, useCSRF } from "./hooks/useCSRF";
+import { CSRFErrorBoundary } from "./components/Security/CSRFMonitor";
+import { ErrorBoundary } from "./components/ErrorBoundary/index";
+import { setupGlobalErrorHandlers } from "./utils/error-handling";
+import { ToastContainer } from "./components/Toast/index";
+import { NetworkStatus } from "./components/NetworkStatus/index";
+import { webSocketConfig, getApiBaseUrl } from "../config/websocket.config";
+import { ErrorProvider } from "./contexts/ErrorContext";
 import {
   DashboardErrorBoundary,
   WalmartErrorBoundary,
   ChatErrorBoundary,
   EmailErrorBoundary,
-} from "./components/ErrorBoundary/SectionErrorBoundary.js";
-import { logger } from "../utils/logger.js";
+} from "./components/ErrorBoundary/SectionErrorBoundary";
+import { logger } from "../utils/logger";
 import "./App.css";
 
 // Setup global error handlers
@@ -80,7 +80,7 @@ function AppWithCSRF() {
               }
               return true;
             },
-            retryDelay: (attemptIndex: any) =>
+            retryDelay: (attemptIndex: number) =>
               Math.min(1000 * 2 ** attemptIndex, 30000),
           },
         },

@@ -295,7 +295,7 @@ export class EmailRAGIntegration {
         "EMAIL_RAG_INTEGRATION"
       );
 
-      return validatedStatus;
+      return validatedStatus as EmailIndexingStatus;
     } finally {
       this.indexingInProgress = false;
     }

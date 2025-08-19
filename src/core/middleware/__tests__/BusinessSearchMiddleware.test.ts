@@ -3,10 +3,10 @@
  * GROUP 2B WebSearch Enhancement
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { BusinessSearchMiddleware } from "../BusinessSearchMiddleware.js";
-import { OllamaProvider } from "../../llm/OllamaProvider.js";
-import { FeatureFlagService } from "../../../config/features/FeatureFlagService.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { BusinessSearchMiddleware } from '../BusinessSearchMiddleware';
+import { OllamaProvider } from '../../llm/OllamaProvider';
+import { FeatureFlagService } from '../../../config/features/FeatureFlagService';
 
 // Mock modules
 vi.mock("../../llm/OllamaProvider");

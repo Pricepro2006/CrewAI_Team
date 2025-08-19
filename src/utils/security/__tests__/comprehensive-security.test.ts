@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { PathValidator } from '../path-validation.js';
-import { FileUploadScanner } from '../file-upload-scanner.js';
+import { PathValidator } from '../path-validation';
+import { FileUploadScanner } from '../file-upload-scanner';
 import { 
   sanitizeString, 
   sanitizeEmail, 
@@ -13,7 +13,7 @@ import {
   sanitizeFilePath,
   detectDangerousPatterns,
   SafeQueryBuilder
-} from '../../../api/middleware/security/input-validation.js';
+} from '../../../api/middleware/security/input-validation';
 
 describe('Comprehensive Security Testing Suite', () => {
   

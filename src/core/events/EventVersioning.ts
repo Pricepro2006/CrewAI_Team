@@ -128,15 +128,15 @@ export class EventVersionManager extends EventEmitter {
   }
 
   private startMetricsCollection(): void {
-    if (!this?.config?.enableMetrics) return;
+    if (!this.config.enableMetrics) return;
 
     setInterval(() => {
       this.emit('version_metrics', {
         ...this.metrics,
         timestamp: Date.now(),
-        cacheSize: this?.transformationCache?.size,
-        schemaCount: Array.from(this?.schemas?.values()).reduce((sum: any, versions: any) => sum + versions.size, 0),
-        ruleCount: Array.from(this?.evolutionRules?.values()).reduce((sum: any, rules: any) => sum + rules?.length || 0, 0)
+        cacheSize: this.transformationCache.size,
+        schemaCount: Array.from(this.schemas.values()).reduce((sum: any, versions: any) => sum + versions.size, 0),
+        ruleCount: Array.from(this.evolutionRules.values()).reduce((sum: any, rules: any) => sum + (rules?.length || 0), 0)
       });
     }, 60000); // Every minute
   }
@@ -155,11 +155,11 @@ export class EventVersionManager extends EventEmitter {
     const { eventType, version } = eventSchema;
 
     // Initialize event type map if needed
-    if (!this?.schemas?.has(eventType)) {
-      this?.schemas?.set(eventType, new Map());
+    if (!this.schemas.has(eventType)) {
+      this.schemas.set(eventType, new Map());
     }
 
-    const eventVersions = this?.schemas?.get(eventType)!;
+    const eventVersions = this.schemas.get(eventType)!;
     
     // Check for version conflicts
     if (eventVersions.has(version)) {
@@ -172,9 +172,9 @@ export class EventVersionManager extends EventEmitter {
     eventVersions.set(version, eventSchema);
     
     // Clean up old versions if limit exceeded
-    if (eventVersions.size > this?.config?.maxVersionsSupported) {
+    if (eventVersions.size > this.config.maxVersionsSupported) {
       const versions = Array.from(eventVersions.keys()).sort((a, b) => a - b);
-      const versionsToRemove = versions.slice(0, versions?.length || 0 - this?.config?.maxVersionsSupported);
+      const versionsToRemove = versions.slice(0, versions.length - this.config.maxVersionsSupported);
       
       for (const oldVersion of versionsToRemove) {
         eventVersions.delete(oldVersion);
@@ -195,12 +195,12 @@ export class EventVersionManager extends EventEmitter {
   }
 
   public getSchema(eventType: string, version: number): EventSchema | null {
-    const eventVersions = this?.schemas?.get(eventType);
+    const eventVersions = this.schemas.get(eventType);
     return eventVersions?.get(version) || null;
   }
 
   public getLatestSchema(eventType: string): EventSchema | null {
-    const eventVersions = this?.schemas?.get(eventType);
+    const eventVersions = this.schemas.get(eventType);
     if (!eventVersions || eventVersions.size === 0) return null;
 
     const latestVersion = Math.max(...Array.from(eventVersions.keys()));
@@ -209,18 +209,18 @@ export class EventVersionManager extends EventEmitter {
 
   public listSchemas(eventType?: string): EventSchema[] {
     if (eventType) {
-      const eventVersions = this?.schemas?.get(eventType);
+      const eventVersions = this.schemas.get(eventType);
       return eventVersions ? Array.from(eventVersions.values()) : [];
     }
 
     const allSchemas: EventSchema[] = [];
-    for (const eventVersions of this?.schemas?.values()) {
+    for (const eventVersions of Array.from(this.schemas.values())) {
       allSchemas.push(...Array.from(eventVersions.values()));
     }
 
     return allSchemas.sort((a, b) => {
       if (a.eventType !== b.eventType) {
-        return a?.eventType?.localeCompare(b.eventType);
+        return a.eventType.localeCompare(b.eventType);
       }
       return a.version - b.version;
     });
@@ -235,11 +235,11 @@ export class EventVersionManager extends EventEmitter {
     // Validate rule makes sense
     this.validateEvolutionRule(rule);
 
-    if (!this?.evolutionRules?.has(eventType)) {
-      this?.evolutionRules?.set(eventType, []);
+    if (!this.evolutionRules.has(eventType)) {
+      this.evolutionRules.set(eventType, []);
     }
 
-    const rules = this?.evolutionRules?.get(eventType)!;
+    const rules = this.evolutionRules.get(eventType)!;
     
     // Remove existing rule with same ID
     const existingIndex = rules.findIndex(r => r.id === rule.id);
@@ -265,7 +265,7 @@ export class EventVersionManager extends EventEmitter {
   }
 
   public removeEvolutionRule(eventType: string, ruleId: string): boolean {
-    const rules = this?.evolutionRules?.get(eventType);
+    const rules = this.evolutionRules.get(eventType);
     if (!rules) return false;
 
     const index = rules.findIndex(r => r.id === ruleId);
@@ -279,13 +279,13 @@ export class EventVersionManager extends EventEmitter {
   }
 
   public getEvolutionRules(eventType: string, fromVersion?: number, toVersion?: number): SchemaEvolutionRule[] {
-    const rules = this?.evolutionRules?.get(eventType) || [];
+    const rules = this.evolutionRules.get(eventType) || [];
     
     if (fromVersion === undefined && toVersion === undefined) {
-      return rules?.filter(r => r.enabled);
+      return rules.filter(r => r.enabled);
     }
 
-    return rules?.filter(r => 
+    return rules.filter(r => 
       r.enabled &&
       (fromVersion === undefined || r.fromVersion === fromVersion) &&
       (toVersion === undefined || r.toVersion === toVersion)
@@ -320,11 +320,11 @@ export class EventVersionManager extends EventEmitter {
       }
 
       // Check cache first
-      if (this?.config?.cacheTransformations) {
+      if (this.config.cacheTransformations) {
         const cacheKey = this.getCacheKey(eventType, currentVersion, targetVersion);
-        if (this?.transformationCache?.has(cacheKey)) {
-          const cached = this?.transformationCache?.get(cacheKey)!;
-          if (this.metrics.transformations.cached) { this.metrics.transformations.cached++ };
+        if (this.transformationCache.has(cacheKey)) {
+          const cached = this.transformationCache.get(cacheKey)!;
+          this.metrics.transformations.cached++;
           return {
             ...cached,
             metadata: {
@@ -338,9 +338,9 @@ export class EventVersionManager extends EventEmitter {
       // Find transformation path
       const transformationPath = this.findTransformationPath(eventType, currentVersion, targetVersion);
       
-      if (transformationPath?.length || 0 === 0) {
+      if (transformationPath.length === 0) {
         const error = `No transformation path found from version ${currentVersion} to ${targetVersion} for ${eventType}`;
-        if (this.metrics.transformations.failed) { this.metrics.transformations.failed++ };
+        this.metrics.transformations.failed++;
         
         return {
           success: false,
@@ -365,8 +365,12 @@ export class EventVersionManager extends EventEmitter {
           const transformResult = await this.applyTransformationRule(currentEvent, rule);
           
           if (!transformResult.success) {
-            errors.push(...(transformResult.errors || []));
-            warnings.push(...(transformResult.warnings || []));
+            if (transformResult.errors) {
+            errors.push(...transformResult.errors);
+            }
+            if (transformResult.warnings) {
+            warnings.push(...transformResult.warnings);
+            }
             break;
           }
 
@@ -387,15 +391,15 @@ export class EventVersionManager extends EventEmitter {
       }
 
       const result: TransformationResult = {
-        success: errors?.length || 0 === 0,
-        transformedEvent: errors?.length || 0 === 0 ? {
+        success: errors.length === 0,
+        transformedEvent: errors.length === 0 ? {
           ...currentEvent,
           schemaVersion: targetVersion,
           originalVersion: versionedEvent.originalVersion || versionedEvent.schemaVersion || 1,
           transformationHistory
         } : undefined,
-        errors: errors?.length || 0 > 0 ? errors : undefined,
-        warnings: warnings?.length || 0 > 0 ? warnings : undefined,
+        errors: errors.length > 0 ? errors : undefined,
+        warnings: warnings.length > 0 ? warnings : undefined,
         metadata: {
           fromVersion: currentVersion,
           toVersion: targetVersion,
@@ -406,16 +410,22 @@ export class EventVersionManager extends EventEmitter {
 
       // Update metrics
       if (result.success) {
-        if (this.metrics.transformations.successful) { this.metrics.transformations.successful++ };
-        this?.metrics?.versions[`${transformationType}s` as keyof typeof this.metrics.versions]++;
+        this.metrics.transformations.successful++;
+        if (transformationType === 'upgrade') {
+          this.metrics.versions.upgrades++;
+        } else if (transformationType === 'downgrade') {
+          this.metrics.versions.downgrades++;
+        } else if (transformationType === 'migrate') {
+          this.metrics.versions.migrations++;
+        }
       } else {
-        if (this.metrics.transformations.failed) { this.metrics.transformations.failed++ };
+        this.metrics.transformations.failed++;
       }
 
       // Cache successful transformations
-      if (result.success && this?.config?.cacheTransformations) {
+      if (result.success && this.config.cacheTransformations) {
         const cacheKey = this.getCacheKey(eventType, currentVersion, targetVersion);
-        this?.transformationCache?.set(cacheKey, result);
+        this.transformationCache.set(cacheKey, result);
       }
 
       this.emit('event_transformed', {
@@ -425,13 +435,13 @@ export class EventVersionManager extends EventEmitter {
         toVersion: targetVersion,
         success: result.success,
         transformationType,
-        processingTime: result?.metadata?.processingTime
+        processingTime: result.metadata?.processingTime || 0
       });
 
       return result;
 
     } catch (error) {
-      if (this.metrics.transformations.failed) { this.metrics.transformations.failed++ };
+      this.metrics.transformations.failed++;
       
       this.emit('transformation_error', {
         eventId: event.id,
@@ -457,8 +467,16 @@ export class EventVersionManager extends EventEmitter {
   public validateEvent(event: BaseEvent, version?: number): { valid: boolean; errors: string[]; warnings: string[] } {
     try {
       const eventType = event?.type;
+      if (!eventType) {
+        this.metrics.validations.failed++;
+        return {
+          valid: false,
+          errors: ['Event type is required'],
+          warnings: []
+        };
+      }
+      
       const schemaVersion = version || (event as VersionedEvent).schemaVersion || 1;
-
       const schema = this.getSchema(eventType, schemaVersion);
       if (!schema) {
         if (this.metrics.validations.failed) { this.metrics.validations.failed++ };
@@ -473,33 +491,37 @@ export class EventVersionManager extends EventEmitter {
       const warnings: string[] = [];
 
       // Validate required fields
-      for (const requiredField of schema?.schema?.required) {
+      for (const requiredField of schema.schema.required) {
         if (!(requiredField in event.payload)) {
           errors.push(`Missing required field: ${requiredField}`);
         }
       }
 
       // Check for deprecated fields
-      for (const deprecatedField of schema?.schema?.deprecated) {
+      for (const deprecatedField of schema.schema.deprecated) {
         if (deprecatedField in event.payload) {
           warnings.push(`Field '${deprecatedField}' is deprecated`);
         }
       }
 
       // Validate field types (simplified validation)
-      if (this?.config?.strictValidation) {
-        const validationResult = this.validateFieldTypes(event.payload, schema?.schema?.payload);
+      if (this.config.strictValidation) {
+        const validationResult = this.validateFieldTypes(event.payload, schema.schema.payload);
+        if (validationResult.errors) {
         errors.push(...validationResult.errors);
+        }
+        if (validationResult.warnings) {
         warnings.push(...validationResult.warnings);
+        }
       }
 
-      const valid = errors?.length || 0 === 0;
+      const valid = errors.length === 0;
 
       // Update metrics
       if (valid) {
-        if (this.metrics.validations.passed) { this.metrics.validations.passed++ };
+        this.metrics.validations.passed++;
       } else {
-        if (this.metrics.validations.failed) { this.metrics.validations.failed++ };
+        this.metrics.validations.failed++;
       }
 
       this.emit('event_validated', {
@@ -507,14 +529,14 @@ export class EventVersionManager extends EventEmitter {
         eventType,
         version: schemaVersion,
         valid,
-        errorCount: errors?.length || 0,
-        warningCount: warnings?.length || 0
+        errorCount: errors.length,
+        warningCount: warnings.length
       });
 
       return { valid, errors, warnings };
 
     } catch (error) {
-      if (this.metrics.validations.failed) { this.metrics.validations.failed++ };
+      this.metrics.validations.failed++;
       return {
         valid: false,
         errors: [`Validation failed: ${error}`],
@@ -542,7 +564,7 @@ export class EventVersionManager extends EventEmitter {
 
     // Check if transformation rules exist
     const transformationPath = this.findTransformationPath(eventType, fromVersion, toVersion);
-    const requiresTransformation = transformationPath?.length || 0 > 0;
+    const requiresTransformation = transformationPath.length > 0;
 
     // Determine compatibility type based on schema compatibility settings
     let compatibilityType = fromSchema.compatibility;
@@ -563,13 +585,13 @@ export class EventVersionManager extends EventEmitter {
       compatible,
       compatibilityType,
       requiresTransformation,
-      transformationRules: transformationPath?.map(rule => rule.id)
+      transformationRules: transformationPath.map(rule => rule.id)
     };
   }
 
   // Private helper methods
   private validateSchemaCompatibility(eventType: string, newSchema: EventSchema): void {
-    const existingVersions = this?.schemas?.get(eventType);
+    const existingVersions = this.schemas.get(eventType);
     if (!existingVersions) return;
 
     for (const [version, existingSchema] of existingVersions) {
@@ -612,7 +634,7 @@ export class EventVersionManager extends EventEmitter {
   }
 
   private findTransformationPath(eventType: string, fromVersion: number, toVersion: number): SchemaEvolutionRule[] {
-    const rules = this?.evolutionRules?.get(eventType) || [];
+    const rules = this.evolutionRules.get(eventType) || [];
     
     // Simple direct transformation lookup
     const directRule = rules.find(r => 
@@ -639,7 +661,7 @@ export class EventVersionManager extends EventEmitter {
       const warnings: string[] = [];
 
       // Apply field mappings
-      for (const [oldField, newField] of Object.entries(rule?.transformation?.fieldMappings)) {
+      for (const [oldField, newField] of Object.entries(rule.transformation.fieldMappings)) {
         if (oldField in transformedEvent.payload) {
           transformedEvent.payload[newField] = transformedEvent.payload[oldField];
           delete transformedEvent.payload[oldField];
@@ -647,14 +669,14 @@ export class EventVersionManager extends EventEmitter {
       }
 
       // Apply default values for new fields
-      for (const [field, defaultValue] of Object.entries(rule?.transformation?.defaultValues)) {
+      for (const [field, defaultValue] of Object.entries(rule.transformation.defaultValues)) {
         if (!(field in transformedEvent.payload)) {
           transformedEvent.payload[field] = defaultValue;
         }
       }
 
       // Remove deprecated fields
-      for (const field of rule?.transformation?.removedFields) {
+      for (const field of rule.transformation.removedFields) {
         if (field in transformedEvent.payload) {
           delete transformedEvent.payload[field];
           warnings.push(`Removed deprecated field: ${field}`);
@@ -662,19 +684,19 @@ export class EventVersionManager extends EventEmitter {
       }
 
       // Apply custom transformation if provided
-      if (rule?.transformation?.customTransform) {
+      if (rule.transformation.customTransform) {
         try {
-          transformedEvent = this.applyCustomTransformation(transformedEvent, rule?.transformation?.customTransform);
+          transformedEvent = this.applyCustomTransformation(transformedEvent, rule.transformation.customTransform);
         } catch (error) {
           errors.push(`Custom transformation failed: ${error}`);
         }
       }
 
       return {
-        success: errors?.length || 0 === 0,
-        transformedEvent: errors?.length || 0 === 0 ? transformedEvent : undefined,
-        errors: errors?.length || 0 > 0 ? errors : undefined,
-        warnings: warnings?.length || 0 > 0 ? warnings : undefined,
+        success: errors.length === 0,
+        transformedEvent: errors.length === 0 ? transformedEvent : undefined,
+        errors: errors.length > 0 ? errors : undefined,
+        warnings: warnings.length > 0 ? warnings : undefined,
         metadata: {
           fromVersion: rule.fromVersion,
           toVersion: rule.toVersion,
@@ -707,10 +729,27 @@ export class EventVersionManager extends EventEmitter {
     }
   }
 
-  private validateFieldTypes(payload: any, schema: any): { errors: string[]; warnings: string[] } {
+  private validateFieldTypes(payload: Record<string, any>, schema: Record<string, any>): { errors: string[]; warnings: string[] } {
     // Simplified field type validation
     // In production, would use a proper JSON schema validator
-    return { errors: [], warnings: [] };
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    
+    try {
+      // Basic validation - could be enhanced with proper schema validation
+      for (const [key, expectedType] of Object.entries(schema)) {
+        if (key in payload) {
+          const actualValue = payload[key];
+          if (actualValue === null || actualValue === undefined) {
+            warnings.push(`Field '${key}' is null or undefined`);
+          }
+        }
+      }
+    } catch (error) {
+      errors.push(`Field validation failed: ${error}`);
+    }
+    
+    return { errors, warnings };
   }
 
   private isVersionCompatible(fromSchema: EventSchema, toSchema: EventSchema, compatibilityType: string): boolean {
@@ -736,27 +775,27 @@ export class EventVersionManager extends EventEmitter {
   private clearCacheForEventType(eventType: string): void {
     const keysToDelete: string[] = [];
     
-    for (const key of this?.transformationCache?.keys()) {
+    for (const key of this.transformationCache.keys()) {
       if (key.startsWith(`${eventType}:`)) {
         keysToDelete.push(key);
       }
     }
     
-    keysToDelete.forEach(key => this?.transformationCache?.delete(key));
+    keysToDelete.forEach(key => this.transformationCache.delete(key));
   }
 
   // Public API methods
   public getMetrics() {
     return {
       ...this.metrics,
-      cacheSize: this?.transformationCache?.size,
-      schemaCount: Array.from(this?.schemas?.values()).reduce((sum: any, versions: any) => sum + versions.size, 0),
-      ruleCount: Array.from(this?.evolutionRules?.values()).reduce((sum: any, rules: any) => sum + rules?.length || 0, 0)
+      cacheSize: this.transformationCache.size,
+      schemaCount: Array.from(this.schemas.values()).reduce((sum: number, versions: Map<number, EventSchema>) => sum + versions.size, 0),
+      ruleCount: Array.from(this.evolutionRules.values()).reduce((sum: number, rules: SchemaEvolutionRule[]) => sum + (rules?.length || 0), 0)
     };
   }
 
   public clearCache(): void {
-    this?.transformationCache?.clear();
+    this.transformationCache.clear();
     this.emit('cache_cleared');
   }
 
@@ -767,19 +806,19 @@ export class EventVersionManager extends EventEmitter {
     totalRules: number;
     compatibility: string;
   } | null {
-    const eventVersions = this?.schemas?.get(eventType);
+    const eventVersions = this.schemas.get(eventType);
     if (!eventVersions || eventVersions.size === 0) return null;
 
     const versions = Array.from(eventVersions.keys()).sort((a, b) => a - b);
     const latestVersion = Math.max(...versions);
     const latestSchema = eventVersions.get(latestVersion)!;
-    const rules = this?.evolutionRules?.get(eventType) || [];
+    const rules = this.evolutionRules.get(eventType) || [];
 
     return {
       eventType,
       versions,
       latestVersion,
-      totalRules: rules?.length || 0,
+      totalRules: rules.length,
       compatibility: latestSchema.compatibility
     };
   }

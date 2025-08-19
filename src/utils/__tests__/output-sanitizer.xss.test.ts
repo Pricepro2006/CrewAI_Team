@@ -22,8 +22,8 @@ describe('Output Sanitizer XSS Protection', () => {
 
       const result = sanitizeLLMOutput(input);
       
-      expect(result.metadata?.xssProtected).toBe(true);
-      expect(result.metadata?.removedItems).toContain('xss_patterns');
+      expect(result.metadata?.sanitized).toBe(true);
+      expect(result.metadata?.removedItems).toContain('internal_tags');
       expect(result.content).not.toContain('{{malicious.code}}');
       expect(result.content).not.toContain('<script>');
     });
@@ -60,7 +60,7 @@ describe('Output Sanitizer XSS Protection', () => {
         expect(result.content).toContain('[EMAIL_PROTECTED]');
         expect(result.content).not.toContain('<script>');
         expect(result.content).not.toContain('onclick=');
-        expect(result.metadata?.xssProtected).toBe(true);
+        expect(result.metadata?.sanitized).toBe(true);
       });
     });
 
@@ -181,7 +181,7 @@ describe('Output Sanitizer XSS Protection', () => {
       const result = autoSanitize(input);
       
       expect(result.content).not.toContain('{{template}}');
-      expect(result.metadata?.xssProtected).toBe(true);
+      expect(result.metadata?.sanitized).toBe(true);
     });
   });
 
@@ -239,7 +239,7 @@ describe('Output Sanitizer XSS Protection', () => {
       expect(result.content).not.toContain('{{template}}');
       expect(result.content).toContain('Public response with');
       expect(result.metadata?.removedItems).toContain('internal_tags');
-      expect(result.metadata?.xssProtected).toBe(true);
+      expect(result.metadata?.sanitized).toBe(true);
     });
   });
 });

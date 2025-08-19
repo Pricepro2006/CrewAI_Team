@@ -5,7 +5,7 @@
 
 import { EventEmitter } from "events";
 import { logger } from "../../utils/logger.js";
-import type { WebSocketServer, WebSocket } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 
 export interface EmailProcessingEvent {
   type: 'email_processed' | 'phase_started' | 'phase_completed' | 'error' | 'stats_updated';

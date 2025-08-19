@@ -11,8 +11,8 @@
 import { EventEmitter } from 'events';
 import { config } from 'dotenv';
 import { logger } from '../../utils/logger.js';
-import fs from 'fs';
-import path from 'path';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 
 config();
 
@@ -46,7 +46,7 @@ export class FeatureFlagService extends EventEmitter {
     this.config = {
       flags: [],
       defaultRolloutPercentage: 0,
-      configFilePath: process.env.FEATURE_FLAGS_PATH || path.join(process.cwd(), 'feature-flags.json'),
+      configFilePath: process.env.FEATURE_FLAGS_PATH || join(process.cwd(), 'feature-flags.json'),
       refreshIntervalMs: parseInt(process.env.FEATURE_FLAGS_REFRESH_MS || '60000') // 1 minute default
     };
 
@@ -123,12 +123,12 @@ export class FeatureFlagService extends EventEmitter {
    * Load feature flags from JSON file
    */
   private loadFromFile(): void {
-    if (!this?.config?.configFilePath || !fs.existsSync(this?.config?.configFilePath)) {
+    if (!this?.config?.configFilePath || !existsSync(this?.config?.configFilePath)) {
       return;
     }
 
     try {
-      const fileContent = fs.readFileSync(this?.config?.configFilePath, 'utf-8');
+      const fileContent = readFileSync(this?.config?.configFilePath, 'utf-8');
       const config = JSON.parse(fileContent) as FeatureFlagConfig;
       
       if (config.flags) {
@@ -167,7 +167,7 @@ export class FeatureFlagService extends EventEmitter {
         defaultRolloutPercentage: this?.config?.defaultRolloutPercentage
       };
 
-      fs.writeFileSync(
+      writeFileSync(
         this?.config?.configFilePath,
         JSON.stringify(config, null, 2),
         'utf-8'

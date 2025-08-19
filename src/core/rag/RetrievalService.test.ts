@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { RetrievalService } from "./RetrievalService.js";
-import type { QueryResult, RetrievalConfig } from "./types.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { RetrievalService } from './RetrievalService';
+import type { QueryResult, RetrievalConfig } from './types';
 
 describe("RetrievalService", () => {
   let service: RetrievalService;
@@ -257,7 +257,7 @@ describe("RetrievalService", () => {
 
       const highlighted = service.highlightMatches("machine learning", results);
 
-      expect(highlighted[0]?.highlights).toBeDefined();
+      expect(highlighted[0]?.content).toBeDefined();
       expect(highlighted[0]?.highlights?.length).toBeGreaterThan(0);
       expect(
         highlighted[0]?.highlights?.every(

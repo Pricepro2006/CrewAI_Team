@@ -5,10 +5,26 @@
 
 import { KnowledgeBackedLLM } from '../core/llm/KnowledgeBackedLLM.js';
 import { RAGSystem } from '../core/rag/RAGSystem.js';
-import { LLMProviderFactory } from '../core/llm/LLMProviderFactory.js';
 import { BaseAgent } from '../core/agents/base/BaseAgent.js';
 import { logger } from '../utils/logger.js';
 import * as fs from 'fs';
+
+// Email interface for type safety
+interface EmailData {
+  id: string;
+  subject: string;
+  body: string;
+  metadata?: Record<string, any>;
+}
+
+// Analysis response interface
+interface AnalysisResponse {
+  emailId: string;
+  analysis: any;
+  contextUsed?: number;
+  metadata?: any;
+  rawResponse?: any;
+}
 
 /**
  * Knowledge-Enhanced Email Analysis Agent
@@ -46,7 +62,7 @@ class KnowledgeEnhancedEmailAgent extends BaseAgent {
       },
     });
 
-    await this?.ragSystem?.initialize();
+    await this.ragSystem.initialize();
     logger.info('RAG system initialized', 'KNOWLEDGE_AGENT');
 
     // Initialize Knowledge-Backed LLM
@@ -73,22 +89,17 @@ class KnowledgeEnhancedEmailAgent extends BaseAgent {
       this.ragSystem
     );
 
-    await this?.knowledgeLLM?.initialize();
+    await this.knowledgeLLM.initialize();
     logger.info('Knowledge-Backed LLM initialized', 'KNOWLEDGE_AGENT');
   }
 
-  async analyzeEmail(email: {
-    id: string;
-    subject: string;
-    body: string;
-    metadata?: Record<string, any>;
-  }): Promise<any> {
+  async analyzeEmail(email: EmailData): Promise<AnalysisResponse> {
     if (!this.knowledgeLLM) {
       throw new Error('Agent not initialized');
     }
 
     // First, add email to knowledge base for future reference
-    await this?.knowledgeLLM?.addToKnowledgeBase(
+    await this.knowledgeLLM.addToKnowledgeBase(
       `Subject: ${email.subject}\n\nBody: ${email.body}`,
       {
         id: email.id,
@@ -114,7 +125,7 @@ Please provide:
 Format your response as a structured JSON object.`;
 
     // Generate response with RAG context
-    const response = await this?.knowledgeLLM?.generateWithContext(analysisPrompt, {
+    const response = await this.knowledgeLLM.generateWithContext(analysisPrompt, {
       temperature: 0.3, // Lower temperature for more structured output
       maxTokens: 1024,
       useRAG: true,
@@ -176,7 +187,11 @@ Format your response as a structured JSON object.`;
     }
   }
 
-  async processEmailChain(emails: Array<any>): Promise<any> {
+  async processEmailChain(emails: EmailData[]): Promise<{
+    individualAnalyses: AnalysisResponse[];
+    chainInsights: string;
+    totalEmailsProcessed: number;
+  }> {
     const chainAnalyses = [];
 
     for (const email of emails) {
@@ -200,14 +215,14 @@ Format your response as a structured JSON object.`;
 
     return {
       individualAnalyses: chainAnalyses,
-      chainInsights: chainInsights.response,
-      totalEmailsProcessed: emails?.length || 0,
+      chainInsights: chainInsights.response as string,
+      totalEmailsProcessed: emails.length,
     };
   }
 
   async cleanup(): Promise<void> {
     if (this.knowledgeLLM) {
-      await this?.knowledgeLLM?.cleanup();
+      await this.knowledgeLLM.cleanup();
     }
     await super.cleanup();
   }

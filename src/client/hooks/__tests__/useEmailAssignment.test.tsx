@@ -1,6 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEmailAssignment } from "../useEmailAssignment.js";
+import { useEmailAssignment } from '../useEmailAssignment';
 import React from "react";
 
 // Mock the trpc module completely

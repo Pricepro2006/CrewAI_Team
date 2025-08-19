@@ -1,20 +1,8 @@
 import React, { lazy, Suspense } from 'react';
-import { SkeletonLoader } from '../loading/SkeletonLoader';
-import type {
-  LineChart as LineChartType,
-  BarChart as BarChartType,
-  PieChart as PieChartType,
-  XAxis as XAxisType,
-  YAxis as YAxisType,
-  CartesianGrid as CartesianGridType,
-  Tooltip as TooltipType,
-  Legend as LegendType,
-  ResponsiveContainer as ResponsiveContainerType,
-  Line as LineType,
-  Bar as BarType,
-  Cell as CellType,
-  Pie as PieType
-} from 'recharts';
+import { SkeletonLoader } from '../../client/components/loading/SkeletonLoader';
+
+// Define chart component types without importing recharts
+type ChartComponent = React.ComponentType<any>;
 
 // Chart component props interfaces
 export interface ChartDataPoint {
@@ -33,37 +21,48 @@ export interface LazyChartProps {
 // Lazy load heavy chart components to reduce initial bundle size
 const LazyRecharts = lazy(() => import('recharts'));
 
-const LazyChartJS = lazy(() => import('chart.js/auto'));
-
-const LazyReactChartJS = lazy(() => import('react-chartjs-2'));
-
-// Chart component wrapper with lazy loading
+// Chart component wrapper with lazy loading  
 export const LazyLineChart: React.FC<LazyChartProps> = ({ 
   data, 
   xKey, 
   yKey, 
   width = "100%", 
   height = 300 
-}) => (
-  <Suspense fallback={<SkeletonLoader height="300px" />}>
-    <LazyRecharts>
-      {(recharts: any) => {
-        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = recharts;
-        return (
-          <ResponsiveContainer width={width} height={height}>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={xKey} />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey={yKey} stroke="#8884d8" />
-            </LineChart>
-          </ResponsiveContainer>
-        );
-      }}
-    </LazyRecharts>
-  </Suspense>
-);
+}) => {
+  const ChartRenderer = () => {
+    const [RechartsComponents, setRechartsComponents] = React.useState<any>(null);
+    
+    React.useEffect(() => {
+      import('recharts')
+        .then((recharts) => {
+          setRechartsComponents(recharts);
+        })
+        .catch((error) => {
+          console.error('Failed to load recharts:', error);
+        });
+    }, []);
+    
+    if (!RechartsComponents) {
+      return <SkeletonLoader height="300px" />;
+    }
+    
+    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = RechartsComponents;
+    
+    return (
+      <ResponsiveContainer width={width} height={height}>
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey={xKey} />
+          <YAxis />
+          <Tooltip />
+          <Line type="monotone" dataKey={yKey} stroke="#8884d8" />
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  };
+  
+  return <ChartRenderer />;
+};
 
 export const LazyBarChart: React.FC<LazyChartProps> = ({ 
   data, 
@@ -71,26 +70,41 @@ export const LazyBarChart: React.FC<LazyChartProps> = ({
   yKey, 
   width = "100%", 
   height = 300 
-}) => (
-  <Suspense fallback={<SkeletonLoader height="300px" />}>
-    <LazyRecharts>
-      {(recharts: any) => {
-        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = recharts;
-        return (
-          <ResponsiveContainer width={width} height={height}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={xKey} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey={yKey} fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        );
-      }}
-    </LazyRecharts>
-  </Suspense>
-);
+}) => {
+  const ChartRenderer = () => {
+    const [RechartsComponents, setRechartsComponents] = React.useState<any>(null);
+    
+    React.useEffect(() => {
+      import('recharts')
+        .then((recharts) => {
+          setRechartsComponents(recharts);
+        })
+        .catch((error) => {
+          console.error('Failed to load recharts:', error);
+        });
+    }, []);
+    
+    if (!RechartsComponents) {
+      return <SkeletonLoader height="300px" />;
+    }
+    
+    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = RechartsComponents;
+    
+    return (
+      <ResponsiveContainer width={width} height={height}>
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey={xKey} />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey={yKey} fill="#8884d8" />
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+  
+  return <ChartRenderer />;
+};
 
 export const LazyPieChart: React.FC<LazyChartProps> = ({ 
   data, 
@@ -98,34 +112,49 @@ export const LazyPieChart: React.FC<LazyChartProps> = ({
   colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300'], 
   width = "100%", 
   height = 300 
-}) => (
-  <Suspense fallback={<SkeletonLoader height="300px" />}>
-    <LazyRecharts>
-      {(recharts: any) => {
-        const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } = recharts;
-        return (
-          <ResponsiveContainer width={width} height={height}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey={yKey}
-              >
-                {data?.map((entry: ChartDataPoint, index: number) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors?.length || 0]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        );
-      }}
-    </LazyRecharts>
-  </Suspense>
-);
+}) => {
+  const ChartRenderer = () => {
+    const [RechartsComponents, setRechartsComponents] = React.useState<any>(null);
+    
+    React.useEffect(() => {
+      import('recharts')
+        .then((recharts) => {
+          setRechartsComponents(recharts);
+        })
+        .catch((error) => {
+          console.error('Failed to load recharts:', error);
+        });
+    }, []);
+    
+    if (!RechartsComponents) {
+      return <SkeletonLoader height="300px" />;
+    }
+    
+    const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } = RechartsComponents;
+    
+    return (
+      <ResponsiveContainer width={width} height={height}>
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            outerRadius={80}
+            fill="#8884d8"
+            dataKey={yKey}
+          >
+            {data?.map((entry: ChartDataPoint, index: number) => (
+              <Cell key={`cell-${index}`} fill={colors[index % (colors?.length || 4)]} />
+            ))}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  };
+  
+  return <ChartRenderer />;
+};
 
 // Performance optimized chart selector
 export interface OptimizedChartProps extends LazyChartProps {

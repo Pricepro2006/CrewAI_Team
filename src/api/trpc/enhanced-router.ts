@@ -115,11 +115,11 @@ const secureQueryValidation = t.middleware(async ({ ctx, next, input }) => {
 });
 
 // Export router and procedure helpers 
-export const router = t?.router;
-export const middleware = t?.middleware;
+export const router = t.router;
+export const middleware = t.middleware;
 
 // Public procedure with basic security
-export const publicProcedure = t?.procedure?.use(securityAudit);
+export const publicProcedure = t.procedure.use(securityAudit);
 
 // Protected procedure requiring authentication and CSRF protection for mutations
 export const protectedProcedure = t.procedure
@@ -155,7 +155,6 @@ const createRateLimitMiddleware = (
     // Implement simple in-memory rate limiting for tRPC procedures
     // This works alongside the Express-level rate limiting
     const now = Date.now();
-    const windowStart = now - windowMs;
 
     // Get existing rate limit data from context or create new
     if (!ctx.rateLimits) {
@@ -183,7 +182,7 @@ const createRateLimitMiddleware = (
 
       // Determine max requests based on user type
       let limit = maxRequests;
-      if (ctx.user?.isAdmin || ctx.user?.role === "admin") {
+      if (ctx.user && ('isAdmin' in ctx.user && ctx.user.isAdmin) || ctx.user?.role === "admin") {
         limit = maxRequests * 5; // Admins get 5x more
       } else if (ctx.user?.id) {
         limit = Math.floor(maxRequests * 1.5); // Authenticated users get 50% more
@@ -315,7 +314,7 @@ export const batchProcedure = protectedProcedure.use(batchOperationMiddleware);
 export { createRateLimitMiddleware };
 
 // Procedure that ensures CSRF token exists and returns it (for client initialization)
-export const csrfTokenProcedure = t?.procedure?.use(securityAudit).use(csrfTokenProvider);
+export const csrfTokenProcedure = t.procedure.use(securityAudit).use(csrfTokenProvider);
 
 // Custom error handlers for different scenarios
 export function createCustomErrorHandler(errorType: string) {
@@ -372,7 +371,7 @@ export const commonSchemas = {
     name: z.string().max(255),
     size: z.number().max(50 * 1024 * 1024), // 50MB max
     type: z.string().refine(
-      (type: any) => {
+      (type: string) => {
         const allowedTypes = [
           "image/jpeg",
           "image/png",
@@ -410,7 +409,7 @@ export function createPermissionMiddleware(requiredPermissions: string[]) {
 
     // Check if user has required permissions
     const hasPermission = requiredPermissions.some(
-      (permission: any) => 
+      (permission: string) => 
         userPermissions.includes(permission) || 
         userRole === permission
     );
@@ -442,8 +441,8 @@ export type EnhancedContext = Context & {
 };
 
 // Database-enhanced procedures
-export const databaseProcedure = t?.procedure?.use(securityAudit).use(authRequired).use(csrfProtection);
-export const safeDatabaseProcedure = t?.procedure?.use(securityAudit);
+export const databaseProcedure = t.procedure.use(securityAudit).use(authRequired).use(csrfProtection);
+export const safeDatabaseProcedure = t.procedure.use(securityAudit);
 
 // Utility function for creating feature-specific routers
 export function createFeatureRouter<T extends Record<string, any>>(

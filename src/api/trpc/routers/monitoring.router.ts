@@ -36,7 +36,7 @@ export const monitoringRouter = router({
   // Detailed health status (protected)
   healthDetailed: protectedProcedure.query(async ({ ctx }) => {
     // Check if user has admin privileges
-    if (!ctx.user?.isAdmin) {
+    if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required for detailed health information",
@@ -55,7 +55,7 @@ export const monitoringRouter = router({
 
   // Get metrics in JSON format (protected)
   metrics: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.user?.isAdmin) {
+    if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required for metrics",
@@ -80,7 +80,7 @@ export const monitoringRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      if (!ctx.user?.isAdmin) {
+      if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Admin access required for error statistics",
@@ -109,7 +109,7 @@ export const monitoringRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      if (!ctx.user?.isAdmin) {
+      if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Admin access required for error logs",
@@ -138,7 +138,7 @@ export const monitoringRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      if (!ctx.user?.isAdmin) {
+      if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Admin access required for error search",
@@ -164,7 +164,7 @@ export const monitoringRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      if (!ctx.user?.isAdmin) {
+      if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Admin access required for performance metrics",
@@ -191,7 +191,7 @@ export const monitoringRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      if (!ctx.user?.isAdmin) {
+      if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Admin access required for performance data",
@@ -209,7 +209,7 @@ export const monitoringRouter = router({
 
   // Get threshold violations (protected)
   thresholdViolations: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.user?.isAdmin) {
+    if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required for threshold data",
@@ -227,7 +227,7 @@ export const monitoringRouter = router({
 
   // Get resource usage (protected)
   resources: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.user?.isAdmin) {
+    if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required for resource metrics",
@@ -246,7 +246,7 @@ export const monitoringRouter = router({
 
   // Force health check (protected)
   forceHealthCheck: protectedProcedure.mutation(async ({ ctx }) => {
-    if (!ctx.user?.isAdmin) {
+    if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required to force health checks",
@@ -265,7 +265,7 @@ export const monitoringRouter = router({
 
   // Clear error logs (protected)
   clearErrors: protectedProcedure.mutation(async ({ ctx }) => {
-    if (!ctx.user?.isAdmin) {
+    if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required to clear errors",
@@ -282,7 +282,7 @@ export const monitoringRouter = router({
 
   // Clear performance metrics (protected)
   clearPerformanceMetrics: protectedProcedure.mutation(async ({ ctx }) => {
-    if (!ctx.user?.isAdmin) {
+    if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required to clear performance metrics",
@@ -307,7 +307,7 @@ export const monitoringRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.isAdmin) {
+      if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Admin access required to set thresholds",
@@ -329,7 +329,7 @@ export const monitoringRouter = router({
 
   // Get monitoring configuration (protected)
   config: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.user?.isAdmin) {
+    if (!ctx.user || (ctx.user.role !== "admin" && !('isAdmin' in ctx.user && ctx.user.isAdmin))) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required for configuration",

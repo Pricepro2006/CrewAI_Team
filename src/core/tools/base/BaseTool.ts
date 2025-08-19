@@ -84,7 +84,7 @@ export abstract class BaseTool {
     }
 
     return {
-      valid: errors?.length || 0 === 0,
+      valid: (errors?.length || 0) === 0,
       errors,
     };
   }

@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import type { Context } from "../trpc/context.js";
-import { emailRouter } from "./email.router.js";
-import { EmailStorageService } from "../services/EmailStorageService.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { Context } from '../trpc/context';
+import { emailRouter } from './email.router';
+import { EmailStorageService } from '../services/EmailStorageService';
 import Database from "better-sqlite3";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";

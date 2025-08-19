@@ -110,20 +110,20 @@ export class WalmartMonitoringSystem extends EventEmitter {
     };
 
     // Store in memory
-    if (!this?.metrics?.has(metric.name)) {
-      this?.metrics?.set(metric.name, []);
+    if (!this.metrics.has(metric.name)) {
+      this.metrics.set(metric.name, []);
     }
 
-    const metricHistory = this?.metrics?.get(metric.name)!;
+    const metricHistory = this.metrics.get(metric.name)!;
     metricHistory.push(fullMetric);
 
     // Keep only recent metrics in memory
-    if (metricHistory?.length || 0 > this?.config?.metrics.maxHistorySize) {
+    if ((metricHistory?.length || 0) > this.config.metrics.maxHistorySize) {
       metricHistory.shift();
     }
 
     // Store in persistent storage
-    this?.storage?.storeMetric(fullMetric);
+    this.storage.storeMetric(fullMetric);
 
     // Check alert conditions
     this.checkAlertConditions(fullMetric);
@@ -192,11 +192,11 @@ export class WalmartMonitoringSystem extends EventEmitter {
 
       if (result instanceof Promise) {
         return result
-          .then((res: any) => {
+          .then((res) => {
             recordTime(false);
             return res;
           })
-          .catch((err: any) => {
+          .catch((err) => {
             recordTime(true);
             throw err;
           });
@@ -245,8 +245,15 @@ export class WalmartMonitoringSystem extends EventEmitter {
     }
 
     alert.resolved = true;
-    alert?.metadata?.resolvedAt = new Date().toISOString();
-    alert?.metadata?.resolvedBy = resolvedBy;
+    if (alert.metadata) {
+      alert.metadata.resolvedAt = new Date().toISOString();
+        alert.metadata.resolvedBy = resolvedBy;
+      } else {
+        alert.metadata = {
+          resolvedAt: new Date().toISOString(),
+          resolvedBy: resolvedBy
+        };
+      }
 
     this.emit("alert_resolved", alert);
 
@@ -260,7 +267,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
   }
 
   registerAlertRule(rule: AlertRule): void {
-    this?.alertRules?.set(rule.name, rule);
+    this.alertRules.set(rule.name, rule);
 
     logger.info("Alert rule registered", "WALMART_MONITORING", {
       name: rule.name,
@@ -269,10 +276,10 @@ export class WalmartMonitoringSystem extends EventEmitter {
   }
 
   private checkAlertConditions(metric: WalmartMetric): void {
-    for (const [ruleName, rule] of this.alertRules) {
+    for (const [ruleName, rule] of Array.from(this.alertRules.entries())) {
       if (rule.metricName !== metric.name) continue;
 
-      const shouldAlert = rule?.conditions?.every((condition: any) => {
+      const shouldAlert = rule?.conditions?.every((condition) => {
         switch (condition.operator) {
           case "gt":
             return metric.value > condition.threshold;
@@ -295,7 +302,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
         this.createAlert({
           name: rule.name,
           severity: rule.severity,
-          message: rule?.message?.replace("{value}", metric?.value?.toString()),
+          message: rule.message.replace("{value}", metric.value.toString()),
           metadata: {
             metric: metric.name,
             value: metric.value,
@@ -308,8 +315,8 @@ export class WalmartMonitoringSystem extends EventEmitter {
   }
 
   private hasActiveAlert(ruleName: string): boolean {
-    return Array.from(this?.alerts?.values()).some(
-      (alert: any) => alert?.metadata?.rule === ruleName && !alert.resolved,
+    return Array.from(this.alerts.values()).some(
+      (alert) => alert.metadata?.rule === ruleName && !alert.resolved,
     );
   }
 
@@ -333,7 +340,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
             timestamp: new Date().toISOString(),
           };
 
-          this?.healthChecks?.set(name, healthCheck);
+          this.healthChecks.set(name, healthCheck);
           this.gauge(`health_check.${name}.response_time`, responseTime, {
             status: "healthy",
           });
@@ -349,7 +356,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
             error: error instanceof Error ? error.message : String(error),
           };
 
-          this?.healthChecks?.set(name, healthCheck);
+          this.healthChecks.set(name, healthCheck);
           this.gauge(`health_check.${name}.response_time`, responseTime, {
             status: "unhealthy",
           });
@@ -359,13 +366,13 @@ export class WalmartMonitoringSystem extends EventEmitter {
       },
     };
 
-    this?.collectors?.set(name, collector);
+    this.collectors.set(name, collector);
   }
 
   async runHealthChecks(): Promise<Record<string, HealthCheck>> {
     const results: Record<string, HealthCheck> = {};
 
-    const promises = Array.from(this?.collectors?.entries()).map(
+    const promises = Array.from(this.collectors.entries()).map(
       async ([name, collector]) => {
         const checks = await collector.collect();
         results[name] = checks[0] as HealthCheck;
@@ -377,9 +384,9 @@ export class WalmartMonitoringSystem extends EventEmitter {
   }
 
   getHealthStatus(): SystemHealth {
-    const checks = Array.from(this?.healthChecks?.values());
-    const unhealthy = checks?.filter((c: any) => c.status === "unhealthy").length;
-    const degraded = checks?.filter((c: any) => c.status === "degraded").length;
+    const checks = Array.from(this.healthChecks.values());
+    const unhealthy = checks.filter((c) => c.status === "unhealthy").length;
+    const degraded = checks.filter((c) => c.status === "degraded").length;
 
     let overallStatus: "healthy" | "degraded" | "unhealthy";
     if (unhealthy > 0) {
@@ -393,10 +400,10 @@ export class WalmartMonitoringSystem extends EventEmitter {
     return {
       status: overallStatus,
       timestamp: new Date().toISOString(),
-      checks: Object.fromEntries(checks?.map((check: any) => [check.name, check])),
+      checks: Object.fromEntries(checks.map((check) => [check.name, check])),
       metrics: {
-        totalChecks: checks?.length || 0,
-        healthyChecks: checks?.filter((c: any) => c.status === "healthy").length,
+        totalChecks: checks.length,
+        healthyChecks: checks.filter((c) => c.status === "healthy").length,
         degradedChecks: degraded,
         unhealthyChecks: unhealthy,
       },
@@ -412,7 +419,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
 
     try {
       // Query from storage for historical data
-      const storageResults = await this?.storage?.query(query);
+      const storageResults = await this.storage.query(query);
 
       // Also check in-memory metrics for recent data
       const memoryResults = this.queryMemoryMetrics(query);
@@ -430,7 +437,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
         metrics: aggregatedResults,
         query,
         executionTime: Date.now() - startTime,
-        totalResults: aggregatedResults?.length || 0,
+        totalResults: aggregatedResults.length,
       };
     } catch (error) {
       logger.error("Metric query failed", "WALMART_MONITORING", {
@@ -444,15 +451,15 @@ export class WalmartMonitoringSystem extends EventEmitter {
   private queryMemoryMetrics(query: MetricQuery): WalmartMetric[] {
     const results: WalmartMetric[] = [];
 
-    for (const [name, metrics] of this.metrics) {
+    for (const [name, metrics] of Array.from(this.metrics.entries())) {
       if (query.metricName && !name.includes(query.metricName)) continue;
 
-      const filteredMetrics = metrics?.filter((metric: any) => {
+      const filteredMetrics = metrics.filter((metric) => {
         // Time range filter
         if (query.timeRange) {
           const metricTime = new Date(metric.timestamp).getTime();
-          const startTime = new Date(query?.timeRange?.start).getTime();
-          const endTime = new Date(query?.timeRange?.end).getTime();
+          const startTime = new Date(query.timeRange.start).getTime();
+          const endTime = new Date(query.timeRange.end).getTime();
 
           if (metricTime < startTime || metricTime > endTime) return false;
         }
@@ -475,7 +482,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
 
   private deduplicateMetrics(metrics: WalmartMetric[]): WalmartMetric[] {
     const seen = new Set<string>();
-    return metrics?.filter((metric: any) => {
+    return metrics.filter((metric) => {
       const key = `${metric.name}_${metric.timestamp}_${JSON.stringify(metric.tags)}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -505,17 +512,17 @@ export class WalmartMonitoringSystem extends EventEmitter {
 
     // Aggregate each group
     const aggregated: WalmartMetric[] = [];
-    for (const [key, groupMetrics] of grouped) {
+    for (const [key, groupMetrics] of Array.from(grouped.entries())) {
       const [name, interval] = key.split("_");
-      const values = groupMetrics?.map((m: any) => m.value);
+      const values = groupMetrics.map((m) => m.value);
 
       let aggregatedValue: number;
       switch (aggregation.function) {
         case "sum":
-          aggregatedValue = values.reduce((a: any, b: any) => a + b, 0);
+          aggregatedValue = values.reduce((a, b) => a + b, 0);
           break;
         case "avg":
-          aggregatedValue = values.reduce((a: any, b: any) => a + b, 0) / values?.length || 0;
+          aggregatedValue = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
           break;
         case "min":
           aggregatedValue = Math.min(...values);
@@ -524,7 +531,7 @@ export class WalmartMonitoringSystem extends EventEmitter {
           aggregatedValue = Math.max(...values);
           break;
         case "count":
-          aggregatedValue = values?.length || 0;
+          aggregatedValue = values.length;
           break;
         default:
           aggregatedValue = values[0];
@@ -574,24 +581,24 @@ export class WalmartMonitoringSystem extends EventEmitter {
 
     // Get key metrics for the last hour
     const [
-      searchRequests,
-      cartOperations,
-      orderPlacements,
-      errors,
-      responseTime,
+    searchRequests,
+    cartOperations,
+    orderPlacements,
+    errors,
+    responseTime,
     ] = await Promise.all([
-      this.queryMetrics({
-        metricName: "walmart.search?.requests",
+    this.queryMetrics({
+    metricName: "walmart.search.requests",
         timeRange: { start: oneHourAgo.toISOString(), end: now.toISOString() },
         aggregation: { function: "sum", interval: "5m" },
       }),
       this.queryMetrics({
-        metricName: "walmart.cart?.operations",
+        metricName: "walmart.cart.operations",
         timeRange: { start: oneHourAgo.toISOString(), end: now.toISOString() },
         aggregation: { function: "sum", interval: "5m" },
       }),
       this.queryMetrics({
-        metricName: "walmart.order?.placements",
+        metricName: "walmart.order.placements",
         timeRange: { start: oneHourAgo.toISOString(), end: now.toISOString() },
         aggregation: { function: "sum", interval: "5m" },
       }),
@@ -608,8 +615,8 @@ export class WalmartMonitoringSystem extends EventEmitter {
     ]);
 
     const health = this.getHealthStatus();
-    const activeAlerts = Array.from(this?.alerts?.values()).filter(
-      (a: any) => !a.resolved,
+    const activeAlerts = Array.from(this.alerts.values()).filter(
+      (a) => !a.resolved,
     );
 
     return {
@@ -624,23 +631,23 @@ export class WalmartMonitoringSystem extends EventEmitter {
         responseTime: responseTime.metrics,
       },
       summary: {
-        totalSearches: searchRequests?.metrics?.reduce(
+        totalSearches: searchRequests.metrics.reduce(
           (sum, m) => sum + m.value,
           0,
         ),
-        totalCartOps: cartOperations?.metrics?.reduce(
+        totalCartOps: cartOperations.metrics.reduce(
           (sum, m) => sum + m.value,
           0,
         ),
-        totalOrders: orderPlacements?.metrics?.reduce(
+        totalOrders: orderPlacements.metrics.reduce(
           (sum, m) => sum + m.value,
           0,
         ),
-        totalErrors: errors?.metrics?.reduce((sum: any, m: any) => sum + m.value, 0),
+        totalErrors: errors.metrics.reduce((sum, m) => sum + m.value, 0),
         avgResponseTime:
-          responseTime?.metrics?.length > 0
-            ? responseTime?.metrics?.reduce((sum: any, m: any) => sum + m.value, 0) /
-              responseTime?.metrics?.length
+          responseTime.metrics.length > 0
+            ? responseTime.metrics.reduce((sum, m) => sum + m.value, 0) /
+              responseTime.metrics.length
             : 0,
       },
     };
@@ -654,11 +661,20 @@ export class WalmartMonitoringSystem extends EventEmitter {
     // Register default health checks
     this.registerHealthCheck("walmart_api", async () => {
       // Check if Walmart API is accessible
-      const response = await fetch("https://www?.walmart.com/api/health", {
-        timeout: 5000,
-      });
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      try {
+        const response = await fetch("https://www.walmart.com/api/health", {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
       }
     });
 
@@ -709,12 +725,12 @@ export class WalmartMonitoringSystem extends EventEmitter {
     // Low search success rate
     this.registerAlertRule({
       name: "low_search_success_rate",
-      metricName: "walmart.search?.success_rate",
+      metricName: "walmart.search.success_rate",
       severity: "high",
       message: "Low search success rate: {value}%",
       conditions: [
         {
-          metric: "walmart.search?.success_rate",
+          metric: "walmart.search.success_rate",
           operator: "lt",
           threshold: 95,
           duration: 600,
@@ -740,11 +756,11 @@ export class WalmartMonitoringSystem extends EventEmitter {
   }
 
   private cleanupOldMetrics(): void {
-    const cutoff = new Date(Date.now() - this?.config?.metrics.retentionPeriod);
+    const cutoff = new Date(Date.now() - this.config.metrics.retentionPeriod);
 
-    for (const [name, metrics] of this.metrics) {
-      const filtered = metrics?.filter((m: any) => new Date(m.timestamp) > cutoff);
-      this?.metrics?.set(name, filtered);
+    for (const [name, metrics] of Array.from(this.metrics.entries())) {
+      const filtered = metrics.filter((m) => new Date(m.timestamp) > cutoff);
+      this.metrics.set(name, filtered);
     }
   }
 }
@@ -851,23 +867,23 @@ class MetricStorage implements MetricStorageInterface {
   constructor(private config: MonitoringConfig["storage"]) {}
 
   async storeMetric(metric: WalmartMetric): Promise<void> {
-    this?.storage?.push(metric);
+    this.storage.push(metric);
 
     // Keep only recent metrics
     const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days
-    this.storage = this?.storage?.filter((m: any) => new Date(m.timestamp) > cutoff);
+    this.storage = this.storage.filter((m) => new Date(m.timestamp) > cutoff);
   }
 
   async query(query: MetricQuery): Promise<WalmartMetric[]> {
     return this.storage
-      .filter((metric: any) => {
-        if (query.metricName && !metric?.name?.includes(query.metricName))
+      .filter((metric) => {
+        if (query.metricName && !metric.name.includes(query.metricName))
           return false;
 
         if (query.timeRange) {
           const metricTime = new Date(metric.timestamp).getTime();
-          const startTime = new Date(query?.timeRange?.start).getTime();
-          const endTime = new Date(query?.timeRange?.end).getTime();
+          const startTime = new Date(query.timeRange.start).getTime();
+          const endTime = new Date(query.timeRange.end).getTime();
 
           if (metricTime < startTime || metricTime > endTime) return false;
         }

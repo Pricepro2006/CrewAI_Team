@@ -21,7 +21,7 @@ import {
   Key,
   FileText
 } from 'lucide-react';
-import { api } from '../../../utils/trpc';
+import { api } from '../../../lib/trpc';
 import './Documentation.css';
 
 interface APIEndpoint {

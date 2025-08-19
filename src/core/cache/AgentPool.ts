@@ -338,7 +338,7 @@ export class AgentPool {
 
       switch (type) {
         case "email":
-          agent = new EmailAnalysisAgent();
+          agent = new EmailAnalysisAgent() as unknown as BaseAgent;
           break;
         case "business":
         case "customer":
@@ -346,7 +346,7 @@ export class AgentPool {
         case "master":
           // For now, use EmailAnalysisAgent as a base
           // TODO: Implement other agent types
-          agent = new EmailAnalysisAgent();
+          agent = new EmailAnalysisAgent() as unknown as BaseAgent;
           break;
         default:
           throw new Error(`Unknown agent type: ${type}`);
@@ -526,13 +526,19 @@ export class AgentPool {
 
     // Reset type counts
     for (const type of Object.keys(this?.stats?.agentsByType) as AgentType[]) {
-      this?.stats?.agentsByType[type] = 0;
+      if (this.stats?.agentsByType) {
+        this.stats.agentsByType[type] = 0;
+      }
     }
 
     // Count agents by pool
     for (const [type, pool] of this?.pools?.entries()) {
-      this?.stats?.agentsByType[type] = pool?.length || 0;
-      this?.stats?.totalAgents += pool?.length || 0;
+      if (this.stats?.agentsByType) {
+        this.stats.agentsByType[type] = pool?.length || 0;
+      }
+      if (this.stats) {
+        this.stats.totalAgents += pool?.length || 0;
+      }
 
       for (const pooledAgent of pool) {
         if (pooledAgent.isActive) {
@@ -551,9 +557,7 @@ export class AgentPool {
     // Simple moving average calculation
     const alpha = 0.1; // Smoothing factor
     if (this.stats) {
-
-      this.stats.avgInitTime = this?.stats?.avgInitTime * (1 - alpha) + newTime * alpha;
-
+      this.stats.avgInitTime = this.stats.avgInitTime * (1 - alpha) + newTime * alpha;
     }
   }
 }

@@ -2,15 +2,15 @@
  * Transaction Manager Tests
  */
 
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   TransactionManager,
   transactionManager,
-} from "../TransactionManager.js";
+} from '../TransactionManager';
 import {
   getDatabaseConnection,
   shutdownConnectionPool,
-} from "../ConnectionPool.js";
+} from '../ConnectionPool';
 import Database from "better-sqlite3";
 import { existsSync, unlinkSync } from "fs";
 
@@ -45,9 +45,9 @@ describe("TransactionManager", () => {
     }
   });
 
-  test("should execute simple transaction successfully", async () => {
+  it("should execute simple transaction successfully", async () => {
     const result = await transactionManager.executeTransaction(async (tx: any) => {
-      const stmt = tx?.db?.prepare("INSERT INTO test_table (value) VALUES (?)");
+      const stmt = tx.db.prepare("INSERT INTO test_table (value) VALUES (?)");
       const info = stmt.run("test-value");
       return info.lastInsertRowid;
     });
@@ -59,11 +59,11 @@ describe("TransactionManager", () => {
     expect(row).toMatchObject({ id: 1, value: "test-value" });
   });
 
-  test("should rollback transaction on error", async () => {
+  it("should rollback transaction on error", async () => {
     try {
       await transactionManager.executeTransaction(async (tx: any) => {
         // Insert first row
-        tx?.db?.prepare("INSERT INTO test_table (value) VALUES (?)").run("first");
+        tx.db.prepare("INSERT INTO test_table (value) VALUES (?)").run("first");
 
         // Force an error
         throw new Error("Intentional error");
@@ -74,7 +74,7 @@ describe("TransactionManager", () => {
           .run("second");
       });
 
-      fail("Transaction should have thrown an error");
+      throw new Error("Transaction should have thrown an error");
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toBe("Intentional error");
@@ -87,17 +87,17 @@ describe("TransactionManager", () => {
     expect(count.count).toBe(0);
   });
 
-  test("should handle nested transactions with savepoints", async () => {
+  it("should handle nested transactions with savepoints", async () => {
     await transactionManager.executeTransaction(async (tx: any) => {
       // Insert first row
-      tx?.db?.prepare("INSERT INTO test_table (value) VALUES (?)").run("outer");
+      tx.db.prepare("INSERT INTO test_table (value) VALUES (?)").run("outer");
 
       // Create savepoint
       const savepoint = await transactionManager.createSavepoint(tx);
 
       try {
         // Insert second row
-        tx?.db?.prepare("INSERT INTO test_table (value) VALUES (?)").run("inner");
+        tx.db.prepare("INSERT INTO test_table (value) VALUES (?)").run("inner");
 
         // Force error
         throw new Error("Inner error");
@@ -121,7 +121,7 @@ describe("TransactionManager", () => {
     expect(rows[1].value).toBe("after-rollback");
   });
 
-  test("should timeout long-running transactions", async () => {
+  it("should timeout long-running transactions", async () => {
     try {
       await transactionManager.executeTransaction(
         async (tx: any) => {
@@ -132,14 +132,14 @@ describe("TransactionManager", () => {
         { timeout: 100 },
       );
 
-      fail("Transaction should have timed out");
+      throw new Error("Transaction should have timed out");
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toContain("timed out");
     }
   });
 
-  test("should retry on retryable errors", async () => {
+  it("should retry on retryable errors", async () => {
     let attempts = 0;
 
     const result = await transactionManager.executeTransaction(
@@ -170,7 +170,7 @@ describe("TransactionManager", () => {
     expect(count.count).toBe(1);
   });
 
-  test("should execute batch operations with individual savepoints", async () => {
+  it("should execute batch operations with individual savepoints", async () => {
     const operations = [
       async (tx: any) => {
         tx.db
@@ -203,7 +203,7 @@ describe("TransactionManager", () => {
     expect(count.count).toBe(3);
   });
 
-  test("should rollback failed batch operation", async () => {
+  it("should rollback failed batch operation", async () => {
     const operations = [
       async (tx: any) => {
         tx.db
@@ -224,7 +224,7 @@ describe("TransactionManager", () => {
 
     try {
       await transactionManager.executeBatch(operations);
-      fail("Batch should have failed");
+      throw new Error("Batch should have failed");
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toContain("Batch operation 1 failed");
@@ -237,7 +237,7 @@ describe("TransactionManager", () => {
     expect(count.count).toBe(1);
   });
 
-  test("should track transaction metrics", async () => {
+  it("should track transaction metrics", async () => {
     // Reset metrics
     transactionManager.resetMetrics();
 
@@ -266,10 +266,10 @@ describe("TransactionManager", () => {
     expect(metrics.averageDuration).toBeGreaterThan(0);
   });
 
-  test("should handle concurrent transactions", async () => {
+  it("should handle concurrent transactions", async () => {
     const transactions = Array.from({ length: 5 }, (_, i) =>
       transactionManager.executeTransaction(async (tx: any) => {
-        const stmt = tx?.db?.prepare(
+        const stmt = tx.db.prepare(
           "INSERT INTO test_table (value, number) VALUES (?, ?)",
         );
         stmt.run(`concurrent-${i}`, i);
@@ -286,7 +286,7 @@ describe("TransactionManager", () => {
     expect(rows).toHaveLength(5);
   });
 
-  test("should use different isolation levels", async () => {
+  it("should use different isolation levels", async () => {
     // Test IMMEDIATE isolation
     await transactionManager.executeTransaction(
       async (tx: any) => {
@@ -321,7 +321,7 @@ describe("TransactionManager", () => {
     expect(result).toBe(2);
   });
 
-  test("should emit transaction events", async () => {
+  it("should emit transaction events", async () => {
     const events: string[] = [];
 
     transactionManager.on("transaction:success", () => events.push("success"));

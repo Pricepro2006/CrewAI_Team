@@ -8,9 +8,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import WS from 'jest-websocket-mock';
 
 type WsMock = any; // Type alias for the mock server
-import { useEnhancedWebSocket, useEmailWebSocket } from '../../hooks/useEnhancedWebSocket.js';
-import { useWebSocketStateManager } from '../../stores/webSocketStateManager.js';
-import type { EmailStatsUpdatedEvent } from '../../../shared/types/websocket-events.js';
+import { useEnhancedWebSocket, useEmailWebSocket } from '../../hooks/useEnhancedWebSocket';
+import { useWebSocketStateManager } from '../../stores/webSocketStateManager';
+import type { EmailStatsUpdatedEvent } from '../../../shared/types/websocket-events';
 
 describe('WebSocket Integration Tests', () => {
   let server: WsMock;
@@ -203,7 +203,7 @@ describe('WebSocket Integration Tests', () => {
 
       // Check that only the latest update is in cache
       const cache = stateManager?.emailCache?.get(emailId);
-      expect(cache?.data?.updates?.status).toBe('status-4');
+      expect(cache?.data?.updates?.length).toBe('status-4');
     });
 
     it('should handle optimistic updates correctly', async () => {

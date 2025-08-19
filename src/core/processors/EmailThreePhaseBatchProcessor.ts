@@ -243,7 +243,7 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
 
       // Cache the complete analysis
       if (this?.options?.useCaching && phasesCompleted === 3) {
-        this?.cache?.set(email.id, analysis);
+        this?.cache?.set(email.id, analysis as any);
       }
 
       return {

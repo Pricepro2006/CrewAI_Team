@@ -19,8 +19,7 @@ import { CircuitBreakerFactory } from '../../core/resilience/CircuitBreaker.js';
 import { cacheManager } from '../../core/cache/RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
-import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { IncomingMessage, ServerResponse } from 'http';
 import WebSocket from 'ws';
 
@@ -422,7 +421,7 @@ export class ServiceProxy {
     }
 
     // Record Prometheus metrics
-    metrics.increment('service_proxy?.request?.success', {
+    metrics.increment('service_proxy?.request?.success', 1, {
       service: this?.config?.serviceName,
     });
     metrics.histogram('service_proxy.response_time', responseTime, {
@@ -437,7 +436,7 @@ export class ServiceProxy {
     if (this.metrics.failedRequests) { this.metrics.failedRequests++ };
     
     // Record Prometheus metrics
-    metrics.increment('service_proxy?.request?.failed', {
+    metrics.increment('service_proxy?.request?.failed', 1, {
       service: this?.config?.serviceName,
     });
   }
@@ -455,7 +454,7 @@ export class ServiceProxy {
           body: req.body,
           query: req.query as Record<string, any>,
           clientIp: req.ip,
-          clientId: req.get('X-Client-ID') || req.sessionID,
+          clientId: req.get('X-Client-ID') || (req as any).sessionID || req.ip,
         };
 
         const response = await this.proxyRequest(proxyRequest);

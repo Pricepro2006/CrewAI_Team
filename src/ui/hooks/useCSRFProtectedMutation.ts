@@ -55,7 +55,7 @@ export function useCSRFProtectedMutation<
           },
           {
             onTokenRefresh: async () => {
-              setRetryCount((prev: any) => prev + 1);
+              setRetryCount(prev => prev + 1);
               await refreshToken();
             },
             maxRetries: options?.maxRetries ?? 2,

@@ -7,11 +7,18 @@
 
 import { Worker } from "worker_threads";
 import { EventEmitter } from "events";
-import { Queue, Worker as BullWorker } from "bullmq";
+// @ts-ignore - bullmq v5 type definitions issue
+import { Queue, Worker as BullWorker, Job } from "bullmq";
 import { Logger } from "../../utils/logger.js";
 import { performance } from "perf_hooks";
 import type { Redis } from "ioredis";
 import { WorkerLoader } from "./WorkerLoader.js";
+import type { 
+  WorkerToMainMessage,
+  JobCompleteMessage,
+  JobFailedMessage,
+  MetricsMessage
+} from "./types.js";
 
 const logger = new Logger("EmailProcessingWorkerPool");
 
@@ -148,10 +155,7 @@ export class EmailProcessingWorkerPool extends EventEmitter {
    * Initialize the worker pool
    */
   private async initialize(): Promise<void> {
-    logger.info("Initializing worker pool", {
-      minWorkers: this?.config?.minWorkers,
-      maxWorkers: this?.config?.maxWorkers,
-    });
+    logger.info(`Initializing worker pool with ${this?.config?.minWorkers} min workers and ${this?.config?.maxWorkers} max workers`);
 
     // Create minimum number of workers
     for (let i = 0; i < this?.config?.minWorkers; i++) {
@@ -224,18 +228,18 @@ export class EmailProcessingWorkerPool extends EventEmitter {
   private setupWorkerHandlers(workerInstance: WorkerInstance): void {
     const { worker, id } = workerInstance;
 
-    worker.on("message", (message: any) => {
+    worker.on("message", (message: WorkerToMainMessage) => {
       this.handleWorkerMessage(id, message);
     });
 
-    worker.on("error", (error: any) => {
-      logger.error(`Worker ${id} error:`, error as string);
+    worker.on("error", (error: Error) => {
+      logger.error(`Worker ${id} error:`, error.message);
       workerInstance.lastError = error;
       this.emit("workerError", { workerId: id, error });
       this.handleWorkerFailure(id);
     });
 
-    worker.on("exit", (code: any) => {
+    worker.on("exit", (code: number) => {
       logger.info(`Worker ${id} exited with code ${code}`);
       this?.workers?.delete(id);
       this.emit("workerExit", { workerId: id, code });
@@ -250,29 +254,31 @@ export class EmailProcessingWorkerPool extends EventEmitter {
   /**
    * Handle messages from workers
    */
-  private handleWorkerMessage(workerId: string, message: any): void {
+  private handleWorkerMessage(workerId: string, message: WorkerToMainMessage): void {
     const workerInstance = this?.workers?.get(workerId);
     if (!workerInstance) return;
 
     switch (message.type) {
       case "jobComplete":
-        this.handleJobComplete(workerId, message.data);
+        this.handleJobComplete(workerId, (message as JobCompleteMessage).data);
         break;
 
       case "jobFailed":
-        this.handleJobFailed(workerId, message.data);
+        this.handleJobFailed(workerId, { error: (message as JobFailedMessage).error });
         break;
 
       case "metrics":
-        this.updateWorkerMetrics(workerId, message.data);
+        this.updateWorkerMetrics(workerId, (message as MetricsMessage).data);
         break;
 
       case "heartbeat":
-        workerInstance?.metrics?.lastActivityTime = new Date();
+        if (workerInstance?.metrics) {
+          workerInstance.metrics.lastActivityTime = new Date();
+        }
         break;
 
       default:
-        logger.debug(`Unknown message type from worker ${workerId}:`, message);
+        logger.debug(`Unknown message type from worker ${workerId}:`, JSON.stringify(message));
     }
   }
 
@@ -284,15 +290,17 @@ export class EmailProcessingWorkerPool extends EventEmitter {
     if (!workerInstance) return;
 
     workerInstance.isProcessing = false;
-    workerInstance?.metrics?.processedJobs++;
-    workerInstance?.metrics?.lastActivityTime = new Date();
+    if (workerInstance.metrics) {
+      workerInstance.metrics.processedJobs++;
+      workerInstance.metrics.lastActivityTime = new Date();
 
-    // Update average processing time
-    const { processingTime } = data;
-    const { processedJobs, averageProcessingTime } = workerInstance.metrics;
-    workerInstance?.metrics?.averageProcessingTime =
-      (averageProcessingTime * (processedJobs - 1) + processingTime) /
-      processedJobs;
+      // Update average processing time
+      const { processingTime } = data;
+      const { processedJobs, averageProcessingTime } = workerInstance.metrics;
+      workerInstance.metrics.averageProcessingTime =
+        (averageProcessingTime * (processedJobs - 1) + processingTime) /
+        processedJobs;
+    }
 
     this.totalProcessed++;
     this.emit("jobComplete", { workerId, ...data });
@@ -306,8 +314,10 @@ export class EmailProcessingWorkerPool extends EventEmitter {
     if (!workerInstance) return;
 
     workerInstance.isProcessing = false;
-    workerInstance?.metrics?.failedJobs++;
-    workerInstance?.metrics?.lastActivityTime = new Date();
+    if (workerInstance.metrics) {
+      workerInstance.metrics.failedJobs++;
+      workerInstance.metrics.lastActivityTime = new Date();
+    }
 
     this.totalFailed++;
     this.emit("jobFailed", { workerId, ...data });
@@ -349,7 +359,7 @@ export class EmailProcessingWorkerPool extends EventEmitter {
   private startQueueProcessor(): void {
     this.bullWorker = new BullWorker<EmailProcessingJob>(
       "email-processing",
-      async (job: any) => {
+      async (job: Job<EmailProcessingJob>) => {
         // Find available worker
         const workerId = await this.getAvailableWorker();
         if (!workerId) {
@@ -363,7 +373,9 @@ export class EmailProcessingWorkerPool extends EventEmitter {
 
         // Mark worker as busy
         workerInstance.isProcessing = true;
-        workerInstance?.metrics?.isIdle = false;
+        if (workerInstance.metrics) {
+          workerInstance.metrics.isIdle = false;
+        }
 
         // Send job to worker
         const startTime = performance.now();
@@ -371,10 +383,10 @@ export class EmailProcessingWorkerPool extends EventEmitter {
         return new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
             reject(new Error("Worker timeout"));
-          }, job?.data?.options.timeout || 180000);
+          }, job?.data?.options?.timeout || 180000);
 
-          const messageHandler = (message: any) => {
-            if (message.type === "jobComplete" && message.jobId === job.id) {
+          const messageHandler = (message: WorkerToMainMessage) => {
+            if (message.type === "jobComplete" && (message as JobCompleteMessage).jobId === job.id) {
               clearTimeout(timeout);
               workerInstance?.worker?.off("message", messageHandler);
 
@@ -382,23 +394,23 @@ export class EmailProcessingWorkerPool extends EventEmitter {
               this.handleJobComplete(workerId, {
                 jobId: job.id,
                 processingTime,
-                result: message.data,
+                result: (message as JobCompleteMessage).data,
               });
 
-              resolve(message.data);
+              resolve((message as JobCompleteMessage).data);
             } else if (
               message.type === "jobFailed" &&
-              message.jobId === job.id
+              (message as JobFailedMessage).jobId === job.id
             ) {
               clearTimeout(timeout);
               workerInstance?.worker?.off("message", messageHandler);
 
               this.handleJobFailed(workerId, {
                 jobId: job.id,
-                error: message.error,
+                error: (message as JobFailedMessage).error,
               });
 
-              reject(new Error(message.error));
+              reject(new Error((message as JobFailedMessage).error));
             }
           };
 
@@ -417,12 +429,12 @@ export class EmailProcessingWorkerPool extends EventEmitter {
       },
     );
 
-    this?.bullWorker?.on("completed", (job: any) => {
+    this?.bullWorker?.on("completed", (job: Job<EmailProcessingJob>) => {
       logger.debug(`Job ${job.id} completed`);
     });
 
-    this?.bullWorker?.on("failed", (job, err) => {
-      logger.error(`Job ${job?.id} failed:`, err);
+    this?.bullWorker?.on("failed", (job: Job<EmailProcessingJob> | undefined, err: Error) => {
+      logger.error(`Job ${job?.id} failed: ${err.message}`);
     });
   }
 
@@ -447,7 +459,7 @@ export class EmailProcessingWorkerPool extends EventEmitter {
     }
 
     // Wait for a worker to become available
-    return new Promise((resolve: any) => {
+    return new Promise<string | null>((resolve) => {
       const checkInterval = setInterval(() => {
         for (const [workerId, instance] of this.workers) {
           if (!instance.isProcessing) {
@@ -470,7 +482,7 @@ export class EmailProcessingWorkerPool extends EventEmitter {
    * Add jobs to the processing queue
    */
   async addJobs(jobs: EmailProcessingJob[]): Promise<void> {
-    const bulkJobs = jobs?.map((job: any) => ({
+    const bulkJobs = jobs?.map((job: EmailProcessingJob) => ({
       name: "process-emails",
       data: job,
       opts: {
@@ -501,16 +513,12 @@ export class EmailProcessingWorkerPool extends EventEmitter {
    * Start metrics collection
    */
   private startMetricsCollection(): void {
-    this.metricsInterval = setInterval(() => {
-      const metrics = this.getPoolMetrics();
+    this.metricsInterval = setInterval(async () => {
+      const metrics = await this.getPoolMetrics();
       this.emit("metrics", metrics);
 
       // Log metrics
-      logger.debug("Pool metrics:", {
-        activeWorkers: metrics.activeWorkers,
-        throughput: `${metrics?.throughput?.toFixed(2)} jobs/min`,
-        queueDepth: metrics.queueDepth,
-      });
+      logger.debug(`Pool metrics: activeWorkers=${metrics.activeWorkers}, throughput=${metrics?.throughput?.toFixed(2)} jobs/min, queueDepth=${metrics.queueDepth}`);
     }, 10000); // Every 10 seconds
   }
 
@@ -521,17 +529,14 @@ export class EmailProcessingWorkerPool extends EventEmitter {
     this.scaleInterval = setInterval(async () => {
       if (this.isShuttingDown) return;
 
-      const metrics = this.getPoolMetrics();
+      const metrics = await this.getPoolMetrics();
 
       // Scale up if queue is deep
       if (
         metrics.queueDepth > this?.config?.scaleUpThreshold &&
         this?.workers?.size < this?.config?.maxWorkers
       ) {
-        logger.info("Scaling up: high queue depth", {
-          queueDepth: metrics.queueDepth,
-          currentWorkers: this?.workers?.size,
-        });
+        logger.info(`Scaling up: high queue depth (${metrics.queueDepth}), current workers: ${this?.workers?.size}`);
         await this.createWorker();
       }
 
@@ -544,7 +549,7 @@ export class EmailProcessingWorkerPool extends EventEmitter {
         // Find and remove an idle worker
         for (const [workerId, instance] of this.workers) {
           if (instance?.metrics?.isIdle && !instance.isProcessing) {
-            logger.info("Scaling down: removing idle worker", { workerId });
+            logger.info(`Scaling down: removing idle worker ${workerId}`);
             await instance?.worker?.terminate();
             this?.workers?.delete(workerId);
             break;
@@ -557,7 +562,7 @@ export class EmailProcessingWorkerPool extends EventEmitter {
   /**
    * Get current pool metrics
    */
-  getPoolMetrics(): PoolMetrics {
+  async getPoolMetrics(): Promise<PoolMetrics> {
     let activeWorkers = 0;
     let idleWorkers = 0;
     let totalProcessingTime = 0;
@@ -570,9 +575,9 @@ export class EmailProcessingWorkerPool extends EventEmitter {
         idleWorkers++;
       }
 
-      totalJobs += instance?.metrics?.processedJobs;
+      totalJobs += instance?.metrics?.processedJobs || 0;
       totalProcessingTime +=
-        instance?.metrics?.averageProcessingTime * instance?.metrics?.processedJobs;
+        (instance?.metrics?.averageProcessingTime || 0) * (instance?.metrics?.processedJobs || 0);
     }
 
     const averageProcessingTime =
@@ -581,13 +586,23 @@ export class EmailProcessingWorkerPool extends EventEmitter {
     const throughput =
       elapsedMinutes > 0 ? this.totalProcessed / elapsedMinutes : 0;
 
+    // Get queue depth from BullMQ v5
+    let queueDepth = 0;
+    try {
+      const jobCounts = await this?.jobQueue?.getJobCounts();
+      queueDepth = (jobCounts?.waiting || 0) + (jobCounts?.active || 0);
+    } catch (error) {
+      // Handle error gracefully
+      queueDepth = 0;
+    }
+
     return {
       activeWorkers,
       idleWorkers,
       totalProcessed: this.totalProcessed,
       totalFailed: this.totalFailed,
       averageProcessingTime,
-      queueDepth: this?.jobQueue?.count() || 0,
+      queueDepth,
       throughput,
     };
   }
@@ -597,7 +612,7 @@ export class EmailProcessingWorkerPool extends EventEmitter {
    */
   getWorkerMetrics(): WorkerMetrics[] {
     return Array.from(this?.workers?.values()).map(
-      (instance: any) => instance.metrics,
+      (instance: WorkerInstance) => instance.metrics,
     );
   }
 
@@ -619,11 +634,11 @@ export class EmailProcessingWorkerPool extends EventEmitter {
 
     // Terminate all workers
     const terminationPromises = Array.from(this?.workers?.values()).map(
-      async (instance: any) => {
+      async (instance: WorkerInstance) => {
         try {
           await instance?.worker?.terminate();
         } catch (error) {
-          logger.error(`Error terminating worker ${instance.id}:`, error as string);
+          logger.error(`Error terminating worker ${instance.id}:`, error instanceof Error ? error.message : String(error));
         }
       },
     );

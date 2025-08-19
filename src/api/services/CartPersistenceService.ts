@@ -25,6 +25,7 @@ export interface Cart {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
+  totalAmount?: number; // Added for backwards compatibility
   createdAt: Date;
   updatedAt: Date;
   expiresAt?: Date;
@@ -64,6 +65,7 @@ export class CartPersistenceService {
         items: [],
         totalItems: 0,
         totalPrice: 0,
+        totalAmount: 0, // Added for backwards compatibility
         createdAt: new Date(),
         updatedAt: new Date(),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
@@ -188,6 +190,7 @@ export class CartPersistenceService {
   private updateCartTotals(cart: Cart): void {
     cart.totalItems = cart?.items?.reduce((total: any, item: any) => total + item.quantity, 0);
     cart.totalPrice = cart?.items?.reduce((total: any, item: any) => total + (item.price * item.quantity), 0);
+    cart.totalAmount = cart.totalPrice; // Keep in sync for backwards compatibility
   }
 
   async getCartsByUser(userId: string): Promise<Cart[]> {
@@ -286,6 +289,45 @@ export class CartPersistenceService {
       return cart;
     } catch (error) {
       logger.error('Error converting cart:', error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  }
+
+  async getCartStats(cartId: string): Promise<{ itemCount: number; totalValue: number; lastUpdated: Date }> {
+    try {
+      const cart = this?.carts?.get(cartId);
+      if (!cart) {
+        return { itemCount: 0, totalValue: 0, lastUpdated: new Date() };
+      }
+
+      return {
+        itemCount: cart.items.length,
+        totalValue: cart.totalPrice, // Fixed: Changed from totalAmount to totalPrice
+        lastUpdated: cart.updatedAt
+      };
+    } catch (error) {
+      logger.error('Error getting cart stats:', error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  }
+
+  async trackProductView(productId: string, userId?: string): Promise<void> {
+    try {
+      // In a real implementation, this would track product views in analytics
+      logger.debug(`Product view tracked: ${productId} by user ${userId || 'anonymous'}`);
+    } catch (error) {
+      logger.error('Error tracking product view:', error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  }
+
+  async getRecentlyViewed(userId?: string, limit: number = 10): Promise<CartItem[]> {
+    try {
+      // In a real implementation, this would return recently viewed products from analytics
+      logger.debug(`Getting recently viewed for user ${userId || 'anonymous'}, limit: ${limit}`);
+      return [];
+    } catch (error) {
+      logger.error('Error getting recently viewed:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }

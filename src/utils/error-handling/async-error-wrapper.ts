@@ -46,7 +46,7 @@ export function withAsyncErrorHandler<
           {
             error: lastError.message,
             stack: lastError.stack,
-            args: args?.length || 0 > 0 ? args : undefined,
+            args: (args?.length || 0) > 0 ? args : undefined,
             attempt,
           },
         );
@@ -193,7 +193,7 @@ export class GracefulShutdown {
   private signalHandlersRegistered = false;
 
   register(handler: () => Promise<void>): void {
-    this?.shutdownHandlers?.push(handler);
+    this.shutdownHandlers.push(handler);
   }
 
   async shutdown(signal: string): Promise<void> {
@@ -212,7 +212,7 @@ export class GracefulShutdown {
 
     try {
       await Promise.all(
-        this?.shutdownHandlers?.map((handler: any) =>
+        this.shutdownHandlers.map((handler) =>
           handler().catch((error: any) =>
             logger.error(
               "Error during shutdown handler",

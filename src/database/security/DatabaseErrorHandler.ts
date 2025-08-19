@@ -149,7 +149,7 @@ export class DatabaseErrorHandler {
     const codeMatch = error?.message?.match(
       /\b(SQLITE_\w+|ENOENT|EACCES|EPERM|EMFILE|ENFILE|ENOSPC)\b/i,
     );
-    if (codeMatch) {
+    if (codeMatch && codeMatch[1]) {
       return codeMatch[1].toUpperCase();
     }
 

@@ -66,8 +66,8 @@ async function benchmarkEndpoint(
   const p99 = latencies[Math.floor(latencies?.length || 0 * 0.99)] || 0;
 
   return {
-    service: name.split(" - ")[0],
-    endpoint: name.split(" - ")[1],
+    service: name.split(" - ")[0] || 'unknown',
+    endpoint: name.split(" - ")[1] || 'unknown',
     requests,
     avgLatency: Math.round(avg),
     minLatency: min,
@@ -199,8 +199,10 @@ async function runBenchmarks() {
   const overallAvg = Math.round(avgLatencies.reduce((a: any, b: any) => a + b, 0) / avgLatencies?.length || 0);
   
   console.log(`Overall Average Latency: ${overallAvg}ms`);
-  console.log(`Best Performing: ${results.sort((a, b) => a.avgLatency - b.avgLatency)[0].service} - ${results[0].endpoint}`);
-  console.log(`Slowest Service: ${results.sort((a, b) => b.avgLatency - a.avgLatency)[0].service} - ${results[results?.length || 0 - 1].endpoint}`);
+  const sortedByLatency = results.sort((a, b) => a.avgLatency - b.avgLatency);
+  console.log(`Best Performing: ${sortedByLatency[0]?.service} - ${sortedByLatency[0]?.endpoint}`);
+  const sortedBySlowest = results.sort((a, b) => b.avgLatency - a.avgLatency);
+  console.log(`Slowest Service: ${sortedBySlowest[0]?.service} - ${sortedBySlowest[sortedBySlowest.length - 1]?.endpoint}`);
   
   const allPassing = results.every(r => {
     const target = targets[r.service as keyof typeof targets];

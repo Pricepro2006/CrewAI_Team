@@ -40,13 +40,16 @@ import { monitoringRouter } from "./routers/monitoring.router.js";
 import { groceryNLPQueueRouter } from "./routers/grocery-nlp-queue.router.js";
 import { pollingRouter } from "./routers/polling.router.js";
 import { priceAlertsRouter } from "./price-alerts.router.js";
+import { cartRouter } from "./cart.router.js";
+import { healthCheckRouter } from "./health-check.router.js";
+import { walmartGroceryRouter as walmartGroceryTRPCRouter } from "./walmart-grocery.router.js";
 
 // Import the router function from enhanced-router
-import { router as createRouter } from "./enhanced-router.js";
+import { router } from "./enhanced-router.js";
 import type { AnyRouter } from "@trpc/server";
 
 // Create the main app router with enhanced security
-export const appRouter = createRouter({
+export const appRouter = router({
   auth: authRouter, // Authentication endpoints
   agent: agentRouter,
   task: taskRouter,
@@ -68,6 +71,9 @@ export const appRouter = createRouter({
   groceryNLPQueue: groceryNLPQueueRouter, // Grocery NLP Queue management
   polling: pollingRouter, // HTTP polling fallback endpoints
   priceAlerts: priceAlertsRouter, // Price alert system
+  cart: cartRouter, // Shopping cart management
+  healthCheck: healthCheckRouter, // Health monitoring endpoints
+  walmartGroceryTRPC: walmartGroceryTRPCRouter, // Enhanced Walmart grocery endpoints
 });
 
 export type AppRouter = typeof appRouter;

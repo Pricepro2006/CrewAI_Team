@@ -7,7 +7,7 @@ import {
 import type {
   IEMSEmail,
   EmailStatus,
-} from "../../../types/iems-email?.types.js";
+} from "../../../types/iems-email.types.js";
 import "./EmailAliasSection.css";
 
 interface EmailAliasSectionProps {
@@ -36,6 +36,10 @@ export const EmailAliasSection: React.FC<EmailAliasSectionProps> = ({
       case "green":
         return (
           <CheckCircleIcon className="email-status-icon email-status-icon--green" />
+        );
+      default:
+        return (
+          <ClockIcon className="email-status-icon email-status-icon--yellow" />
         );
     }
   };
@@ -123,7 +127,8 @@ export const EmailAliasSection: React.FC<EmailAliasSectionProps> = ({
                           yellow: "green",
                           green: "red",
                         };
-                        handleStatusChange(email.id, nextStatus[email.status]);
+                        const emailStatus = email.status as EmailStatus;
+                        handleStatusChange(email.id, nextStatus[emailStatus]);
                       }}
                       title={email.statusText || "Click to change status"}
                     >

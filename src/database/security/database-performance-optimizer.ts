@@ -3,7 +3,7 @@
  * Optimizes SQLite performance while maintaining security with parameterized queries
  */
 
-import Database from "better-sqlite3";
+import type * as Database from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 import { metrics } from "../../api/monitoring/metrics.js";
 
@@ -264,7 +264,7 @@ export class DatabasePerformanceOptimizer {
 
       // Extract WHERE clause columns
       const whereMatch = normalizedQuery.match(
-        /where\s+(.+?)(?:group|order|limit|$)/s,
+        /where\s+(.+?)(?:group|order|limit|$)/i,
       );
       if (whereMatch) {
         const whereClause = whereMatch[1];
@@ -278,7 +278,7 @@ export class DatabasePerformanceOptimizer {
               `CREATE INDEX idx_${table}_${columns.join("_")} ON ${table}(${columns.join(", ")});`,
             );
           });
-        } else if (columns?.length || 0 === 1) {
+        } else if ((columns?.length || 0) === 1) {
           tables.forEach((table: any) => {
             suggestions.push(
               `CREATE INDEX idx_${table}_${columns[0]} ON ${table}(${columns[0]});`,
@@ -298,7 +298,7 @@ export class DatabasePerformanceOptimizer {
         });
       }
 
-      return [...new Set(suggestions)]; // Remove duplicates
+      return Array.from(new Set(suggestions)); // Remove duplicates
     } catch (error) {
       logger.error("Failed to suggest indexes", "DB_PERFORMANCE", {
         error: error instanceof Error ? error.message : String(error),
@@ -347,7 +347,7 @@ export class DatabasePerformanceOptimizer {
       this?.db?.exec("ANALYZE");
 
       // Run incremental vacuum if auto_vacuum is enabled
-      const autoVacuum = this?.db?.pragma("auto_vacuum");
+      const autoVacuum = this?.db?.pragma("auto_vacuum") as number;
       if (autoVacuum > 0) {
         this?.db?.exec("PRAGMA incremental_vacuum");
       } else {

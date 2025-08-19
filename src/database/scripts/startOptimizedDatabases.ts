@@ -18,7 +18,7 @@ async function startOptimizedDatabases() {
     
     // Override with app-specific paths
     if (config.main) {
-      config.main.path = appConfig?.database?.path || config.main.path;
+      config.main.path = appConfig.database?.path || config.main.path;
     }
     if (config.walmart) {
       config.walmart.path = process.env.WALMART_DB_PATH || "./data/walmart_grocery.db";
@@ -64,21 +64,21 @@ async function startOptimizedDatabases() {
     }
 
     logger.info("Database health check passed", "DB_STARTUP", {
-      main: health?.main?.healthy,
-      walmart: health?.walmart.healthy,
+      main: health.main?.healthy,
+      walmart: health.walmart?.healthy,
     });
 
     // Get initial metrics
     const metrics = await unifiedDb.getMetrics();
     logger.info("Database metrics baseline", "DB_STARTUP", {
       main: {
-        connections: metrics?.main?.totalConnections,
-        maxConnections: config?.main?.maxConnections,
+        connections: metrics.main?.totalConnections,
+        maxConnections: config.main?.maxConnections,
       },
       walmart: {
-        connections: metrics?.walmart.totalConnections,
-        maxConnections: config?.walmart.maxConnections,
-        minConnections: config?.walmart.minConnections,
+        connections: metrics.walmart?.totalConnections,
+        maxConnections: config.walmart?.maxConnections,
+        minConnections: config.walmart?.minConnections,
       },
     });
 
@@ -102,8 +102,8 @@ async function startOptimizedDatabases() {
         // Get final metrics
         const finalMetrics = await unifiedDb.getMetrics();
         logger.info("Final database metrics", "DB_STARTUP", {
-          totalQueries: finalMetrics?.main?.totalQueries + finalMetrics?.walmart.totalQueries,
-          avgQueryTime: (finalMetrics?.main?.avgQueryTime + finalMetrics?.walmart.avgQueryTime) / 2,
+          totalQueries: (finalMetrics.main?.totalQueries || 0) + (finalMetrics.walmart?.totalQueries || 0),
+          avgQueryTime: ((finalMetrics.main?.avgQueryTime || 0) + (finalMetrics.walmart?.avgQueryTime || 0)) / 2,
           uptime: process.uptime(),
         });
 
@@ -146,8 +146,8 @@ async function startOptimizedDatabases() {
 
     logger.info("Optimized database systems started successfully", "DB_STARTUP", {
       environment: process.env.NODE_ENV || 'development',
-      mainDb: config?.main?.path,
-      walmartDb: config?.walmart.path,
+      mainDb: config.main?.path,
+      walmartDb: config.walmart?.path,
       monitoring: true,
     });
 

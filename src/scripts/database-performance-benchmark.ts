@@ -125,7 +125,7 @@ class DatabasePerformanceBenchmark {
         }
       }
       
-      stmt.finalize();
+      // Note: better-sqlite3 statements are automatically finalized when they go out of scope
       console.log(''); // New line after progress
       
     } catch (e: any) {
@@ -328,8 +328,8 @@ class DatabasePerformanceBenchmark {
         
         // Add index-based queries if indexes exist
         if (table?.indexes?.length > 0) {
-          const firstIndex = table.indexes[0];
-          const firstColumn = firstIndex.columns[0];
+          const firstIndex = table.indexes?.[0];
+          const firstColumn = firstIndex?.columns?.[0];
           if (firstColumn) {
             testQueries.push({
               query: `SELECT COUNT(*) FROM ${table.tableName} WHERE ${firstColumn} IS NOT NULL`,
@@ -552,7 +552,7 @@ class DatabasePerformanceBenchmark {
         totalTables: results.reduce((sum: any, r: any) => sum + (r.metrics?.tableCount || 0), 0),
         totalIndexes: results.reduce((sum: any, r: any) => sum + (r.metrics?.indexCount || 0), 0),
         avgQueryTime: results.reduce((sum: any, r: any) => {
-          const successfulQueries = r?.benchmarks?.filter(b => b.success);
+          const successfulQueries = r?.benchmarks?.filter((b: any) => b.success);
           const avgTime = successfulQueries.reduce((s: any, b: any) => s + b.avgExecutionTime, 0) / successfulQueries?.length || 0;
           return sum + (avgTime || 0);
         }, 0) / results?.length || 0
@@ -605,4 +605,5 @@ if (isMainModule) {
   main();
 }
 
-export { DatabasePerformanceBenchmark, QueryBenchmark, DatabaseMetrics, TableAnalysis };
+export type { QueryBenchmark, DatabaseMetrics, TableAnalysis };
+export { DatabasePerformanceBenchmark };

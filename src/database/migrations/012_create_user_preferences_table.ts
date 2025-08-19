@@ -1,4 +1,4 @@
-import type { Database } from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 
 /**
  * Migration: Create user preferences table
@@ -6,7 +6,7 @@ import type { Database } from "better-sqlite3";
  * Description: Creates comprehensive user preferences for brand preferences, dietary restrictions, price sensitivity, and shopping behavior
  */
 
-export function up(db: Database.Database) {
+export function up(db: DatabaseInstance) {
   console.log("Creating user preferences table...");
 
   // Create user_preferences table
@@ -233,7 +233,7 @@ export function up(db: Database.Database) {
   console.log("✅ User preferences table created successfully");
 }
 
-export function down(db: Database.Database) {
+export function down(db: DatabaseInstance) {
   console.log("Dropping user preferences tables...");
 
   db.exec(`DROP TABLE IF EXISTS dietary_goals;`);

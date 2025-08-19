@@ -4,9 +4,14 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useSmartWebSocket } from '../hooks/useSmartWebSocket.js';
+import { useSmartWebSocket, ConnectionMode, ConnectionQuality } from '../hooks/useSmartWebSocket.js';
 import { ConnectionMonitor } from './ConnectionMonitor.js';
-import { toast } from 'react-hot-toast';
+// Using fallback toast implementation
+const toast = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  loading: (message: string) => console.log('Loading:', message),
+};
 import { 
   WifiIcon, 
   ArrowPathIcon,
@@ -17,8 +22,26 @@ import {
 interface WalmartSmartConnectionProps {
   userId?: string;
   sessionId?: string;
-  onDataReceived?: (data: any) => void;
+  onDataReceived?: (data: Record<string, unknown>) => void;
   children?: React.ReactNode;
+}
+
+interface SmartWebSocketConnection {
+  mode: ConnectionMode;
+  quality: ConnectionQuality;
+  isConnected: boolean;
+  isConnecting: boolean;
+  reconnectAttempts: number;
+  lastError: Error | null;
+  lastMessage: Record<string, unknown> | null;
+  dataVersion: number;
+  connect: () => void;
+  disconnect: () => void;
+  reconnect: () => void;
+  sendMessage: (message: Record<string, unknown>) => boolean;
+  switchMode: (mode: ConnectionMode) => void;
+  trpcClient: unknown;
+  canSend: boolean;
 }
 
 export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
@@ -30,7 +53,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [messageHistory, setMessageHistory] = useState<any[]>([]);
 
-  const connection = useSmartWebSocket({
+  const connection: SmartWebSocketConnection = useSmartWebSocket({
     wsUrl: `ws://localhost:3001/ws/walmart`,
     userId,
     sessionId,
@@ -57,16 +80,18 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
       setMessageHistory(prev => [...prev.slice(-9), message]);
       onDataReceived?.(message);
     },
-    onModeChange: (mode: any) => {
-      const modeMessages = {
+    onModeChange: (mode: ConnectionMode) => {
+      const modeMessages: Record<ConnectionMode, string> = {
         websocket: 'Real-time connection established',
         polling: 'Switched to polling mode (fallback)',
+        hybrid: 'Hybrid mode active',
         offline: 'Connection lost'
       };
       
-      const modeIcons = {
+      const modeIcons: Record<ConnectionMode, React.ReactNode> = {
         websocket: <WifiIcon className="w-5 h-5" />,
         polling: <ArrowPathIcon className="w-5 h-5" />,
+        hybrid: <ArrowPathIcon className="w-5 h-5" />,
         offline: <ExclamationCircleIcon className="w-5 h-5" />
       };
 
@@ -80,7 +105,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
   });
 
   // Send test message
-  const sendTestMessage = () => {
+  const sendTestMessage = (): void => {
     const success = connection.sendMessage({
       type: 'ping',
       timestamp: Date.now()
@@ -94,14 +119,14 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
   };
 
   // Connection status indicator
-  const getStatusColor = () => {
+  const getStatusColor = (): string => {
     if (!connection.isConnected) return 'bg-red-500';
     if (connection.mode === 'websocket') return 'bg-green-500';
     if (connection.mode === 'polling') return 'bg-yellow-500';
     return 'bg-gray-500';
   };
 
-  const getStatusText = () => {
+  const getStatusText = (): string => {
     if (connection.isConnecting) return 'Connecting...';
     if (!connection.isConnected) return 'Offline';
     if (connection.mode === 'websocket') return 'Real-time';
@@ -164,7 +189,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
         {/* Connection Actions */}
         <div className="mt-3 flex gap-2">
           <button
-            onClick={() => connection.reconnect()}
+            onClick={(): void => connection.reconnect()}
             className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
             disabled={connection.isConnecting}
           >
@@ -172,7 +197,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
           </button>
           
           <button
-            onClick={() => connection.switchMode('websocket')}
+            onClick={(): void => connection.switchMode('websocket')}
             className={`px-3 py-1 text-sm rounded transition-colors ${
               connection.mode === 'websocket' 
                 ? 'bg-green-500 text-white' 
@@ -184,7 +209,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
           </button>
           
           <button
-            onClick={() => connection.switchMode('polling')}
+            onClick={(): void => connection.switchMode('polling')}
             className={`px-3 py-1 text-sm rounded transition-colors ${
               connection.mode === 'polling' 
                 ? 'bg-yellow-500 text-white' 
@@ -215,7 +240,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
       </div>
 
       {/* Message History (Debug) */}
-      {process.env.NODE_ENV === 'development' && messageHistory?.length || 0 > 0 && (
+      {process.env.NODE_ENV === 'development' && (messageHistory?.length || 0) > 0 && (
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Recent Messages ({messageHistory?.length || 0})
@@ -246,7 +271,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
                 Attempting to reconnect...
               </p>
               <button
-                onClick={() => connection.reconnect()}
+                onClick={(): void => connection.reconnect()}
                 className="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
               >
                 Retry Now

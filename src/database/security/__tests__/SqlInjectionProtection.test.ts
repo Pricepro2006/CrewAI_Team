@@ -3,13 +3,13 @@
  * Comprehensive test suite for SQL injection protection
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   SqlInjectionProtection,
   SqlInjectionError,
   DatabaseInputSchemas,
   createSqlInjectionProtection,
-} from "../SqlInjectionProtection.js";
+} from '../SqlInjectionProtection';
 
 describe("SqlInjectionProtection", () => {
   let sqlSecurity: SqlInjectionProtection;
@@ -259,25 +259,25 @@ describe("DatabaseInputSchemas", () => {
   describe("Basic Input Validation", () => {
     it("should validate safe inputs", () => {
       expect(() => {
-        DatabaseInputSchemas?.email?.parse("user@example.com");
+        DatabaseInputSchemas.email.parse("user@example.com");
       }).not.toThrow();
 
       expect(() => {
-        DatabaseInputSchemas?.id?.parse("123e4567-e89b-12d3-a456-426614174000");
+        DatabaseInputSchemas.id.parse("123e4567-e89b-12d3-a456-426614174000");
       }).not.toThrow();
 
       expect(() => {
-        DatabaseInputSchemas?.shortText?.parse("Safe text content");
+        DatabaseInputSchemas.shortText.parse("Safe text content");
       }).not.toThrow();
     });
 
     it("should reject malicious inputs", () => {
       expect(() => {
-        DatabaseInputSchemas?.shortText?.parse("'; DROP TABLE users; --");
+        DatabaseInputSchemas.shortText.parse("'; DROP TABLE users; --");
       }).toThrow();
 
       expect(() => {
-        DatabaseInputSchemas?.email?.parse(
+        DatabaseInputSchemas.email.parse(
           "admin@example.com'; DROP TABLE users; --",
         );
       }).toThrow();
@@ -295,7 +295,7 @@ describe("DatabaseInputSchemas", () => {
 
       safeQueries.forEach((query: any) => {
         expect(() => {
-          DatabaseInputSchemas?.searchQuery?.parse(query);
+          DatabaseInputSchemas.searchQuery.parse(query);
         }).not.toThrow();
       });
     });
@@ -312,7 +312,7 @@ describe("DatabaseInputSchemas", () => {
 
       maliciousQueries.forEach((query: any) => {
         expect(() => {
-          DatabaseInputSchemas?.searchQuery?.parse(query);
+          DatabaseInputSchemas.searchQuery.parse(query);
         }).toThrow();
       });
     });
@@ -324,7 +324,7 @@ describe("DatabaseInputSchemas", () => {
 
       validNames.forEach((name: any) => {
         expect(() => {
-          DatabaseInputSchemas?.columnName?.parse(name);
+          DatabaseInputSchemas.columnName.parse(name);
         }).not.toThrow();
       });
     });
@@ -340,7 +340,7 @@ describe("DatabaseInputSchemas", () => {
 
       invalidNames.forEach((name: any) => {
         expect(() => {
-          DatabaseInputSchemas?.columnName?.parse(name);
+          DatabaseInputSchemas.columnName.parse(name);
         }).toThrow();
       });
     });
@@ -358,7 +358,7 @@ describe("DatabaseInputSchemas", () => {
 
       validJson.forEach((json: any) => {
         expect(() => {
-          DatabaseInputSchemas.jsonField?.parse(json);
+          DatabaseInputSchemas.jsonField.parse(json);
         }).not.toThrow();
       });
     });
@@ -374,7 +374,7 @@ describe("DatabaseInputSchemas", () => {
 
       invalidJson.forEach((json: any) => {
         expect(() => {
-          DatabaseInputSchemas.jsonField?.parse(json);
+          DatabaseInputSchemas.jsonField.parse(json);
         }).toThrow();
       });
     });

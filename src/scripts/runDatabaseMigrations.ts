@@ -8,9 +8,9 @@
 import Database from "better-sqlite3";
 import { join } from "path";
 import { existsSync } from "fs";
-import { DatabaseMigrator } from "../database/migrations/DatabaseMigrator.js";
-import { logger } from "../../utils/logger.js";
-import appConfig from "../config/app.config.js";
+import { DatabaseMigrator } from "../database/migrations/DatabaseMigrator";
+import { logger } from "../utils/logger";
+import appConfig from "../config/app.config";
 
 // Import all migrations
 import {
@@ -36,16 +36,16 @@ const migrations: MigrationModule[] = [
     version: 6,
     name: "fix_negative_processing_times",
     description: "Fix negative processing times in email_analysis table",
-    up: fixNegativeProcessingTimes,
-    down: rollbackNegativeProcessingTimes,
+    up: async (db: Database.Database) => { return fixNegativeProcessingTimes(db); },
+    down: async (db: Database.Database) => { return rollbackNegativeProcessingTimes(db); },
   },
   {
     version: 7,
     name: "add_composite_indexes",
     description:
       "Add composite indexes for email analytics performance optimization",
-    up: addCompositeIndexes,
-    down: rollbackCompositeIndexes,
+    up: async (db: Database.Database) => { return addCompositeIndexes(db); },
+    down: async (db: Database.Database) => { return rollbackCompositeIndexes(db); },
   },
 ];
 

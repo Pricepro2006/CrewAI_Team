@@ -1,7 +1,29 @@
 import React, { useMemo, useState } from "react";
-import type { GetAnalyticsResponse } from "../../../types/unified-email?.types.js";
-import { StatusDistributionChart } from "../../../client/components/charts/StatusDistributionChart.js";
-import { WorkflowTimelineChart } from "../../../client/components/charts/WorkflowTimelineChart.js";
+// Define GetAnalyticsResponse locally to avoid import issues
+interface GetAnalyticsResponse {
+  totalEmails: number;
+  workflowDistribution: Record<string, number>;
+  slaCompliance: Record<string, number>;
+  averageProcessingTime: number;
+  workflowCompletion?: number;
+  avgResponseTime?: number;
+  agentUtilization?: number;
+  statusCounts?: {
+    critical: number;
+    inProgress: number;
+    completed: number;
+  };
+  workflowData?: {
+    completeChains: number;
+    partialChains: number;
+    brokenChains: number;
+    totalChains: number;
+  };
+  criticalAlerts?: any[];
+}
+// Import chart components with fallback
+import { StatusDistributionChart } from "../../../client/components/charts/StatusDistributionChart";
+import { WorkflowTimelineChart } from "../../../client/components/charts/WorkflowTimelineChart";
 import {
   ChartBarIcon,
   ClockIcon,

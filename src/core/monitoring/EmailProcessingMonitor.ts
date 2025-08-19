@@ -208,8 +208,8 @@ export class EmailProcessingMonitor extends EventEmitter {
       currentMetrics?.errors?.recent.push(errorInfo);
 
       // Keep only last 100 errors
-      if (currentMetrics?.errors?.recent?.length || 0 > 100) {
-        currentMetrics?.errors?.recent = currentMetrics?.errors?.recent.slice(-100);
+      if (currentMetrics?.errors?.recent?.length && currentMetrics.errors.recent.length > 100) {
+        currentMetrics.errors.recent = currentMetrics.errors.recent.slice(-100);
       }
     }
 
@@ -238,9 +238,9 @@ export class EmailProcessingMonitor extends EventEmitter {
     workerMetrics: WorkerMetrics[],
   ): void {
     const currentMetrics = this.getCurrentMetrics();
-    if (currentMetrics) {
-      currentMetrics?.workers?.pool = poolMetrics;
-      currentMetrics?.workers?.instances = workerMetrics;
+    if (currentMetrics && currentMetrics.workers) {
+      currentMetrics.workers.pool = poolMetrics;
+      currentMetrics.workers.instances = workerMetrics;
     }
 
     // Update throughput samples

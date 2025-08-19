@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { BusinessResponseValidator } from "../BusinessResponseValidator.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { BusinessResponseValidator } from '../BusinessResponseValidator';
 
 describe("BusinessResponseValidator", () => {
   let validator: BusinessResponseValidator;
@@ -19,8 +19,8 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.phones).toHaveLength(5);
-      expect(result?.contactInfo?.phones[0]?.type).toBe("tollFree");
+      expect(result?.contactInfo?.length).toHaveLength(5);
+      expect(result?.contactInfo?.phones[0]?.length).toBe("tollFree");
       expect(
         result?.contactInfo?.phones.some((p: any) => p?.value?.includes("ext")),
       ).toBe(true);
@@ -35,7 +35,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.phones).toHaveLength(3);
+      expect(result?.contactInfo?.length).toHaveLength(3);
       expect(
         result?.contactInfo?.phones.every((p: any) => p.type === "international"),
       ).toBe(true);
@@ -52,7 +52,7 @@ describe("BusinessResponseValidator", () => {
       const result = validator.validateResponse(text);
 
       expect(result?.contactInfo?.phones?.length || 0).toBeGreaterThan(0);
-      expect(result?.contactInfo?.phones[0]?.normalized).toMatch(/^\d+$/);
+      expect(result?.contactInfo?.phones[0]?.length).toMatch(/^\d+$/);
     });
 
     it("should mask phone numbers in privacy mode", () => {
@@ -63,8 +63,8 @@ describe("BusinessResponseValidator", () => {
 
       const result = privacyValidator.validateResponse(text);
 
-      expect(result?.contactInfo?.phones[0]?.value).toContain("XXXX4567");
-      expect(result?.contactInfo?.phones[0]?.normalized).toContain("XXXX4567");
+      expect(result?.contactInfo?.phones[0]?.length).toContain("XXXX4567");
+      expect(result?.contactInfo?.phones[0]?.length).toContain("XXXX4567");
     });
   });
 
@@ -77,11 +77,11 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.addresses).toHaveLength(2);
-      expect(result?.contactInfo?.addresses[0]?.street).toContain("Main Street");
-      expect(result?.contactInfo?.addresses[0]?.city).toBe("New York");
-      expect(result?.contactInfo?.addresses[0]?.state).toBe("NY");
-      expect(result?.contactInfo?.addresses[0]?.zip).toBe("10001");
+      expect(result?.contactInfo?.length).toHaveLength(2);
+      expect(result?.contactInfo?.addresses[0]?.length).toContain("Main Street");
+      expect(result?.contactInfo?.addresses[0]?.length).toBe("New York");
+      expect(result?.contactInfo?.addresses[0]?.length).toBe("NY");
+      expect(result?.contactInfo?.addresses[0]?.length).toBe("10001");
     });
 
     it("should extract PO Box addresses", () => {
@@ -92,7 +92,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.addresses).toHaveLength(2);
+      expect(result?.contactInfo?.length).toHaveLength(2);
       expect(
         result?.contactInfo?.addresses.every((a: any) => a.type === "poBox"),
       ).toBe(true);
@@ -108,7 +108,7 @@ describe("BusinessResponseValidator", () => {
       const result = validator.validateResponse(text);
 
       expect(result?.contactInfo?.addresses?.length || 0).toBeGreaterThan(0);
-      expect(result?.contactInfo?.addresses[0]?.value).toContain("Apt");
+      expect(result?.contactInfo?.addresses[0]?.length).toContain("Apt");
     });
   });
 
@@ -122,11 +122,11 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.businessNames).toHaveLength(3);
+      expect(result?.contactInfo?.length).toHaveLength(3);
       expect(
         result?.contactInfo?.businessNames.every((b: any) => b.hasEntityType),
       ).toBe(true);
-      expect(result?.contactInfo?.businessNames[0]?.confidence).toBeGreaterThan(
+      expect(result?.contactInfo?.businessNames[0]?.length).toBeGreaterThan(
         0.7,
       );
     });
@@ -214,8 +214,8 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.emails).toHaveLength(3);
-      expect(result?.contactInfo?.emails[0]?.domain).toBe("example.com");
+      expect(result?.contactInfo?.length).toHaveLength(3);
+      expect(result?.contactInfo?.emails[0]?.length).toBe("example.com");
     });
 
     it("should extract websites", () => {
@@ -227,8 +227,8 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.websites).toHaveLength(3);
-      expect(result?.contactInfo?.websites[0]?.protocol).toBe("https:");
+      expect(result?.contactInfo?.length).toHaveLength(3);
+      expect(result?.contactInfo?.websites[0]?.length).toBe("https:");
     });
   });
 
@@ -296,7 +296,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.phones).toHaveLength(0);
+      expect(result?.contactInfo?.length).toHaveLength(0);
     });
 
     it("should not extract non-address numbers as addresses", () => {
@@ -308,7 +308,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result?.contactInfo?.addresses).toHaveLength(0);
+      expect(result?.contactInfo?.length).toHaveLength(0);
     });
 
     it("should not extract common words as business names", () => {

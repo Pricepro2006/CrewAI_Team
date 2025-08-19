@@ -16,12 +16,12 @@ import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
 import { CircuitBreaker } from '../resilience/CircuitBreaker.js';
 import { z } from 'zod';
-import crypto from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { promisify } from 'util';
-import zlib from 'zlib';
+import { gzip as zlibGzip, gunzip as zlibGunzip } from 'zlib';
 
-const gzip = promisify(zlib.gzip);
-const gunzip = promisify(zlib.gunzip);
+const gzip = promisify(zlibGzip);
+const gunzip = promisify(zlibGunzip);
 
 // Cache configuration schema
 const CacheConfigSchema = z.object({
@@ -86,7 +86,7 @@ export class RedisCacheManager {
     this.circuitBreaker = new CircuitBreaker('redis-cache', {
       failureThreshold: 5,
       resetTimeout: 30000,
-      timeout: 5000,
+      monitoringPeriod: 60000,
     });
 
     this.setupErrorHandling();
@@ -244,17 +244,23 @@ export class RedisCacheManager {
               parsedValue = decompressed.toString();
             }
 
-            results.set(key, JSON.parse(parsedValue) as T);
-            this.updateMetrics(key, 'hit', Date.now() - startTime);
+            if (key && parsedValue) {
+              results.set(key, JSON.parse(parsedValue) as T);
+              this.updateMetrics(key, 'hit', Date.now() - startTime);
+            }
           } catch (parseError) {
             logger.warn('Failed to parse cached value', 'CACHE_MANAGER', {
               key,
               error: parseError instanceof Error ? parseError.message : String(parseError),
             });
-            this.updateMetrics(key, 'miss', Date.now() - startTime);
+            if (key) {
+              this.updateMetrics(key, 'miss', Date.now() - startTime);
+            }
           }
         } else {
-          this.updateMetrics(key, 'miss', Date.now() - startTime);
+          if (key) {
+            this.updateMetrics(key, 'miss', Date.now() - startTime);
+          }
         }
       }
 
@@ -421,8 +427,8 @@ export class RedisCacheManager {
       const missesMatch = info.match(/keyspace_misses:(\d+)/);
       const memoryMatch = memory.match(/used_memory:(\d+)/);
       
-      const hits = statsMatch ? parseInt(statsMatch[1]) : 0;
-      const misses = missesMatch ? parseInt(missesMatch[1]) : 0;
+      const hits = statsMatch && statsMatch[1] ? parseInt(statsMatch[1]) : 0;
+      const misses = missesMatch && missesMatch[1] ? parseInt(missesMatch[1]) : 0;
       const total = hits + misses;
       
       // Calculate metrics from our collector
@@ -440,7 +446,7 @@ export class RedisCacheManager {
         missRate: total > 0 ? (misses / total) * 100 : 0,
         totalHits: hits,
         totalMisses: misses,
-        memoryUsage: memoryMatch ? parseInt(memoryMatch[1]) : 0,
+        memoryUsage: memoryMatch && memoryMatch[1] ? parseInt(memoryMatch[1]) : 0,
         avgResponseTime: avgResponseTime / 1000, // Convert to seconds
       };
     } catch (error) {
@@ -512,7 +518,7 @@ export class RedisCacheManager {
     ttl: number = 30,
     timeout: number = 10000
   ): Promise<string | null> {
-    const lockValue = crypto.randomUUID();
+    const lockValue = randomUUID();
     const fullKey = `${this?.keyPrefixes?.locks}${lockKey}`;
     const startTime = Date.now();
 

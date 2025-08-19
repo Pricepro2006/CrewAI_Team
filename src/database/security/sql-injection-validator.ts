@@ -3,8 +3,8 @@
  * Validates all database queries in the codebase for SQL injection vulnerabilities
  */
 
-import { glob } from "glob";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync, statSync } from "fs";
+import { join } from "path";
 import { logger } from "../../utils/logger.js";
 
 interface VulnerabilityReport {
@@ -82,20 +82,46 @@ export class SqlInjectionValidator {
   async validateCodebase(rootPath: string = "src"): Promise<void> {
     logger.info("Starting SQL injection security validation", "SQL_VALIDATOR");
 
-    const files = await glob(`${rootPath}/**/*.{ts,js}`, {
-      ignore: [
-        "**/node_modules/**",
-        "**/dist/**",
-        "**/*.test.ts",
-        "**/*.spec.ts",
-      ],
-    });
+    const files = this.getAllFiles(rootPath, ['.ts', '.js']);
 
     for (const file of files) {
+      // Skip test files and node_modules
+      if (file.includes('node_modules') || file.includes('dist') || 
+          file.endsWith('.test.ts') || file.endsWith('.spec.ts')) {
+        continue;
+      }
       await this.validateFile(file);
     }
 
     this.generateReport();
+  }
+
+  /**
+   * Get all files with specified extensions recursively
+   */
+  private getAllFiles(dirPath: string, extensions: string[]): string[] {
+    const files: string[] = [];
+    
+    try {
+      const items = readdirSync(dirPath);
+      
+      for (const item of items) {
+        const fullPath = join(dirPath, item);
+        const stat = statSync(fullPath);
+        
+        if (stat.isDirectory()) {
+          files.push(...this.getAllFiles(fullPath, extensions));
+        } else if (extensions.some(ext => item.endsWith(ext))) {
+          files.push(fullPath);
+        }
+      }
+    } catch (error) {
+      logger.warn(`Failed to read directory: ${dirPath}`, "SQL_VALIDATOR", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+    
+    return files;
   }
 
   /**

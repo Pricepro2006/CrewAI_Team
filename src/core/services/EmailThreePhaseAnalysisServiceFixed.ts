@@ -279,7 +279,7 @@ Respond ONLY with valid JSON.`;
         processing_time_ms: Date.now() - startTime,
       } as AnalysisResult;
     } catch (error) {
-      logger.warn("Phase 2 enhancement failed, using phase 1 results:", error);
+      logger.warn("Phase 2 enhancement failed, using phase 1 results:", error as string);
       if (this.stats.jsonFailureCount) { this.stats.jsonFailureCount++ };
 
       return {

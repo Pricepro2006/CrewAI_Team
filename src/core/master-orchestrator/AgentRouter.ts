@@ -62,27 +62,27 @@ export class AgentRouter {
         case 'research':
         case 'information':
         case 'web':
-          agentScores.ResearchAgent += 3;
+          agentScores.ResearchAgent = (agentScores.ResearchAgent || 0) + 3;
           break;
         case 'code':
         case 'programming':
         case 'development':
-          agentScores.CodeAgent += 3;
+          agentScores.CodeAgent = (agentScores.CodeAgent || 0) + 3;
           break;
         case 'analysis':
         case 'data':
         case 'statistics':
-          agentScores.DataAnalysisAgent += 3;
+          agentScores.DataAnalysisAgent = (agentScores.DataAnalysisAgent || 0) + 3;
           break;
         case 'writing':
         case 'documentation':
         case 'content':
-          agentScores.WriterAgent += 3;
+          agentScores.WriterAgent = (agentScores.WriterAgent || 0) + 3;
           break;
         case 'automation':
         case 'tools':
         case 'execution':
-          agentScores.ToolExecutorAgent += 3;
+          agentScores.ToolExecutorAgent = (agentScores.ToolExecutorAgent || 0) + 3;
           break;
       }
     });
@@ -108,7 +108,7 @@ export class AgentRouter {
     Object.entries(intentPatterns).forEach(([agent, patterns]) => {
       patterns.forEach(pattern => {
         if (intentLower.includes(pattern)) {
-          agentScores[agent] += 2;
+          agentScores[agent] = (agentScores[agent] || 0) + 2;
         }
       });
     });
@@ -116,22 +116,22 @@ export class AgentRouter {
     // Score based on entities (lower weight)
     if (entities) {
       if (entities.code || entities.functions || entities.classes) {
-        agentScores.CodeAgent += 1;
+        agentScores.CodeAgent = (agentScores.CodeAgent || 0) + 1;
       }
       if (entities.data || entities.metrics || entities.numbers) {
-        agentScores.DataAnalysisAgent += 1;
+        agentScores.DataAnalysisAgent = (agentScores.DataAnalysisAgent || 0) + 1;
       }
       if (entities.topics || entities.concepts) {
-        agentScores.ResearchAgent += 1;
+        agentScores.ResearchAgent = (agentScores.ResearchAgent || 0) + 1;
       }
       if (entities.documents || entities.text) {
-        agentScores.WriterAgent += 1;
+        agentScores.WriterAgent = (agentScores.WriterAgent || 0) + 1;
       }
     }
     
     // Special case: prioritize CodeAgent for explicit code requests
     if (intentLower.includes('write') && intentLower.includes('function')) {
-      agentScores.CodeAgent += 5;
+      agentScores.CodeAgent = (agentScores.CodeAgent || 0) + 5;
     }
     
     // Find agent with highest score

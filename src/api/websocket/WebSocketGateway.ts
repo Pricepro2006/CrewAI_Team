@@ -198,10 +198,14 @@ export class WebSocketGateway extends EventEmitter {
           perMessageDeflate: this.config.batching.compression.enabled,
           verifyClient: (info, callback) => {
             // Handle async verification properly
-            this.verifyClient(info, callback).catch((error: Error) => {
-              console.error('WebSocket verification error:', error);
-              callback(false);
-            });
+            if (this.verifyClient) {
+              this.verifyClient(info, callback).catch((error: Error) => {
+                console.error('WebSocket verification error:', error);
+                callback(false);
+              });
+            } else {
+              callback(true);
+            }
           }
         });
 
@@ -278,7 +282,7 @@ export class WebSocketGateway extends EventEmitter {
           : authHeader;
 
         // Validate token asynchronously
-        if (this.config.auth.validateToken) {
+        if (this.config.auth.validateToken && typeof this.config.auth.validateToken === 'function') {
           try {
             const isValid = await this.config.auth.validateToken(token);
             if (!isValid) {
@@ -313,9 +317,9 @@ export class WebSocketGateway extends EventEmitter {
       userId,
       subscriptions: new Map(),
       metadata: {
-        userAgent: request.headers['user-agent'],
-        origin: request.headers.origin,
-        ip: request.socket?.remoteAddress
+        userAgent: request.headers['user-agent'] || 'unknown',
+        origin: request.headers.origin || 'unknown',
+        ip: request.socket?.remoteAddress || 'unknown'
       },
       stats: {
         connectedAt: Date.now(),
@@ -366,6 +370,7 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'ping',
+      timestamp: Date.now(),
       payload: {
         connectionId,
         serverTime: Date.now(),
@@ -468,6 +473,7 @@ export class WebSocketGateway extends EventEmitter {
       this.sendMessage(connectionId, {
         id: this.generateMessageId(),
         type: 'subscribe',
+        timestamp: Date.now(),
         payload: {
           subscriptionId: subscription.id,
           status: 'success',
@@ -519,6 +525,7 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'unsubscribe',
+      timestamp: Date.now(),
       payload: {
         subscriptionId,
         status: 'success',
@@ -533,6 +540,7 @@ export class WebSocketGateway extends EventEmitter {
       const event: BaseEvent = {
         id: message.payload?.id || this.generateMessageId(),
         type: message.payload?.type,
+        version: 1,
         source: `websocket:${connectionId}`,
         timestamp: Date.now(),
         payload: message.payload?.payload || {},
@@ -561,6 +569,7 @@ export class WebSocketGateway extends EventEmitter {
       this.sendMessage(connectionId, {
         id: this.generateMessageId(),
         type: 'publish',
+        timestamp: Date.now(),
         payload: {
           eventId: event.id,
           status: 'success',
@@ -578,6 +587,7 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'pong',
+      timestamp: Date.now(),
       payload: {
         serverTime: Date.now(),
         connectionId
@@ -632,11 +642,13 @@ export class WebSocketGateway extends EventEmitter {
       // Check if event matches subscription filters
       const matchingSubscriptions = this.getMatchingSubscriptions(connection, event);
       
-      for (const subscription of matchingSubscriptions) {
-        if (subscription.options?.batching) {
-          this.addToBatch(connectionId, event, subscription);
-        } else {
-          this.sendEventDirectly(connectionId, event, subscription);
+      if (matchingSubscriptions && matchingSubscriptions.length > 0) {
+        for (const subscription of matchingSubscriptions) {
+          if (subscription.options?.batching) {
+            this.addToBatch(connectionId, event, subscription);
+          } else {
+            this.sendEventDirectly(connectionId, event, subscription);
+          }
         }
       }
     }
@@ -645,8 +657,9 @@ export class WebSocketGateway extends EventEmitter {
   private getMatchingSubscriptions(connection: ClientConnection, event: BaseEvent): Subscription[] {
     const matching: Subscription[] = [];
 
-    for (const subscription of Array.from(connection.subscriptions.values())) {
-      if (!subscription.eventTypes.includes(event.type)) continue;
+    const subscriptions = connection.subscriptions ? Array.from(connection.subscriptions.values()) : [];
+    for (const subscription of subscriptions) {
+      if (!subscription.eventTypes || !subscription.eventTypes.includes(event.type)) continue;
 
       if (subscription.filters) {
         // Apply filters
@@ -654,9 +667,9 @@ export class WebSocketGateway extends EventEmitter {
           continue;
         }
 
-        if (subscription.filters.metadata) {
+        if (subscription.filters.metadata && event.metadata) {
           const matches = Object.entries(subscription.filters.metadata).every(
-            ([key, value]) => event.metadata[key] === value
+            ([key, value]) => event.metadata && event.metadata[key] === value
           );
           if (!matches) continue;
         }
@@ -706,6 +719,7 @@ export class WebSocketGateway extends EventEmitter {
     const batchMessage: WebSocketMessage = {
       id: this.generateMessageId(),
       type: 'batch',
+      timestamp: Date.now(),
       payload: {
         events,
         batchSize: events.length,
@@ -716,19 +730,22 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, batchMessage);
 
     this.metrics.totalBatches++;
-    this.updateAverageBatchSize(events.length);
+    if (events && events.length > 0) {
+      this.updateAverageBatchSize(events.length);
 
-    this.emit('batch_sent', {
-      connectionId,
-      eventCount: events.length,
-      batchId: batchMessage.id
-    });
+      this.emit('batch_sent', {
+        connectionId,
+        eventCount: events.length,
+        batchId: batchMessage.id
+      });
+    }
   }
 
   private sendEventDirectly(connectionId: string, event: BaseEvent, subscription: Subscription): void {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'publish',
+      timestamp: Date.now(),
       payload: {
         event,
         subscriptionId: subscription.id,
@@ -760,6 +777,7 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'ping', // Using ping as error type not in schema
+      timestamp: Date.now(),
       payload: {
         error: true,
         code,
@@ -979,6 +997,7 @@ export class WebSocketGateway extends EventEmitter {
     const event: BaseEvent = {
       id: this.generateMessageId(),
       type: eventType,
+      version: 1,
       source: options.source || 'websocket_gateway',
       timestamp: Date.now(),
       payload,

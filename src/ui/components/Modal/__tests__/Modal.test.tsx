@@ -3,9 +3,9 @@
  * Tests modal functionality and accessibility
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock Modal component
@@ -41,12 +41,16 @@ const Modal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      document?.body?.style.overflow = "hidden";
+      if (document?.body?.style) {
+        document.body.style.overflow = "hidden";
+      }
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document?.body?.style.overflow = "unset";
+      if (document?.body?.style) {
+        document.body.style.overflow = "unset";
+      }
     };
   }, [isOpen, closeOnEscape, onClose]);
 

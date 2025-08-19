@@ -7,16 +7,16 @@ import {
 // Removed MockEmailStorageService import - using real service only
 import { realEmailStorageService } from "../services/RealEmailStorageService.js";
 // import { emailStorageAdapter } from "../services/EmailStorageServiceAdapter.js"; // Disabled - conflicts with enhanced DB
-import { UnifiedEmailService } from "../services/UnifiedEmailService.js";
+// import { UnifiedEmailService } from "../services/UnifiedEmailService.js";
 import { emailIntegrationService } from "../services/EmailIntegrationService.js";
-import { simpleAPIProxy } from "../services/SimpleAPIProxy.js";
+// import { simpleAPIProxy } from "../services/SimpleAPIProxy.js";
 import { logger } from "../../utils/logger.js";
 
 // Initialize email services
 // Use RealEmailStorageService that connects to crewai_enhanced.db
 const emailStorage = realEmailStorageService; // Real database connection with enhanced schema
 // const unifiedEmailService = new UnifiedEmailService(); // Can't use - wrong database schema
-const unifiedEmailService: UnifiedEmailService | null = null; // Temporary disable until database fixed
+// const unifiedEmailService: UnifiedEmailService | null = null; // Temporary disable until database fixed
 // Start SLA monitoring
 // emailStorage.startSLAMonitoring(); // Not implemented in RealEmailStorageService yet
 
@@ -41,8 +41,8 @@ const GetEmailsTableInputSchema = z.object({
         .optional(),
       dateRange: z
         .object({
-          start: z.string().datetime(),
-          end: z.string().datetime(),
+          start: z.string(),
+          end: z.string(),
         })
         .optional(),
     })
@@ -174,35 +174,25 @@ export const emailRouter = router({
           search: input.search,
         });
 
-        // Convert input to unified service format
-        const filters = {
-          search: input.search,
-          emailAliases: input.filters?.emailAlias || [],
-          statuses: (input.filters?.status || []).map(status => {
-            // Map old status values to new EmailStatus values
-            switch (status) {
-              case "red": return "escalated" as const;
-              case "yellow": return "processing" as const;
-              case "green": return "resolved" as const;
-              default: return "unread" as const;
-            }
-          }),
-          workflowStates: input.filters?.workflowState || [],
-          priorities: input.filters?.priority || [],
-          dateRange: input.filters?.dateRange ? {
-            start: new Date(input?.filters?.dateRange.start),
-            end: new Date(input?.filters?.dateRange.end),
-          } : { start: null, end: null },
-          requesters: [],
-          workflowTypes: [],
-          hasAttachments: undefined,
-          isRead: undefined,
-          tags: [],
-          assignedAgents: [],
+        // Convert input to emailStorage-compatible format
+        const storageInput: Parameters<typeof emailStorage.getEmailsForTableView>[0] = {
+          page: input.page,
+          pageSize: input.pageSize,
+          sortBy: input.sortBy as string | undefined,
+          sortOrder: input.sortOrder,
+          filters: input.filters ? {
+            status: input.filters.status as string[] | undefined,
+            priority: input.filters.priority as string[] | undefined,
+            dateRange: input.filters.dateRange ? {
+              start: input.filters.dateRange.start,
+              end: input.filters.dateRange.end
+            } : undefined
+          } : undefined,
+          search: input.search
         };
 
         // Use real email storage service to get analyzed emails
-        const result = await emailStorage.getEmailsForTableView(input);
+        const result = await emailStorage.getEmailsForTableView(storageInput);
 
         // Broadcast table data update for real-time synchronization
         try {
@@ -326,11 +316,32 @@ export const emailRouter = router({
         }> = [];
 
         if (input.workflow) {
-          emails = await emailStorage.getEmailsByWorkflow(
-            input.workflow,
-            input.limit,
-            input.offset,
-          );
+          // Get emails by workflow - simplified call
+          const allEmails = await emailStorage.getEmailsForTableView({
+            page: 1,
+            pageSize: input.limit || 50,
+            filters: {
+              // Map workflow state to status for compatibility
+              status: [input.workflow === 'COMPLETION' ? 'green' : input.workflow === 'START_POINT' ? 'red' : 'yellow']
+            }
+          });
+          // Transform the emails to match the expected format
+          emails = (allEmails.emails || []).map(email => ({
+            id: email.id,
+            subject: email.subject,
+            from: email.requested_by ? {
+              emailAddress: {
+                address: email.requested_by,
+                name: email.requested_by
+              }
+            } : undefined,
+            analysis: {
+              quick_priority: email.priority,
+              workflow_state: email.workflow_state,
+              action_sla_status: email.status
+            },
+            receivedDateTime: email.received_date
+          }));
         } else {
           // For now, return empty array - this would be replaced with actual filtering logic
           emails = [];
@@ -425,8 +436,8 @@ export const emailRouter = router({
         });
 
         // Pass user context as changedBy for WebSocket broadcast
-        const user = ctx.user as { email?: string; name?: string } | undefined;
-        const changedBy = user?.email ?? user?.name ?? "system";
+        const user = ctx.user;
+        const changedBy = user?.email ?? user?.username ?? "system";
         await emailStorage.updateWorkflowState(
           input.emailId,
           input.newState,
@@ -466,8 +477,8 @@ export const emailRouter = router({
           workflow_state: input.workflow_state,
         });
 
-        const user = ctx.user as { email?: string; name?: string } | undefined;
-        const changedBy = user?.email ?? user?.name ?? "system";
+        const user = ctx.user;
+        const changedBy = user?.email ?? user?.username ?? "system";
 
         // Update the email status
         await emailStorage.updateEmailStatus(
@@ -1174,8 +1185,8 @@ export const emailRouter = router({
 
         const results = [];
         const errors = [];
-        const user = ctx.user as { email?: string; name?: string } | undefined;
-        const changedBy = input.changedBy || user?.email || "system";
+        const user = ctx.user;
+        const changedBy = input.changedBy || user?.email || user?.username || "system";
 
         for (const update of input.updates) {
           try {
@@ -1500,8 +1511,8 @@ export const emailRouter = router({
           targetEmails: input.targetEmails?.length,
         });
 
-        const user = ctx.user as { email?: string; name?: string } | undefined;
-        const initiatedBy = user?.email ?? user?.name ?? "system";
+        const user = ctx.user;
+        const initiatedBy = user?.email ?? user?.username ?? "system";
 
         // Start the agent processing
         await emailStorage.startAgentBacklogProcessing({
@@ -1554,8 +1565,8 @@ export const emailRouter = router({
           forceStop: input.forceStop,
         });
 
-        const user = ctx.user as { email?: string; name?: string } | undefined;
-        const stoppedBy = user?.email ?? user?.name ?? "system";
+        const user = ctx.user;
+        const stoppedBy = user?.email ?? user?.username ?? "system";
 
         // Stop the agent processing
         await emailStorage.stopAgentProcessing({
@@ -1625,8 +1636,8 @@ export const emailRouter = router({
           agentType: input.agentType,
         });
 
-        const user = ctx.user as { email?: string; name?: string } | undefined;
-        const requestedBy = user?.email ?? user?.name ?? "system";
+        const user = ctx.user;
+        const requestedBy = user?.email ?? user?.username ?? "system";
 
         const results = [];
         const errors = [];
@@ -1752,8 +1763,8 @@ export const emailRouter = router({
           clearProgress: input.clearProgress,
         });
 
-        const user = ctx.user as { email?: string; name?: string } | undefined;
-        const resetBy = user?.email ?? user?.name ?? "system";
+        const user = ctx.user;
+        const resetBy = user?.email ?? user?.username ?? "system";
 
         await emailStorage.resetAgentProcessing({
           resetQueue: input.clearProgress || true,

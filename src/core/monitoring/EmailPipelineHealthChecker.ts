@@ -89,6 +89,7 @@ export class EmailPipelineHealthChecker {
           database: databaseHealth,
           redis: redisHealth,
           ollama: ollamaHealth,
+          llama: ollamaHealth, // Using ollama health for llama since they're the same service
           pipeline: pipelineHealth,
           processingQueue: queueHealth,
         },
@@ -128,7 +129,7 @@ export class EmailPipelineHealthChecker {
         },
       );
 
-      return this.healthCache;
+      return this.healthCache!;
     } catch (error) {
       logger.error(
         "Email pipeline health check failed",
@@ -152,6 +153,11 @@ export class EmailPipelineHealthChecker {
             details: "Health check failed",
           },
           ollama: {
+            status: "unhealthy",
+            lastCheck: new Date().toISOString(),
+            details: "Health check failed",
+          },
+          llama: {
             status: "unhealthy",
             lastCheck: new Date().toISOString(),
             details: "Health check failed",

@@ -1,39 +1,140 @@
-import React, { lazy, Suspense } from 'react';
+import * as React from 'react';
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { SkeletonLoader } from './loading/SkeletonLoader';
+import { SkeletonLoader as Skeleton } from '../../client/components/loading/SkeletonLoader';
+
+// Define types locally to avoid import issues
+type EmailStatus = "pending" | "processing" | "completed" | "failed";
+type StatusUpdateEmailStatus = "pending" | "in_progress" | "completed" | "cancelled" | "on_hold";
+
+interface EmailRecord {
+  id: string;
+  emailAlias: string;
+  requestedBy: string;
+  subject: string;
+  summary: string;
+  status: StatusUpdateEmailStatus;
+  priority: "low" | "medium" | "high" | "critical";
+  assignedTo?: string;
+  dueDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  tags: string[];
+  metadata: Record<string, any>;
+}
 
 // Lazy load major route components to reduce initial bundle
-const LazyWalmartDashboard = lazy(() => 
-  import('./walmart/WalmartDashboard').then(module => ({ default: module.WalmartDashboard }))
-);
+const LazyWalmartDashboard = lazy(async () => {
+  try {
+    const module = await import('../../client/components/walmart/WalmartDashboard');
+    return { default: (module as any).WalmartDashboard || module.default };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
-const LazyWalmartGroceryList = lazy(() => 
-  import('./walmart/WalmartGroceryList').then(module => ({ default: module.WalmartGroceryList }))
-);
+const LazyWalmartGroceryList = lazy(async () => {
+  try {
+    const module = await import('../../client/components/walmart/WalmartGroceryList');
+    return { default: (module as any).WalmartGroceryList || module.default };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
 const LazyWalmartLivePricing = lazy(() => 
-  import('./walmart/WalmartLivePricing').then(module => ({ default: module.WalmartLivePricing }))
+  import('../../client/components/walmart/WalmartLivePricing')
 );
 
-const LazyWalmartOrderHistory = lazy(() => 
-  import('./walmart/WalmartOrderHistory').then(module => ({ default: module.WalmartOrderHistory }))
-);
+const LazyWalmartOrderHistory = lazy(async () => {
+  try {
+    const module = await import('../../client/components/walmart/WalmartOrderHistory');
+    return { default: (module as any).WalmartOrderHistory || module.default };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
-const LazyEmailDashboard = lazy(() => 
-  import('./dashboard/EmailDashboardMultiPanel').then(module => ({ default: module.EmailDashboardMultiPanel }))
-);
+const LazyEmailDashboard = lazy(async () => {
+  try {
+    const module = await import('../../client/components/dashboard/EmailDashboardMultiPanel');
+    return { default: (module as any).EmailDashboardMultiPanel || module.default };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
 const LazyAdvancedEmailDashboard = lazy(() => 
-  import('./dashboard/AdvancedEmailDashboard').then(module => ({ default: module.AdvancedEmailDashboard }))
+  import('../../client/components/dashboard/AdvancedEmailDashboard')
 );
 
-const LazyMonitoringDashboard = lazy(() => 
-  import('./monitoring/MonitoringDashboard').then(module => ({ default: module.MonitoringDashboard }))
-);
+// Wrapper components to provide default props
+const EmailDashboardWrapper: React.FC = () => {
+  // Provide default props for the email dashboard
+  const defaultEmails: EmailRecord[] = [];
+  
+  return (
+    <LazyEmailDashboard 
+      emails={defaultEmails}
+      loading={false}
+      error={null}
+    />
+  );
+};
 
-const LazyPerformanceDashboard = lazy(() => 
-  import('./dev/PerformanceDashboard').then(module => ({ default: module.PerformanceDashboard }))
-);
+const AdvancedEmailDashboardWrapper: React.FC = () => {
+  // Provide default props for the advanced email dashboard
+  const defaultEmails: EmailRecord[] = [];
+  
+  const defaultUser = {
+    id: 'guest',
+    name: 'Guest User',
+    role: 'viewer',
+    permissions: ['read']
+  };
+  
+  const handleEmailStatusUpdate = async (
+    emailId: string,
+    fromStatus: StatusUpdateEmailStatus,
+    toStatus: StatusUpdateEmailStatus,
+    comment?: string
+  ): Promise<void> => {
+    // Default implementation - could integrate with actual API
+    console.log('Email status update:', { emailId, fromStatus, toStatus, comment });
+  };
+  
+  const handleRefresh = async (): Promise<void> => {
+    // Default implementation - could integrate with actual API
+    console.log('Refreshing email data');
+  };
+  
+  return (
+    <LazyAdvancedEmailDashboard 
+      emails={defaultEmails}
+      currentUser={defaultUser}
+      onEmailStatusUpdate={handleEmailStatusUpdate}
+      onRefresh={handleRefresh}
+    />
+  );
+};
+
+const LazyMonitoringDashboard = lazy(async () => {
+  try {
+    const module = await import('../../client/components/monitoring/MonitoringDashboard');
+    return { default: (module as any).MonitoringDashboard || module.default };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
+
+const LazyPerformanceDashboard = lazy(async () => {
+  try {
+    const module = await import('../../client/components/dev/PerformanceDashboard');
+    return { default: (module as any).PerformanceDashboard || module.default };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
 // Route wrapper with optimized loading states
 interface RouteWrapperProps {
@@ -49,7 +150,7 @@ const RouteWrapper: React.FC<RouteWrapperProps> = ({ children, title }): React.R
           <div className="mb-4">
             <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
           </div>
-          <SkeletonLoader height="600px" />
+          <Skeleton height="600px" />
         </div>
       </div>
     }
@@ -103,7 +204,7 @@ export const OptimizedRoutes: React.FC = (): React.ReactElement => {
         path="/emails" 
         element={
           <RouteWrapper title="email-dashboard">
-            <LazyEmailDashboard />
+            <EmailDashboardWrapper />
           </RouteWrapper>
         } 
       />
@@ -111,7 +212,7 @@ export const OptimizedRoutes: React.FC = (): React.ReactElement => {
         path="/emails/advanced" 
         element={
           <RouteWrapper title="advanced-email">
-            <LazyAdvancedEmailDashboard />
+            <AdvancedEmailDashboardWrapper />
           </RouteWrapper>
         } 
       />
@@ -147,20 +248,34 @@ export const OptimizedRoutes: React.FC = (): React.ReactElement => {
   );
 };
 
+// Type definitions for preload map
+type PreloadMap = {
+  'walmart-dashboard': () => Promise<any>;
+  'walmart-grocery': () => Promise<any>;
+  'walmart-pricing': () => Promise<any>;
+  'walmart-orders': () => Promise<any>;
+  'email-dashboard': () => Promise<any>;
+  'advanced-email': () => Promise<any>;
+  'monitoring': () => Promise<any>;
+  'performance': () => Promise<any>;
+};
+
+type RouteNames = keyof PreloadMap;
+
 // Preload utilities for better UX
-export const preloadRoute = (routeName: string): void => {
-  const preloadMap = {
-    'walmart-dashboard': () => import('./walmart/WalmartDashboard'),
-    'walmart-grocery': () => import('./walmart/WalmartGroceryList'),
-    'walmart-pricing': () => import('./walmart/WalmartLivePricing'),
-    'walmart-orders': () => import('./walmart/WalmartOrderHistory'),
-    'email-dashboard': () => import('./dashboard/EmailDashboardMultiPanel'),
-    'advanced-email': () => import('./dashboard/AdvancedEmailDashboard'),
-    'monitoring': () => import('./monitoring/MonitoringDashboard'),
-    'performance': () => import('./dev/PerformanceDashboard'),
+export const preloadRoute = (routeName: RouteNames): void => {
+  const preloadMap: PreloadMap = {
+    'walmart-dashboard': () => import('../../client/components/walmart/WalmartDashboard'),
+    'walmart-grocery': () => import('../../client/components/walmart/WalmartGroceryList'),
+    'walmart-pricing': () => import('../../client/components/walmart/WalmartLivePricing'),
+    'walmart-orders': () => import('../../client/components/walmart/WalmartOrderHistory'),
+    'email-dashboard': () => import('../../client/components/dashboard/EmailDashboardMultiPanel'),
+    'advanced-email': () => import('../../client/components/dashboard/AdvancedEmailDashboard'),
+    'monitoring': () => import('../../client/components/monitoring/MonitoringDashboard'),
+    'performance': () => import('../../client/components/dev/PerformanceDashboard'),
   };
   
-  const preloader = preloadMap[routeName as keyof typeof preloadMap];
+  const preloader = preloadMap[routeName];
   if (preloader) {
     preloader().catch((err: Error) => console.warn(`Failed to preload ${routeName}:`, err));
   }
@@ -171,9 +286,25 @@ export const useRoutePreloading = (): void => {
   React.useEffect(() => {
     const prefetchOnHover = (event: Event): void => {
       const target = event.target as HTMLElement;
-      const link = target.closest('a[href]') as HTMLAnchorElement;
-      if (link && link?.href?.includes('/walmart')) {
-        preloadRoute('walmart-dashboard');
+      const link = target.closest('a[href]') as HTMLAnchorElement | null;
+      if (link?.href) {
+        if (link.href.includes('/walmart/grocery')) {
+          preloadRoute('walmart-grocery');
+        } else if (link.href.includes('/walmart/pricing')) {
+          preloadRoute('walmart-pricing');
+        } else if (link.href.includes('/walmart/orders')) {
+          preloadRoute('walmart-orders');
+        } else if (link.href.includes('/walmart')) {
+          preloadRoute('walmart-dashboard');
+        } else if (link.href.includes('/emails/advanced')) {
+          preloadRoute('advanced-email');
+        } else if (link.href.includes('/emails')) {
+          preloadRoute('email-dashboard');
+        } else if (link.href.includes('/monitoring')) {
+          preloadRoute('monitoring');
+        } else if (link.href.includes('/performance')) {
+          preloadRoute('performance');
+        }
       }
     };
     

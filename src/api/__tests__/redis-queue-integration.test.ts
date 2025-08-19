@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
-import { setupRedisQueueSystem } from '../examples/redis-queue-integration.js';
+import { setupRedisQueueSystem } from '../examples/redis-queue-integration';
 
 // Mock external dependencies
 vi.mock('ioredis', () => {

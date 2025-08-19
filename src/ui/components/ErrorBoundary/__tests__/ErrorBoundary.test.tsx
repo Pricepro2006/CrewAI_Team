@@ -1,13 +1,13 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import {
   ErrorBoundary,
   withErrorBoundary,
   useErrorHandler,
-} from "../ErrorBoundary.js";
-import { ErrorFallback } from "../ErrorFallback.js";
+} from '../ErrorBoundary';
+import { ErrorFallback } from '../ErrorFallback';
 import "@testing-library/jest-dom";
-import { vi } from "vitest";
 
 // Mock logger
 vi.mock("../../../utils/logger", () => ({

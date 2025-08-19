@@ -84,8 +84,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
   const websocket = useWalmartWebSocket({
     userId,
     autoConnect: preferWebSocket,
-    maxReconnectAttempts,
-    onModeChange: undefined
+    maxReconnectAttempts
   });
 
   // tRPC polling queries

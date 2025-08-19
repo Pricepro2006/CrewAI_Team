@@ -28,6 +28,7 @@ export enum WorkflowEvents {
 
   // Batch events
   BATCH_CREATED = "workflow:batch:created",
+  BATCH_STARTED = "workflow:batch:started",
   BATCH_COMPLETED = "workflow:batch:completed",
 
   // System events

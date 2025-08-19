@@ -153,7 +153,7 @@ async function startWebSocketServer() {
                 connectionId: clientId
               }));
             } catch (error) {
-              logger.error('Error processing WebSocket message:', 'WEBSOCKET_SERVER', error);
+              logger.error('Error processing WebSocket message:', 'WEBSOCKET_SERVER', { error: error instanceof Error ? error.message : String(error) });
             }
           });
           
@@ -163,7 +163,7 @@ async function startWebSocketServer() {
           });
           
           ws.on('error', (error) => {
-            logger.error(`WebSocket error for ${clientId}:`, 'WEBSOCKET_SERVER', error);
+            logger.error(`WebSocket error for ${clientId}:`, 'WEBSOCKET_SERVER', { error: error instanceof Error ? error.message : String(error) });
           });
         });
       } else if (pathname === '/ws/walmart') {
@@ -212,7 +212,7 @@ async function startWebSocketServer() {
           process.exit(0);
         });
       } catch (error) {
-        logger.error('Error during WebSocket server shutdown', 'WEBSOCKET_SERVER', error);
+        logger.error('Error during WebSocket server shutdown', 'WEBSOCKET_SERVER', { error: error instanceof Error ? error.message : String(error) });
         process.exit(1);
       }
     };
@@ -221,13 +221,13 @@ async function startWebSocketServer() {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   } catch (error) {
-    logger.error('Failed to start WebSocket Gateway Server', 'WEBSOCKET_SERVER', error);
+    logger.error('Failed to start WebSocket Gateway Server', 'WEBSOCKET_SERVER', { error: error instanceof Error ? error.message : String(error) });
     process.exit(1);
   }
 }
 
 // Start the server
 startWebSocketServer().catch((error: any) => {
-  logger.error('Unhandled error starting WebSocket server', 'WEBSOCKET_SERVER', error);
+  logger.error('Unhandled error starting WebSocket server', 'WEBSOCKET_SERVER', { error: error instanceof Error ? error.message : String(error) });
   process.exit(1);
 });

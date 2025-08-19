@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BusinessSearchMiddleware } from "../BusinessSearchMiddleware.js";
-import type { OllamaProvider } from "../../llm/OllamaProvider.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { BusinessSearchMiddleware } from '../BusinessSearchMiddleware';
+import type { OllamaProvider } from '../../llm/OllamaProvider';
 
 // Set timeout for rate limiting tests
 vi.setConfig({ testTimeout: 20000 });

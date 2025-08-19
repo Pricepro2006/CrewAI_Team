@@ -191,7 +191,7 @@ export function useGroceryWebSocket(
           isReconnectingRef.current = true;
           reconnectTimeoutRef.current = setTimeout(() => {
             if (isMountedRef.current) {
-              updateState(prev => ({ reconnectAttempts: prev.reconnectAttempts + 1 }));
+              setState(prev => ({ ...prev, reconnectAttempts: prev.reconnectAttempts + 1 }));
               connect();
             }
           }, delay);

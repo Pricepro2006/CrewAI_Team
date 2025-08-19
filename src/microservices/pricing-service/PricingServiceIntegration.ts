@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
  */
 export class PricingServiceIntegration extends EventEmitter {
   private static instance: PricingServiceIntegration;
-  private pricingService: PricingService;
+  private pricingService!: PricingService; // Use definite assignment assertion
   private isInitialized: boolean = false;
 
   private constructor() {

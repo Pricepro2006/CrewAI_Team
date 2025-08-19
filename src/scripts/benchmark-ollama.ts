@@ -6,8 +6,8 @@
 
 import axios from "axios";
 import { performance } from "perf_hooks";
-import { logger } from "../../utils/logger.js";
-import { OllamaOptimizer } from "../core/services/OllamaOptimizer.js";
+import { logger } from "../utils/logger";
+import { OllamaOptimizer } from "../core/services/OllamaOptimizer";
 
 interface BenchmarkConfig {
   models: string[];

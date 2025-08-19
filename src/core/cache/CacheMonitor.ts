@@ -174,7 +174,7 @@ export class CacheMonitor extends EventEmitter {
       }
 
       const healthStatus: CacheHealthStatus = {
-        healthy: issues?.length || 0 === 0,
+        healthy: (issues?.length || 0) === 0,
         issues,
         recommendations,
         stats: {
@@ -547,7 +547,7 @@ export class CacheMonitor extends EventEmitter {
    * Get current health status
    */
   getCurrentHealth(): CacheHealthStatus | null {
-    return this?.healthHistory?.length > 0 ? this.healthHistory[this?.healthHistory?.length - 1] : null;
+    return this?.healthHistory?.length > 0 ? this.healthHistory[this?.healthHistory?.length - 1] ?? null : null;
   }
 
   /**

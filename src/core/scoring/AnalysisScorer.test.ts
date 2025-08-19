@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AnalysisScorer, scoreAnalysis, getDetailedScore } from "./AnalysisScorer";
 import type { EmailAnalysis } from "../../types/AnalysisTypes";
 
