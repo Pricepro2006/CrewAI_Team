@@ -93,7 +93,7 @@ export class SimpleLLMProvider {
     const template = templates[Math.floor(Math.random() * templates.length)];
     
     // Add context-specific details
-    let response = template;
+    let response = template || 'I apologize, but I cannot process this request at the moment. Please try again later.';
     
     if (options.systemPrompt) {
       response = `[System: ${options.systemPrompt}]\n\n${response}`;
@@ -113,12 +113,12 @@ export class SimpleLLMProvider {
     await new Promise(resolve => setTimeout(resolve, 100));
     
     const duration = Date.now() - startTime;
-    const tokens = response.split(/\s+/).length;
+    const tokens = response ? response.split(/\s+/).length : 1;
     
     return {
       model: 'simple-fallback',
       created_at: new Date().toISOString(),
-      response: response,
+      response: response || '',
       done: true,
       tokensGenerated: tokens,
       tokensPerSecond: tokens / (duration / 1000),

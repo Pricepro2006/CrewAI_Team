@@ -149,12 +149,12 @@ export class EmailProcessingOptimizer {
     const model = options.model || "llama3.2:3b";
     
     // Check for cached results first
-    const results: (Phase2Results | null)[] = new Array(emails?.length || 0).fill(null);
+    const results: (Phase2Results | null)[] = new Array(emails?.length ?? 0).fill(null);
     const uncachedIndices: number[] = [];
     
-    if (this?.config?.enableSmartCaching) {
-      for (let i = 0; i < emails?.length || 0; i++) {
-        const cached = await this.checkSimilarCache(emails[i], phase1Results[i]);
+    if (this.config?.enableSmartCaching) {
+      for (let i = 0; i < (emails?.length ?? 0); i++) {
+        const cached = (emails[i] && phase1Results[i]) ? await this.checkSimilarCache(emails[i]!, phase1Results[i]!) : null;
         if (cached) {
           results[i] = cached;
           if (this.metrics.cacheHits) { this.metrics.cacheHits++ };
@@ -163,10 +163,10 @@ export class EmailProcessingOptimizer {
         }
       }
     } else {
-      uncachedIndices.push(...Array.from({ length: emails?.length || 0 }, (_, i) => i));
+      uncachedIndices.push(...Array.from({ length: emails?.length ?? 0 }, (_, i) => i));
     }
 
-    if (uncachedIndices?.length || 0 === 0) {
+    if ((uncachedIndices?.length ?? 0) === 0) {
       logger.debug(`All ${emails?.length || 0} emails served from cache`);
       return results as Phase2Results[];
     }
@@ -179,12 +179,12 @@ export class EmailProcessingOptimizer {
         const phase1 = phase1Results[index];
         
         try {
-          const result = await this.processPhase2Single(email, phase1, model);
+          const result = email && phase1 ? await this.processPhase2Single(email, phase1, model) : null;
           results[index] = result;
           
           // Cache the result
           if (this?.config?.enableSmartCaching) {
-            await this.cacheResult(email, phase1, result);
+            if (email && phase1 && result) { await this.cacheResult(email, phase1, result); }
           }
           
           return result;
@@ -197,7 +197,9 @@ export class EmailProcessingOptimizer {
 
     await Promise.all(batchPromises);
     
-    this?.metrics?.totalProcessed += emails?.length || 0;
+    if (this.metrics) {
+      this.metrics.totalProcessed = (this.metrics.totalProcessed || 0) + (emails?.length || 0);
+    }
     if (this.metrics.batchesProcessed) { this.metrics.batchesProcessed++ };
     
     return results as Phase2Results[];
@@ -400,7 +402,7 @@ Required JSON fields:
    */
   private isSimilarEnough(phase1: Phase1Results, cached: Phase2Results): boolean {
     // Simple similarity check - can be enhanced
-    return (
+    return Boolean(
       cached.workflow_validation &&
       cached.confidence > 0.6 &&
       cached.business_process !== "PARSING_ERROR"

@@ -7,7 +7,7 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import axios from "axios";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger";
 
 const execAsync = promisify(exec);
 
@@ -32,7 +32,7 @@ class OllamaSetupOptimizer {
         process.exit(1);
       }
 
-      logger.info("Ollama status:", status);
+      logger.info("Ollama status:", JSON.stringify(status));
 
       // 2. Install required models
       await this.installOptimizedModels();

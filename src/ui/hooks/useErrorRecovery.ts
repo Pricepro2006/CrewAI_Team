@@ -63,8 +63,8 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
     });
 
     // Reset specified query keys
-    if (resetKeys?.length || 0 > 0) {
-      resetKeys.forEach((key: any) => {
+    if (resetKeys.length > 0) {
+      resetKeys.forEach((key: string) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
     }
@@ -76,7 +76,7 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
         return;
       }
 
-      setState((prev: any) => ({ ...prev, isRetrying: true }));
+      setState(prev => ({ ...prev, isRetrying: true }));
 
       try {
         await retryFn();
@@ -90,7 +90,7 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
         }
 
         if (newRetryCount >= maxRetries) {
-          setState((prev: any) => ({
+          setState(prev => ({
             ...prev,
             error: err,
             isRetrying: false,
@@ -107,7 +107,7 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
             ? retryDelay * Math.pow(2, newRetryCount - 1)
             : retryDelay;
 
-          setState((prev: any) => ({
+          setState(prev => ({
             ...prev,
             error: err,
             isRetrying: false,
@@ -199,7 +199,7 @@ export function useAutoReconnect(
     }
 
     setIsReconnecting(true);
-    setAttempts((prev: any) => prev + 1);
+    setAttempts(prev => prev + 1);
 
     try {
       await connect();
@@ -255,7 +255,7 @@ export function useNetworkRecovery(
   onOffline?: () => void,
 ) {
   const [isOnline, setIsOnline] = useState(
-    typeof window !== "undefined" ? window?.navigator?.onLine : true,
+    typeof window !== "undefined" ? navigator.onLine : true,
   );
   const queryClient = useQueryClient();
 

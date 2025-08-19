@@ -148,7 +148,9 @@ export class ErrorTracker extends EventEmitter {
 
     recentErrors.forEach((error: any) => {
       // Count by severity
-      stats.bySeverity[error.severity]++;
+      if (error.severity && error.severity in stats.bySeverity) {
+        stats.bySeverity[error.severity as keyof typeof stats.bySeverity]++;
+      }
 
       // Count by type
       const type = error?.error?.name;

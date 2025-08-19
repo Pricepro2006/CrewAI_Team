@@ -160,7 +160,7 @@ export function useEnhancedWebSocket(
 
   // Setup heartbeat
   const setupHeartbeat = useCallback(() => {
-    if (!websocketConfig?.heartbeat?.enabled) return;
+    if (!webSocketConfig?.heartbeat?.enabled) return;
 
     const sendPing = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -189,7 +189,7 @@ export function useEnhancedWebSocket(
 
     heartbeatIntervalRef.current = setInterval(
       sendPing,
-      websocketConfig?.heartbeat?.interval
+      webSocketConfig?.heartbeat?.interval || 30000
     );
   }, [updateState]);
 
@@ -210,7 +210,8 @@ export function useEnhancedWebSocket(
 
     for (const message of queue) {
       try {
-        await send(message);
+        // Direct send without dependency on send function
+        wsRef.current.send(JSON.stringify(message));
       } catch (error) {
         console.error('Failed to send queued message:', error);
       }
@@ -290,7 +291,7 @@ export function useEnhancedWebSocket(
         // Attempt reconnection if enabled
         if (reconnection && !isUnmountedRef.current) {
           const attempts = stateRef?.current?.reconnectAttempts;
-          if (attempts < websocketConfig?.reconnection?.maxAttempts) {
+          if (attempts < (webSocketConfig?.reconnection?.maxAttempts || 5)) {
             updateState({
               isReconnecting: true,
               reconnectAttempts: attempts + 1,
@@ -299,7 +300,7 @@ export function useEnhancedWebSocket(
             const delay = getReconnectionDelay(attempts + 1);
             reconnectTimeoutRef.current = setTimeout(() => {
               if (!isUnmountedRef.current) {
-                connect();
+                void connect();
               }
             }, delay);
           }
@@ -392,23 +393,35 @@ export function useEnhancedWebSocket(
 
   // Subscribe to channel
   const subscribe = useCallback(async (channel: string): Promise<void> => {
-    await send({
+    if (!wsRef.current || wsRef?.current?.readyState !== WebSocket.OPEN) {
+      throw new Error('WebSocket is not connected');
+    }
+    
+    const message = {
       id: crypto.randomUUID(),
       type: 'subscribe',
       timestamp: new Date(),
       data: { channel },
-    } as any);
-  }, [send]);
+    };
+    
+    wsRef.current.send(JSON.stringify(message));
+  }, []);
 
   // Unsubscribe from channel
   const unsubscribe = useCallback(async (channel: string): Promise<void> => {
-    await send({
+    if (!wsRef.current || wsRef?.current?.readyState !== WebSocket.OPEN) {
+      throw new Error('WebSocket is not connected');
+    }
+    
+    const message = {
       id: crypto.randomUUID(),
       type: 'unsubscribe',
       timestamp: new Date(),
       data: { channel },
-    } as any);
-  }, [send]);
+    };
+    
+    wsRef.current.send(JSON.stringify(message));
+  }, []);
 
   // Register event handler
   const on = useCallback(<T extends WebSocketEvent>(
@@ -418,13 +431,13 @@ export function useEnhancedWebSocket(
     if (!eventHandlersRef?.current?.has(eventType)) {
       eventHandlersRef?.current?.set(eventType, new Set());
     }
-    eventHandlersRef?.current?.get(eventType)!.add(handler);
+    eventHandlersRef?.current?.get(eventType)!.add(handler as (event: WebSocketEvent) => void);
 
     // Return unsubscribe function
     return () => {
       const handlers = eventHandlersRef?.current?.get(eventType);
       if (handlers) {
-        handlers.delete(handler);
+        handlers.delete(handler as (event: WebSocketEvent) => void);
         if (handlers.size === 0) {
           eventHandlersRef?.current?.delete(eventType);
         }

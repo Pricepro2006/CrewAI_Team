@@ -6,7 +6,7 @@ import {
   useContext,
   type ReactNode,
 } from "react";
-import { api } from "../../lib/trpc.js";
+import { api } from "../../lib/trpc";
 
 /**
  * Authentication Hook and Context
@@ -139,25 +139,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   // TRPC mutations
-  const loginMutation = api?.auth?.login.useMutation();
-  const registerMutation = api?.auth?.register.useMutation();
-  const logoutMutation = api?.auth?.logout.useMutation();
-  const logoutAllMutation = api?.auth?.logoutAll.useMutation();
-  const refreshTokenMutation = api?.auth?.refreshToken.useMutation();
-  const updateProfileMutation = api?.auth?.updateProfile.useMutation();
-  const changePasswordMutation = api?.auth?.changePassword.useMutation();
+  const loginMutation = api?.auth?.login?.useMutation();
+  const registerMutation = api?.auth?.register?.useMutation();
+  const logoutMutation = api?.auth?.logout?.useMutation();
+  const logoutAllMutation = api?.auth?.logoutAll?.useMutation();
+  const refreshTokenMutation = api?.auth?.refreshToken?.useMutation();
+  const updateProfileMutation = api?.auth?.updateProfile?.useMutation();
+  const changePasswordMutation = api?.auth?.changePassword?.useMutation();
 
   // TRPC queries
-  const { data: userData, refetch: refetchUser } = api?.auth?.me.useQuery(
+  const { data: userData, refetch: refetchUser } = api?.auth?.me?.useQuery(
     undefined,
     {
       enabled: !!tokens?.accessToken,
       retry: false,
     },
-  );
+  ) || { data: undefined, refetch: () => Promise.resolve(undefined) };
 
   const checkPasswordStrengthQuery = (password: string) => {
-    return api?.auth?.checkPasswordStrength.useQuery({ password });
+    return api?.auth?.checkPasswordStrength?.useQuery({ password });
   };
 
   // Initialize auth state from storage
@@ -191,7 +191,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
 
     try {
-      const result = await refreshTokenMutation.mutateAsync({
+      const result = await refreshTokenMutation?.mutateAsync({
         refreshToken: tokens.refreshToken,
       });
 
@@ -240,7 +240,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = useCallback(
     async (credentials: LoginCredentials): Promise<void> => {
       try {
-        const result = await loginMutation.mutateAsync(credentials);
+        const result = await loginMutation?.mutateAsync(credentials);
 
         const newTokens = result?.tokens;
         setTokens(newTokens);
@@ -263,7 +263,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Register function
   const register = useCallback(
     async (data: RegisterData): Promise<void> => {
-      await registerMutation.mutateAsync(data);
+      await registerMutation?.mutateAsync(data);
       // Note: After registration, user needs to login separately
     },
     [registerMutation],
@@ -273,7 +273,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = useCallback(async (): Promise<void> => {
     try {
       if (tokens?.refreshToken) {
-        await logoutMutation.mutateAsync({ refreshToken: tokens.refreshToken });
+        await logoutMutation?.mutateAsync({ refreshToken: tokens.refreshToken });
       }
     } catch (error) {
       console.warn("Logout request failed:", error);
@@ -289,7 +289,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Logout from all devices
   const logoutAll = useCallback(async (): Promise<void> => {
     try {
-      await logoutAllMutation.mutateAsync();
+      await logoutAllMutation?.mutateAsync();
     } catch (error) {
       console.warn("Logout all request failed:", error);
     } finally {
@@ -303,8 +303,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Update profile function
   const updateProfile = useCallback(
     async (data: UpdateProfileData): Promise<void> => {
-      const result = await updateProfileMutation.mutateAsync(data);
-      setUser(result.user);
+      const result = await updateProfileMutation?.mutateAsync(data);
+      setUser(result?.user);
     },
     [updateProfileMutation],
   );
@@ -312,32 +312,49 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Change password function
   const changePassword = useCallback(
     async (data: ChangePasswordData): Promise<void> => {
-      await changePasswordMutation.mutateAsync(data);
+      await changePasswordMutation?.mutateAsync(data);
       // After password change, logout user for security
       await logout();
     },
     [changePasswordMutation, logout],
   );
 
-  // Check password strength function
+  // Check password strength function  
   const checkPasswordStrength = useCallback(async (password: string) => {
-    const result = await api?.auth?.checkPasswordStrength.mutate({ password });
-    // Map the result to match the expected interface
-    return {
-      isValid: result.isValid,
-      errors: result.errors,
-      strength:
-        result.strength === "fair" ||
-        result.strength === "good" ||
-        result.strength === "very-strong"
+    try {
+      // Use the checkPasswordStrength query with proper tRPC pattern
+      const passwordStrengthQuery = api?.auth?.checkPasswordStrength?.useQuery?.({ password }, {
+        enabled: false // Manual trigger
+      });
+      
+      // Manually trigger the query
+      const result = await passwordStrengthQuery?.refetch?.();
+      const data = result?.data;
+      
+      // Map the result to match the expected interface
+      return {
+        isValid: data?.isValid || false,
+        errors: data?.errors || [],
+        strength: (data?.strength === "fair" || data?.strength === "good")
           ? ("medium" as const)
-          : result.strength === "strong" || result.strength === "very-strong"
+          : (data?.strength === "strong" || data?.strength === "very-strong")
             ? ("strong" as const)
             : ("weak" as const),
-      entropy: result.entropy,
-      isCompromised: result.isCompromised,
-      recommendations: result.recommendations,
-    };
+        entropy: data?.entropy || 0,
+        isCompromised: data?.isCompromised || false,
+        recommendations: data?.recommendations || [],
+      };
+    } catch (error) {
+      // Return default values on error
+      return {
+        isValid: false,
+        errors: ["Failed to check password strength"],
+        strength: "weak" as const,
+        entropy: 0,
+        isCompromised: false,
+        recommendations: [],
+      };
+    }
   }, []);
 
   const isAuthenticated = !!user && !!tokens?.accessToken;

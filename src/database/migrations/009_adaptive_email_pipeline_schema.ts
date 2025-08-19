@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -16,7 +16,7 @@ import { logger } from "../../utils/logger.js";
  * - Views for real-time dashboard
  */
 
-export async function up(db: Database.Database): Promise<void> {
+export async function up(db: DatabaseInstance): Promise<void> {
   logger.info("Starting migration: Adaptive Email Pipeline Schema Optimization", "MIGRATION");
 
   try {
@@ -407,7 +407,7 @@ export async function up(db: Database.Database): Promise<void> {
 /**
  * Rollback migration: Remove adaptive pipeline schema changes
  */
-export async function down(db: Database.Database): Promise<void> {
+export async function down(db: DatabaseInstance): Promise<void> {
   logger.info("Rolling back: Adaptive Email Pipeline Schema", "MIGRATION");
 
   try {

@@ -125,7 +125,7 @@ export class LLMProviderFactory {
   /**
    * Create Llama.cpp provider
    */
-  private static async createLlamaCppProvider(config: NonNullable<LLMProviderConfig['llamacpp']>): Promise<LlamaCppProvider> {
+  private static async createLlamaCppProvider(config: NonNullable<LLMProviderConfig['llamacpp']>): Promise<LLMProviderInterface> {
     logger.info('Creating Llama.cpp provider', 'LLM_FACTORY', { modelPath: config.modelPath });
     
     const provider = new LlamaCppProvider({
@@ -141,7 +141,19 @@ export class LLMProviderFactory {
       if (!provider.isReady()) {
         logger.info('Llama.cpp provider created, model will load on first use', 'LLM_FACTORY');
       }
-      return provider;
+      
+      // Wrap to match interface
+      return {
+        async initialize() {
+          // LlamaCppProvider doesn't have an initialize method
+          return;
+        },
+        async generate(prompt: string, options?: any) {
+          const response = await provider.generate(prompt, options);
+          return { response: response.response, model: provider.getModelInfo().model, created_at: response.created_at, done: response.done };
+        },
+        isReady: () => provider.isReady()
+      };
     } catch (error) {
       logger.error('Failed to create Llama.cpp provider', 'LLM_FACTORY', { error });
       throw error;
@@ -154,7 +166,7 @@ export class LLMProviderFactory {
   private static async createKnowledgeBackedProvider(
     config: NonNullable<LLMProviderConfig['knowledgeBacked']>,
     ragSystem?: RAGSystem
-  ): Promise<KnowledgeBackedLLM> {
+  ): Promise<LLMProviderInterface> {
     logger.info('Creating Knowledge-Backed LLM provider', 'LLM_FACTORY', {
       modelPath: config.modelPath,
       ragEnabled: config.ragEnabled !== false,
@@ -181,7 +193,19 @@ export class LLMProviderFactory {
     try {
       await provider.initialize();
       logger.info('Knowledge-Backed LLM provider initialized successfully', 'LLM_FACTORY');
-      return provider;
+      
+      // Wrap to match interface
+      return {
+        async initialize() {
+          // Already initialized above
+          return;
+        },
+        async generate(prompt: string, options?: any) {
+          const result = await provider.generateWithContext(prompt, options);
+          return { response: result.response, context: result.context, metadata: result.metadata };
+        },
+        isReady: () => provider.isReady()
+      };
     } catch (error) {
       logger.error('Failed to initialize Knowledge-Backed LLM provider', 'LLM_FACTORY', { error });
       throw error;
@@ -205,7 +229,7 @@ export class LLMProviderFactory {
         return provider;
       } catch (error) {
         logger.warn('Knowledge-Backed LLM provider failed, trying alternatives', 'LLM_FACTORY', {
-          error: error.message,
+          error: (error as Error).message,
         });
       }
     }
@@ -217,7 +241,7 @@ export class LLMProviderFactory {
         logger.info('Auto-selected Safe Llama.cpp provider', 'LLM_FACTORY');
         return provider;
       } catch (error) {
-        logger.warn('Safe Llama.cpp provider failed, trying regular Llama.cpp', 'LLM_FACTORY', { error: error.message });
+        logger.warn('Safe Llama.cpp provider failed, trying regular Llama.cpp', 'LLM_FACTORY', { error: (error as Error).message });
       }
     }
 
@@ -228,7 +252,7 @@ export class LLMProviderFactory {
         logger.info('Auto-selected Llama.cpp provider', 'LLM_FACTORY');
         return provider;
       } catch (error) {
-        logger.error('Llama.cpp provider also failed', 'LLM_FACTORY', { error: error.message });
+        logger.error('Llama.cpp provider also failed', 'LLM_FACTORY', { error: (error as Error).message });
         throw new Error('No LLM providers are available');
       }
     }

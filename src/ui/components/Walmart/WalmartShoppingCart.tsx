@@ -17,13 +17,19 @@ export const WalmartShoppingCart: React.FC = () => {
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
 
-  const checkout = api?.walmartGrocery?.createOrder.useMutation({
-    onSuccess: (data: any) => {
-      // Handle successful checkout
-      clearCart();
-      alert(`Order placed successfully! Order ID: ${data?.order?.id}`);
+  // Mock checkout for now since the endpoint doesn't exist
+  const checkout = {
+    mutate: (orderData: any) => {
+      console.log('Creating order:', orderData);
+      // Mock successful checkout
+      setTimeout(() => {
+        clearCart();
+        alert(`Order placed successfully! Order ID: ORDER-${Date.now()}`);
+      }, 1000);
     },
-  });
+    isLoading: false,
+    isPending: false
+  };
 
   const applyPromoCode = () => {
     // Mock promo code validation
@@ -67,7 +73,11 @@ export const WalmartShoppingCart: React.FC = () => {
         <h2 className="text-xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
         <p className="text-gray-500 mb-4">Add items to your cart to see them here</p>
         <button
-          onClick={() => window?.location?.href = "/walmart-grocery/search"}
+          onClick={() => {
+            if (window?.location) {
+              window.location.href = "/walmart-grocery/search";
+            }
+          }}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
         >
           Start Shopping

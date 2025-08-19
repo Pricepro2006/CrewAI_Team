@@ -221,7 +221,7 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
     clearErrors,
     retryError,
     getErrorById,
-    hasErrors: errors?.length || 0 > 0,
+    hasErrors: (errors?.length || 0) > 0,
     criticalError,
   };
 

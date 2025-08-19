@@ -4,10 +4,20 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-// TODO: Replace with proper tRPC hooks
-// import { api } from '../lib/api.js';
-import type { WalmartProduct } from '../../types/walmart-grocery';
-import type { ExtendedSearchOptions } from '../../types/walmart-search-extended';
+import { api } from '../lib/api.js';
+import type { WalmartProduct } from '../../types/walmart-grocery.js';
+
+// Define search options interface
+interface ExtendedSearchOptions {
+  query: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  dietary?: string[];
+  limit?: number;
+  offset?: number;
+}
 
 interface UseWalmartSearchResult {
   search: (options: ExtendedSearchOptions) => Promise<void>;
@@ -39,16 +49,24 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
   const currentSearchOptions = useRef<ExtendedSearchOptions | null>(null);
   const currentPage = useRef(0);
 
-  const getCacheKey = (options: ExtendedSearchOptions): string => {
+  // Set up tRPC mutation for search
+  const searchMutation = api.walmartGrocery.searchProducts.useMutation({
+    onError: (error: unknown) => {
+      const errorMessage = error instanceof Error ? error.message : 'Search failed';
+      setError(errorMessage);
+    },
+  });
+
+  const getCacheKey = useCallback((options: ExtendedSearchOptions): string => {
     return JSON.stringify({
       query: options.query,
       category: options.category,
       minPrice: options.minPrice,
       maxPrice: options.maxPrice,
       inStock: options.inStock,
-      dietary: options.dietary?.sort(),
+      dietary: options.dietary ? [...options.dietary].sort() : undefined,
     });
-  };
+  }, [searchMutation]);
 
   const search = useCallback(async (options: ExtendedSearchOptions) => {
     try {
@@ -70,26 +88,27 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
       currentSearchOptions.current = options;
       currentPage.current = 0;
 
-      // TODO: Replace with proper tRPC mutation
-      // Mock successful response for now
-      const response = {
-        success: true,
-        products: [] as WalmartProduct[]
-      };
+      // Use real tRPC mutation for search
+      
+      const response = await searchMutation.mutateAsync({
+        query: options.query,
+        limit: options.limit || 20
+      });
 
-      const products = response.products || [];
+      const products = (response as any)?.products || [];
       setResults(products);
-      setHasMore(products?.length || 0 === (options.limit || 20));
+      setHasMore(products.length === (options.limit || 20));
       
       // Update cache
       searchCache.current[cacheKey] = {
         results: products,
         timestamp: Date.now(),
-        hasMore: products?.length || 0 === (options.limit || 20),
+        hasMore: products.length === (options.limit || 20),
       };
     } catch (err) {
       
-      setError(err instanceof Error ? err.message : 'Search failed');
+      const errorMessage = err instanceof Error ? err.message : 'Search failed';
+      setError(errorMessage);
       setResults([]);
     } finally {
       setLoading(false);
@@ -103,23 +122,24 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
       setLoading(true);
       currentPage.current += 1;
 
-      // TODO: Replace with proper tRPC mutation
-      // Mock successful response for now
-      const response = {
-        success: true,
-        products: [] as WalmartProduct[]
-      };
+      // Use real tRPC mutation for loading more
+      
+      const response = await searchMutation.mutateAsync({
+        query: currentSearchOptions.current.query,
+        limit: currentSearchOptions.current.limit || 20
+      });
 
-      const newProducts = response.products || [];
-      setResults(prev => [...prev, ...newProducts]);
-      setHasMore(newProducts?.length || 0 === (currentSearchOptions.current?.pagination?.limit || 20));
+      const newProducts = (response as any)?.products || [];
+      setResults((prev: WalmartProduct[]) => [...prev, ...newProducts]);
+      setHasMore(newProducts.length === (currentSearchOptions.current?.limit || 20));
     } catch (err) {
       
-      setError(err instanceof Error ? err.message : 'Failed to load more results');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load more results';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore]);
+  }, [loading, hasMore, searchMutation]);
 
   const clearResults = useCallback(() => {
     setResults([]);

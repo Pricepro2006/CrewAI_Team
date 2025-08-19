@@ -336,7 +336,7 @@ export const WalmartChatInterface: React.FC<WalmartChatInterfaceProps> = ({
   useEffect(() => {
     // Scroll to bottom when new messages are added
     if (scrollAreaRef.current) {
-      scrollAreaRef?.current?.scrollTop = scrollAreaRef?.current?.scrollHeight;
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
   

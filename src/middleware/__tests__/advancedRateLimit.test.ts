@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   describe,
   it,
@@ -14,8 +15,8 @@ import express from "express";
 import {
   AdvancedRateLimit,
   DEFAULT_RATE_LIMIT_CONFIG,
-} from "../advancedRateLimit.js";
-import { authenticateToken } from "../auth.js";
+} from '../advancedRateLimit';
+import { authenticateToken } from '../auth';
 
 // Mock Redis for testing
 vi.mock("ioredis", () => {
@@ -143,7 +144,7 @@ describe.skip("AdvancedRateLimit", () => {
       // Next request should be rate limited
       const response = await request(app).get("/test");
       expect(response.status).toBe(429);
-      expect(response?.body?.error).toBe("Rate limit exceeded");
+      expect(response?.body?.length).toBe("Rate limit exceeded");
     });
 
     it("should apply higher limits to authenticated users", async () => {

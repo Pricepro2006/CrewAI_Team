@@ -7,7 +7,7 @@ import { z } from "zod";
 import { logger } from "../utils/logger.js";
 import type { Context } from "../api/trpc/context.js";
 import { TRPCError } from "@trpc/server";
-import LRU from "lru-cache";
+import { LRUCache } from "lru-cache";
 import { createHash } from "crypto";
 
 // Compression configuration
@@ -28,7 +28,7 @@ const defaultConfig: CompressionConfig = {
 };
 
 // Response cache using LRU
-const responseCache = new LRU<string, {
+const responseCache = new LRUCache<string, {
   data: any;
   etag: string;
   compressed: Buffer | null;
@@ -437,7 +437,7 @@ export const CacheInvalidation = {
     const keys = Array.from(responseCache.keys());
     
     for (const key of keys) {
-      if (key.includes(pattern)) {
+      if (String(key).includes(pattern)) {
         responseCache.delete(key);
         count++;
       }

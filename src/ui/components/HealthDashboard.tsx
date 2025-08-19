@@ -13,15 +13,47 @@ import {
   ArrowPathIcon,
   ClockIcon
 } from "@heroicons/react/24/outline";
-import { api } from "../../lib/trpc.js";
-import type { ServiceHealth, SystemHealth } from "../../api/services/HealthCheckService.js";
+import { trpc as api } from "../utils/trpc";
+
+// Define interfaces matching the actual API response
+interface HealthCheckResult {
+  serviceId: string;
+  status: "healthy" | "degraded" | "unhealthy";
+  lastCheck: string | Date;
+  latency?: number;
+  message?: string;
+  details?: Record<string, unknown>;
+  metrics?: {
+    responseTime?: number;
+    memory?: number;
+  };
+}
+
+interface AggregatedHealth {
+  status: "healthy" | "degraded" | "unhealthy";
+  uptime: number;
+  services?: HealthCheckResult[];
+  metrics?: {
+    responseTime?: number;
+    memory?: number;
+  };
+}
+
+interface ServiceHealth {
+  name: string;
+  status: "healthy" | "degraded" | "unhealthy";
+  lastCheck: string | Date;
+  latency?: number;
+  message?: string;
+  details?: Record<string, unknown>;
+}
 
 interface ServiceCardProps {
   service: ServiceHealth;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
-  const getStatusColor = (status: string) => {
+const ServiceCard: React.FC<ServiceCardProps> = ({ service }): React.ReactElement => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case "healthy":
         return "bg-green-100 text-green-800 border-green-300";
@@ -34,7 +66,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string): React.ReactElement => {
     switch (status) {
       case "healthy":
         return <CheckCircleIcon className="h-5 w-5 text-green-600" />;
@@ -82,8 +114,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
   );
 };
 
-export const HealthDashboard: React.FC = () => {
-  const [autoRefresh, setAutoRefresh] = useState(true);
+export const HealthDashboard: React.FC = (): React.ReactElement => {
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
   const [checkLevel, setCheckLevel] = useState<"basic" | "deep" | "full">("basic");
 
   // Get current health
@@ -120,11 +152,11 @@ export const HealthDashboard: React.FC = () => {
     },
   });
 
-  const health = healthData?.health;
-  const history = historyData?.history || [];
+  const health = healthData?.health as AggregatedHealth | undefined;
+  const history = (historyData?.history || []) as any;
   const trends = trendsData?.trends;
 
-  const getSystemStatusColor = (status?: string) => {
+  const getSystemStatusColor = (status?: string): string => {
     switch (status) {
       case "healthy":
         return "bg-green-500";
@@ -137,7 +169,7 @@ export const HealthDashboard: React.FC = () => {
     }
   };
 
-  const formatUptime = (seconds: number) => {
+  const formatUptime = (seconds: number): string => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -166,7 +198,7 @@ export const HealthDashboard: React.FC = () => {
               {/* Check Level Selector */}
               <select
                 value={checkLevel}
-                onChange={(e: any) => setCheckLevel(e?.target?.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCheckLevel(e.target.value as "basic" | "deep" | "full")}
                 className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="basic">Basic Check</option>
@@ -179,7 +211,7 @@ export const HealthDashboard: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={autoRefresh}
-                  onChange={(e: any) => setAutoRefresh(e?.target?.checked)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAutoRefresh(e.target.checked)}
                   className="w-4 h-4"
                 />
                 <span className="text-sm">Auto-refresh</span>
@@ -187,7 +219,7 @@ export const HealthDashboard: React.FC = () => {
               
               {/* Manual Refresh Button */}
               <button
-                onClick={() => triggerCheckMutation.mutate({ level: checkLevel })}
+                onClick={(): void => { triggerCheckMutation.mutate({ level: checkLevel }); }}
                 disabled={triggerCheckMutation.isPending}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
@@ -203,25 +235,25 @@ export const HealthDashboard: React.FC = () => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">System Status</div>
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${getSystemStatusColor(health.status)}`} />
-                  <span className="text-xl font-semibold capitalize">{health.status}</span>
+                  <div className={`w-3 h-3 rounded-full ${getSystemStatusColor(health?.status)}`} />
+                  <span className="text-xl font-semibold capitalize">{health?.status || 'unknown'}</span>
                 </div>
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">Uptime</div>
-                <div className="text-xl font-semibold">{formatUptime(health.uptime)}</div>
+                <div className="text-xl font-semibold">{formatUptime(health?.uptime || 0)}</div>
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">Response Time</div>
-                <div className="text-xl font-semibold">{health.metrics?.responseTime || 0}ms</div>
+                <div className="text-xl font-semibold">{health?.metrics?.responseTime || 0}ms</div>
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">Memory Usage</div>
                 <div className="text-xl font-semibold">
-                  {health.metrics?.memory ? `${health?.metrics?.memory.toFixed(1)} MB` : "N/A"}
+                  {health?.metrics?.memory ? `${health.metrics.memory.toFixed(1)} MB` : "N/A"}
                 </div>
               </div>
             </div>
@@ -237,9 +269,16 @@ export const HealthDashboard: React.FC = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {health?.services?.map((service: any) => (
-                <ServiceCard key={service.name} service={service} />
-              ))}
+              {health?.services?.map((service: HealthCheckResult, index: number) => (
+                <ServiceCard key={service.serviceId || `service-${index}`} service={{
+                  name: service.serviceId,
+                  status: service.status,
+                  lastCheck: service.lastCheck,
+                  latency: service.latency,
+                  message: service.message,
+                  details: service.details
+                }} />
+              )) || []}
             </div>
           </div>
         )}
@@ -276,9 +315,9 @@ export const HealthDashboard: React.FC = () => {
               <div className="mt-4">
                 <h3 className="text-sm font-semibold mb-2">Service Failures</h3>
                 <div className="flex flex-wrap gap-2">
-                  {Object.entries(trends.serviceFailures).map(([service, count]) => (
+                  {Object.entries(trends.serviceFailures || {}).map(([service, count]: [string, unknown]) => (
                     <span key={service} className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">
-                      {service}: {count}
+                      {service}: {String(count)}
                     </span>
                   ))}
                 </div>
@@ -303,10 +342,10 @@ export const HealthDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {history.slice(0, 10).map((check, index) => (
+                  {history.slice(0, 10).map((check: any, index: number) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">
-                        {new Date(check.timestamp).toLocaleTimeString()}
+                        {check.lastCheck ? new Date(check.lastCheck).toLocaleTimeString() : 'N/A'}
                       </td>
                       <td className="px-4 py-2">
                         <span className={`px-2 py-1 text-xs rounded-full ${
@@ -318,20 +357,16 @@ export const HealthDashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-2 text-sm">
-                        {check.metrics?.responseTime || 0}ms
+                        {check?.metrics?.responseTime || 0}ms
                       </td>
                       <td className="px-4 py-2 text-sm">
                         <div className="flex gap-1">
-                          <span className="text-green-600">
-                            {check?.services?.filter(s => s.status === "healthy").length}
-                          </span>
-                          /
-                          <span className="text-yellow-600">
-                            {check?.services?.filter(s => s.status === "degraded").length}
-                          </span>
-                          /
-                          <span className="text-red-600">
-                            {check?.services?.filter(s => s.status === "unhealthy").length}
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            check.status === "healthy" ? "bg-green-100 text-green-800" :
+                            check.status === "degraded" ? "bg-yellow-100 text-yellow-800" :
+                            "bg-red-100 text-red-800"
+                          }`}>
+                            {check.serviceId || "System"}
                           </span>
                         </div>
                       </td>

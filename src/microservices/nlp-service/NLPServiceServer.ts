@@ -29,15 +29,16 @@ app.get("/health", (req, res) => {
 });
 
 // Process NLP query
-app.post("/process", async (req, res) => {
+app.post("/process", async (req, res): Promise<void> => {
   try {
     const { text } = req.body;
     
     if (!text) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Text is required"
       });
+      return;
     }
     
     logger.info(`Processing NLP query: "${text}"`, "NLP_SERVICE");
@@ -60,15 +61,16 @@ app.post("/process", async (req, res) => {
 });
 
 // Batch processing endpoint
-app.post("/batch", async (req, res) => {
+app.post("/batch", async (req, res): Promise<void> => {
   try {
     const { queries } = req.body;
     
     if (!Array.isArray(queries)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Queries must be an array"
       });
+      return;
     }
     
     const results = await qwenProcessor.processBatch(queries);

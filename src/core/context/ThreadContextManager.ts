@@ -353,7 +353,7 @@ export class ThreadContextManager {
 
       for (const pattern of decisionIndicators) {
         const matches = emailText.match(pattern);
-        if (matches && matches?.length || 0 > 0) {
+        if (matches && (matches?.length || 0) > 0) {
           const decision: BusinessDecision = {
             decisionId: `${email.id}_${decisions?.length || 0}`,
             description: this.extractDecisionDescription(emailText, matches[0]),
@@ -423,9 +423,12 @@ export class ThreadContextManager {
     const evolutionTimeline = [...existingTimeline];
     
     // Analyze emails for context changes
-    for (let i = 1; i < emails?.length || 0; i++) {
+    const emailsLength = emails?.length || 0;
+    for (let i = 1; i < emailsLength; i++) {
       const prevEmail = emails[i - 1];
       const currentEmail = emails[i];
+      
+      if (!prevEmail || !currentEmail) continue;
       
       const changes = await this.detectEvolutionChanges(prevEmail, currentEmail);
       evolutionTimeline.push(...changes);
@@ -681,9 +684,9 @@ export class ThreadContextManager {
 
     // Try Redis
     try {
-      const cached = await this?.redisService?.getHash(`thread_context:${chainId}`);
+      const cached = await this?.redisService?.get<string>(`thread_context:${chainId}`);
       if (cached) {
-        const context = JSON.parse(cached.data || '{}') as ThreadContext;
+        const context = JSON.parse(cached) as ThreadContext;
         this?.contextCache?.set(chainId, context);
         return context;
       }
@@ -700,9 +703,9 @@ export class ThreadContextManager {
 
     // Update Redis cache
     try {
-      await this?.redisService?.setHash(
+      await this?.redisService?.set(
         `thread_context:${context.chainId}`,
-        { data: JSON.stringify(context) },
+        JSON.stringify(context),
         this.defaultTTL
       );
     } catch (error) {
@@ -1060,13 +1063,13 @@ export class ThreadContextManager {
     
     // Summarize older entries by time periods
     const olderEntries = flow.slice(0, -3);
-    if (olderEntries?.length || 0 > 0) {
+    if ((olderEntries?.length || 0) > 0) {
       const summaryEntry: ChronologicalEntry = {
         emailId: "summary_older",
-        timestamp: olderEntries[0].timestamp,
+        timestamp: olderEntries[0]?.timestamp || new Date(),
         sender: "System Summary",
         keyPoints: [`Summary of ${olderEntries?.length || 0} earlier emails`],
-        businessImpact: this.aggregateBusinessImpact(olderEntries),
+        businessImpact: this.aggregateBusinessImpact(olderEntries || []),
         contextChanges: [],
         analysisQuality: "medium"
       };
@@ -1106,7 +1109,14 @@ export class ThreadContextManager {
    * Cleanup method to free resources
    */
   async shutdown(): Promise<void> {
-    await this?.redisService?.disconnect();
+    // Redis service cleanup - method may not exist in all implementations
+    try {
+      if (this.redisService && 'disconnect' in this.redisService && typeof (this.redisService as any).disconnect === 'function') {
+        await (this.redisService as any).disconnect();
+      }
+    } catch (error) {
+      logger.warn('Redis disconnect failed:', String(error));
+    }
     this?.contextCache?.clear();
     logger.info("ThreadContextManager shutdown complete");
   }

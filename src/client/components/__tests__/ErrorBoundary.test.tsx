@@ -2,16 +2,17 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import '@testing-library/jest-dom';
 import { 
   ErrorBoundary, 
   withErrorBoundary, 
   WalmartErrorBoundary, 
   PricingErrorBoundary, 
   DashboardErrorBoundary 
-} from '../ErrorBoundary.js';
+} from '../ErrorBoundary';
 
 // Mock Sentry error tracker
-vi.mock('../../../monitoring/SentryErrorTracker.js', () => ({
+vi.mock('../../../monitoring/SentryErrorTracker', () => ({
   sentryErrorTracker: {
     captureError: vi.fn().mockReturnValue('mock-error-id'),
     addBreadcrumb: vi.fn(),
@@ -20,7 +21,7 @@ vi.mock('../../../monitoring/SentryErrorTracker.js', () => ({
 }));
 
 // Mock UI components
-vi.mock('../../../components/ui/button.js', () => ({
+vi.mock('../../../components/ui/button', () => ({
   Button: ({ children, onClick, className, variant, size }: any) => (
     <button 
       className={`button ${variant} ${size} ${className || ''}`} 
@@ -32,7 +33,7 @@ vi.mock('../../../components/ui/button.js', () => ({
   ),
 }));
 
-vi.mock('../../../components/ui/alert.js', () => ({
+vi.mock('../../../components/ui/alert', () => ({
   Alert: ({ children, className }: any) => (
     <div className={`alert ${className || ''}`} data-testid="alert">
       {children}
@@ -85,7 +86,7 @@ describe('ErrorBoundary', () => {
   let user: ReturnType<typeof userEvent.setup>;
   let mockOnError: ReturnType<typeof vi.fn>;
   let originalConsoleError: typeof console.error;
-  let originalLocation: typeof window.location;
+  let originalLocation: Location;
 
   beforeEach(() => {
     user = userEvent.setup();
@@ -102,7 +103,7 @@ describe('ErrorBoundary', () => {
       ...originalLocation,
       reload: vi.fn(),
       href: 'http://localhost:3000/',
-    };
+    } as any;
 
     // Mock window.open
     window.open = vi.fn();
@@ -120,7 +121,7 @@ describe('ErrorBoundary', () => {
   afterEach(() => {
     vi.clearAllMocks();
     console.error = originalConsoleError;
-    window.location = originalLocation;
+    window.location = originalLocation as any;
     vi.unstubAllEnvs();
   });
 

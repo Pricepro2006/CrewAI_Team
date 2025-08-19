@@ -13,7 +13,7 @@
  * @module MemoryManager
  */
 
-import v8 from 'v8';
+import * as v8 from 'v8';
 import { performance } from 'node:perf_hooks';
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -80,7 +80,7 @@ class MemoryManager extends EventEmitter {
   private isShuttingDown = false;
   private objectPools = new Map<string, ObjectPool<any>>();
   private weakRefs = new Map<string, WeakRef<any>>();
-  private finalizationRegistry: FinalizationRegistry<string>;
+  private finalizationRegistry?: FinalizationRegistry<string>;
   
   // Memory growth tracking for leak detection
   private memoryGrowthSamples: number[] = [];
@@ -91,29 +91,31 @@ class MemoryManager extends EventEmitter {
     super();
     
     this.config = {
-      warningThreshold: 0.7,
-      criticalThreshold: 0.85,
-      gcInterval: 60000,
-      heapSnapshotOnCritical: true,
-      enableAutoGC: true,
-      enableMemoryProfiling: false,
-      snapshotDir: './memory-snapshots',
-      restartOnOOM: true,
-      maxRestarts: 3,
-      restartCooldown: 300000, // 5 minutes
-      ...config
+      ...config,
+      warningThreshold: config.warningThreshold ?? 0.7,
+      criticalThreshold: config.criticalThreshold ?? 0.85,
+      gcInterval: config.gcInterval ?? 60000,
+      heapSnapshotOnCritical: config.heapSnapshotOnCritical ?? true,
+      enableAutoGC: config.enableAutoGC ?? true,
+      enableMemoryProfiling: config.enableMemoryProfiling ?? false,
+      snapshotDir: config.snapshotDir ?? './memory-snapshots',
+      restartOnOOM: config.restartOnOOM ?? true,
+      maxRestarts: config.maxRestarts ?? 3,
+      restartCooldown: config.restartCooldown ?? 300000 // 5 minutes
     };
     
     // Create snapshot directory if it doesn't exist
-    if (!existsSync(this?.config?.snapshotDir)) {
-      mkdirSync(this?.config?.snapshotDir, { recursive: true });
+    if (!existsSync(this.config.snapshotDir)) {
+      mkdirSync(this.config.snapshotDir, { recursive: true });
     }
     
     // Setup finalization registry for weak reference cleanup
-    this.finalizationRegistry = new FinalizationRegistry((key: string) => {
-      this?.weakRefs?.delete(key);
-      logger.debug(`Weak reference cleaned up: ${key}`, 'MEMORY_MANAGER');
-    });
+    if (typeof (globalThis as any).FinalizationRegistry !== 'undefined') {
+      this.finalizationRegistry = new (globalThis as any).FinalizationRegistry((key: string) => {
+        this.weakRefs.delete(key);
+        logger.debug(`Weak reference cleaned up: ${key}`, 'MEMORY_MANAGER');
+      });
+    }
     
     this.initialize();
   }
@@ -122,10 +124,10 @@ class MemoryManager extends EventEmitter {
    * Get or create a MemoryManager instance for a service
    */
   static getInstance(config: MemoryConfiguration): MemoryManager {
-    if (!MemoryManager?.instances?.has(config.service)) {
-      MemoryManager?.instances?.set(config.service, new MemoryManager(config));
+    if (!MemoryManager.instances.has(config.service)) {
+      MemoryManager.instances.set(config.service, new MemoryManager(config));
     }
-    return MemoryManager?.instances?.get(config.service)!;
+    return MemoryManager.instances.get(config.service)!;
   }
   
   /**
@@ -133,12 +135,12 @@ class MemoryManager extends EventEmitter {
    */
   private initialize(): void {
     // Set max heap size if specified
-    if (this?.config?.maxHeapSize) {
-      const maxHeapBytes = this?.config?.maxHeapSize * 1024 * 1024;
+    if (this.config.maxHeapSize) {
+      const maxHeapBytes = this.config.maxHeapSize * 1024 * 1024;
       try {
-        v8.setFlagsFromString(`--max-old-space-size=${this?.config?.maxHeapSize}`);
-        logger.info(`Max heap size set to ${this?.config?.maxHeapSize}MB`, 'MEMORY_MANAGER', {
-          service: this?.config?.service
+        v8.setFlagsFromString(`--max-old-space-size=${this.config.maxHeapSize}`);
+        logger.info(`Max heap size set to ${this.config.maxHeapSize}MB`, 'MEMORY_MANAGER', {
+          service: this.config.service
         });
       } catch (error) {
         logger.error('Failed to set max heap size', 'MEMORY_MANAGER', { error });
@@ -149,7 +151,7 @@ class MemoryManager extends EventEmitter {
     this.startMonitoring();
     
     // Start automatic GC if enabled
-    if (this?.config?.enableAutoGC) {
+    if (this.config.enableAutoGC) {
       this.startAutoGC();
     }
     
@@ -157,10 +159,10 @@ class MemoryManager extends EventEmitter {
     this.setupProcessHandlers();
     
     logger.info('Memory manager initialized', 'MEMORY_MANAGER', {
-      service: this?.config?.service,
-      maxHeapSize: this?.config?.maxHeapSize,
-      warningThreshold: this?.config?.warningThreshold * 100 + '%',
-      criticalThreshold: this?.config?.criticalThreshold * 100 + '%'
+      service: this.config.service,
+      maxHeapSize: this.config.maxHeapSize,
+      warningThreshold: this.config.warningThreshold * 100 + '%',
+      criticalThreshold: this.config.criticalThreshold * 100 + '%'
     });
   }
   
@@ -172,11 +174,11 @@ class MemoryManager extends EventEmitter {
     
     this.monitoringInterval = setInterval(() => {
       const metrics = this.collectMetrics();
-      this?.metrics?.push(metrics);
+      this.metrics.push(metrics);
       
       // Keep only last hour of metrics
       const oneHourAgo = Date.now() - 3600000;
-      this.metrics = this?.metrics?.filter(m => m.timestamp > oneHourAgo);
+      this.metrics = this.metrics.filter(m => m.timestamp > oneHourAgo);
       
       // Check for memory leaks
       this.checkForLeaks(metrics);
@@ -197,13 +199,15 @@ class MemoryManager extends EventEmitter {
     const memUsage = process.memoryUsage();
     const heapStats = v8.getHeapStatistics();
     
-    const heapUsedPercent = memUsage.heapUsed / heapStats.heap_size_limit;
-    const isWarning = heapUsedPercent >= this?.config?.warningThreshold;
-    const isCritical = heapUsedPercent >= this?.config?.criticalThreshold;
+    const heapUsedPercent = heapStats.heap_size_limit > 0 
+      ? memUsage.heapUsed / heapStats.heap_size_limit 
+      : 0;
+    const isWarning = heapUsedPercent >= this.config.warningThreshold;
+    const isCritical = heapUsedPercent >= this.config.criticalThreshold;
     
     const metrics: MemoryMetrics = {
       timestamp: Date.now(),
-      service: this?.config?.service,
+      service: this.config.service,
       heapUsed: memUsage.heapUsed,
       heapTotal: memUsage.heapTotal,
       external: memUsage.external,
@@ -224,7 +228,7 @@ class MemoryManager extends EventEmitter {
       logger.warn('High memory usage', 'MEMORY_MANAGER', metrics);
     } else {
       logger.debug('Memory metrics collected', 'MEMORY_MANAGER', {
-        service: this?.config?.service,
+        service: this.config.service,
         heapUsedMB: Math.round(memUsage.heapUsed / 1024 / 1024),
         heapUsedPercent: Math.round(heapUsedPercent * 100) + '%'
       });
@@ -238,10 +242,10 @@ class MemoryManager extends EventEmitter {
    */
   private checkForLeaks(metrics: MemoryMetrics): LeakDetectionResult {
     // Track memory growth
-    this?.memoryGrowthSamples?.push(metrics.heapUsed);
+    this.memoryGrowthSamples.push(metrics.heapUsed);
     
-    if (this?.memoryGrowthSamples?.length > this.LEAK_DETECTION_SAMPLES) {
-      this?.memoryGrowthSamples?.shift();
+    if (this.memoryGrowthSamples.length > this.LEAK_DETECTION_SAMPLES) {
+      this.memoryGrowthSamples.shift();
     }
     
     if (this?.memoryGrowthSamples?.length < this.LEAK_DETECTION_SAMPLES) {
@@ -255,15 +259,15 @@ class MemoryManager extends EventEmitter {
     }
     
     // Calculate growth rate
-    const firstSample = this.memoryGrowthSamples[0];
-    const lastSample = this.memoryGrowthSamples[this?.memoryGrowthSamples?.length - 1];
+    const firstSample = this.memoryGrowthSamples[0]!;
+    const lastSample = this.memoryGrowthSamples[this?.memoryGrowthSamples?.length - 1]!;
     const timeDiff = (this.LEAK_DETECTION_SAMPLES * 10) / 60; // minutes
     const growthRate = (lastSample - firstSample) / 1024 / 1024 / timeDiff; // MB per minute
     
     // Check if growth is consistently increasing
     let increasingCount = 0;
     for (let i = 1; i < this?.memoryGrowthSamples?.length; i++) {
-      if (this.memoryGrowthSamples[i] > this.memoryGrowthSamples[i - 1]) {
+      if (this.memoryGrowthSamples[i]! > this.memoryGrowthSamples[i - 1]!) {
         increasingCount++;
       }
     }
@@ -288,7 +292,9 @@ class MemoryManager extends EventEmitter {
       
       // Take heap snapshot for analysis
       if (this?.config?.heapSnapshotOnCritical) {
-        this.takeHeapSnapshot('leak-detection');
+        this.takeHeapSnapshot('leak-detection').catch(err => {
+          logger.error('Failed to take leak detection snapshot', 'MEMORY_MANAGER', { error: err });
+        });
       }
     }
     
@@ -307,7 +313,9 @@ class MemoryManager extends EventEmitter {
       
       // Take heap snapshot for debugging
       if (this?.config?.heapSnapshotOnCritical) {
-        this.takeHeapSnapshot('critical');
+        this.takeHeapSnapshot('critical').catch(err => {
+          logger.error('Failed to take critical snapshot', 'MEMORY_MANAGER', { error: err });
+        });
       }
       
       // Force garbage collection
@@ -399,7 +407,7 @@ class MemoryManager extends EventEmitter {
    * Force garbage collection
    */
   forceGC(): void {
-    if (!global.gc) {
+    if (typeof global.gc !== 'function') {
       logger.warn('Garbage collection not exposed. Run with --expose-gc flag', 'MEMORY_MANAGER');
       return;
     }
@@ -407,6 +415,7 @@ class MemoryManager extends EventEmitter {
     const startTime = performance.now();
     
     try {
+      // Call gc with proper type checking
       global.gc();
       
       const duration = performance.now() - startTime;
@@ -429,7 +438,7 @@ class MemoryManager extends EventEmitter {
   /**
    * Take a heap snapshot for debugging
    */
-  takeHeapSnapshot(reason: string = 'manual'): string {
+  async takeHeapSnapshot(reason: string = 'manual'): Promise<string> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `${this?.config?.service}-${reason}-${timestamp}.heapsnapshot`;
@@ -441,20 +450,19 @@ class MemoryManager extends EventEmitter {
         filepath
       });
       
-      const snapshot = v8.writeHeapSnapshot();
+      // v8.writeHeapSnapshot writes directly to file and returns the filename
+      const resultPath = v8.writeHeapSnapshot(filepath);
       
-      if (snapshot) {
-        writeFileSync(filepath, snapshot);
-        
+      if (resultPath) {
         logger.info('Heap snapshot saved', 'MEMORY_MANAGER', {
           service: this?.config?.service,
-          filepath,
-          size: snapshot?.length || 0
+          filepath: resultPath,
+          reason
         });
         
-        this.emit('snapshot-taken', { filepath, reason });
+        this.emit('snapshot-taken', { filepath: resultPath, reason });
         
-        return filepath;
+        return resultPath;
       }
       
       throw new Error('Failed to generate heap snapshot');
@@ -478,21 +486,21 @@ class MemoryManager extends EventEmitter {
     
     const objectPool: ObjectPool<T> = {
       acquire(): T {
-        if (pool?.length || 0 > 0) {
+        if (pool.length > 0) {
           return pool.pop()!;
         }
         return factory();
       },
       
       release(obj: T): void {
-        if (pool?.length || 0 < maxSize) {
+        if (pool.length < maxSize) {
           reset(obj);
           pool.push(obj);
         }
       },
       
       size(): number {
-        return pool?.length || 0;
+        return pool.length;
       },
       
       clear(): void {
@@ -522,22 +530,30 @@ class MemoryManager extends EventEmitter {
    * Clear all object pools
    */
   clearAllPools(): void {
-    for (const [name, pool] of this.objectPools) {
+    this.objectPools.forEach((pool, name) => {
       pool.clear();
       logger.debug('Object pool cleared', 'MEMORY_MANAGER', {
         service: this?.config?.service,
         poolName: name
       });
-    }
+    });
   }
   
   /**
    * Create a weak reference to an object
    */
-  createWeakRef<T extends object>(key: string, obj: T): WeakRef<T> {
-    const weakRef = new WeakRef(obj);
+  createWeakRef<T extends object>(key: string, obj: T): any {
+    if (typeof (globalThis as any).WeakRef === 'undefined') {
+      // Fallback for environments without WeakRef support
+      this?.weakRefs?.set(key, obj as any);
+      return { deref: () => obj };
+    }
+    
+    const weakRef = new (globalThis as any).WeakRef(obj);
     this?.weakRefs?.set(key, weakRef);
-    this?.finalizationRegistry?.register(obj, key);
+    if (this?.finalizationRegistry) {
+      this?.finalizationRegistry?.register(obj, key);
+    }
     
     return weakRef;
   }
@@ -547,7 +563,15 @@ class MemoryManager extends EventEmitter {
    */
   getWeakRef<T extends object>(key: string): T | undefined {
     const weakRef = this?.weakRefs?.get(key);
-    return weakRef?.deref() as T | undefined;
+    if (!weakRef) return undefined;
+    
+    // Handle both real WeakRef and fallback objects
+    if (typeof weakRef.deref === 'function') {
+      return weakRef.deref() as T | undefined;
+    }
+    
+    // Direct reference fallback
+    return weakRef as T | undefined;
   }
   
   /**
@@ -574,12 +598,12 @@ class MemoryManager extends EventEmitter {
     weakRefs: number;
   } {
     const current = this.getCurrentMetrics();
-    const heapUsedValues = this?.metrics?.map(m => m.heapUsed);
-    const averageHeapUsed = heapUsedValues?.length || 0 > 0
-      ? heapUsedValues.reduce((a: any, b: any) => a + b, 0) / heapUsedValues?.length || 0
+    const heapUsedValues = this?.metrics?.map(m => m.heapUsed) || [];
+    const averageHeapUsed = heapUsedValues.length > 0
+      ? heapUsedValues.reduce((a: number, b: number) => a + b, 0) / heapUsedValues.length
       : 0;
-    const peakHeapUsed = Math.max(...heapUsedValues, 0);
-    const leaksDetected = this?.metrics?.filter(m => m.leakSuspected).length;
+    const peakHeapUsed = heapUsedValues.length > 0 ? Math.max(...heapUsedValues) : 0;
+    const leaksDetected = this?.metrics?.filter(m => m.leakSuspected)?.length || 0;
     
     return {
       service: this?.config?.service,
@@ -591,8 +615,8 @@ class MemoryManager extends EventEmitter {
       averageGCDuration: this.gcCount > 0 ? this.gcTotalDuration / this.gcCount : 0,
       leaksDetected,
       restartCount: this.restartCount,
-      objectPools: this?.objectPools?.size,
-      weakRefs: this?.weakRefs?.size
+      objectPools: this?.objectPools?.size || 0,
+      weakRefs: this?.weakRefs?.size || 0
     };
   }
   
@@ -604,11 +628,9 @@ class MemoryManager extends EventEmitter {
     process.on('uncaughtException', (error: any) => {
       logger.error('Uncaught exception - taking heap snapshot', 'MEMORY_MANAGER', { error });
       
-      try {
-        this.takeHeapSnapshot('uncaught-exception');
-      } catch (snapshotError) {
+      this.takeHeapSnapshot('uncaught-exception').catch(snapshotError => {
         logger.error('Failed to take snapshot on exception', 'MEMORY_MANAGER', { snapshotError });
-      }
+      });
     });
     
     // Handle out of memory errors
@@ -654,11 +676,9 @@ class MemoryManager extends EventEmitter {
     // Take final snapshot if memory usage is high
     const metrics = this.getCurrentMetrics();
     if (metrics && metrics.heapUsedPercent > 0.7) {
-      try {
-        this.takeHeapSnapshot('shutdown');
-      } catch (error) {
+      await this.takeHeapSnapshot('shutdown').catch(error => {
         logger.error('Failed to take shutdown snapshot', 'MEMORY_MANAGER', { error });
-      }
+      });
     }
     
     // Emit shutdown event
@@ -677,10 +697,7 @@ class MemoryManager extends EventEmitter {
   }
 }
 
-// Global GC type declaration
-declare global {
-  var gc: (() => void) | undefined;
-}
+// Type augmentation is handled by Node.js types
 
 export { MemoryManager };
 export default MemoryManager;

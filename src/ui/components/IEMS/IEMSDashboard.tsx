@@ -10,7 +10,7 @@ import { api } from "../../../lib/trpc.js";
 import { EmailAliasSection } from "./EmailAliasSection.js";
 import { MarketingSplunkSection } from "./MarketingSplunkSection.js";
 import { VMwareTDSynnexSection } from "./VMwareTDSynnexSection.js";
-import type { CategorizedEmails } from "../../../types/iems-email?.types.js";
+import type { CategorizedEmails } from "../../../types/iems-email.types.js";
 import "./IEMSDashboard.css";
 
 export interface IEMSDashboardProps {

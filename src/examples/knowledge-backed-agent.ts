@@ -5,10 +5,26 @@
 
 import { KnowledgeBackedLLM } from '../core/llm/KnowledgeBackedLLM.js';
 import { RAGSystem } from '../core/rag/RAGSystem.js';
-import { LLMProviderFactory } from '../core/llm/LLMProviderFactory.js';
 import { BaseAgent } from '../core/agents/base/BaseAgent.js';
 import { logger } from '../utils/logger.js';
 import * as fs from 'fs';
+
+// Email interface for type safety
+interface EmailData {
+  id: string;
+  subject: string;
+  body: string;
+  metadata?: Record<string, any>;
+}
+
+// Analysis response interface
+interface AnalysisResponse {
+  emailId: string;
+  analysis: any;
+  contextUsed?: number;
+  metadata?: any;
+  rawResponse?: any;
+}
 
 /**
  * Knowledge-Enhanced Email Analysis Agent
@@ -16,17 +32,100 @@ import * as fs from 'fs';
  */
 class KnowledgeEnhancedEmailAgent extends BaseAgent {
   private knowledgeLLM: KnowledgeBackedLLM | null = null;
-  private ragSystem: RAGSystem | null = null;
 
   constructor() {
-    super({
-      name: 'KnowledgeEnhancedEmailAgent',
-      description: 'Analyzes emails with context from knowledge base',
-      capabilities: ['email-analysis', 'entity-extraction', 'business-intelligence'],
-    });
+    super(
+      'KnowledgeEnhancedEmailAgent',
+      'Analyzes emails with context from knowledge base'
+    );
+    this.addCapability('email-analysis');
+    this.addCapability('entity-extraction');
+    this.addCapability('business-intelligence');
   }
 
-  async initialize(): Promise<void> {
+  /**
+   * Execute method implementation required by BaseAgent
+   * Routes tasks to appropriate analysis methods
+   */
+  async execute(task: string, context: any): Promise<any> {
+    if (!this.knowledgeLLM) {
+      throw new Error('Agent not initialized');
+    }
+
+    try {
+      // Parse task to determine operation
+      const taskLower = task.toLowerCase();
+      
+      if (taskLower.includes('analyze email')) {
+        // Extract email data from context
+        const emailData = context.emailData || context.data;
+        if (!emailData) {
+          throw new Error('No email data provided in context');
+        }
+        
+        const analysis = await this.analyzeEmail(emailData);
+        return {
+          success: true,
+          data: analysis,
+          output: JSON.stringify(analysis, null, 2),
+          metadata: {
+            agent: this.name,
+            timestamp: new Date().toISOString(),
+            operation: 'email-analysis'
+          }
+        };
+      } else if (taskLower.includes('process email chain')) {
+        const emails = context.emails || context.data;
+        if (!emails || !Array.isArray(emails)) {
+          throw new Error('No email chain data provided in context');
+        }
+        
+        const chainAnalysis = await this.processEmailChain(emails);
+        return {
+          success: true,
+          data: chainAnalysis,
+          output: `Processed ${chainAnalysis.totalEmailsProcessed} emails. Chain insights: ${chainAnalysis.chainInsights}`,
+          metadata: {
+            agent: this.name,
+            timestamp: new Date().toISOString(),
+            operation: 'email-chain-analysis'
+          }
+        };
+      } else {
+        // Generic RAG-enhanced response
+        const response = await this.knowledgeLLM.generateWithContext(task, {
+          useRAG: true,
+          temperature: 0.7,
+          maxTokens: 1024
+        });
+        
+        return {
+          success: true,
+          data: response,
+          output: response.response,
+          metadata: {
+            agent: this.name,
+            timestamp: new Date().toISOString(),
+            operation: 'general-query',
+            contextUsed: response.context?.length || 0
+          }
+        };
+      }
+    } catch (error) {
+      logger.error(`Execution failed in ${this.name}`, 'KNOWLEDGE_AGENT', { error, task });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        metadata: {
+          agent: this.name,
+          timestamp: new Date().toISOString(),
+          operation: 'failed'
+        }
+      };
+    }
+  }
+
+  override async initialize(): Promise<void> {
     await super.initialize();
 
     // Initialize RAG system
@@ -37,8 +136,8 @@ class KnowledgeEnhancedEmailAgent extends BaseAgent {
         collectionName: 'email-knowledge-base',
       },
       chunking: {
-        chunkSize: 500,
-        chunkOverlap: 50,
+        size: 500,
+        overlap: 50,
       },
       retrieval: {
         topK: 5,
@@ -46,7 +145,7 @@ class KnowledgeEnhancedEmailAgent extends BaseAgent {
       },
     });
 
-    await this?.ragSystem?.initialize();
+    await this.ragSystem.initialize();
     logger.info('RAG system initialized', 'KNOWLEDGE_AGENT');
 
     // Initialize Knowledge-Backed LLM
@@ -73,22 +172,17 @@ class KnowledgeEnhancedEmailAgent extends BaseAgent {
       this.ragSystem
     );
 
-    await this?.knowledgeLLM?.initialize();
+    await this.knowledgeLLM.initialize();
     logger.info('Knowledge-Backed LLM initialized', 'KNOWLEDGE_AGENT');
   }
 
-  async analyzeEmail(email: {
-    id: string;
-    subject: string;
-    body: string;
-    metadata?: Record<string, any>;
-  }): Promise<any> {
+  async analyzeEmail(email: EmailData): Promise<AnalysisResponse> {
     if (!this.knowledgeLLM) {
       throw new Error('Agent not initialized');
     }
 
     // First, add email to knowledge base for future reference
-    await this?.knowledgeLLM?.addToKnowledgeBase(
+    await this.knowledgeLLM.addToKnowledgeBase(
       `Subject: ${email.subject}\n\nBody: ${email.body}`,
       {
         id: email.id,
@@ -114,7 +208,7 @@ Please provide:
 Format your response as a structured JSON object.`;
 
     // Generate response with RAG context
-    const response = await this?.knowledgeLLM?.generateWithContext(analysisPrompt, {
+    const response = await this.knowledgeLLM.generateWithContext(analysisPrompt, {
       temperature: 0.3, // Lower temperature for more structured output
       maxTokens: 1024,
       useRAG: true,
@@ -176,7 +270,11 @@ Format your response as a structured JSON object.`;
     }
   }
 
-  async processEmailChain(emails: Array<any>): Promise<any> {
+  async processEmailChain(emails: EmailData[]): Promise<{
+    individualAnalyses: AnalysisResponse[];
+    chainInsights: string;
+    totalEmailsProcessed: number;
+  }> {
     const chainAnalyses = [];
 
     for (const email of emails) {
@@ -200,16 +298,18 @@ Format your response as a structured JSON object.`;
 
     return {
       individualAnalyses: chainAnalyses,
-      chainInsights: chainInsights.response,
-      totalEmailsProcessed: emails?.length || 0,
+      chainInsights: chainInsights.response as string,
+      totalEmailsProcessed: emails.length,
     };
   }
 
   async cleanup(): Promise<void> {
     if (this.knowledgeLLM) {
-      await this?.knowledgeLLM?.cleanup();
+      await this.knowledgeLLM.cleanup();
     }
-    await super.cleanup();
+    // BaseAgent doesn't have a cleanup method, so we just clean up our own resources
+    this.knowledgeLLM = null;
+    logger.info('Knowledge-Enhanced Email Agent cleaned up', 'KNOWLEDGE_AGENT');
   }
 }
 
@@ -326,6 +426,7 @@ Senior Account Manager`,
 export { KnowledgeEnhancedEmailAgent, demonstrateKnowledgeBackedAgent };
 
 // Run demonstration if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Check if this is the main module being executed
+if (typeof require !== 'undefined' && require.main === module) {
   demonstrateKnowledgeBackedAgent().catch(console.error);
 }

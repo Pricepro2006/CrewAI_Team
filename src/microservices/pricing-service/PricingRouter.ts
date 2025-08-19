@@ -34,6 +34,7 @@ export class PricingRouter {
     this.rateLimiter = createRateLimiter({
       windowMs: 60 * 1000, // 1 minute
       max: 100, // 100 requests per minute per IP
+      keyPrefix: 'pricing:',
       message: 'Too many pricing requests, please try again later'
     });
 
@@ -107,7 +108,7 @@ export class PricingRouter {
   private async getPrice(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const request: PriceRequest = {
-        productId: req?.params?.productId,
+        productId: req?.params?.productId || '',
         storeId: req?.query?.storeId as string || 'default',
         quantity: parseInt(req?.query?.quantity as string) || 1,
         includePromotions: req?.query?.includePromotions !== 'false'
@@ -276,7 +277,7 @@ export class PricingRouter {
     // Send initial price
     try {
       const price = await this?.pricingService?.getPrice({
-        productId,
+        productId: productId || '',
         storeId,
         quantity: 1,
         includePromotions: true
@@ -291,7 +292,7 @@ export class PricingRouter {
     const interval = setInterval(async () => {
       try {
         const price = await this?.pricingService?.getPrice({
-          productId,
+          productId: productId || '',
           storeId,
           quantity: 1,
           includePromotions: true

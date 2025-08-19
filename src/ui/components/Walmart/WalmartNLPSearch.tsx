@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MagnifyingGlassIcon, SparklesIcon, ShoppingCartIcon, WifiIcon } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc.js";
+import { trpc } from "../../../utils/trpc";
 import { WalmartProductCard } from "./WalmartProductCard.js";
 import type { WalmartProduct } from "../../../types/walmart-grocery.js";
 import { useWalmartWebSocket } from "../../hooks/useWalmartWebSocket.js";
@@ -39,17 +39,21 @@ export const WalmartNLPSearch: React.FC = () => {
     error: wsError
   } = useWalmartWebSocket();
 
-  const searchProducts = api?.walmartGrocery?.searchProducts.useMutation({
+  const searchProducts = trpc?.walmartGrocery?.searchProducts?.useMutation({
     onSuccess: (data: any) => {
       setSearchResults(data.products || []);
     },
   });
 
-  const addToCart = api?.walmartGrocery?.addToCart.useMutation({
-    onSuccess: () => {
-      // Refresh cart or show success message
+  // Mock addToCart for now since the endpoint doesn't exist
+  const addToCart = {
+    mutate: (params: { productId: string; quantity: number }) => {
+      console.log('Adding to cart:', params);
+      // Mock success behavior
     },
-  });
+    isPending: false,
+    isLoading: false,
+  };
 
   const handleNLPSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -73,18 +77,38 @@ export const WalmartNLPSearch: React.FC = () => {
         case "add_items":
           // For add_items, we get products directly from NLP
           if (nlpData.products && nlpData?.products?.length > 0) {
-            const walmartProducts: WalmartProduct[] = nlpData?.products?.map(p => ({
+            const walmartProducts: WalmartProduct[] = nlpData?.products?.map((p: any) => ({
               id: p.id,
+              walmartId: p.id,
               name: p.name,
               brand: p.brand,
-              current_price: p.price,
-              regular_price: p.price,
-              in_stock: p.inStock,
-              category: "Grocery",
-              image_url: "",
+              price: {
+                currency: 'USD',
+                regular: p.price,
+                sale: p.price
+              },
+              images: [{
+                id: `${p.id}-image`,
+                url: "/api/placeholder/200/200",
+                type: "primary" as const
+              }],
+              availability: {
+                inStock: p.inStock,
+                stockLevel: p.inStock ? "in_stock" as const : "out_of_stock" as const
+              },
+              category: {
+                id: "grocery",
+                name: "Grocery",
+                path: ["grocery"],
+                level: 1
+              },
               description: "",
-              unit: "",
-              size: "",
+              metadata: {
+                source: "api" as const,
+                confidence: 0.8
+              },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             }));
             setSearchResults(walmartProducts);
           } else if (nlpData?.items?.length > 0) {
@@ -184,19 +208,39 @@ export const WalmartNLPSearch: React.FC = () => {
 
   // Update product matches from WebSocket
   useEffect(() => {
-    if (productMatches && productMatches?.length || 0 > 0) {
-      const walmartProducts: WalmartProduct[] = productMatches?.map(p => ({
-        id: p.id || p.product_id,
+    if (productMatches && (productMatches?.length || 0) > 0) {
+      const walmartProducts: WalmartProduct[] = (Array.isArray(productMatches) ? productMatches : []).map((p: any) => ({
+        id: p.id || p.product_id || `product-${Date.now()}`,
+        walmartId: p.id || p.product_id || `walmart-${Date.now()}`,
         name: p.name,
         brand: p.brand,
-        current_price: p.price || p.current_price,
-        regular_price: p.price || p.regular_price,
-        in_stock: p.inStock !== undefined ? p.inStock : p.in_stock,
-        category: "Grocery",
-        image_url: "",
+        price: {
+          currency: 'USD',
+          regular: p.price || p.current_price || p.regular_price || 0,
+          sale: p.price || p.current_price || p.regular_price || 0
+        },
+        images: [{
+          id: `${p.id}-image`,
+          url: "/api/placeholder/200/200",
+          type: "primary" as const
+        }],
+        availability: {
+          inStock: p.inStock !== undefined ? p.inStock : (p.in_stock ?? true),
+          stockLevel: (p.inStock !== undefined ? p.inStock : (p.in_stock ?? true)) ? "in_stock" as const : "out_of_stock" as const
+        },
+        category: {
+          id: "grocery",
+          name: "Grocery",
+          path: ["grocery"],
+          level: 1
+        },
         description: "",
-        unit: "",
-        size: "",
+        metadata: {
+          source: "api" as const,
+          confidence: 0.9
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }));
       setSearchResults(walmartProducts);
     }

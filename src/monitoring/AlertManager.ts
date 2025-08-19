@@ -5,8 +5,20 @@
 
 import { EventEmitter } from 'node:events';
 import { logger } from '../utils/logger.js';
-import nodemailer from 'nodemailer';
-import { WebhookClient } from 'discord.js';
+// Import nodemailer and discord.js only if available
+let nodemailer: any;
+let WebhookClient: any;
+try {
+  nodemailer = require('nodemailer');
+} catch (error) {
+  // nodemailer not available
+}
+try {
+  const discord = require('discord.js');
+  WebhookClient = discord.WebhookClient;
+} catch (error) {
+  // discord.js not available
+}
 
 export interface Alert {
   id: string;
@@ -73,7 +85,7 @@ class AlertManager extends EventEmitter {
   private alertCounts = new Map<string, number>(); // For frequency tracking
   private checkInterval?: NodeJS.Timeout;
   private initialized = false;
-  private emailTransporter?: nodemailer.Transporter;
+  private emailTransporter?: any;
 
   private constructor() {
     super();
@@ -105,9 +117,9 @@ class AlertManager extends EventEmitter {
 
     this.initialized = true;
     logger.info('Alert manager initialized', 'ALERT_MGR', {
-      rules: this?.alertRules?.size,
-      channels: this?.notificationChannels?.size,
-      slos: this?.sloDefinitions?.size,
+      rules: this.alertRules.size,
+      channels: this.notificationChannels.size,
+      slos: this.sloDefinitions.size,
     });
     this.emit('initialized');
   }
@@ -204,7 +216,7 @@ class AlertManager extends EventEmitter {
     ];
 
     defaultRules.forEach(rule => {
-      this?.alertRules?.set(rule.id, rule);
+      this.alertRules.set(rule.id, rule);
     });
   }
 
@@ -265,7 +277,7 @@ class AlertManager extends EventEmitter {
     }
 
     defaultChannels.forEach(channel => {
-      this?.notificationChannels?.set(channel.id, channel);
+      this.notificationChannels.set(channel.id, channel);
     });
   }
 
@@ -307,21 +319,24 @@ class AlertManager extends EventEmitter {
     ];
 
     defaultSLOs.forEach(slo => {
-      this?.sloDefinitions?.set(slo.name, slo);
+      this.sloDefinitions.set(slo.name, slo);
     });
   }
 
   private async setupEmailTransporter(): Promise<void> {
-    const emailChannel = this?.notificationChannels?.get('email_alerts');
-    if (emailChannel && emailChannel.enabled) {
+    const emailChannel = this.notificationChannels.get('email_alerts');
+    if (emailChannel && emailChannel.enabled && nodemailer) {
       try {
         this.emailTransporter = nodemailer.createTransporter(emailChannel.config);
-        await this?.emailTransporter?.verify();
+        await this.emailTransporter?.verify();
         logger.info('Email transporter configured successfully', 'ALERT_MGR');
       } catch (error) {
-        logger.warn('Failed to setup email transporter', 'ALERT_MGR', {}, error as Error);
+        logger.warn('Failed to setup email transporter', 'ALERT_MGR', error as Error);
         emailChannel.enabled = false;
       }
+    } else if (!nodemailer && emailChannel?.enabled) {
+      logger.warn('Nodemailer not available, disabling email channel', 'ALERT_MGR');
+      emailChannel.enabled = false;
     }
   }
 
@@ -339,8 +354,8 @@ class AlertManager extends EventEmitter {
 
     // Check cooldown
     const cooldownKey = `${type}_${component}`;
-    const lastAlertTime = this?.lastAlertTimes?.get(cooldownKey) || 0;
-    const rule = this?.alertRules?.get(type);
+    const lastAlertTime = this.lastAlertTimes.get(cooldownKey) || 0;
+    const rule = this.alertRules.get(type);
     const cooldownMs = (rule?.cooldownMinutes || 5) * 60 * 1000;
 
     if (now - lastAlertTime < cooldownMs) {
@@ -363,12 +378,12 @@ class AlertManager extends EventEmitter {
       metadata,
     };
 
-    this?.alerts?.set(alertId, alert);
-    this?.lastAlertTimes?.set(cooldownKey, now);
+    this.alerts.set(alertId, alert);
+    this.lastAlertTimes.set(cooldownKey, now);
     
     // Update alert frequency tracking
-    const currentCount = this?.alertCounts?.get(cooldownKey) || 0;
-    this?.alertCounts?.set(cooldownKey, currentCount + 1);
+    const currentCount = this.alertCounts.get(cooldownKey) || 0;
+    this.alertCounts.set(cooldownKey, currentCount + 1);
 
     // Send notifications
     await this.sendNotifications(alert);
@@ -389,13 +404,13 @@ class AlertManager extends EventEmitter {
 
   // Resolve an alert
   async resolveAlert(alertId: string, resolvedBy?: string): Promise<boolean> {
-    const alert = this?.alerts?.get(alertId);
+    const alert = this.alerts.get(alertId);
     if (!alert || alert.resolvedAt) {
       return false;
     }
 
     alert.resolvedAt = Date.now();
-    this?.alerts?.set(alertId, alert);
+    this.alerts.set(alertId, alert);
 
     // Send resolution notification
     await this.sendResolutionNotification(alert, resolvedBy);
@@ -415,7 +430,7 @@ class AlertManager extends EventEmitter {
 
   // Acknowledge an alert
   async acknowledgeAlert(alertId: string, acknowledgedBy: string): Promise<boolean> {
-    const alert = this?.alerts?.get(alertId);
+    const alert = this.alerts.get(alertId);
     if (!alert || alert.acknowledged) {
       return false;
     }
@@ -423,7 +438,7 @@ class AlertManager extends EventEmitter {
     alert.acknowledged = true;
     alert.acknowledgedBy = acknowledgedBy;
     alert.acknowledgedAt = Date.now();
-    this?.alerts?.set(alertId, alert);
+    this.alerts.set(alertId, alert);
 
     this.emit('alert-acknowledged', alert);
 
@@ -439,10 +454,10 @@ class AlertManager extends EventEmitter {
   private async sendNotifications(alert: Alert): Promise<void> {
     const promises: Promise<void>[] = [];
 
-    for (const channel of this?.notificationChannels?.values()) {
+    for (const channel of this.notificationChannels.values() || []) {
       if (!channel.enabled) continue;
-      if (!channel?.severityFilter?.includes(alert.severity)) continue;
-      if (channel.componentFilter && !channel?.componentFilter?.includes(alert.component)) continue;
+      if (!channel.severityFilter?.includes(alert.severity)) continue;
+      if (channel.componentFilter && !channel.componentFilter.includes(alert.component)) continue;
 
       promises.push(this.sendNotification(channel, alert));
     }
@@ -481,17 +496,35 @@ class AlertManager extends EventEmitter {
                     alert.severity === 'error' ? 'error' :
                     alert.severity === 'warning' ? 'warn' : 'info';
     
-    logger[logLevel](`ALERT: ${alert.title}`, 'ALERT', {
-      id: alert.id,
-      type: alert.type,
-      component: alert.component,
-      message: alert.message,
-      metadata: alert.metadata,
-    });
+    if (logLevel === 'error') {
+      logger.error(`ALERT: ${alert.title}`, 'ALERT', {
+        id: alert.id,
+        type: alert.type,
+        component: alert.component,
+        message: alert.message,
+        metadata: alert.metadata,
+      }, undefined);
+    } else if (logLevel === 'warn') {
+      logger.warn(`ALERT: ${alert.title}`, 'ALERT', {
+        id: alert.id,
+        type: alert.type,
+        component: alert.component,
+        message: alert.message,
+        metadata: alert.metadata,
+      });
+    } else {
+      logger.info(`ALERT: ${alert.title}`, 'ALERT', {
+        id: alert.id,
+        type: alert.type,
+        component: alert.component,
+        message: alert.message,
+        metadata: alert.metadata,
+      });
+    }
   }
 
   private async sendEmailNotification(channel: NotificationChannel, alert: Alert): Promise<void> {
-    if (!this.emailTransporter) return;
+    if (!this.emailTransporter || !nodemailer) return;
 
     const severityEmoji = {
       info: 'ℹ️',
@@ -511,16 +544,20 @@ class AlertManager extends EventEmitter {
       <p><small>Alert ID: ${alert.id}</small></p>
     `;
 
-    await this?.emailTransporter?.sendMail({
-      from: channel?.config?.from,
-      to: channel?.config?.to,
-      subject: `[${alert?.severity?.toUpperCase()}] ${alert.title}`,
+    await this.emailTransporter?.sendMail({
+      from: channel.config?.from,
+      to: channel.config?.to,
+      subject: `[${alert.severity?.toUpperCase()}] ${alert.title}`,
       html,
     });
   }
 
   private async sendDiscordNotification(channel: NotificationChannel, alert: Alert): Promise<void> {
-    const webhook = new WebhookClient({ url: channel?.config?.webhookUrl });
+    if (!WebhookClient) {
+      logger.warn('Discord.js not available, cannot send Discord notification', 'ALERT_MGR');
+      return;
+    }
+    const webhook = new WebhookClient({ url: channel.config?.webhookUrl });
     
     const colorMap = {
       info: 0x3498db,     // Blue
@@ -536,7 +573,7 @@ class AlertManager extends EventEmitter {
         color: colorMap[alert.severity],
         fields: [
           { name: 'Component', value: alert.component, inline: true },
-          { name: 'Severity', value: alert?.severity?.toUpperCase(), inline: true },
+          { name: 'Severity', value: alert.severity?.toUpperCase() || '', inline: true },
           { name: 'Time', value: new Date(alert.timestamp).toISOString(), inline: true },
         ],
         footer: { text: `Alert ID: ${alert.id}` },
@@ -552,11 +589,11 @@ class AlertManager extends EventEmitter {
       source: 'walmart-grocery-agent',
     };
 
-    const response = await fetch(channel?.config?.url, {
+    const response = await fetch(channel.config?.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...channel?.config?.headers,
+        ...channel.config?.headers,
       },
       body: JSON.stringify(payload),
     });
@@ -589,10 +626,10 @@ class AlertManager extends EventEmitter {
   private checkEscalations(): void {
     const now = Date.now();
     
-    for (const alert of this?.alerts?.values()) {
+    for (const alert of this.alerts.values()) {
       if (alert.resolvedAt || alert.escalated) continue;
       
-      const rule = this?.alertRules?.get(alert.type);
+      const rule = this.alertRules.get(alert.type);
       if (!rule?.escalationMinutes) continue;
       
       const escalationTime = alert.timestamp + (rule.escalationMinutes * 60 * 1000);
@@ -636,9 +673,9 @@ class AlertManager extends EventEmitter {
   private cleanupOldAlerts(): void {
     const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days
     
-    for (const [alertId, alert] of this?.alerts?.entries()) {
+    for (const [alertId, alert] of this.alerts.entries()) {
       if (alert.resolvedAt && alert.resolvedAt < cutoff) {
-        this?.alerts?.delete(alertId);
+        this.alerts.delete(alertId);
       }
     }
   }
@@ -654,7 +691,7 @@ class AlertManager extends EventEmitter {
     resolved?: boolean;
     limit?: number;
   }): Alert[] {
-    let alerts = Array.from(this?.alerts?.values());
+    let alerts = Array.from(this.alerts.values());
     
     if (filters) {
       if (filters.severity) {
@@ -683,7 +720,7 @@ class AlertManager extends EventEmitter {
     byCategory: Record<string, number>;
     bySeverity: Record<string, number>;
   } {
-    const alerts = Array.from(this?.alerts?.values());
+    const alerts = Array.from(this.alerts.values());
     const unresolved = alerts?.filter(a => !a.resolvedAt);
     
     const byCategory = alerts.reduce((acc: any, alert: any) => {
@@ -706,33 +743,33 @@ class AlertManager extends EventEmitter {
 
   // Rule management
   addAlertRule(rule: AlertRule): void {
-    this?.alertRules?.set(rule.id, rule);
+    this.alertRules.set(rule.id, rule);
     logger.info('Alert rule added', 'ALERT_MGR', { id: rule.id, name: rule.name });
   }
 
   updateAlertRule(id: string, updates: Partial<AlertRule>): boolean {
-    const rule = this?.alertRules?.get(id);
+    const rule = this.alertRules.get(id);
     if (!rule) return false;
     
-    this?.alertRules?.set(id, { ...rule, ...updates });
+    this.alertRules.set(id, { ...rule, ...updates });
     logger.info('Alert rule updated', 'ALERT_MGR', { id, updates });
     return true;
   }
 
   // Channel management
   addNotificationChannel(channel: NotificationChannel): void {
-    this?.notificationChannels?.set(channel.id, channel);
+    this.notificationChannels.set(channel.id, channel);
     logger.info('Notification channel added', 'ALERT_MGR', { id: channel.id, type: channel.type });
   }
 
   // SLO management
   addSLO(slo: SLODefinition): void {
-    this?.sloDefinitions?.set(slo.name, slo);
+    this.sloDefinitions.set(slo.name, slo);
     logger.info('SLO definition added', 'ALERT_MGR', { name: slo.name });
   }
 
   checkSLO(sloName: string, currentValue: number): void {
-    const slo = this?.sloDefinitions?.get(sloName);
+    const slo = this.sloDefinitions.get(sloName);
     if (!slo || !slo.alertOnBreach) return;
     
     let breached = false;

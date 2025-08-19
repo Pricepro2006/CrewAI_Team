@@ -11,24 +11,46 @@ import {
   ArrowTrendingUpIcon,
   CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc.js";
-import { useWebSocket } from "../../hooks/useWebSocket.js";
-import { MetricsBar } from "./MetricsBar.js";
-import { EmailListView } from "./EmailListView.js";
-import { EmailDashboardView } from "./EmailDashboardView.js";
-import { AnalyticsView } from "./AnalyticsView.js";
-import { AgentView } from "./AgentView.js";
-import { StatusLegend } from "./StatusLegend.js";
-import { BusinessIntelligenceDashboard } from "./BusinessIntelligenceDashboard.js";
-import type {
-  UnifiedEmailData,
-  ViewMode,
-  FilterConfig,
-  DashboardMetrics,
-  WorkflowState,
-  EmailPriority,
-  EmailStatus,
-} from "../../../types/unified-email?.types.js";
+import { api } from "../../../client/lib/api";
+import { useWebSocket } from "../../hooks/useWebSocket";
+import { MetricsBar } from "./MetricsBar";
+import { EmailListView } from "./EmailListView";
+import { EmailDashboardView } from "./EmailDashboardView";
+import { AnalyticsView } from "./AnalyticsView";
+import { AgentView } from "./AgentView";
+import { StatusLegend } from "./StatusLegend";
+import { BusinessIntelligenceDashboard } from "./BusinessIntelligenceDashboard";
+import type { UnifiedEmailData, ViewMode, WorkflowState, EmailPriority, EmailStatus } from "../../../types/index";
+
+interface FilterConfig {
+  search: string;
+  emailAliases: string[];
+  requesters: string[];
+  statuses: string[];
+  workflowStates: string[];
+  workflowTypes: string[];
+  priorities: string[];
+  dateRange: {
+    start: Date | null;
+    end: Date | null;
+  };
+  hasAttachments: boolean | undefined;
+  isRead: boolean | undefined;
+  tags: string[];
+  assignedAgents: string[];
+}
+
+interface DashboardMetrics {
+  totalEmails: number;
+  todaysEmails: number;
+  workflowCompletion: number;
+  avgResponseTime: number;
+  criticalAlerts: any[];
+  agentUtilization: number;
+  pendingAssignment: number;
+  urgentCount: number;
+  processedToday?: number;
+}
 import "./UnifiedEmailDashboard.css";
 
 interface UnifiedEmailDashboardProps {
@@ -63,11 +85,11 @@ const convertToUnifiedEmailData = (apiEmail: any): UnifiedEmailData => ({
   from: apiEmail.requested_by,
   to: [apiEmail.email_alias],
   receivedAt: apiEmail.received_date,
-  workflowState: apiEmail.workflow_state as WorkflowState,
-  isWorkflowComplete: apiEmail.workflow_state === 'COMPLETED',
-  priority: apiEmail.priority as EmailPriority,
-  status: apiEmail.status as EmailStatus,
-  tags: [],
+  workflowState: apiEmail.workflow_state as any,
+  isWorkflowComplete: apiEmail.workflow_state === 'COMPLETION',
+  priority: apiEmail.priority as any,
+  status: apiEmail.status as any,
+  tags: undefined,
   hasAttachments: apiEmail.has_attachments || false,
   isRead: apiEmail.is_read || false,
 });
@@ -82,8 +104,8 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Fetch unified email data with all enrichments
-  const { data: emailData, refetch: refetchEmails } = api?.emails?.getTableData.useQuery({
+  // Fetch unified email data with all enrichments and proper error handling
+  const { data: emailData, refetch: refetchEmails } = api?.emails?.getTableData?.useQuery?.({
     page: 1,
     pageSize: 50,
     sortBy: "received_date",
@@ -99,12 +121,12 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
       } : undefined,
     },
     search: filters.search,
-  });
+  }) || { data: null, refetch: async () => {} };
 
-  // Analytics data with workflow metrics
-  const { data: analytics, refetch: refetchAnalytics } = api?.emails?.getAnalytics.useQuery({
+  // Analytics data with workflow metrics and proper error handling
+  const { data: analytics, refetch: refetchAnalytics } = api?.emails?.getAnalytics?.useQuery?.({
     refreshKey: Date.now(),
-  });
+  }) || { data: null, refetch: async () => {} };
 
   // Memoize WebSocket callbacks to prevent unnecessary re-renders
   const onConnect = useCallback(() => {
@@ -119,12 +141,18 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
     console.error("WebSocket error:", error);
   }, []);
 
-  // Real-time updates via WebSocket
-  useWebSocket({
-    onConnect,
-    onDisconnect,
-    onError,
-  });
+  // Real-time updates via WebSocket with error handling
+  React.useEffect(() => {
+    try {
+      useWebSocket({
+        onConnect,
+        onDisconnect,
+        onError,
+      });
+    } catch (error) {
+      console.warn('WebSocket connection failed:', error);
+    }
+  }, [onConnect, onDisconnect, onError]);
 
   // Manual refresh - memoized to prevent unnecessary re-renders
   const handleRefresh = useCallback(async () => {
@@ -272,9 +300,9 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
         {viewMode === "list" && (
           <EmailListView
-            emails={Array.isArray(emailData?.data?.emails) 
+            emails={(Array.isArray(emailData?.data?.emails) 
               ? emailData?.data?.emails?.map(convertToUnifiedEmailData) 
-              : []
+              : []) as any
             }
             onEmailSelect={(email: any) => setSelectedEmails([email.id])}
             selectedEmailId={selectedEmails[0]}
@@ -295,9 +323,9 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
             <EmailListView
               emails={(Array.isArray(emailData?.data?.emails) ? emailData?.data?.emails : [])
                 .filter((e: any) => e.workflow_state === "IN_PROGRESS")
-                .map(convertToUnifiedEmailData)
+                .map(convertToUnifiedEmailData) as any
               }
-              onEmailSelect={(email: UnifiedEmailData) =>
+              onEmailSelect={(email: any) =>
                 setSelectedEmails([email.id])
               }
               selectedEmailId={selectedEmails[0]}

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { MasterOrchestrator } from "./MasterOrchestrator.js";
-import type { Plan, Query, PlanStep } from "./types.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { MasterOrchestrator } from './MasterOrchestrator';
+import type { Plan, Query, PlanStep } from './types';
 
 // Mock Ollama provider
 const mockOllamaProvider = {
@@ -190,9 +190,9 @@ describe("MasterOrchestrator", () => {
     );
 
     const result = await orchestrator.processQuery(query);
-    expect(result.plan?.steps[0]?.agentType).toBe("ResearchAgent");
-    expect(result.plan?.steps[0]?.task).toBe("ResearchAgent");
-    expect(result.plan?.steps[1]?.agentType).toBe("WriterAgent");
+    expect(result.plan?.steps[0]?.length).toBe("ResearchAgent");
+    expect(result.plan?.steps[0]?.length).toBe("ResearchAgent");
+    expect(result.plan?.steps[1]?.length).toBe("WriterAgent");
   });
 
   it("should generate comprehensive summaries", async () => {

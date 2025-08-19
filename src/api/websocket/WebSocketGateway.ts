@@ -157,28 +157,28 @@ export class WebSocketGateway extends EventEmitter {
 
   private setupEventBusIntegration(): void {
     // Listen to all events from EventBus and broadcast to subscribers
-    this?.eventBus?.on('event_published', (data: { event: BaseEvent }) => {
+    this.eventBus.on('event_published', (data: { event: BaseEvent }) => {
       this.broadcastEvent(data.event);
     });
 
     // Monitor event bus health
-    this?.eventBus?.on('error', (error: any) => {
+    this.eventBus.on('error', (error: Error) => {
       this.emit('eventbus_error', error);
     });
   }
 
   private startPeriodicTasks(): void {
-    if (this?.config?.heartbeat.enabled) {
+    if (this.config.heartbeat.enabled) {
       this.heartbeatTimer = setInterval(() => {
         this.performHeartbeat();
-      }, this?.config?.heartbeat.interval);
+      }, this.config.heartbeat.interval);
     }
 
-    if (this?.config?.monitoring.enabled) {
+    if (this.config.monitoring.enabled) {
       this.metricsTimer = setInterval(() => {
         this.updateMetrics();
         this.emit('metrics', { ...this.metrics, timestamp: Date.now() });
-      }, this?.config?.monitoring.metricsInterval);
+      }, this.config.monitoring.metricsInterval);
     }
 
     // Cleanup inactive connections
@@ -192,34 +192,38 @@ export class WebSocketGateway extends EventEmitter {
     return new Promise((resolve, reject) => {
       try {
         this.server = new WebSocketServer({
-          port: this?.config?.port,
-          path: this?.config?.path,
-          maxPayload: this?.config?.limits.maxMessageSize,
-          perMessageDeflate: this?.config?.batching.compression.enabled,
+          port: this.config.port,
+          path: this.config.path,
+          maxPayload: this.config.limits.maxMessageSize,
+          perMessageDeflate: this.config.batching.compression.enabled,
           verifyClient: (info, callback) => {
             // Handle async verification properly
-            this.verifyClient(info, callback).catch((error: any) => {
-              console.error('WebSocket verification error:', error);
-              callback(false);
-            });
+            if (this.verifyClient) {
+              this.verifyClient(info, callback).catch((error: Error) => {
+                console.error('WebSocket verification error:', error);
+                callback(false);
+              });
+            } else {
+              callback(true);
+            }
           }
         });
 
-        this?.server?.on('connection', (ws, request) => {
+        this.server.on('connection', (ws: WebSocket, request: IncomingMessage) => {
           this.handleConnection(ws, request);
         });
 
-        this?.server?.on('error', (error: any) => {
-          if (this.metrics.connectionErrors) { this.metrics.connectionErrors++ };
+        this.server.on('error', (error: Error) => {
+          this.metrics.connectionErrors++;
           this.emit('server_error', error);
           reject(error);
         });
 
-        this?.server?.on('listening', () => {
-          console.log(`WebSocket Gateway listening on port ${this?.config?.port}${this?.config?.path}`);
+        this.server.on('listening', () => {
+          console.log(`WebSocket Gateway listening on port ${this.config.port}${this.config.path}`);
           this.emit('server_started', {
-            port: this?.config?.port,
-            path: this?.config?.path
+            port: this.config.port,
+            path: this.config.path
           });
           resolve();
         });
@@ -231,19 +235,19 @@ export class WebSocketGateway extends EventEmitter {
   }
 
   public async stop(): Promise<void> {
-    return new Promise((resolve: any) => {
+    return new Promise<void>((resolve) => {
       // Clean up timers
       if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
       if (this.metricsTimer) clearInterval(this.metricsTimer);
       if (this.cleanupTimer) clearInterval(this.cleanupTimer);
 
       // Close all connections
-      for (const connection of this?.connections?.values()) {
-        this.closeConnection(connection.id, 'server_shutdown');
+      for (const connectionId of Array.from(this.connections.keys())) {
+        this.closeConnection(connectionId, 'server_shutdown');
       }
 
       if (this.server) {
-        this?.server?.close(() => {
+        this.server.close(() => {
           this.emit('server_stopped');
           resolve();
         });
@@ -257,17 +261,17 @@ export class WebSocketGateway extends EventEmitter {
   private async verifyClient(info: { origin: string; secure: boolean; req: IncomingMessage }, callback: (result: boolean) => void): Promise<void> {
     try {
       // Check connection limits
-      if (this?.connections?.size >= this?.config?.limits.maxConnections) {
+      if (this.connections.size >= this.config.limits.maxConnections) {
         callback(false);
         return;
       }
 
       // Proper async auth check
-      if (this?.config?.auth.enabled) {
-        const authHeader = info?.req?.headers[this?.config?.auth.tokenHeader.toLowerCase()] as string;
+      if (this.config.auth.enabled) {
+        const authHeader = info.req.headers[this.config.auth.tokenHeader.toLowerCase()] as string;
         
         if (!authHeader) {
-          if (this.metrics.authFailures) { this.metrics.authFailures++ };
+          this.metrics.authFailures++;
           callback(false);
           return;
         }
@@ -278,17 +282,17 @@ export class WebSocketGateway extends EventEmitter {
           : authHeader;
 
         // Validate token asynchronously
-        if (this?.config?.auth.validateToken) {
+        if (this.config.auth.validateToken && typeof this.config.auth.validateToken === 'function') {
           try {
-            const isValid = await this?.config?.auth.validateToken(token);
+            const isValid = await this.config.auth.validateToken(token);
             if (!isValid) {
-              if (this.metrics.authFailures) { this.metrics.authFailures++ };
+              this.metrics.authFailures++;
               callback(false);
               return;
             }
           } catch (error) {
             this.emit('auth_error', error);
-            if (this.metrics.authFailures) { this.metrics.authFailures++ };
+            this.metrics.authFailures++;
             callback(false);
             return;
           }
@@ -313,9 +317,9 @@ export class WebSocketGateway extends EventEmitter {
       userId,
       subscriptions: new Map(),
       metadata: {
-        userAgent: request.headers['user-agent'],
-        origin: request?.headers?.origin,
-        ip: request?.socket?.remoteAddress
+        userAgent: request.headers['user-agent'] || 'unknown',
+        origin: request.headers.origin || 'unknown',
+        ip: request.socket?.remoteAddress || 'unknown'
       },
       stats: {
         connectedAt: Date.now(),
@@ -335,25 +339,25 @@ export class WebSocketGateway extends EventEmitter {
       }
     };
 
-    this?.connections?.set(connectionId, connection);
-    if (this.metrics.totalConnections) { this.metrics.totalConnections++ };
-    if (this.metrics.activeConnections) { this.metrics.activeConnections++ };
+    this.connections.set(connectionId, connection);
+    this.metrics.totalConnections++;
+    this.metrics.activeConnections++;
 
     // Set up WebSocket event handlers
-    ws.on('message', (data: any) => {
+    ws.on('message', (data: Buffer | string) => {
       this.handleMessage(connectionId, data);
     });
 
-    ws.on('close', (code, reason) => {
+    ws.on('close', (code: number, reason: Buffer) => {
       this.handleClose(connectionId, code, reason);
     });
 
-    ws.on('error', (error: any) => {
+    ws.on('error', (error: Error) => {
       this.handleError(connectionId, error);
     });
 
     ws.on('pong', () => {
-      connection?.stats?.lastActivity = Date.now();
+      connection.stats.lastActivity = Date.now();
     });
 
     this.emit('connection_opened', {
@@ -366,20 +370,21 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'ping',
+      timestamp: Date.now(),
       payload: {
         connectionId,
         serverTime: Date.now(),
         capabilities: {
-          batching: this?.config?.batching.enabled,
-          compression: this?.config?.batching.compression.enabled,
-          maxBatchSize: this?.config?.batching.maxBatchSize
+          batching: this.config.batching.enabled,
+          compression: this.config.batching.compression.enabled,
+          maxBatchSize: this.config.batching.maxBatchSize
         }
       }
     });
   }
 
   private handleMessage(connectionId: string, data: Buffer | string): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     if (!connection) return;
 
     try {
@@ -392,9 +397,9 @@ export class WebSocketGateway extends EventEmitter {
       const message = this.parseMessage(data);
       if (!message) return;
 
-      connection?.stats?.messagesReceived++;
-      connection?.stats?.bytesReceived += Buffer.isBuffer(data) ? data?.length || 0 : Buffer.byteLength(data);
-      connection?.stats?.lastActivity = Date.now();
+      connection.stats.messagesReceived++;
+      connection.stats.bytesReceived += Buffer.isBuffer(data) ? data.length : Buffer.byteLength(data);
+      connection.stats.lastActivity = Date.now();
 
       this.processMessage(connectionId, message);
 
@@ -437,26 +442,26 @@ export class WebSocketGateway extends EventEmitter {
 
   // Message handlers
   private handleSubscribe(connectionId: string, message: WebSocketMessage): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     if (!connection) return;
 
     try {
       const subscription = SubscriptionSchema.parse(message.payload);
 
       // Check subscription limits
-      if (connection?.subscriptions?.size >= this?.config?.limits.maxSubscriptions) {
+      if (connection.subscriptions.size >= this.config.limits.maxSubscriptions) {
         this.sendError(connectionId, 'subscription_limit_exceeded', 'Too many subscriptions');
         return;
       }
 
-      connection?.subscriptions?.set(subscription.id, subscription);
+      connection.subscriptions.set(subscription.id, subscription);
 
       // Add to global subscription index
-      subscription?.eventTypes?.forEach(eventType => {
-        if (!this?.subscriptions?.has(eventType)) {
-          this?.subscriptions?.set(eventType, new Set());
+      subscription.eventTypes.forEach(eventType => {
+        if (!this.subscriptions.has(eventType)) {
+          this.subscriptions.set(eventType, new Set());
         }
-        this?.subscriptions?.get(eventType)!.add(connectionId);
+        this.subscriptions.get(eventType)!.add(connectionId);
       });
 
       this.emit('subscription_created', {
@@ -468,6 +473,7 @@ export class WebSocketGateway extends EventEmitter {
       this.sendMessage(connectionId, {
         id: this.generateMessageId(),
         type: 'subscribe',
+        timestamp: Date.now(),
         payload: {
           subscriptionId: subscription.id,
           status: 'success',
@@ -482,7 +488,7 @@ export class WebSocketGateway extends EventEmitter {
   }
 
   private handleUnsubscribe(connectionId: string, message: WebSocketMessage): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     if (!connection) return;
 
     const subscriptionId = message.payload?.subscriptionId;
@@ -491,24 +497,24 @@ export class WebSocketGateway extends EventEmitter {
       return;
     }
 
-    const subscription = connection?.subscriptions?.get(subscriptionId);
+    const subscription = connection.subscriptions.get(subscriptionId);
     if (!subscription) {
       this.sendError(connectionId, 'subscription_not_found', 'Subscription not found');
       return;
     }
 
     // Remove from global subscription index
-    subscription?.eventTypes?.forEach(eventType => {
+    subscription.eventTypes.forEach(eventType => {
       const subscribers = this.subscriptions.get(eventType);
       if (subscribers) {
         subscribers.delete(connectionId);
         if (subscribers.size === 0) {
-          this?.subscriptions?.delete(eventType);
+          this.subscriptions.delete(eventType);
         }
       }
     });
 
-    connection?.subscriptions?.delete(subscriptionId);
+    connection.subscriptions.delete(subscriptionId);
 
     this.emit('subscription_removed', {
       connectionId,
@@ -519,6 +525,7 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'unsubscribe',
+      timestamp: Date.now(),
       payload: {
         subscriptionId,
         status: 'success',
@@ -533,6 +540,7 @@ export class WebSocketGateway extends EventEmitter {
       const event: BaseEvent = {
         id: message.payload?.id || this.generateMessageId(),
         type: message.payload?.type,
+        version: 1,
         source: `websocket:${connectionId}`,
         timestamp: Date.now(),
         payload: message.payload?.payload || {},
@@ -544,11 +552,10 @@ export class WebSocketGateway extends EventEmitter {
       };
 
       // Use circuit breaker for event bus publishing
-      await this?.circuitBreaker?.execute(
+      await this.circuitBreaker.execute(
         'event_publishing',
         async () => {
-          await this?.eventBus?.publish(event.type, event.payload, {
-            source: event.source,
+          await this.eventBus.publish(event.type, event.payload, {
             metadata: event.metadata,
             correlationId: message.correlationId
           });
@@ -562,6 +569,7 @@ export class WebSocketGateway extends EventEmitter {
       this.sendMessage(connectionId, {
         id: this.generateMessageId(),
         type: 'publish',
+        timestamp: Date.now(),
         payload: {
           eventId: event.id,
           status: 'success',
@@ -579,6 +587,7 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'pong',
+      timestamp: Date.now(),
       payload: {
         serverTime: Date.now(),
         connectionId
@@ -588,14 +597,14 @@ export class WebSocketGateway extends EventEmitter {
   }
 
   private handlePong(connectionId: string, message: WebSocketMessage): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     if (connection) {
-      connection?.stats?.lastActivity = Date.now();
+      connection.stats.lastActivity = Date.now();
     }
   }
 
   private handleBatchRequest(connectionId: string, message: WebSocketMessage): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     if (!connection) return;
 
     const action = message.payload?.action;
@@ -619,11 +628,11 @@ export class WebSocketGateway extends EventEmitter {
 
   // Event broadcasting
   private broadcastEvent(event: BaseEvent): void {
-    const subscribers = this?.subscriptions?.get(event.type);
+    const subscribers = this.subscriptions.get(event.type);
     if (!subscribers || subscribers.size === 0) return;
 
-    for (const connectionId of subscribers) {
-      const connection = this?.connections?.get(connectionId);
+    for (const connectionId of Array.from(subscribers)) {
+      const connection = this.connections.get(connectionId);
       if (!connection) {
         // Clean up stale subscription
         subscribers.delete(connectionId);
@@ -633,11 +642,13 @@ export class WebSocketGateway extends EventEmitter {
       // Check if event matches subscription filters
       const matchingSubscriptions = this.getMatchingSubscriptions(connection, event);
       
-      for (const subscription of matchingSubscriptions) {
-        if (subscription.options?.batching) {
-          this.addToBatch(connectionId, event, subscription);
-        } else {
-          this.sendEventDirectly(connectionId, event, subscription);
+      if (matchingSubscriptions && matchingSubscriptions.length > 0) {
+        for (const subscription of matchingSubscriptions) {
+          if (subscription.options?.batching) {
+            this.addToBatch(connectionId, event, subscription);
+          } else {
+            this.sendEventDirectly(connectionId, event, subscription);
+          }
         }
       }
     }
@@ -646,18 +657,19 @@ export class WebSocketGateway extends EventEmitter {
   private getMatchingSubscriptions(connection: ClientConnection, event: BaseEvent): Subscription[] {
     const matching: Subscription[] = [];
 
-    for (const subscription of connection?.subscriptions?.values()) {
-      if (!subscription?.eventTypes?.includes(event.type)) continue;
+    const subscriptions = connection.subscriptions ? Array.from(connection.subscriptions.values()) : [];
+    for (const subscription of subscriptions) {
+      if (!subscription.eventTypes || !subscription.eventTypes.includes(event.type)) continue;
 
       if (subscription.filters) {
         // Apply filters
-        if (subscription?.filters?.source && event.source !== subscription?.filters?.source) {
+        if (subscription.filters.source && event.source !== subscription.filters.source) {
           continue;
         }
 
-        if (subscription?.filters?.metadata) {
-          const matches = Object.entries(subscription?.filters?.metadata).every(
-            ([key, value]) => event.metadata[key] === value
+        if (subscription.filters.metadata && event.metadata) {
+          const matches = Object.entries(subscription.filters.metadata).every(
+            ([key, value]) => event.metadata && event.metadata[key] === value
           );
           if (!matches) continue;
         }
@@ -671,65 +683,69 @@ export class WebSocketGateway extends EventEmitter {
 
   // Batching system
   private addToBatch(connectionId: string, event: BaseEvent, subscription: Subscription): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     if (!connection) return;
 
-    connection?.batching?.queue.push(event);
+    connection.batching.queue.push(event);
 
-    const batchSize = subscription.options?.batchSize || this?.config?.batching.defaultBatchSize;
-    const timeout = subscription.options?.batchTimeout || this?.config?.batching.defaultTimeout;
+    const batchSize = subscription.options?.batchSize || this.config.batching.defaultBatchSize;
+    const timeout = subscription.options?.batchTimeout || this.config.batching.defaultTimeout;
 
     // Check if batch is ready to flush
-    if (connection?.batching?.queue?.length || 0 >= batchSize) {
+    if (connection.batching.queue.length >= batchSize) {
       this.flushBatch(connectionId);
-    } else if (!connection?.batching?.timer) {
+    } else if (!connection.batching.timer) {
       // Set timer for batch timeout
-      connection?.batching?.timer = setTimeout(() => {
+      connection.batching.timer = setTimeout(() => {
         this.flushBatch(connectionId);
       }, timeout);
     }
   }
 
   private flushBatch(connectionId: string): void {
-    const connection = this?.connections?.get(connectionId);
-    if (!connection || connection?.batching?.queue?.length || 0 === 0) return;
+    const connection = this.connections.get(connectionId);
+    if (!connection || connection.batching.queue.length === 0) return;
 
-    const events = [...connection?.batching?.queue];
-    connection?.batching?.queue = [];
-    connection?.batching?.lastFlush = Date.now();
+    const events = [...connection.batching.queue];
+    connection.batching.queue = [];
+    connection.batching.lastFlush = Date.now();
 
     // Clear timeout timer
-    if (connection?.batching?.timer) {
-      clearTimeout(connection?.batching?.timer);
-      connection?.batching?.timer = undefined;
+    if (connection.batching.timer) {
+      clearTimeout(connection.batching.timer);
+      connection.batching.timer = undefined;
     }
 
     const batchMessage: WebSocketMessage = {
       id: this.generateMessageId(),
       type: 'batch',
+      timestamp: Date.now(),
       payload: {
         events,
-        batchSize: events?.length || 0,
+        batchSize: events.length,
         timestamp: Date.now()
       }
     };
 
     this.sendMessage(connectionId, batchMessage);
 
-    if (this.metrics.totalBatches) { this.metrics.totalBatches++ };
-    this.updateAverageBatchSize(events?.length || 0);
+    this.metrics.totalBatches++;
+    if (events && events.length > 0) {
+      this.updateAverageBatchSize(events.length);
 
-    this.emit('batch_sent', {
-      connectionId,
-      eventCount: events?.length || 0,
-      batchId: batchMessage.id
-    });
+      this.emit('batch_sent', {
+        connectionId,
+        eventCount: events.length,
+        batchId: batchMessage.id
+      });
+    }
   }
 
   private sendEventDirectly(connectionId: string, event: BaseEvent, subscription: Subscription): void {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'publish',
+      timestamp: Date.now(),
       payload: {
         event,
         subscriptionId: subscription.id,
@@ -740,16 +756,16 @@ export class WebSocketGateway extends EventEmitter {
 
   // Connection management utilities
   private sendMessage(connectionId: string, message: WebSocketMessage): void {
-    const connection = this?.connections?.get(connectionId);
-    if (!connection || connection?.ws?.readyState !== WebSocket.OPEN) return;
+    const connection = this.connections.get(connectionId);
+    if (!connection || connection.ws.readyState !== WebSocket.OPEN) return;
 
     try {
       const serialized = JSON.stringify(message);
-      connection?.ws?.send(serialized);
+      connection.ws.send(serialized);
 
-      connection?.stats?.messagesSent++;
-      connection?.stats?.bytesTransmitted += Buffer.byteLength(serialized);
-      if (this.metrics.totalMessages) { this.metrics.totalMessages++ };
+      connection.stats.messagesSent++;
+      connection.stats.bytesTransmitted += Buffer.byteLength(serialized);
+      this.metrics.totalMessages++;
 
     } catch (error) {
       this.emit('send_error', { connectionId, error });
@@ -761,6 +777,7 @@ export class WebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, {
       id: this.generateMessageId(),
       type: 'ping', // Using ping as error type not in schema
+      timestamp: Date.now(),
       payload: {
         error: true,
         code,
@@ -781,32 +798,32 @@ export class WebSocketGateway extends EventEmitter {
   }
 
   private closeConnection(connectionId: string, reason: string, code?: number): void {
-    const connection = this?.connections?.get(connectionId);
+    const connection = this.connections.get(connectionId);
     if (!connection) return;
 
     // Clean up batch timer
-    if (connection?.batching?.timer) {
-      clearTimeout(connection?.batching?.timer);
+    if (connection.batching.timer) {
+      clearTimeout(connection.batching.timer);
     }
 
     // Remove from subscription indexes
-    for (const subscription of connection?.subscriptions?.values()) {
-      subscription?.eventTypes?.forEach(eventType => {
+    for (const subscription of Array.from(connection.subscriptions.values())) {
+      subscription.eventTypes.forEach(eventType => {
         const subscribers = this.subscriptions.get(eventType);
         if (subscribers) {
           subscribers.delete(connectionId);
           if (subscribers.size === 0) {
-            this?.subscriptions?.delete(eventType);
+            this.subscriptions.delete(eventType);
           }
         }
       });
     }
 
-    this?.connections?.delete(connectionId);
-    if (this.metrics.activeConnections) { this.metrics.activeConnections-- };
+    this.connections.delete(connectionId);
+    this.metrics.activeConnections--;
 
-    if (connection?.ws?.readyState === WebSocket.OPEN) {
-      connection?.ws?.close(code || 1000, reason);
+    if (connection.ws.readyState === WebSocket.OPEN) {
+      connection.ws.close(code || 1000, reason);
     }
 
     this.emit('connection_closed', {
@@ -814,7 +831,7 @@ export class WebSocketGateway extends EventEmitter {
       reason,
       code,
       stats: connection.stats,
-      duration: Date.now() - connection?.stats?.connectedAt
+      duration: Date.now() - connection.stats.connectedAt
     });
   }
 
@@ -829,38 +846,38 @@ export class WebSocketGateway extends EventEmitter {
   }
 
   private checkRateLimit(connection: ClientConnection): boolean {
-    if (!this?.config?.limits.rateLimiting.enabled) return true;
+    if (!this.config.limits.rateLimiting.enabled) return true;
 
     const now = Date.now();
-    const windowMs = this?.config?.limits.rateLimiting.windowMs;
+    const windowMs = this.config.limits.rateLimiting.windowMs;
 
     // Reset window if needed
-    if (now - connection?.rateLimiting?.windowStart > windowMs) {
-      connection?.rateLimiting?.windowStart = now;
-      connection?.rateLimiting?.messageCount = 0;
+    if (now - connection.rateLimiting.windowStart > windowMs) {
+      connection.rateLimiting.windowStart = now;
+      connection.rateLimiting.messageCount = 0;
     }
 
-    connection?.rateLimiting?.messageCount++;
-    return connection?.rateLimiting?.messageCount <= this?.config?.limits.rateLimiting.messagesPerMinute;
+    connection.rateLimiting.messageCount++;
+    return connection.rateLimiting.messageCount <= this.config.limits.rateLimiting.messagesPerMinute;
   }
 
   private performHeartbeat(): void {
-    const timeout = this?.config?.heartbeat.timeout;
+    const timeout = this.config.heartbeat.timeout;
     const now = Date.now();
 
-    for (const [connectionId, connection] of this.connections) {
-      if (now - connection?.stats?.lastActivity > timeout) {
+    for (const [connectionId, connection] of Array.from(this.connections)) {
+      if (now - connection.stats.lastActivity > timeout) {
         this.closeConnection(connectionId, 'heartbeat_timeout');
-      } else if (connection?.ws?.readyState === WebSocket.OPEN) {
-        connection?.ws?.ping();
+      } else if (connection.ws.readyState === WebSocket.OPEN) {
+        connection.ws.ping();
       }
     }
   }
 
   private cleanupConnections(): void {
-    for (const [connectionId, connection] of this.connections) {
-      if (connection?.ws?.readyState === WebSocket.CLOSED ||
-          connection?.ws?.readyState === WebSocket.CLOSING) {
+    for (const [connectionId, connection] of Array.from(this.connections)) {
+      if (connection.ws.readyState === WebSocket.CLOSED ||
+          connection.ws.readyState === WebSocket.CLOSING) {
         this.closeConnection(connectionId, 'cleanup');
       }
     }
@@ -870,43 +887,27 @@ export class WebSocketGateway extends EventEmitter {
     let totalLatency = 0;
     let latencyCount = 0;
 
-    for (const connection of this?.connections?.values()) {
-      const latency = Date.now() - connection?.stats?.lastActivity;
+    for (const connection of Array.from(this.connections.values())) {
+      const latency = Date.now() - connection.stats.lastActivity;
       totalLatency += latency;
       latencyCount++;
     }
 
     if (latencyCount > 0) {
-      if (this.metrics) {
-
-        this.metrics.averageLatency = totalLatency / latencyCount;
-
-      }
+      this.metrics.averageLatency = totalLatency / latencyCount;
     }
 
     // Update bytes transmitted
-    if (this.metrics) {
-
-      this.metrics.bytesTransmitted = Array.from(this?.connections?.values())
-      .reduce((total: any, conn: any) => total + conn?.stats?.bytesTransmitted, 0);
-
-    }
+    this.metrics.bytesTransmitted = Array.from(this.connections.values())
+      .reduce((total: number, conn: ClientConnection) => total + conn.stats.bytesTransmitted, 0);
   }
 
   private updateAverageBatchSize(newSize: number): void {
-    if (this?.metrics?.totalBatches === 1) {
-      if (this.metrics) {
-
-        this.metrics.averageBatchSize = newSize;
-
-      }
+    if (this.metrics.totalBatches === 1) {
+      this.metrics.averageBatchSize = newSize;
     } else {
-      if (this.metrics) {
-
-        this.metrics.averageBatchSize = (this?.metrics?.averageBatchSize * (this?.metrics?.totalBatches - 1) + newSize) / 
-        this?.metrics?.totalBatches;
-
-      }
+      this.metrics.averageBatchSize = (this.metrics.averageBatchSize * (this.metrics.totalBatches - 1) + newSize) / 
+        this.metrics.totalBatches;
     }
   }
 
@@ -920,7 +921,7 @@ export class WebSocketGateway extends EventEmitter {
 
   private extractUserId(request: IncomingMessage): string | undefined {
     // Extract user ID from token or headers
-    const authHeader = request?.headers?.authorization;
+    const authHeader = request.headers.authorization;
     if (authHeader) {
       // In production, decode JWT or validate token to get user ID
       return 'user_' + Math.random().toString(36).substr(2, 9);
@@ -933,12 +934,12 @@ export class WebSocketGateway extends EventEmitter {
     return {
       ...this.metrics,
       connections: {
-        total: this?.connections?.size,
+        total: this.connections.size,
         byUserId: this.getConnectionsByUser()
       },
       subscriptions: {
-        total: Array.from(this?.subscriptions?.values()).reduce((sum: any, set: any) => sum + set.size, 0),
-        byEventType: Array.from(this?.subscriptions?.entries()).map(([eventType, connections]) => ({
+        total: Array.from(this.subscriptions.values()).reduce((sum: number, set: Set<string>) => sum + set.size, 0),
+        byEventType: Array.from(this.subscriptions.entries()).map(([eventType, connections]) => ({
           eventType,
           subscribers: connections.size
         }))
@@ -949,8 +950,8 @@ export class WebSocketGateway extends EventEmitter {
   private getConnectionsByUser(): Record<string, number> {
     const userCounts: Record<string, number> = {};
     
-    for (const connection of this?.connections?.values()) {
-      const userId = connection.userId || "" || 'anonymous';
+    for (const connection of Array.from(this.connections.values())) {
+      const userId = connection.userId || 'anonymous';
       userCounts[userId] = (userCounts[userId] || 0) + 1;
     }
 
@@ -958,11 +959,11 @@ export class WebSocketGateway extends EventEmitter {
   }
 
   public getConnection(connectionId: string): ClientConnection | undefined {
-    return this?.connections?.get(connectionId);
+    return this.connections.get(connectionId);
   }
 
   public getConnections(): ClientConnection[] {
-    return Array.from(this?.connections?.values());
+    return Array.from(this.connections.values());
   }
 
   public getSubscriptionStats(): {
@@ -972,7 +973,7 @@ export class WebSocketGateway extends EventEmitter {
   } {
     const subscriptionsByEventType: Record<string, number> = {};
     
-    for (const [eventType, subscribers] of this.subscriptions) {
+    for (const [eventType, subscribers] of Array.from(this.subscriptions)) {
       subscriptionsByEventType[eventType] = subscribers.size;
     }
 
@@ -982,7 +983,7 @@ export class WebSocketGateway extends EventEmitter {
       .slice(0, 10);
 
     return {
-      totalSubscriptions: Object.values(subscriptionsByEventType).reduce((sum: any, count: any) => sum + count, 0),
+      totalSubscriptions: Object.values(subscriptionsByEventType).reduce((sum: number, count: number) => sum + count, 0),
       subscriptionsByEventType,
       topEventTypes
     };
@@ -996,6 +997,7 @@ export class WebSocketGateway extends EventEmitter {
     const event: BaseEvent = {
       id: this.generateMessageId(),
       type: eventType,
+      version: 1,
       source: options.source || 'websocket_gateway',
       timestamp: Date.now(),
       payload,
@@ -1010,8 +1012,8 @@ export class WebSocketGateway extends EventEmitter {
 
   public isHealthy(): boolean {
     return this.server !== undefined && 
-           this?.connections?.size > 0 && 
-           this?.metrics?.connectionErrors < this?.metrics?.totalConnections * 0.1; // Less than 10% error rate
+           this.connections.size > 0 && 
+           this.metrics.connectionErrors < this.metrics.totalConnections * 0.1; // Less than 10% error rate
   }
 
   public getHealthStatus(): {
@@ -1021,22 +1023,22 @@ export class WebSocketGateway extends EventEmitter {
     errorRate: number;
     lastError?: string;
   } {
-    const errorRate = this?.metrics?.totalConnections > 0 
-      ? this?.metrics?.connectionErrors / this?.metrics?.totalConnections 
+    const errorRate = this.metrics.totalConnections > 0 
+      ? this.metrics.connectionErrors / this.metrics.totalConnections 
       : 0;
 
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     
     if (!this.server) {
       status = 'unhealthy';
-    } else if (errorRate > 0.1 || this?.connections?.size === 0) {
+    } else if (errorRate > 0.1 || this.connections.size === 0) {
       status = 'degraded';
     }
 
     return {
       status,
-      connections: this?.connections?.size,
-      uptime: Date.now() - (this.metricsTimer ? Date.now() - this?.config?.monitoring.metricsInterval : Date.now()),
+      connections: this.connections.size,
+      uptime: Date.now() - (this.metricsTimer ? Date.now() - this.config.monitoring.metricsInterval : Date.now()),
       errorRate
     };
   }

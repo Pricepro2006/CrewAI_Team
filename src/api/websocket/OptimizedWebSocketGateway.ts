@@ -125,7 +125,7 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     };
 
     this?.connections?.set(connectionId, connection);
-    if (this.stats.connections) { this.stats.connections++ };
+    this.stats.connections++;
     
     // Set up event handlers
     ws.on('message', (data: any) => this.handleMessage(connectionId, data));
@@ -156,10 +156,14 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     try {
       const message = JSON.parse(data.toString());
       
-      connection?.stats?.messagesReceived++;
-      connection?.stats?.bytesReceived += Buffer.byteLength(data);
+      if (connection?.stats) {
+        connection.stats.messagesReceived++;
+        connection.stats.bytesReceived += Buffer.byteLength(data);
+      }
       if (this.stats.messagesReceived) { this.stats.messagesReceived++ };
-      this?.stats?.bytesReceived += Buffer.byteLength(data);
+      if (this.stats) {
+        this.stats.bytesReceived += Buffer.byteLength(data);
+      }
       
       switch (message.type) {
         case 'subscribe':
@@ -343,7 +347,7 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     }
 
     // Update stats
-    if (this.stats.connections) { this.stats.connections-- };
+    this.stats.connections--;
     if (this.stats) {
 
       this.stats.subscriptions = this.countTotalSubscriptions();
@@ -442,7 +446,7 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     connection.batchTimer = undefined;
 
     // Send as batch if multiple messages, otherwise send single
-    const payload = messages?.length || 0 === 1 
+    const payload = (messages?.length ?? 0) === 1 
       ? messages[0] 
       : { type: 'batch', messages, count: messages?.length || 0 };
 
@@ -464,10 +468,10 @@ export class OptimizedWebSocketGateway extends EventEmitter {
       const data = JSON.stringify(message);
       connection?.ws?.send(data);
       
-      connection?.stats?.messagesSent++;
-      connection?.stats?.bytesTransmitted += Buffer.byteLength(data);
-      if (this.stats.messagesSent) { this.stats.messagesSent++ };
-      this?.stats?.bytesTransmitted += Buffer.byteLength(data);
+      connection.stats.messagesSent++;
+      connection.stats.bytesTransmitted += Buffer.byteLength(data);
+      this.stats.messagesSent++;
+      this.stats.bytesTransmitted += Buffer.byteLength(data);
       
     } catch (error) {
       console.error(`Error sending message to ${connectionId}:`, error);

@@ -347,7 +347,7 @@ export class OptimizedQueries {
       WHERE id IN (${placeholders})
     `);
     
-    const params = [status];
+    const params: any[] = [status];
     if (phase !== undefined) {
       params.push(phase);
     }

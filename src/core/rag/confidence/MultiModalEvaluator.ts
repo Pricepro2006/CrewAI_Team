@@ -9,10 +9,10 @@ import {
   type TokenConfidence,
   type EvaluationMetrics,
   ActionType,
-} from "./types.js";
-import { RelevanceScorer } from "./evaluators/RelevanceScorer.js";
-import { FactualityChecker } from "./evaluators/FactualityChecker.js";
-import { CoherenceAnalyzer } from "./evaluators/CoherenceAnalyzer.js";
+} from "./types";
+import { RelevanceScorer } from "./evaluators/RelevanceScorer";
+import { FactualityChecker } from "./evaluators/FactualityChecker";
+import { CoherenceAnalyzer } from "./evaluators/CoherenceAnalyzer";
 
 export class MultiModalEvaluator {
   private relevanceScorer: RelevanceScorer;

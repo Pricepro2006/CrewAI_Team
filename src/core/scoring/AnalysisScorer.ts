@@ -1,5 +1,11 @@
-import type { EmailAnalysis } from "../../types/AnalysisTypes.js";
+import type { 
+  EmailAnalysis,
+  Phase1Results,
+  Phase2Results,
+  Phase3Results 
+} from "../../types/AnalysisTypes.js";
 import { logger } from "../../utils/logger.js";
+import { z } from "zod";
 
 interface ScoringDimensions {
   contextUnderstanding: number;
@@ -15,6 +21,39 @@ interface DetailedScore {
   details: string[];
 }
 
+// Zod schemas for safe property access
+const Phase1ResultsSchema = z.object({
+  basic_classification: z.object({
+    priority: z.string(),
+    urgency: z.boolean(),
+  }).optional(),
+  entities: z.object({
+    po_numbers: z.array(z.string()).optional(),
+    quotes: z.array(z.string()).optional(),
+    cases: z.array(z.string()).optional(),
+    parts: z.array(z.string()).optional(),
+    people: z.array(z.string()).optional(),
+    companies: z.array(z.string()).optional(),
+  }).optional(),
+}).optional();
+
+const Phase2ResultsSchema = z.object({
+  action_items: z.array(z.object({
+    task: z.string(),
+    owner: z.string().optional(),
+    deadline: z.string().optional(),
+    priority: z.string(),
+  })).optional(),
+  contextual_insights: z.object({
+    business_impact: z.string().optional(),
+    recommended_actions: z.union([
+      z.array(z.string()),
+      z.string()
+    ]).optional(),
+    risk_level: z.string().optional(),
+  }).optional(),
+}).optional();
+
 export class AnalysisScorer {
   // Scoring weights based on TD SYNNEX business priorities
   private weights = {
@@ -24,6 +63,35 @@ export class AnalysisScorer {
     actionableInsights: 0.2, // 20% - Quality of action items
     responseQuality: 0.15, // 15% - Appropriate response suggestion
   };
+
+  // Safe property accessor helpers
+  private getPriority(analysis: EmailAnalysis): string | undefined {
+    return analysis.phase1_results?.basic_classification?.priority;
+  }
+
+  private getUrgency(analysis: EmailAnalysis): boolean | undefined {
+    return analysis.phase1_results?.basic_classification?.urgency;
+  }
+
+  private getEntities(analysis: EmailAnalysis): Phase1Results['entities'] | undefined {
+    return analysis.phase1_results?.entities;
+  }
+
+  private getActionItems(analysis: EmailAnalysis): Phase2Results['action_items'] | undefined {
+    return analysis.phase2_results?.action_items;
+  }
+
+  private getBusinessImpact(analysis: EmailAnalysis): string | undefined {
+    return analysis.phase2_results?.contextual_insights?.business_impact;
+  }
+
+  private getRiskLevel(analysis: EmailAnalysis): string | undefined {
+    return analysis.phase2_results?.contextual_insights?.risk_level;
+  }
+
+  private getRecommendedActions(analysis: EmailAnalysis): string[] | string | undefined {
+    return analysis.phase2_results?.contextual_insights?.recommended_actions;
+  }
 
   scoreAnalysis(
     analysis: EmailAnalysis,
@@ -58,31 +126,38 @@ export class AnalysisScorer {
   ): number {
     let score = 0;
 
-    // Check workflow state accuracy (40% of context score)
-    if (analysis.workflow_state === baseline.workflow_state) {
+    // Check workflow type accuracy (40% of context score)
+    if (analysis.workflow_type === baseline.workflow_type) {
       score += 4;
     } else if (
       this.isCloseWorkflowState(
-        analysis.workflow_state,
-        baseline.workflow_state,
+        analysis.workflow_type,
+        baseline.workflow_type,
       )
     ) {
       score += 2;
     }
 
     // Check priority accuracy (30% of context score)
-    if (analysis.priority === baseline.priority) {
+    const analysisPriority = this.getPriority(analysis);
+    const baselinePriority = this.getPriority(baseline);
+    if (analysisPriority === baselinePriority) {
       score += 3;
-    } else if (this.isClosePriority(analysis.priority, baseline.priority)) {
+    } else if (analysisPriority && baselinePriority && this.isClosePriority(analysisPriority, baselinePriority)) {
       score += 1.5;
     }
 
     // Check urgency indicators (30% of context score)
-    const urgencyMatch = this.compareUrgencyIndicators(
-      analysis.urgency_indicators || [],
-      baseline.urgency_indicators || [],
-    );
-    score += urgencyMatch * 3;
+    const analysisUrgency = this.getUrgency(analysis);
+    const baselineUrgency = this.getUrgency(baseline);
+    if (analysisUrgency === baselineUrgency) {
+      score += 3;
+    } else {
+      // Partial credit if both exist but don't match
+      if (analysisUrgency !== undefined && baselineUrgency !== undefined) {
+        score += 1;
+      }
+    }
 
     return Math.min(10, score);
   }
@@ -93,11 +168,11 @@ export class AnalysisScorer {
   ): number {
     const entityTypes = [
       "po_numbers",
-      "quote_numbers",
-      "case_numbers",
-      "part_numbers",
-      "companies",
-      "contacts",
+      "quotes",
+      "cases",
+      "parts",
+      "companies", 
+      "people",
     ];
 
     let totalScore = 0;
@@ -106,17 +181,20 @@ export class AnalysisScorer {
     // Different weights for different entity types
     const typeWeights = {
       po_numbers: 2.0, // Most critical
-      quote_numbers: 1.5,
-      case_numbers: 1.5,
-      part_numbers: 1.0,
+      quotes: 1.5,
+      cases: 1.5,
+      parts: 1.0,
       companies: 1.5,
-      contacts: 1.0,
+      people: 1.0,
     };
 
     for (const entityType of entityTypes) {
       const weight = typeWeights[entityType as keyof typeof typeWeights] || 1.0;
-      const analysisEntities = analysis.entities?.[entityType] || [];
-      const baselineEntities = baseline.entities?.[entityType] || [];
+      const analysisEntityData = this.getEntities(analysis);
+      const baselineEntityData = this.getEntities(baseline);
+      
+      const analysisEntities = analysisEntityData?.[entityType as keyof NonNullable<typeof analysisEntityData>] || [];
+      const baselineEntities = baselineEntityData?.[entityType as keyof NonNullable<typeof baselineEntityData>] || [];
 
       const precision = this.calculatePrecision(
         analysisEntities,
@@ -138,34 +216,38 @@ export class AnalysisScorer {
   ): number {
     let score = 0;
 
-    // Business process identification (50%)
-    if (analysis.business_process === baseline.business_process) {
+    // Business process identification (50%) - using workflow_type as proxy
+    if (analysis.workflow_type === baseline.workflow_type) {
       score += 5;
     } else if (
       this.isRelatedProcess(
-        analysis.business_process,
-        baseline.business_process,
+        analysis.workflow_type,
+        baseline.workflow_type,
       )
     ) {
       score += 2.5;
     }
 
-    // SLA and risk assessment (30%)
-    if (analysis.sla_status && baseline.sla_status) {
-      if (analysis.sla_status === baseline.sla_status) {
+    // SLA and risk assessment (30%) - using risk_level from contextual insights
+    const analysisRisk = this.getRiskLevel(analysis);
+    const baselineRisk = this.getRiskLevel(baseline);
+    if (analysisRisk && baselineRisk) {
+      if (analysisRisk === baselineRisk) {
         score += 3;
       } else if (
-        this.isSimilarSLAStatus(analysis.sla_status, baseline.sla_status)
+        this.isSimilarSLAStatus(analysisRisk, baselineRisk)
       ) {
         score += 1.5;
       }
     }
 
-    // Business impact assessment (20%)
-    if (analysis.business_impact && baseline.business_impact) {
+    // Business impact assessment (20%) - using business_impact from contextual insights
+    const analysisImpact = this.getBusinessImpact(analysis);
+    const baselineImpact = this.getBusinessImpact(baseline);
+    if (analysisImpact && baselineImpact) {
       const similarity = this.compareBusinessImpact(
-        analysis.business_impact,
-        baseline.business_impact,
+        analysisImpact,
+        baselineImpact,
       );
       score += similarity * 2;
     }
@@ -177,8 +259,8 @@ export class AnalysisScorer {
     analysis: EmailAnalysis,
     baseline: EmailAnalysis,
   ): number {
-    const analysisActions = analysis.action_items || [];
-    const baselineActions = baseline.action_items || [];
+    const analysisActions = this.getActionItems(analysis) || [];
+    const baselineActions = this.getActionItems(baseline) || [];
 
     if (!baselineActions || baselineActions.length === 0) {
       return (!analysisActions || analysisActions.length === 0) ? 10 : 5;
@@ -210,31 +292,36 @@ export class AnalysisScorer {
     analysis: EmailAnalysis,
     baseline: EmailAnalysis,
   ): number {
-    if (!analysis.suggested_response || !baseline.suggested_response) {
-      return analysis.suggested_response === baseline.suggested_response
-        ? 10
-        : 0;
+    // Use recommended_actions as proxy for response quality
+    const analysisResponse = this.getRecommendedActions(analysis);
+    const baselineResponse = this.getRecommendedActions(baseline);
+    if (!analysisResponse || !baselineResponse) {
+      return (analysisResponse === baselineResponse) ? 10 : 0;
     }
 
     let score = 0;
 
+    // Convert string arrays to strings for comparison
+    const analysisResponseStr = Array.isArray(analysisResponse) ? analysisResponse.join(' ') : analysisResponse;
+    const baselineResponseStr = Array.isArray(baselineResponse) ? baselineResponse.join(' ') : baselineResponse;
+
     // Tone appropriateness (30%)
     const toneSimilarity = this.compareTone(
-      analysis.suggested_response,
-      baseline.suggested_response,
+      analysisResponseStr,
+      baselineResponseStr,
     );
     score += toneSimilarity * 3;
 
     // Key points coverage (40%)
     const keyPointsCoverage = this.compareKeyPoints(
-      analysis.suggested_response,
-      baseline.suggested_response,
+      analysisResponseStr,
+      baselineResponseStr,
     );
     score += keyPointsCoverage * 4;
 
     // Professional quality (30%)
     const professionalQuality = this.assessProfessionalQuality(
-      analysis.suggested_response,
+      analysisResponseStr,
     );
     score += professionalQuality * 3;
 
@@ -270,14 +357,14 @@ export class AnalysisScorer {
   }
 
   private compareUrgencyIndicators(
-    indicators1: string[],
-    indicators2: string[],
+    indicators1: string[] | undefined,
+    indicators2: string[] | undefined,
   ): number {
     if (!indicators2 || indicators2.length === 0) return (!indicators1 || indicators1.length === 0) ? 1 : 0;
 
-    const matches = (indicators1 || []).filter((i: any) =>
+    const matches = (indicators1 || []).filter((i) =>
       indicators2.some(
-        (j: any) =>
+        (j) =>
           i.toLowerCase().includes(j.toLowerCase()) ||
           j.toLowerCase().includes(i.toLowerCase()),
       ),
@@ -286,15 +373,15 @@ export class AnalysisScorer {
     return matches / (indicators2?.length || 1);
   }
 
-  private calculatePrecision(predicted: string[], actual: string[]): number {
+  private calculatePrecision(predicted: string[] | undefined, actual: string[] | undefined): number {
     if (!predicted || predicted.length === 0) return (!actual || actual.length === 0) ? 1 : 0;
-    const correct = predicted.filter((p: any) => actual?.includes(p)).length || 0;
+    const correct = predicted.filter((p) => actual?.includes(p)).length || 0;
     return correct / (predicted.length || 1);
   }
 
-  private calculateRecall(predicted: string[], actual: string[]): number {
+  private calculateRecall(predicted: string[] | undefined, actual: string[] | undefined): number {
     if (!actual || actual.length === 0) return 1;
-    const correct = (predicted || []).filter((p: any) => actual.includes(p)).length;
+    const correct = (predicted || []).filter((p) => actual.includes(p)).length;
     return correct / (actual.length || 1);
   }
 
@@ -390,7 +477,7 @@ export class AnalysisScorer {
   private textSimilarity(text1: string, text2: string): number {
     const words1 = text1.toLowerCase().split(/\s+/);
     const words2 = text2.toLowerCase().split(/\s+/);
-    const commonWords = words1.filter((w: any) => words2.includes(w)).length;
+    const commonWords = words1.filter((w) => words2.includes(w)).length;
 
     return commonWords / Math.max(words1.length || 1, words2.length || 1);
   }
@@ -403,17 +490,17 @@ export class AnalysisScorer {
     const urgentTerms = ["today", "immediate", "asap", "urgent"];
     const nearTerms = ["tomorrow", "24 hours", "1 day", "next day"];
 
-    const isUrgent1 = urgentTerms.some((t: any) =>
+    const isUrgent1 = urgentTerms.some((t) =>
       deadline1.toLowerCase().includes(t),
     );
-    const isUrgent2 = urgentTerms.some((t: any) =>
+    const isUrgent2 = urgentTerms.some((t) =>
       deadline2.toLowerCase().includes(t),
     );
 
     if (isUrgent1 === isUrgent2) return 0.8;
 
-    const isNear1 = nearTerms.some((t: any) => deadline1.toLowerCase().includes(t));
-    const isNear2 = nearTerms.some((t: any) => deadline2.toLowerCase().includes(t));
+    const isNear1 = nearTerms.some((t) => deadline1.toLowerCase().includes(t));
+    const isNear2 = nearTerms.some((t) => deadline2.toLowerCase().includes(t));
 
     if (isNear1 === isNear2) return 0.6;
 
@@ -432,8 +519,8 @@ export class AnalysisScorer {
     let totalChecks = 0;
 
     for (const [tone, keywords] of Object.entries(toneIndicators)) {
-      const has1 = keywords.some((k: any) => response1.toLowerCase().includes(k));
-      const has2 = keywords.some((k: any) => response2.toLowerCase().includes(k));
+      const has1 = keywords.some((k) => response1.toLowerCase().includes(k));
+      const has2 = keywords.some((k) => response2.toLowerCase().includes(k));
 
       if (has1 === has2) matchScore++;
       totalChecks++;
@@ -447,8 +534,8 @@ export class AnalysisScorer {
     const extractKeyPoints = (text: string): string[] => {
       return text
         .split(/[.!?]/)
-        .filter((s: any) => s.trim().length > 10)
-        .map((s: any) => s.trim().toLowerCase());
+        .filter((s) => s.trim().length > 10)
+        .map((s) => s.trim().toLowerCase());
     };
 
     const points1 = extractKeyPoints(response1);
@@ -458,7 +545,7 @@ export class AnalysisScorer {
 
     let covered = 0;
     for (const point2 of points2) {
-      if (points1.some((p1: any) => this.textSimilarity(p1, point2) > 0.6)) {
+      if (points1.some((p1) => this.textSimilarity(p1, point2) > 0.6)) {
         covered++;
       }
     }
@@ -481,7 +568,7 @@ export class AnalysisScorer {
       "update",
     ];
 
-    const hasProfessionalTerms = professionalTerms.some((t: any) =>
+    const hasProfessionalTerms = professionalTerms.some((t) =>
       response.toLowerCase().includes(t),
     );
 
@@ -506,17 +593,19 @@ export class AnalysisScorer {
     const details: string[] = [];
 
     // Context understanding details
-    if (analysis.workflow_state !== baseline.workflow_state) {
+    if (analysis.workflow_type !== baseline.workflow_type) {
       details.push(
-        `Workflow state mismatch: ${analysis.workflow_state} vs ${baseline.workflow_state}`,
+        `Workflow type mismatch: ${analysis.workflow_type} vs ${baseline.workflow_type}`,
       );
     }
 
     // Entity extraction details
-    const entityTypes = ["po_numbers", "quote_numbers", "case_numbers"];
+    const entityTypes = ["po_numbers", "quotes", "cases"] as const;
     for (const type of entityTypes) {
-      const analysisCount = analysis.entities?.[type]?.length || 0;
-      const baselineCount = baseline.entities?.[type]?.length || 0;
+      const analysisEntityData = this.getEntities(analysis);
+      const baselineEntityData = this.getEntities(baseline);
+      const analysisCount = analysisEntityData?.[type]?.length || 0;
+      const baselineCount = baselineEntityData?.[type]?.length || 0;
 
       if (analysisCount !== baselineCount) {
         details.push(
@@ -526,8 +615,8 @@ export class AnalysisScorer {
     }
 
     // Action items details
-    const analysisActionCount = analysis.action_items?.length || 0;
-    const baselineActionCount = baseline.action_items?.length || 0;
+    const analysisActionCount = this.getActionItems(analysis)?.length || 0;
+    const baselineActionCount = this.getActionItems(baseline)?.length || 0;
 
     if (analysisActionCount !== baselineActionCount) {
       details.push(

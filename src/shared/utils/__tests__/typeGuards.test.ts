@@ -3,7 +3,7 @@
  * Tests type guard utility functions
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock type guard functions that might exist in the codebase
 interface User {

@@ -252,11 +252,12 @@ export class CircuitBreaker extends EventEmitter {
     // Transition to open if failure threshold reached
     if ((this.state.state === 'closed' || this.state.state === 'half-open') &&
         this.state.failureCount >= this.config.failureThreshold) {
+      const previousState = this.state.state;
       this.state.state = 'open';
       this.state.nextAttemptTime = Date.now() + this.config.timeout;
       
       this.emit('state_changed', { 
-        from: this.state.state === 'half-open' ? 'half-open' : 'closed', 
+        from: previousState, 
         to: 'open',
         reason: 'failure_threshold_reached' 
       });
@@ -298,10 +299,10 @@ export class CircuitBreaker extends EventEmitter {
   private async executeFallback<T>(options: FallbackOptions<T>): Promise<T> {
     // Try cache first if enabled
     if (options.useCache && options.cacheKey) {
-      const cached = this.getCachedValue(options.cacheKey);
+      const cached = this.getCachedValue<T>(options.cacheKey);
       if (cached !== null) {
         this.emit('fallback_cache_hit', { cacheKey: options.cacheKey });
-        return cached;
+        return cached as T;
       }
     }
 
@@ -407,7 +408,7 @@ export class CircuitBreaker extends EventEmitter {
       return null;
     }
     
-    return cached.value as T;
+    return cached.value as T | null;
   }
 
   private cleanupCache(): void {

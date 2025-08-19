@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { Search, X } from "lucide-react";
-import { useDebounce } from "../../hooks/useDebounce.js";
-import { cn } from "../../../lib/utils.js";
+import { useDebounce } from "../../hooks/useDebounce";
+import { cn } from "../../../lib/utils";
 
 interface DebouncedSearchInputProps {
   onSearch: (query: string) => void;
@@ -32,15 +32,15 @@ export const DebouncedSearchInput = React.memo<DebouncedSearchInputProps>(({
 
   // Trigger search when debounced value changes
   React.useEffect(() => {
-    if (debouncedValue?.length || 0 >= minLength) {
+    if ((debouncedValue?.length || 0) >= minLength) {
       onSearch(debouncedValue);
-    } else if (debouncedValue?.length || 0 === 0) {
+    } else if ((debouncedValue?.length || 0) === 0) {
       onSearch("");
     }
   }, [debouncedValue, onSearch, minLength]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e?.target?.value);
+    setInputValue(e.target.value);
   }, []);
 
   const handleClear = useCallback(() => {
@@ -54,8 +54,8 @@ export const DebouncedSearchInput = React.memo<DebouncedSearchInputProps>(({
     }
   }, [handleClear]);
 
-  const showClear = showClearButton && inputValue?.length || 0 > 0;
-  const hasMinLengthError = inputValue?.length || 0 > 0 && inputValue?.length || 0 < minLength;
+  const showClear = showClearButton && (inputValue?.length || 0) > 0;
+  const hasMinLengthError = (inputValue?.length || 0) > 0 && (inputValue?.length || 0) < minLength;
 
   return (
     <div className={cn("relative", className)}>
@@ -101,7 +101,7 @@ export const DebouncedSearchInput = React.memo<DebouncedSearchInputProps>(({
       </div>
       
       {/* Loading indicator */}
-      {inputValue !== debouncedValue && inputValue?.length || 0 >= minLength && (
+      {inputValue !== debouncedValue && (inputValue?.length || 0) >= minLength && (
         <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent" />
         </div>

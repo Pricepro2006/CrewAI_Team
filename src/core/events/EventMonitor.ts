@@ -148,17 +148,17 @@ export class EventMonitor extends EventEmitter {
   }
 
   private initializeMonitoring(): void {
-    if (this?.config?.metrics.enabled) {
+    if (this.config.metrics.enabled) {
       this.metricsTimer = setInterval(() => {
         this.aggregateMetrics();
         this.emit('metrics_updated', this.metrics);
-      }, this?.config?.metrics.aggregationInterval);
+      }, this.config.metrics.aggregationInterval);
     }
 
-    if (this?.config?.alerting.enabled) {
+    if (this.config.alerting.enabled) {
       this.alertTimer = setInterval(() => {
         this.checkAlerts();
-      }, this?.config?.alerting.checkInterval);
+      }, this.config.alerting.checkInterval);
     }
 
     // Cleanup old data periodically
@@ -174,6 +174,7 @@ export class EventMonitor extends EventEmitter {
     this.addAlertRule({
       id: 'high_error_rate',
       name: 'High Error Rate',
+      enabled: true,
       severity: 'critical',
       condition: {
         metric: 'health.errorRate',
@@ -184,13 +185,16 @@ export class EventMonitor extends EventEmitter {
       actions: [
         { type: 'log', config: { level: 'error' } },
         { type: 'event', config: { eventType: 'monitoring?.alert?.critical' } }
-      ]
+      ],
+      cooldown: 300000, // 5 minutes
+      metadata: { category: 'system_health', priority: 'high' }
     });
 
     // Low throughput alert
     this.addAlertRule({
       id: 'low_throughput',
       name: 'Low Throughput',
+      enabled: true,
       severity: 'warning',
       condition: {
         metric: 'throughput.current',
@@ -200,13 +204,16 @@ export class EventMonitor extends EventEmitter {
       },
       actions: [
         { type: 'log', config: { level: 'warn' } }
-      ]
+      ],
+      cooldown: 600000, // 10 minutes
+      metadata: { category: 'performance', priority: 'medium' }
     });
 
     // High latency alert
     this.addAlertRule({
       id: 'high_latency_p99',
       name: 'High P99 Latency',
+      enabled: true,
       severity: 'warning',
       condition: {
         metric: 'latency.p99',
@@ -216,7 +223,9 @@ export class EventMonitor extends EventEmitter {
       },
       actions: [
         { type: 'log', config: { level: 'warn' } }
-      ]
+      ],
+      cooldown: 300000, // 5 minutes
+      metadata: { category: 'performance', priority: 'medium' }
     });
   }
 
@@ -232,18 +241,22 @@ export class EventMonitor extends EventEmitter {
     const now = Date.now();
 
     // Update basic metrics
-    if (this.metrics.totalEvents) { this.metrics.totalEvents++ };
+    this.metrics.totalEvents++;
     
     // Track by type
-    this?.metrics?.eventsByType[event.type] = (this?.metrics?.eventsByType[event.type] || 0) + 1;
+    if (event.type) {
+      this.metrics.eventsByType[event.type] = (this.metrics.eventsByType[event.type] || 0) + 1;
+    }
     
     // Track by source
     const source = context.source || event.source;
-    this?.metrics?.eventsBySource[source] = (this?.metrics?.eventsBySource[source] || 0) + 1;
+    if (source) {
+      this.metrics.eventsBySource[source] = (this.metrics.eventsBySource[source] || 0) + 1;
+    }
 
     // Track errors
-    if (context.error) {
-      this?.metrics?.errorsByType[event.type] = (this?.metrics?.errorsByType[event.type] || 0) + 1;
+    if (context.error && event.type) {
+      this.metrics.errorsByType[event.type] = (this.metrics.errorsByType[event.type] || 0) + 1;
     }
 
     // Track processing time
@@ -253,7 +266,7 @@ export class EventMonitor extends EventEmitter {
     }
 
     // Create or update trace
-    if (this?.config?.tracing.enabled && this.shouldSample()) {
+    if (this.config.tracing.enabled && this.shouldSample()) {
       this.recordTrace(event, context);
     }
 
@@ -261,9 +274,9 @@ export class EventMonitor extends EventEmitter {
     this.eventCountSinceLastCalc++;
 
     // Log event if configured
-    if (this?.config?.logging.level === 'debug' || 
-        (this?.config?.logging.level === 'info' && !context.error) ||
-        (context.error && ['warn', 'error'].includes(this?.config?.logging.level))) {
+    if (this.config.logging.level === 'debug' || 
+        (this.config.logging.level === 'info' && !context.error) ||
+        (context.error && ['warn', 'error'].includes(this.config.logging.level))) {
       this.logEvent(event, context);
     }
   }
@@ -276,13 +289,13 @@ export class EventMonitor extends EventEmitter {
   } = {}): void {
     // Update error metrics
     if (context.eventType) {
-      this?.metrics?.errorsByType[context.eventType] = 
-        (this?.metrics?.errorsByType[context.eventType] || 0) + 1;
+      this.metrics.errorsByType[context.eventType] = 
+        (this.metrics.errorsByType[context.eventType] || 0) + 1;
     }
 
     // Update trace if exists
-    if (context.traceId && this?.traces?.has(context.traceId)) {
-      const trace = this?.traces?.get(context.traceId)!;
+    if (context.traceId && this.traces.has(context.traceId)) {
+      const trace = this.traces.get(context.traceId)!;
       trace.status = 'error';
       trace.error = error.message;
       trace.endTime = Date.now();
@@ -300,7 +313,7 @@ export class EventMonitor extends EventEmitter {
   }
 
   public startTrace(event: BaseEvent, parentTraceId?: string): string {
-    if (!this?.config?.tracing.enabled || !this.shouldSample()) {
+    if (!this.config.tracing.enabled || !this.shouldSample()) {
       return '';
     }
 
@@ -320,14 +333,14 @@ export class EventMonitor extends EventEmitter {
       spans: []
     };
 
-    this?.traces?.set(traceId, trace);
+    this.traces.set(traceId, trace);
     return traceId;
   }
 
   public endTrace(traceId: string, success: boolean = true, error?: Error): void {
-    if (!this?.traces?.has(traceId)) return;
+    if (!this.traces.has(traceId)) return;
 
-    const trace = this?.traces?.get(traceId)!;
+    const trace = this.traces.get(traceId)!;
     trace.endTime = Date.now();
     trace.duration = trace.endTime - trace.startTime;
     trace.status = success ? 'success' : 'error';
@@ -345,10 +358,10 @@ export class EventMonitor extends EventEmitter {
   }
 
   public addSpan(traceId: string, operationName: string, startTime: number, endTime: number, tags: Record<string, string> = {}): void {
-    if (!this?.traces?.has(traceId)) return;
+    if (!this.traces.has(traceId)) return;
 
-    const trace = this?.traces?.get(traceId)!;
-    trace?.spans?.push({
+    const trace = this.traces.get(traceId)!;
+    trace.spans.push({
       spanId: this.generateSpanId(),
       operationName,
       startTime,
@@ -365,7 +378,7 @@ export class EventMonitor extends EventEmitter {
     };
 
     AlertRuleSchema.parse(alertRule);
-    this?.alertRules?.set(alertRule.id, alertRule);
+    this.alertRules.set(alertRule.id, alertRule);
     
     this.emit('alert_rule_added', {
       ruleId: alertRule.id,
@@ -377,10 +390,10 @@ export class EventMonitor extends EventEmitter {
   }
 
   public removeAlertRule(ruleId: string): boolean {
-    const removed = this?.alertRules?.delete(ruleId);
+    const removed = this.alertRules.delete(ruleId);
     if (removed) {
       // Resolve any active alerts for this rule
-      for (const [alertId, alert] of this.activeAlerts) {
+      for (const [alertId, alert] of Array.from(this.activeAlerts)) {
         if (alert.ruleId === ruleId) {
           this.resolveAlert(alertId);
         }
@@ -391,11 +404,11 @@ export class EventMonitor extends EventEmitter {
   }
 
   public getAlertRules(): AlertRule[] {
-    return Array.from(this?.alertRules?.values());
+    return Array.from(this.alertRules.values());
   }
 
   public getActiveAlerts(): Alert[] {
-    return Array.from(this?.activeAlerts?.values()).filter(a => a.status === 'active');
+    return Array.from(this.activeAlerts.values()).filter(a => a.status === 'active');
   }
 
   // Metrics and observability
@@ -404,7 +417,7 @@ export class EventMonitor extends EventEmitter {
   }
 
   public getTrace(traceId: string): EventTrace | null {
-    return this?.traces?.get(traceId) || null;
+    return this.traces.get(traceId) || null;
   }
 
   public getTraces(filter: {
@@ -415,30 +428,30 @@ export class EventMonitor extends EventEmitter {
     maxDuration?: number;
     limit?: number;
   } = {}): EventTrace[] {
-    let traces = Array.from(this?.traces?.values());
+    let traces = Array.from(this.traces.values());
 
     if (filter.eventType) {
-      traces = traces?.filter(t => t.eventType === filter.eventType);
+      traces = traces.filter(t => t.eventType === filter.eventType);
     }
 
     if (filter.source) {
-      traces = traces?.filter(t => t.source === filter.source);
+      traces = traces.filter(t => t.source === filter.source);
     }
 
     if (filter.status) {
-      traces = traces?.filter(t => t.status === filter.status);
+      traces = traces.filter(t => t.status === filter.status);
     }
 
     if (filter.minDuration !== undefined) {
-      traces = traces?.filter(t => (t.duration || 0) >= filter.minDuration!);
+      traces = traces.filter(t => (t.duration || 0) >= filter.minDuration!);
     }
 
     if (filter.maxDuration !== undefined) {
-      traces = traces?.filter(t => (t.duration || 0) <= filter.maxDuration!);
+      traces = traces.filter(t => (t.duration || 0) <= filter.maxDuration!);
     }
 
     // Sort by start time (newest first)
-    traces.sort((a, b) => b.startTime - a.startTime);
+    traces.sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
 
     if (filter.limit) {
       traces = traces.slice(0, filter.limit);
@@ -459,9 +472,9 @@ export class EventMonitor extends EventEmitter {
     
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     
-    if (criticalAlerts?.length || 0 > 0) {
+    if (criticalAlerts.length > 0) {
       status = 'unhealthy';
-    } else if (activeAlertsCount > 0 || this?.metrics?.health.errorRate > 0.01) {
+    } else if (activeAlertsCount > 0 || this.metrics.health.errorRate > 0.01) {
       status = 'degraded';
     }
 
@@ -470,7 +483,7 @@ export class EventMonitor extends EventEmitter {
       uptime: Date.now() - this.startTime,
       metrics: this.metrics,
       activeAlertsCount,
-      lastError: this?.metrics?.health.lastError
+      lastError: this.metrics.health.lastError
     };
   }
 
@@ -484,11 +497,11 @@ export class EventMonitor extends EventEmitter {
   }
 
   private recordLatency(latency: number): void {
-    this?.latencyBuffer?.push(latency);
+    this.latencyBuffer.push(latency);
     
     // Keep buffer size manageable
-    if (this?.latencyBuffer?.length > 1000) {
-      this.latencyBuffer = this?.latencyBuffer?.slice(-1000);
+    if (this.latencyBuffer.length > 1000) {
+      this.latencyBuffer = this.latencyBuffer.slice(-1000);
     }
   }
 
@@ -498,79 +511,44 @@ export class EventMonitor extends EventEmitter {
     const timeSinceLastCalc = now - this.lastThroughputCalculation;
     const currentThroughput = (this.eventCountSinceLastCalc / timeSinceLastCalc) * 1000; // per second
 
-    if (this.metrics && this.metrics.throughput) {
-
-
-      this.metrics.throughput.current = currentThroughput;
-
-
-    }
-    if (this.metrics && this.metrics.throughput) {
-
-      this.metrics.throughput.peak = Math.max(this?.metrics?.throughput.peak, currentThroughput);
-
-    }
+    this.metrics.throughput.current = currentThroughput;
+    this.metrics.throughput.peak = Math.max(this.metrics.throughput.peak, currentThroughput);
     
     // Calculate average throughput
     const totalTime = (now - this.startTime) / 1000; // in seconds
-    if (this.metrics && this.metrics.throughput) {
-
-      this.metrics.throughput.average = this?.metrics?.totalEvents / totalTime;
-
-    }
+    this.metrics.throughput.average = totalTime > 0 ? (this.metrics.totalEvents || 0) / totalTime : 0;
 
     // Reset counters
     this.lastThroughputCalculation = now;
     this.eventCountSinceLastCalc = 0;
 
     // Calculate latency percentiles
-    if (this?.latencyBuffer?.length > 0) {
+    if (this.latencyBuffer.length > 0) {
       const sorted = [...this.latencyBuffer].sort((a, b) => a - b);
-      if (this.metrics && this.metrics.latency) {
-
-        this.metrics.latency.p50 = this.calculatePercentile(sorted, 0.5);
-
-      }
-      if (this.metrics && this.metrics.latency) {
-
-        this.metrics.latency.p90 = this.calculatePercentile(sorted, 0.9);
-
-      }
-      if (this.metrics && this.metrics.latency) {
-
-        this.metrics.latency.p95 = this.calculatePercentile(sorted, 0.95);
-
-      }
-      if (this.metrics && this.metrics.latency) {
-
-        this.metrics.latency.p99 = this.calculatePercentile(sorted, 0.99);
-
-      }
+      this.metrics.latency.p50 = this.calculatePercentile(sorted, 0.5);
+      this.metrics.latency.p90 = this.calculatePercentile(sorted, 0.9);
+      this.metrics.latency.p95 = this.calculatePercentile(sorted, 0.95);
+      this.metrics.latency.p99 = this.calculatePercentile(sorted, 0.99);
     }
 
     // Calculate error rate
-    const totalErrors = Object.values(this?.metrics?.errorsByType).reduce((sum: any, count: any) => sum + count, 0);
-    if (this.metrics && this.metrics.health) {
-
-      this.metrics.health.errorRate = this?.metrics?.totalEvents > 0 ? totalErrors / this?.metrics?.totalEvents : 0;
-
-    }
+    const totalErrors = Object.values(this.metrics.errorsByType || {})
+      .filter((count): count is number => typeof count === 'number')
+      .reduce((sum: number, count: number) => sum + count, 0);
+    const totalEvents = this.metrics.totalEvents || 0;
+    this.metrics.health.errorRate = totalEvents > 0 ? totalErrors / totalEvents : 0;
     
     // Update health status
-    if (this.metrics && this.metrics.health) {
-
-      this.metrics.health.uptime = now - this.startTime;
-
-    }
+    this.metrics.health.uptime = now - this.startTime;
     this.updateHealthStatus();
 
     // Store metrics history
-    this?.metricsHistory?.push({ ...this.metrics });
+    this.metricsHistory.push({ ...this.metrics });
     
     // Keep history size manageable
-    const maxHistorySize = Math.floor(this?.config?.metrics.retention / this?.config?.metrics.aggregationInterval);
-    if (this?.metricsHistory?.length > maxHistorySize) {
-      this.metricsHistory = this?.metricsHistory?.slice(-maxHistorySize);
+    const maxHistorySize = Math.floor(this.config.metrics.retention / this.config.metrics.aggregationInterval);
+    if (this.metricsHistory.length > maxHistorySize) {
+      this.metricsHistory = this.metricsHistory.slice(-maxHistorySize);
     }
   }
 
@@ -578,40 +556,28 @@ export class EventMonitor extends EventEmitter {
     const activeAlertsCount = this.getActiveAlerts().length;
     const criticalAlerts = this.getActiveAlerts().filter(a => a.severity === 'critical');
     
-    if (criticalAlerts?.length || 0 > 0) {
-      if (this.metrics && this.metrics.health) {
-
-        this.metrics.health.status = 'unhealthy';
-
-      }
-    } else if (activeAlertsCount > 0 || this?.metrics?.health.errorRate > 0.01) {
-      if (this.metrics && this.metrics.health) {
-
-        this.metrics.health.status = 'degraded';
-
-      }
+    if (criticalAlerts.length > 0) {
+      this.metrics.health.status = 'unhealthy';
+    } else if (activeAlertsCount > 0 || (this.metrics.health.errorRate || 0) > 0.01) {
+      this.metrics.health.status = 'degraded';
     } else {
-      if (this.metrics && this.metrics.health) {
-
-        this.metrics.health.status = 'healthy';
-
-      }
+      this.metrics.health.status = 'healthy';
     }
   }
 
   private checkAlerts(): void {
     const now = Date.now();
 
-    for (const [ruleId, rule] of this.alertRules) {
+    for (const [ruleId, rule] of Array.from(this.alertRules)) {
       if (!rule.enabled) continue;
 
       // Check cooldown
-      const lastTriggered = this?.alertCooldowns?.get(ruleId);
+      const lastTriggered = this.alertCooldowns.get(ruleId);
       if (lastTriggered && (now - lastTriggered) < rule.cooldown) {
         continue;
       }
 
-      const metricValue = this.getMetricValue(rule?.condition?.metric);
+      const metricValue = this.getMetricValue(rule.condition.metric);
       const conditionMet = this.evaluateCondition(metricValue, rule.condition);
 
       if (conditionMet) {
@@ -654,17 +620,17 @@ export class EventMonitor extends EventEmitter {
       triggeredAt: Date.now(),
       status: 'active',
       metadata: {
-        metric: rule?.condition?.metric,
-        threshold: rule?.condition?.threshold,
-        currentValue: this.getMetricValue(rule?.condition?.metric)
+        metric: rule.condition.metric,
+        threshold: rule.condition.threshold,
+        currentValue: this.getMetricValue(rule.condition.metric)
       }
     };
 
-    this?.activeAlerts?.set(alertId, alert);
-    this?.alertCooldowns?.set(rule.id, Date.now());
+    this.activeAlerts.set(alertId, alert);
+    this.alertCooldowns.set(rule.id, Date.now());
 
     // Execute alert actions
-    rule?.actions?.forEach(action => {
+    rule.actions.forEach(action => {
       this.executeAlertAction(action, alert);
     });
 
@@ -675,22 +641,25 @@ export class EventMonitor extends EventEmitter {
     try {
       switch (action.type) {
         case 'log':
-          const level = action?.config?.level || 'warn';
-          console[level as keyof Console](`[ALERT] ${alert.message}`, alert.metadata);
+          const level = action.config.level || 'warn';
+          const logFn = (console as any)[level];
+          if (typeof logFn === 'function') {
+            logFn(`[ALERT] ${alert.message}`, alert.metadata);
+          }
           break;
 
         case 'event':
-          this.emit(action?.config?.eventType || 'alert', alert);
+          this.emit(action.config.eventType || 'alert', alert);
           break;
 
         case 'webhook':
           // Would implement webhook call
-          console.log(`[WEBHOOK] Would call ${action?.config?.url} with alert:`, alert);
+          console.log(`[WEBHOOK] Would call ${action.config.url} with alert:`, alert);
           break;
 
         case 'email':
           // Would implement email notification
-          console.log(`[EMAIL] Would send to ${action?.config?.to}:`, alert.message);
+          console.log(`[EMAIL] Would send to ${action.config.to}:`, alert.message);
           break;
       }
     } catch (error) {
@@ -699,7 +668,7 @@ export class EventMonitor extends EventEmitter {
   }
 
   private resolveAlert(alertId: string): void {
-    const alert = this?.activeAlerts?.get(alertId);
+    const alert = this.activeAlerts.get(alertId);
     if (alert && alert.status === 'active') {
       alert.status = 'resolved';
       alert.resolvedAt = Date.now();
@@ -711,51 +680,51 @@ export class EventMonitor extends EventEmitter {
     const now = Date.now();
 
     // Clean up old traces
-    if (this?.config?.tracing.enabled) {
-      const traceRetention = this?.config?.tracing.retention;
-      const traceIds = Array.from(this?.traces?.keys());
+    if (this.config.tracing.enabled) {
+      const traceRetention = this.config.tracing.retention;
+      const traceIds = Array.from(this.traces.keys());
       
       for (const traceId of traceIds) {
-        const trace = this?.traces?.get(traceId)!;
+        const trace = this.traces.get(traceId)!;
         if (now - trace.startTime > traceRetention) {
-          this?.traces?.delete(traceId);
+          this.traces.delete(traceId);
         }
       }
 
       // Limit total number of traces
-      if (this?.traces?.size > this?.config?.tracing.maxTraces) {
-        const sortedTraces = Array.from(this?.traces?.entries())
+      if (this.traces.size > this.config.tracing.maxTraces) {
+        const sortedTraces = Array.from(this.traces.entries())
           .sort(([, a], [, b]) => a.startTime - b.startTime);
         
-        const toDelete = sortedTraces.slice(0, sortedTraces?.length || 0 - this?.config?.tracing.maxTraces);
-        toDelete.forEach(([traceId]) => this?.traces?.delete(traceId));
+        const toDelete = sortedTraces.slice(0, sortedTraces.length - this.config.tracing.maxTraces);
+        toDelete.forEach(([traceId]) => this.traces.delete(traceId));
       }
     }
 
     // Clean up resolved alerts older than 24 hours
-    const alertIds = Array.from(this?.activeAlerts?.keys());
+    const alertIds = Array.from(this.activeAlerts.keys());
     for (const alertId of alertIds) {
-      const alert = this?.activeAlerts?.get(alertId)!;
+      const alert = this.activeAlerts.get(alertId)!;
       if (alert.status === 'resolved' && alert.resolvedAt && 
           (now - alert.resolvedAt) > 24 * 60 * 60 * 1000) {
-        this?.activeAlerts?.delete(alertId);
+        this.activeAlerts.delete(alertId);
       }
     }
   }
 
   private shouldSample(): boolean {
-    return Math.random() < this?.config?.tracing.sampleRate;
+    return Math.random() < this.config.tracing.sampleRate;
   }
 
   private calculatePercentile(sortedArray: number[], percentile: number): number {
-    if (sortedArray?.length || 0 === 0) return 0;
+    if (!sortedArray || sortedArray.length === 0) return 0;
     
-    const index = Math.ceil(sortedArray?.length || 0 * percentile) - 1;
-    return sortedArray[Math.max(0, Math.min(index, sortedArray?.length || 0 - 1))];
+    const index = Math.ceil(sortedArray.length * percentile) - 1;
+    return sortedArray[Math.max(0, Math.min(index, sortedArray.length - 1))] || 0;
   }
 
   private logEvent(event: BaseEvent, context: any): void {
-    if (this?.config?.logging.structured) {
+    if (this.config.logging.structured) {
       console.log(JSON.stringify({
         timestamp: new Date().toISOString(),
         level: context.error ? 'error' : 'info',
@@ -766,7 +735,7 @@ export class EventMonitor extends EventEmitter {
         duration: context.processingEndTime ? 
           context.processingEndTime - context.processingStartTime : undefined,
         error: context.error?.message,
-        ...(this?.config?.logging.includePayloads && { payload: event.payload })
+        ...(this.config.logging.includePayloads && { payload: event.payload })
       }));
     } else {
       const message = `[${event.type}] ${event.id} from ${event.source}`;
@@ -779,7 +748,7 @@ export class EventMonitor extends EventEmitter {
   }
 
   private logError(error: Error, context: any): void {
-    if (this?.config?.logging.structured) {
+    if (this.config.logging.structured) {
       console.error(JSON.stringify({
         timestamp: new Date().toISOString(),
         level: 'error',
@@ -812,18 +781,18 @@ export class EventMonitor extends EventEmitter {
       
       lines.push(`# HELP events_total Total number of events processed`);
       lines.push(`# TYPE events_total counter`);
-      lines.push(`events_total ${this?.metrics?.totalEvents}`);
+      lines.push(`events_total ${this.metrics.totalEvents}`);
       
       lines.push(`# HELP events_throughput_current Current events per second`);
       lines.push(`# TYPE events_throughput_current gauge`);
-      lines.push(`events_throughput_current ${this?.metrics?.throughput.current}`);
+      lines.push(`events_throughput_current ${this.metrics.throughput.current}`);
       
       lines.push(`# HELP events_latency_seconds Event processing latency`);
       lines.push(`# TYPE events_latency_seconds summary`);
-      lines.push(`events_latency_seconds{quantile="0.5"} ${this?.metrics?.latency.p50 / 1000}`);
-      lines.push(`events_latency_seconds{quantile="0.9"} ${this?.metrics?.latency.p90 / 1000}`);
-      lines.push(`events_latency_seconds{quantile="0.95"} ${this?.metrics?.latency.p95 / 1000}`);
-      lines.push(`events_latency_seconds{quantile="0.99"} ${this?.metrics?.latency.p99 / 1000}`);
+      lines.push(`events_latency_seconds{quantile="0.5"} ${this.metrics.latency.p50 / 1000}`);
+      lines.push(`events_latency_seconds{quantile="0.9"} ${this.metrics.latency.p90 / 1000}`);
+      lines.push(`events_latency_seconds{quantile="0.95"} ${this.metrics.latency.p95 / 1000}`);
+      lines.push(`events_latency_seconds{quantile="0.99"} ${this.metrics.latency.p99 / 1000}`);
       
       return lines.join('\n');
     }
@@ -840,24 +809,24 @@ export class EventMonitor extends EventEmitter {
   } {
     return {
       overview: {
-        totalEvents: this?.metrics?.totalEvents,
-        currentThroughput: this?.metrics?.throughput.current,
-        healthStatus: this?.metrics?.health.status,
-        activeAlerts: this.getActiveAlerts().length
+      totalEvents: this.metrics.totalEvents || 0,
+      currentThroughput: this.metrics.throughput?.current || 0,
+      healthStatus: this.metrics.health?.status || 'healthy',
+      activeAlerts: this.getActiveAlerts().length
       },
       throughput: {
-        current: this?.metrics?.throughput.current,
-        peak: this?.metrics?.throughput.peak,
-        average: this?.metrics?.throughput.average,
-        history: this?.metricsHistory?.map(m => ({
-          timestamp: Date.now() - (this?.metricsHistory?.length - this?.metricsHistory?.indexOf(m)) * this?.config?.metrics.aggregationInterval,
-          value: m?.throughput?.current
+        current: this.metrics.throughput.current,
+        peak: this.metrics.throughput.peak,
+        average: this.metrics.throughput.average,
+        history: this.metricsHistory.map(m => ({
+          timestamp: Date.now() - (this.metricsHistory.length - this.metricsHistory.indexOf(m)) * (this.config.metrics?.aggregationInterval || 60000),
+          value: m.throughput?.current || 0
         }))
       },
-      latency: this?.metrics?.latency,
+      latency: this.metrics.latency,
       errors: {
-        errorRate: this?.metrics?.health.errorRate,
-        errorsByType: this?.metrics?.errorsByType
+        errorRate: this.metrics.health?.errorRate || 0,
+        errorsByType: this.metrics.errorsByType || {}
       },
       alerts: {
         active: this.getActiveAlerts(),

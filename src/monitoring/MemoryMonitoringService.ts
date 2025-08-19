@@ -111,7 +111,7 @@ export class MemoryMonitoringService extends EventEmitter {
     super();
     
     this.app = express();
-    this?.app.use(express.json());
+    this.app.use(express.json());
     
     // Initialize Redis for metrics storage
     this.redis = new Redis({
@@ -146,7 +146,7 @@ export class MemoryMonitoringService extends EventEmitter {
    */
   private initializeServices(): void {
     for (const config of this.SERVICE_CONFIGS) {
-      this?.services?.set(config.name, {
+      this.services.set(config.name, {
         service: config.name,
         maxMemory: config.maxMemory,
         status: 'offline',
@@ -322,7 +322,7 @@ export class MemoryMonitoringService extends EventEmitter {
       }
       
       alert.resolved = true;
-      res.json({ success: true, alert });
+      return res.json({ success: true, alert });
     });
     
     // Force garbage collection
@@ -335,7 +335,7 @@ export class MemoryMonitoringService extends EventEmitter {
       }
       
       manager.forceGC();
-      res.json({ success: true, message: 'Garbage collection triggered' });
+      return res.json({ success: true, message: 'Garbage collection triggered' });
     });
     
     // Take heap snapshot
@@ -1018,7 +1018,7 @@ export class MemoryMonitoringService extends EventEmitter {
       const toDelete: string[] = [];
       
       for (const key of keys) {
-        const timestamp = parseInt(key.split(':')[2]);
+        const timestamp = parseInt(key.split(':')[2] || '0');
         if (timestamp < cutoff) {
           toDelete.push(key);
         }

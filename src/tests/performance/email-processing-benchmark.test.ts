@@ -4,18 +4,18 @@
  * Validates that the optimized pipeline meets performance targets.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { performance } from "perf_hooks";
 import Database from "better-sqlite3";
 import { Redis } from "ioredis";
-import { EmailProcessingWorkerPool } from "../../core/workers/EmailProcessingWorkerPool.js";
-import { EmailProcessingQueueService } from "../../core/services/EmailProcessingQueueService.js";
-import { EmailProcessingMonitor } from "../../core/monitoring/EmailProcessingMonitor.js";
-import { OllamaManager } from "../../utils/ollama-manager.js";
+import { EmailProcessingWorkerPool } from '../../core/workers/EmailProcessingWorkerPool';
+import { EmailProcessingQueueService } from '../../core/services/EmailProcessingQueueService';
+import { EmailProcessingMonitor } from '../../core/monitoring/EmailProcessingMonitor';
+import { OllamaManager } from '../../utils/ollama-manager';
 import type {
   EmailProcessingJob,
   EmailJobData,
-} from "../../core/workers/EmailProcessingWorkerPool.js";
+} from '../../core/workers/EmailProcessingWorkerPool';
 
 // Test configuration
 const TEST_CONFIG = {

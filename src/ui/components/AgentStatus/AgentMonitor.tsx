@@ -35,7 +35,7 @@ export const AgentMonitor: React.FC = () => {
     }
   }, [agentStatus?.data]);
 
-  if (activeAgents?.length || 0 === 0) {
+  if ((activeAgents?.length || 0) === 0) {
     return null;
   }
 

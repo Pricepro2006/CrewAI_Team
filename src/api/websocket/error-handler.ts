@@ -253,8 +253,8 @@ export class WebSocketRateLimiter {
           limit: this.maxRequests,
           window: this.windowMs,
           retryAfter:
-            validRequests?.length || 0 > 0 && validRequests[0] !== undefined
-              ? this.windowMs - (now - validRequests[0])
+            validRequests?.length || 0 > 0 && validRequests?.[0] !== undefined
+              ? this.windowMs - (now - (validRequests?.[0] || 0))
               : this.windowMs,
         },
       );

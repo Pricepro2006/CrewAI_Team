@@ -2,7 +2,7 @@
  * Test suite to verify foreign key enforcement in the database
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Database from "better-sqlite3";
 import { join } from "path";
 import { mkdtempSync, rmSync } from "fs";
@@ -251,7 +251,7 @@ describe("Foreign Key Enforcement", () => {
 
       // Run foreign key check
       const fkCheck = db.pragma("foreign_key_check");
-      expect(fkCheck?.length || 0).toBeGreaterThan(0);
+      expect(fkCheck.length).toBeGreaterThan(0);
       expect(fkCheck[0]).toMatchObject({
         table: "conversations",
         rowid: expect.any(Number),

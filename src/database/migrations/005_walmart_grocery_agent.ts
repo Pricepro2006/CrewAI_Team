@@ -3,13 +3,13 @@
  * Adds tables for grocery shopping list management, product data, and agent interactions
  */
 
-import type Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 
 export class WalmartGroceryAgentMigration {
-  private db: Database.Database;
+  private db: DatabaseInstance;
 
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     this.db = db;
   }
 
@@ -490,7 +490,7 @@ export class WalmartGroceryAgentMigration {
     return 5;
   }
 
-  static get name(): string {
+  static get migrationName(): string {
     return "walmart_grocery_agent";
   }
 

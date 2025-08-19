@@ -97,7 +97,7 @@ async function main() {
       ]
     });
 
-    return response?.data?.items?.length || 0 === 2 && 
+    return (response?.data?.items?.length || 0) === 2 && 
            response?.data?.items.every((item: any) => item.finalPrice > 0);
   });
 

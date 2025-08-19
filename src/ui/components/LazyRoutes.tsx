@@ -1,62 +1,179 @@
-import React, { lazy, Suspense } from 'react';
+import * as React from 'react';
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { SkeletonLoader } from './loading/SkeletonLoader';
+import { Skeleton } from '../../client/components/loading/SkeletonLoader';
+import { ErrorBoundary } from './ErrorBoundary/ErrorBoundary';
+
+// Import proper types from status manager and interfaces
+import type { EmailStatus } from '../../client/components/status/StatusUpdateManager';
+import type { EmailRecord as ImportedEmailRecord } from '../../types/email-dashboard.interfaces';
+
+// Create adapter type to bridge between component expectations and imported types
+type EmailRecord = Omit<ImportedEmailRecord, 'email_alias' | 'requested_by'> & {
+  emailAlias: string;
+  requestedBy: string;
+};
+
+// Type alias for AdvancedEmailDashboard's EmailRecord to avoid conflicts
+type AdvancedEmailRecord = {
+  id: string;
+  emailAlias: string;
+  requestedBy: string;
+  subject: string;
+  summary: string;
+  status: EmailStatus;
+  priority: "low" | "medium" | "high" | "critical";
+  assignedTo?: string;
+  dueDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  tags: string[];
+  metadata: Record<string, any>;
+};
 
 // Lazy load major route components to reduce initial bundle
-const LazyWalmartDashboard = lazy(() => 
-  import('./walmart/WalmartDashboard').then(module => ({ default: module.WalmartDashboard }))
-);
+const LazyWalmartDashboard = lazy(async () => {
+  try {
+    const module = await import('../../client/components/walmart/WalmartDashboard');
+    return { default: module.WalmartDashboard };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
-const LazyWalmartGroceryList = lazy(() => 
-  import('./walmart/WalmartGroceryList').then(module => ({ default: module.WalmartGroceryList }))
-);
+const LazyWalmartGroceryList = lazy(async () => {
+  try {
+    const module = await import('../../client/components/walmart/WalmartGroceryList');
+    return { default: module.WalmartGroceryList };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
 const LazyWalmartLivePricing = lazy(() => 
-  import('./walmart/WalmartLivePricing').then(module => ({ default: module.WalmartLivePricing }))
+  import('../../client/components/walmart/WalmartLivePricing')
 );
 
-const LazyWalmartOrderHistory = lazy(() => 
-  import('./walmart/WalmartOrderHistory').then(module => ({ default: module.WalmartOrderHistory }))
-);
+const LazyWalmartOrderHistory = lazy(async () => {
+  try {
+    const module = await import('../../client/components/walmart/WalmartOrderHistory');
+    return { default: module.WalmartOrderHistory };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
 const LazyEmailDashboard = lazy(() => 
-  import('./dashboard/EmailDashboardMultiPanel').then(module => ({ default: module.EmailDashboardMultiPanel }))
+  import('../../client/components/dashboard/EmailDashboardMultiPanel').then(module => ({
+    default: module.EmailDashboardMultiPanel
+  }))
 );
 
 const LazyAdvancedEmailDashboard = lazy(() => 
-  import('./dashboard/AdvancedEmailDashboard').then(module => ({ default: module.AdvancedEmailDashboard }))
+  import('../../client/components/dashboard/AdvancedEmailDashboard')
 );
 
-const LazyMonitoringDashboard = lazy(() => 
-  import('./monitoring/MonitoringDashboard').then(module => ({ default: module.MonitoringDashboard }))
-);
+// Wrapper components to provide default props
+const EmailDashboardWrapper: React.FC = () => {
+  // Provide default props for the email dashboard
+  const defaultEmails: ImportedEmailRecord[] = [];
+  
+  return (
+    <LazyEmailDashboard 
+      emails={defaultEmails}
+      loading={false}
+      error={null}
+    />
+  );
+};
 
-const LazyPerformanceDashboard = lazy(() => 
-  import('./dev/PerformanceDashboard').then(module => ({ default: module.PerformanceDashboard }))
-);
+const AdvancedEmailDashboardWrapper: React.FC = () => {
+  // Use specific type for AdvancedEmailDashboard
+  const defaultEmails: AdvancedEmailRecord[] = [];
+  
+  const defaultUser = {
+    id: 'guest',
+    name: 'Guest User',
+    role: 'viewer',
+    permissions: ['read']
+  };
+  
+  const handleEmailStatusUpdate = async (
+    emailId: string,
+    fromStatus: EmailStatus,
+    toStatus: EmailStatus,
+    comment?: string
+  ): Promise<void> => {
+    // Default implementation - could integrate with actual API
+    console.log('Email status update:', { emailId, fromStatus, toStatus, comment });
+  };
+  
+  const handleRefresh = async (): Promise<void> => {
+    // Default implementation - could integrate with actual API
+    console.log('Refreshing email data');
+  };
+  
+  return (
+    <LazyAdvancedEmailDashboard 
+      emails={defaultEmails}
+      currentUser={defaultUser}
+      onEmailStatusUpdate={handleEmailStatusUpdate}
+      onRefresh={handleRefresh}
+    />
+  );
+};
+
+const LazyMonitoringDashboard = lazy(async () => {
+  try {
+    const module = await import('../../client/components/monitoring/MonitoringDashboard');
+    return { default: module.MonitoringDashboard };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
+
+const LazyPerformanceDashboard = lazy(async () => {
+  try {
+    const module = await import('../../client/components/dev/PerformanceDashboard');
+    return { default: module.PerformanceDashboard };
+  } catch {
+    return { default: () => React.createElement('div', {}, 'Component loading failed') };
+  }
+});
 
 // Route wrapper with optimized loading states
-const RouteWrapper: React.FC<{ children: React.ReactNode; title: string }> = ({ children, title }) => (
-  <Suspense 
-    fallback={
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
-          </div>
-          <SkeletonLoader height="600px" />
-        </div>
-      </div>
-    }
+interface RouteWrapperProps {
+  children: React.ReactNode;
+  title: string;
+}
+
+const RouteWrapper: React.FC<RouteWrapperProps> = ({ children, title }): React.ReactElement => (
+  <ErrorBoundary 
+    onError={(error, errorInfo) => {
+      console.error(`Route loading error for ${title}:`, error, errorInfo);
+    }}
   >
-    <div className="page-content" data-page={title}>
-      {children}
-    </div>
-  </Suspense>
+    <Suspense 
+      fallback={
+        <div className="min-h-screen bg-gray-50">
+          <div className="container mx-auto px-4 py-8">
+            <div className="mb-4">
+              <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+            </div>
+            <Skeleton height="600px" />
+          </div>
+        </div>
+      }
+    >
+      <div className="page-content" data-page={title}>
+        {children}
+      </div>
+    </Suspense>
+  </ErrorBoundary>
 );
 
 // Optimized routing with preload hints
-export const OptimizedRoutes: React.FC = () => {
+export const OptimizedRoutes: React.FC = (): React.ReactElement => {
   return (
     <Routes>
       {/* Walmart Grocery Agent Routes */}
@@ -98,7 +215,7 @@ export const OptimizedRoutes: React.FC = () => {
         path="/emails" 
         element={
           <RouteWrapper title="email-dashboard">
-            <LazyEmailDashboard />
+            <EmailDashboardWrapper />
           </RouteWrapper>
         } 
       />
@@ -106,7 +223,7 @@ export const OptimizedRoutes: React.FC = () => {
         path="/emails/advanced" 
         element={
           <RouteWrapper title="advanced-email">
-            <LazyAdvancedEmailDashboard />
+            <AdvancedEmailDashboardWrapper />
           </RouteWrapper>
         } 
       />
@@ -142,33 +259,63 @@ export const OptimizedRoutes: React.FC = () => {
   );
 };
 
+// Type definitions for preload map
+type PreloadMap = {
+  'walmart-dashboard': () => Promise<any>;
+  'walmart-grocery': () => Promise<any>;
+  'walmart-pricing': () => Promise<any>;
+  'walmart-orders': () => Promise<any>;
+  'email-dashboard': () => Promise<any>;
+  'advanced-email': () => Promise<any>;
+  'monitoring': () => Promise<any>;
+  'performance': () => Promise<any>;
+};
+
+type RouteNames = keyof PreloadMap;
+
 // Preload utilities for better UX
-export const preloadRoute = (routeName: string) => {
-  const preloadMap = {
-    'walmart-dashboard': () => import('./walmart/WalmartDashboard'),
-    'walmart-grocery': () => import('./walmart/WalmartGroceryList'),
-    'walmart-pricing': () => import('./walmart/WalmartLivePricing'),
-    'walmart-orders': () => import('./walmart/WalmartOrderHistory'),
-    'email-dashboard': () => import('./dashboard/EmailDashboardMultiPanel'),
-    'advanced-email': () => import('./dashboard/AdvancedEmailDashboard'),
-    'monitoring': () => import('./monitoring/MonitoringDashboard'),
-    'performance': () => import('./dev/PerformanceDashboard'),
+export const preloadRoute = (routeName: RouteNames): void => {
+  const preloadMap: PreloadMap = {
+    'walmart-dashboard': () => import('../../client/components/walmart/WalmartDashboard'),
+    'walmart-grocery': () => import('../../client/components/walmart/WalmartGroceryList'),
+    'walmart-pricing': () => import('../../client/components/walmart/WalmartLivePricing'),
+    'walmart-orders': () => import('../../client/components/walmart/WalmartOrderHistory'),
+    'email-dashboard': () => import('../../client/components/dashboard/EmailDashboardMultiPanel'),
+    'advanced-email': () => import('../../client/components/dashboard/AdvancedEmailDashboard'),
+    'monitoring': () => import('../../client/components/monitoring/MonitoringDashboard'),
+    'performance': () => import('../../client/components/dev/PerformanceDashboard'),
   };
   
-  const preloader = preloadMap[routeName as keyof typeof preloadMap];
+  const preloader = preloadMap[routeName];
   if (preloader) {
-    preloader().catch(err => console.warn(`Failed to preload ${routeName}:`, err));
+    preloader().catch((err: Error) => console.warn(`Failed to preload ${routeName}:`, err));
   }
 };
 
 // Hook for intelligent route preloading
-export const useRoutePreloading = () => {
+export const useRoutePreloading = (): void => {
   React.useEffect(() => {
-    const prefetchOnHover = (event: Event) => {
+    const prefetchOnHover = (event: Event): void => {
       const target = event.target as HTMLElement;
-      const link = target.closest('a[href]') as HTMLAnchorElement;
-      if (link && link?.href?.includes('/walmart')) {
-        preloadRoute('walmart-dashboard');
+      const link = target.closest('a[href]') as HTMLAnchorElement | null;
+      if (link?.href) {
+        if (link.href.includes('/walmart/grocery')) {
+          preloadRoute('walmart-grocery');
+        } else if (link.href.includes('/walmart/pricing')) {
+          preloadRoute('walmart-pricing');
+        } else if (link.href.includes('/walmart/orders')) {
+          preloadRoute('walmart-orders');
+        } else if (link.href.includes('/walmart')) {
+          preloadRoute('walmart-dashboard');
+        } else if (link.href.includes('/emails/advanced')) {
+          preloadRoute('advanced-email');
+        } else if (link.href.includes('/emails')) {
+          preloadRoute('email-dashboard');
+        } else if (link.href.includes('/monitoring')) {
+          preloadRoute('monitoring');
+        } else if (link.href.includes('/performance')) {
+          preloadRoute('performance');
+        }
       }
     };
     

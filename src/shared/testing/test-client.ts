@@ -309,7 +309,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
   on(
     eventType: string,
-    handler: (message: WebSocketMessage) => void,
+    handler: (message: WebSocketMessage) => Promise<void>,
   ): void {
     if (!this?.eventHandlers?.has(eventType)) {
       this?.eventHandlers?.set(eventType, []);
@@ -319,7 +319,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
   once(
     eventType: string,
-    handler: (message: WebSocketMessage) => void,
+    handler: (message: WebSocketMessage) => Promise<void>,
   ): void {
     if (!this?.eventHandlers?.has(eventType)) {
       this?.eventHandlers?.set(eventType, []);
@@ -336,7 +336,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
         reject(new Error(`Timeout waiting for message of type: ${eventType}`));
       }, timeout);
 
-      this.once(eventType, (message: any) => {
+      this.once(eventType, async (message: WebSocketMessage) => {
         clearTimeout(timeoutId);
         resolve(message);
       });
@@ -360,7 +360,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
     }
   }
 
-  off(eventType: string, handler?: (message: WebSocketMessage) => void): void {
+  off(eventType: string, handler?: (message: WebSocketMessage) => Promise<void>): void {
     if (!handler) {
       this?.eventHandlers?.delete(eventType);
     } else {
@@ -1017,8 +1017,10 @@ export async function authenticateUser(
 
   const token = response?.data?.token;
   context?.services?.http.setAuthToken(token);
-  context?.session?.user = user;
-  context?.session?.authToken = token;
+  if (context?.session) {
+    context.session.user = user;
+    context.session.authToken = token;
+  }
 
   return token;
 }

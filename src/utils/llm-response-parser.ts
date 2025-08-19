@@ -27,7 +27,7 @@ export function extractJSON(response: string): any {
 
   // Try to find JSON blocks in markdown code blocks
   const codeBlockMatch = response.match(/```(?:json)?\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/);
-  if (codeBlockMatch) {
+  if (codeBlockMatch && codeBlockMatch[1]) {
     try {
       return JSON.parse(codeBlockMatch[1]);
     } catch (e) {
@@ -37,7 +37,7 @@ export function extractJSON(response: string): any {
 
   // Try to find JSON object or array in the response
   const jsonMatch = response.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
-  if (jsonMatch) {
+  if (jsonMatch && jsonMatch[1]) {
     try {
       // Clean up common issues
       let cleaned = jsonMatch[1]
@@ -70,14 +70,18 @@ function parseStructuredText(text: string): any {
     const keyValueMatch = line.match(/^[-*]?\s*(\w+):\s*(.+)$/);
     if (keyValueMatch) {
       const [, key, value] = keyValueMatch;
-      result[key.toLowerCase()] = value.trim();
+      if (key && value) {
+        result[key.toLowerCase()] = value.trim();
+      }
     }
     
     // Pattern: numbered list items
     const numberedMatch = line.match(/^\d+\.\s*(\w+):\s*(.+)$/);
     if (numberedMatch) {
       const [, key, value] = numberedMatch;
-      result[key.toLowerCase()] = value.trim();
+      if (key && value) {
+        result[key.toLowerCase()] = value.trim();
+      }
     }
   }
   
@@ -121,7 +125,7 @@ export function parseLLMResponse<T>(
   } catch (error) {
     logger.error('Failed to parse LLM response', 'LLM_PARSER', { 
       error: error instanceof Error ? error.message : String(error),
-      responsePreview: response.substring(0, 100)
+      responsePreview: response?.substring(0, 100) || ''
     });
     return defaultValue;
   }

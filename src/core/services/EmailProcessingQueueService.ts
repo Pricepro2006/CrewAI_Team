@@ -5,6 +5,7 @@
  * priority handling, and comprehensive monitoring.
  */
 
+// @ts-expect-error - BullMQ v5 type definitions issue
 import { Queue, Worker, QueueEvents } from "bullmq";
 import type { Job, JobOptions } from "bullmq";
 import Redis from "ioredis";
@@ -353,7 +354,10 @@ export class EmailProcessingQueueService extends EventEmitter {
 
         try {
           // Update progress
-          await job.progress({ status: "processing", startTime });
+          // Update progress if method exists on job
+          if ('updateProgress' in job && typeof job.updateProgress === 'function') {
+            await job.updateProgress(50);
+          }
 
           // Process the job
           const result = await processor(job);
@@ -520,9 +524,9 @@ export class EmailProcessingQueueService extends EventEmitter {
 
     // Get metrics for all queues
     const allMetrics = new Map<string, QueueMetrics>();
-    for (const [phase] of Array.from(this?.queues?.keys())) {
-      const metrics = await this.calculateQueueMetrics(phase);
-      allMetrics.set(phase, metrics);
+    for (const [phase] of Array.from(this?.queues?.keys() || [])) {
+      const metrics = await this.calculateQueueMetrics(phase!);
+      allMetrics.set(phase!, metrics);
     }
     return allMetrics;
   }

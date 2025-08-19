@@ -52,7 +52,7 @@ export class SectionErrorBoundary extends Component<
     this.previousResetKeys = props.resetKeys || [];
   }
 
-  static override getDerivedStateFromError(error: Error): Partial<SectionErrorBoundaryState> {
+  static getDerivedStateFromError(error: Error): Partial<SectionErrorBoundaryState> {
     return {
       hasError: true,
       error,
@@ -60,7 +60,7 @@ export class SectionErrorBoundary extends Component<
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { sectionName, onError, isolate } = this.props;
     const { errorCount } = this.state;
 
@@ -214,11 +214,15 @@ export function withSectionErrorBoundary<P extends object>(
   sectionName: string,
   options?: Omit<SectionErrorBoundaryProps, "children" | "sectionName">
 ) {
-  return React.forwardRef<any, P>((props, ref) => (
+  const WrappedComponent = React.forwardRef<any, P>((props, ref) => (
     <SectionErrorBoundary sectionName={sectionName} {...options}>
-      <Component {...props} ref={ref} />
+      <Component {...(props as P)} ref={ref} />
     </SectionErrorBoundary>
   ));
+  
+  WrappedComponent.displayName = `withSectionErrorBoundary(${Component.displayName || Component.name})`;
+  
+  return WrappedComponent;
 }
 
 // Specific error boundaries for different sections

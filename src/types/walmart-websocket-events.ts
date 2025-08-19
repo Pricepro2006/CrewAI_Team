@@ -5,7 +5,8 @@
  * Integration Coordinator: Event-driven architecture for real-time updates
  */
 
-import type { WebSocketMessage, Timestamp } from "../shared/types/websocket.js";
+import type { WebSocketMessage } from "../shared/types/websocket.js";
+import type { Timestamp } from "../shared/types/core.js";
 
 import type {
   WalmartProduct,
@@ -409,7 +410,7 @@ export interface WalmartSyncEvent {
 // Event Message Types
 // =====================================================
 
-export type WalmartWebSocketMessage<T = unknown> = WebSocketMessage<T> & {
+export type WalmartWebSocketMessage<T = unknown> = Omit<WebSocketMessage<T>, 'type'> & {
   type: WalmartWebSocketEventType;
   storeId?: string;
   region?: string;

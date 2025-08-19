@@ -3,7 +3,7 @@
  * Provides advanced semantic ranking beyond keyword matching
  */
 
-import type { ScoredDocument } from "./types.js";
+import type { ScoredDocument } from "./types";
 
 export interface RankingConfig {
   maxDocuments?: number;
@@ -267,8 +267,9 @@ export class BERTRanker {
   private async computeEmbedding(text: string): Promise<Float32Array> {
     // Check cache
     const cacheKey = this.hashText(text);
-    if (this.embeddingCache.has(cacheKey)) {
-      return this.embeddingCache.get(cacheKey)!;
+    const cached = this.embeddingCache.get(cacheKey);
+    if (cached) {
+      return cached;
     }
 
     // Simulate embedding computation
@@ -289,11 +290,16 @@ export class BERTRanker {
     // Normalize
     const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
     for (let i = 0; i < embedding.length; i++) {
-      embedding[i] /= norm || 1;
+      const currentValue = embedding[i];
+      if (currentValue !== undefined) {
+        embedding[i] = currentValue / (norm || 1);
+      }
     }
 
     // Cache the result
-    this.embeddingCache.set(cacheKey, embedding);
+    if (this.embeddingCache) {
+      this.embeddingCache.set(cacheKey, embedding);
+    }
     
     return embedding;
   }
@@ -311,9 +317,14 @@ export class BERTRanker {
     let normB = 0;
 
     for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
+      const aVal = a[i];
+      const bVal = b[i];
+      
+      if (aVal !== undefined && bVal !== undefined) {
+        dotProduct += aVal * bVal;
+        normA += aVal * aVal;
+        normB += bVal * bVal;
+      }
     }
 
     const denominator = Math.sqrt(normA) * Math.sqrt(normB);
@@ -332,10 +343,17 @@ export class BERTRanker {
     
     // Boost for recency
     if (document.metadata?.timestamp) {
-      const age = Date.now() - new Date(document.metadata.timestamp as string).getTime();
-      const daysSinceUpdate = age / (1000 * 60 * 60 * 24);
-      if (daysSinceUpdate < 7) boost += 0.1;
-      else if (daysSinceUpdate < 30) boost += 0.05;
+      const timestampValue = document.metadata.timestamp;
+      if (timestampValue) {
+        try {
+          const age = Date.now() - new Date(timestampValue as string).getTime();
+          const daysSinceUpdate = age / (1000 * 60 * 60 * 24);
+          if (daysSinceUpdate < 7) boost += 0.1;
+          else if (daysSinceUpdate < 30) boost += 0.05;
+        } catch {
+          // Invalid timestamp, skip boost
+        }
+      }
     }
 
     // Boost for verified sources
@@ -377,7 +395,7 @@ export class BERTRanker {
     let count = 0;
 
     for (const doc of reranked) {
-      const originalScore = originalMap.get(doc.id) || 0;
+      const originalScore = originalMap.get(doc.id) ?? 0;
       const improvement = doc.score - originalScore;
       totalImprovement += improvement;
       count++;
@@ -456,7 +474,9 @@ export class BERTRanker {
    * Clear embedding cache
    */
   clearCache(): void {
-    this.embeddingCache.clear();
+    if (this.embeddingCache) {
+      this.embeddingCache.clear();
+    }
   }
 
   /**

@@ -402,13 +402,17 @@ export class HealthChecker extends EventEmitter {
     this.emit('health:success', result);
 
     // Record metrics
-    metrics.increment('health_checker.success', {
-      service_id: serviceId,
-      service_name: result.serviceName,
-    });
-    metrics.histogram('health_checker.response_time', result.responseTime, {
-      service_id: serviceId,
-    });
+    if (metrics && typeof metrics.increment === 'function') {
+      metrics.increment('health_checker.success', 1, {
+        service_id: serviceId,
+        service_name: result.serviceName,
+      });
+    }
+    if (metrics && typeof metrics.histogram === 'function') {
+      metrics.histogram('health_checker.response_time', result.responseTime, {
+        service_id: serviceId,
+      });
+    }
   }
 
   /**
@@ -433,13 +437,17 @@ export class HealthChecker extends EventEmitter {
     this.emit('health:failure', result);
 
     // Record metrics
-    metrics.increment('health_checker.failure', {
-      service_id: serviceId,
-      service_name: result.serviceName,
-    });
-    metrics.histogram('health_checker.response_time', result.responseTime, {
-      service_id: serviceId,
-    });
+    if (metrics && typeof metrics.increment === 'function') {
+      metrics.increment('health_checker.failure', 1, {
+        service_id: serviceId,
+        service_name: result.serviceName,
+      });
+    }
+    if (metrics && typeof metrics.histogram === 'function') {
+      metrics.histogram('health_checker.response_time', result.responseTime, {
+        service_id: serviceId,
+      });
+    }
 
     logger.warn('Service health check failed', 'HEALTH_CHECKER', {
       serviceId,
@@ -517,7 +525,7 @@ export class HealthChecker extends EventEmitter {
     const history = this?.healthHistory?.get(serviceId) || [];
     history.push(result);
 
-    if (history?.length || 0 > this.MAX_HISTORY_LENGTH) {
+    if ((history?.length || 0) > this.MAX_HISTORY_LENGTH) {
       history.shift();
     }
 
@@ -538,9 +546,11 @@ export class HealthChecker extends EventEmitter {
 
     let current: 'healthy' | 'unhealthy' | 'unknown' = 'unknown';
     
-    if (recentResults?.length || 0 > 0) {
-      const latestResult = recentResults[recentResults?.length || 0 - 1];
-      current = latestResult.healthy ? 'healthy' : 'unhealthy';
+    if ((recentResults?.length || 0) > 0) {
+      const latestResult = recentResults[(recentResults?.length || 0) - 1];
+      if (latestResult) {
+        current = latestResult.healthy ? 'healthy' : 'unhealthy';
+      }
     }
 
     return {
@@ -563,7 +573,7 @@ export class HealthChecker extends EventEmitter {
   } {
     const allMetrics = Array.from(this?.healthMetrics?.values());
     
-    if (allMetrics?.length || 0 === 0) {
+    if ((allMetrics?.length || 0) === 0) {
       return {
         total_services: 0,
         healthy_services: 0,
@@ -576,12 +586,12 @@ export class HealthChecker extends EventEmitter {
 
     const healthy = allMetrics?.filter(m => {
       const recentResults = this?.healthHistory?.get(m.serviceId)?.slice(-3) || [];
-      return recentResults?.length || 0 > 0 && recentResults[recentResults?.length || 0 - 1].healthy;
+      return (recentResults?.length || 0) > 0 && recentResults[(recentResults?.length || 0) - 1]?.healthy;
     });
 
     const unhealthy = allMetrics?.filter(m => {
       const recentResults = this?.healthHistory?.get(m.serviceId)?.slice(-3) || [];
-      return recentResults?.length || 0 > 0 && !recentResults[recentResults?.length || 0 - 1].healthy;
+      return (recentResults?.length || 0) > 0 && !recentResults[(recentResults?.length || 0) - 1]?.healthy;
     });
 
     const avgResponseTime = allMetrics.reduce((sum: any, m: any) => sum + m.avg_response_time, 0) / allMetrics?.length || 0;
@@ -591,7 +601,7 @@ export class HealthChecker extends EventEmitter {
       total_services: allMetrics?.length || 0,
       healthy_services: healthy?.length || 0,
       unhealthy_services: unhealthy?.length || 0,
-      unknown_services: allMetrics?.length || 0 - healthy?.length || 0 - unhealthy?.length || 0,
+      unknown_services: (allMetrics?.length || 0) - (healthy?.length || 0) - (unhealthy?.length || 0),
       avg_response_time: avgResponseTime,
       overall_uptime: overallUptime,
     };

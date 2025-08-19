@@ -60,15 +60,15 @@ class Circuit {
     fn: () => Promise<T>,
     fallback?: () => T | Promise<T>
   ): Promise<T> {
-    if (this.stats.requests) { this.stats.requests++ };
+    this.stats.requests++;
     
     // Check if circuit is open
     if (this.state === CircuitState.OPEN) {
       if (Date.now() < this.nextAttempt!) {
-        if (this.stats.rejections) { this.stats.rejections++ };
+        this.stats.rejections++;
         
         if (fallback) {
-          if (this.stats.fallbacks) { this.stats.fallbacks++ };
+          this.stats.fallbacks++;
           try {
             return await fallback();
           } catch (fallbackError) {
@@ -81,7 +81,7 @@ class Circuit {
       
       // Try half-open
       this.state = CircuitState.HALF_OPEN;
-      this?.emitter?.emit('state-change', { name: this.name, from: CircuitState.OPEN, to: CircuitState.HALF_OPEN });
+      this.emitter.emit('state-change', { name: this.name, from: CircuitState.OPEN, to: CircuitState.HALF_OPEN });
       console.log(`🔄 Circuit ${this.name} entering HALF_OPEN state`);
     }
 
@@ -92,7 +92,7 @@ class Circuit {
       const result = await Promise.race([
         fn(),
         new Promise<T>((_, reject) => 
-          setTimeout(() => reject(new Error('Circuit breaker timeout')), this?.options?.timeout)
+          setTimeout(() => reject(new Error('Circuit breaker timeout')), this.options.timeout)
         )
       ]);
       
@@ -104,9 +104,9 @@ class Circuit {
       const latency = Date.now() - startTime;
       this.onFailure(latency);
       
-      // Try fallback if circuit is now open
-      if (fallback && this.state === CircuitState.OPEN) {
-        if (this.stats.fallbacks) { this.stats.fallbacks++ };
+      // Try fallback if available (regardless of circuit state at this point)
+      if (fallback) {
+        this.stats.fallbacks++;
         try {
           return await fallback();
         } catch (fallbackError) {
@@ -123,17 +123,17 @@ class Circuit {
    */
   private onSuccess(latency: number): void {
     this.failures = 0;
-    if (this.stats.successes) { this.stats.successes++ };
+    this.stats.successes++;
     this.updateLatency(latency);
     
     if (this.state === CircuitState.HALF_OPEN) {
       this.successes++;
       
-      if (this.successes >= this?.options?.successThreshold) {
-        const previousState = this?.state;
+      if (this.successes >= this.options.successThreshold) {
+        const previousState = this.state;
         this.state = CircuitState.CLOSED;
         this.successes = 0;
-        this?.emitter?.emit('state-change', { name: this.name, from: previousState, to: CircuitState.CLOSED });
+        this.emitter.emit('state-change', { name: this.name, from: previousState, to: CircuitState.CLOSED });
         console.log(`✅ Circuit ${this.name} is now CLOSED (recovered)`);
       }
     }
@@ -144,16 +144,16 @@ class Circuit {
    */
   private onFailure(latency: number): void {
     this.failures++;
-    if (this.stats.failures) { this.stats.failures++ };
+    this.stats.failures++;
     this.successes = 0;
     this.updateLatency(latency);
     
     // Check if we should open the circuit
-    if (this.state !== CircuitState.OPEN && this.failures >= this?.options?.failureThreshold) {
-      const previousState = this?.state;
+    if (this.state !== CircuitState.OPEN && this.failures >= this.options.failureThreshold) {
+      const previousState = this.state;
       this.state = CircuitState.OPEN;
-      this.nextAttempt = Date.now() + this?.options?.resetTimeout;
-      this?.emitter?.emit('state-change', { name: this.name, from: previousState, to: CircuitState.OPEN });
+      this.nextAttempt = Date.now() + this.options.resetTimeout;
+      this.emitter.emit('state-change', { name: this.name, from: previousState, to: CircuitState.OPEN });
       console.warn(`⚠️ Circuit breaker opened for ${this.name} (${this.failures} failures)`);
     }
   }
@@ -162,39 +162,25 @@ class Circuit {
    * Update latency statistics
    */
   private updateLatency(latency: number): void {
-    this?.stats?.latency.push(latency);
+    this.stats.latency.push(latency);
     
     // Keep only last 100 measurements
-    if (this?.stats?.latency?.length || 0 > 100) {
-      this?.stats?.latency.shift();
+    if (this.stats.latency.length > 100) {
+      this.stats.latency.shift();
     }
     
     // Update average
-    if (this?.stats?.latency?.length || 0 > 0) {
-      const sum = this?.stats?.latency.reduce((a: any, b: any) => a + b, 0);
-      if (this.stats) {
-
-        this.stats.averageLatency = sum / this?.stats?.latency?.length || 0;
-
-      }
+    if (this.stats.latency.length > 0) {
+      const sum = this.stats.latency.reduce((a: number, b: number) => a + b, 0);
+      this.stats.averageLatency = sum / this.stats.latency.length;
     }
     
     // Update error rate
-    if (this.stats) {
-
-      this.stats.errorRate = this?.stats?.requests > 0 
-      ? (this?.stats?.failures / this?.stats?.requests) * 100 
+    this.stats.errorRate = this.stats.requests > 0 
+      ? (this.stats.failures / this.stats.requests) * 100 
       : 0;
-
-    }
     
-    if (this.stats) {
-
-    
-      this.stats.state = this.state;
-
-    
-    }
+    this.stats.state = this.state;
   }
 
   /**
@@ -219,7 +205,7 @@ class Circuit {
     this.failures = 0;
     this.successes = 0;
     this.nextAttempt = undefined;
-    this?.emitter?.emit('reset', { name: this.name });
+    this.emitter.emit('reset', { name: this.name });
     console.log(`🔄 Circuit ${this.name} has been reset`);
   }
 }
@@ -298,7 +284,7 @@ export class CircuitBreakerService extends EventEmitter {
    * Register a new circuit
    */
   register(name: string, options: CircuitOptions = {}): void {
-    if (this?.circuits?.has(name)) {
+    if (this.circuits.has(name)) {
       console.warn(`Circuit ${name} already registered, updating options`);
     }
 
@@ -308,7 +294,7 @@ export class CircuitBreakerService extends EventEmitter {
       this
     );
     
-    this?.circuits?.set(name, circuit);
+    this.circuits.set(name, circuit);
     this.emit('circuit-registered', { name, options });
   }
 
@@ -320,12 +306,12 @@ export class CircuitBreakerService extends EventEmitter {
     fn: () => Promise<T>,
     fallback?: () => T | Promise<T>
   ): Promise<T> {
-    let circuit = this?.circuits?.get(name);
+    let circuit = this.circuits.get(name);
     
     if (!circuit) {
       // Auto-register circuit with default options
       this.register(name);
-      circuit = this?.circuits?.get(name)!;
+      circuit = this.circuits.get(name)!;
     }
     
     return circuit.execute(fn, fallback);
@@ -366,14 +352,14 @@ export class CircuitBreakerService extends EventEmitter {
    * Get circuit state
    */
   getCircuitState(name: string): CircuitState | undefined {
-    return this?.circuits?.get(name)?.getState();
+    return this.circuits.get(name)?.getState();
   }
 
   /**
    * Get circuit statistics
    */
   getCircuitStats(name: string): CircuitStats | undefined {
-    return this?.circuits?.get(name)?.getStats();
+    return this.circuits.get(name)?.getStats();
   }
 
   /**
@@ -382,9 +368,9 @@ export class CircuitBreakerService extends EventEmitter {
   getAllStats(): Record<string, CircuitStats> {
     const stats: Record<string, CircuitStats> = {};
     
-    for (const [name, circuit] of this.circuits) {
+    this.circuits.forEach((circuit, name) => {
       stats[name] = circuit.getStats();
-    }
+    });
     
     return stats;
   }
@@ -410,7 +396,7 @@ export class CircuitBreakerService extends EventEmitter {
     const degraded: string[] = [];
     const unhealthy: string[] = [];
     
-    for (const [name, circuit] of this.circuits) {
+    this.circuits.forEach((circuit, name) => {
       const state = circuit.getState();
       
       switch (state) {
@@ -424,12 +410,12 @@ export class CircuitBreakerService extends EventEmitter {
           unhealthy.push(name);
           break;
       }
-    }
+    });
     
     let overall: 'healthy' | 'degraded' | 'unhealthy';
-    if (unhealthy?.length || 0 > 0) {
+    if (unhealthy.length > 0) {
       overall = 'unhealthy';
-    } else if (degraded?.length || 0 > 0) {
+    } else if (degraded.length > 0) {
       overall = 'degraded';
     } else {
       overall = 'healthy';
@@ -442,7 +428,7 @@ export class CircuitBreakerService extends EventEmitter {
    * Reset specific circuit
    */
   reset(name: string): void {
-    const circuit = this?.circuits?.get(name);
+    const circuit = this.circuits.get(name);
     if (circuit) {
       circuit.reset();
       this.emit('circuit-reset', { name });
@@ -453,9 +439,9 @@ export class CircuitBreakerService extends EventEmitter {
    * Reset all circuits
    */
   resetAll(): void {
-    for (const circuit of this?.circuits?.values()) {
+    this.circuits.forEach((circuit) => {
       circuit.reset();
-    }
+    });
     this.emit('all-circuits-reset');
     console.log('🔄 All circuits have been reset');
   }
@@ -464,7 +450,7 @@ export class CircuitBreakerService extends EventEmitter {
    * Remove a circuit
    */
   remove(name: string): void {
-    if (this?.circuits?.delete(name)) {
+    if (this.circuits.delete(name)) {
       this.emit('circuit-removed', { name });
     }
   }
@@ -474,7 +460,7 @@ export class CircuitBreakerService extends EventEmitter {
    */
   shutdown(): void {
     this.resetAll();
-    this?.circuits?.clear();
+    this.circuits.clear();
     this.removeAllListeners();
     console.log('Circuit breaker service shut down');
   }

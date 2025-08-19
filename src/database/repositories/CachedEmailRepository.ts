@@ -14,7 +14,7 @@ import type { EmailRepositoryConfig, CreateEmailParams, UpdateEmailParams, Email
 import { cacheManager } from '../../core/cache/RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 export class CachedEmailRepository extends EmailRepository {
   private cacheNamespace = 'email';
@@ -469,13 +469,13 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Bulk get emails by IDs with caching
    */
-  override async getEmailsByIds(emailIds: string[]): Promise<Map<string, any>> {
+  async getEmailsByIds(emailIds: string[]): Promise<Map<string, any>> {
     const startTime = Date.now();
     const results = new Map<string, any>();
 
     try {
       // Generate cache keys
-      const cacheKeys = emailIds?.map(id => this.generateEmailCacheKey(id));
+      const cacheKeys = emailIds?.map(id => this.generateEmailCacheKey(id)) || [];
       
       // Try to get from cache
       const cachedResults = await cacheManager.mget<any>(cacheKeys, this.cacheNamespace);
@@ -484,23 +484,26 @@ export class CachedEmailRepository extends EmailRepository {
       const missedKeys: string[] = [];
 
       // Separate hits and misses
-      for (let i = 0; i < emailIds?.length || 0; i++) {
-        const emailId = emailIds[i];
-        const cacheKey = cacheKeys[i];
+      for (let i = 0; i < (emailIds?.length || 0); i++) {
+        const emailId = emailIds?.[i];
+        const cacheKey = cacheKeys?.[i];
         
-        if (cachedResults.has(cacheKey)) {
-          results.set(emailId, cachedResults.get(cacheKey));
-          metrics.increment('cached_email_repository.bulk_get_cache_hit');
-        } else {
-          missedIds.push(emailId);
-          missedKeys.push(cacheKey);
-          metrics.increment('cached_email_repository.bulk_get_cache_miss');
+        // Ensure emailId and cacheKey are defined before using
+        if (emailId && cacheKey) {
+          if (cachedResults.has(cacheKey)) {
+            results.set(emailId, cachedResults.get(cacheKey));
+            metrics.increment('cached_email_repository.bulk_get_cache_hit');
+          } else {
+            missedIds.push(emailId);
+            missedKeys.push(cacheKey);
+            metrics.increment('cached_email_repository.bulk_get_cache_miss');
+          }
         }
       }
 
       // Fetch missed emails from database
-      if (missedIds?.length || 0 > 0) {
-        const dbPromises = missedIds?.map(async (emailId, index) => {
+      if ((missedIds?.length || 0) > 0) {
+        const dbPromises = missedIds?.map(async (emailId) => {
           try {
             const email = await super.getEmailById(emailId);
             if (email) {
@@ -532,7 +535,7 @@ export class CachedEmailRepository extends EmailRepository {
       
       logger.debug('Bulk email fetch completed', 'CACHED_EMAIL_REPO', {
         totalRequested: emailIds?.length || 0,
-        cacheHits: emailIds?.length || 0 - missedIds?.length || 0,
+        cacheHits: (emailIds?.length || 0) - (missedIds?.length || 0),
         cacheMisses: missedIds?.length || 0,
         resultCount: results.size,
       });

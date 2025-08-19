@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { UnifiedCacheManager } from '../UnifiedCacheManager.js';
+import { UnifiedCacheManager } from '../UnifiedCacheManager';
 
 // Mock the dependencies
-vi.mock('../CentralizedCacheService.js', () => ({
+vi.mock('../CentralizedCacheService', () => ({
   CentralizedCacheService: vi.fn().mockImplementation(() => ({
     set: vi.fn().mockResolvedValue(undefined),
     get: vi.fn().mockResolvedValue({ found: false, value: null, tier: null, latency: 10 }),
@@ -40,7 +40,7 @@ vi.mock('../CentralizedCacheService.js', () => ({
   }
 }));
 
-vi.mock('../CacheIntegrationService.js', () => ({
+vi.mock('../CacheIntegrationService', () => ({
   CacheIntegrationService: vi.fn().mockImplementation(() => ({
     registerPricingService: vi.fn(),
     registerListService: vi.fn(),
@@ -168,13 +168,13 @@ describe('UnifiedCacheManager', () => {
         cacheManager.invalidateCache({
           pricing: { productId: 'PROD1' }
         })
-      ).resolves?.not?.toThrow();
+      ).resolves.not.toThrow();
     });
 
     it('should invalidate all caches', async () => {
       await expect(
         cacheManager.invalidateCache({ all: true })
-      ).resolves?.not?.toThrow();
+      ).resolves.not.toThrow();
     });
   });
 

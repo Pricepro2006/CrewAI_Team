@@ -159,11 +159,12 @@ export class PromptOptimizer {
           email_id: email.id,
           analysis_version: "1.0.0",
           final_summary: {
-            priority: "medium",
-            workflow_state: "pending",
-            suggested_response: "Mock response",
-            key_insights: [],
-            next_steps: [],
+            email_id: email.id,
+            overall_priority: "MEDIUM",
+            recommended_actions: ["Mock action"],
+            key_insights: ["Mock insight"],
+            workflow_recommendations: ["Mock recommendation"],
+            confidence_score: 0.8,
           },
           confidence_score: 0.8,
           workflow_type: "standard",
@@ -179,9 +180,10 @@ export class PromptOptimizer {
     }
 
     // Score against baseline
-    const scores = results?.map((result, index) =>
-      scoreAnalysis(result, this.baselineResults[index]),
-    );
+    const scores = results?.map((result, index) => {
+      const baseline = this.baselineResults[index];
+      return baseline ? scoreAnalysis(result, baseline) : 0;
+    });
 
     return scores.reduce((sum: any, score: any) => sum + score, 0) / scores?.length || 0;
   }

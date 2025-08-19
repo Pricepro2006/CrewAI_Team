@@ -3,7 +3,8 @@
  * Implements advanced connection pooling with performance monitoring
  */
 
-import Database from 'better-sqlite3';
+const Database = require('better-sqlite3');
+type DatabaseInstance = any;
 import { EventEmitter } from 'events';
 
 interface ConnectionPoolConfig {
@@ -33,7 +34,7 @@ interface PoolMetrics {
 }
 
 interface ConnectionWrapper {
-  db: Database.Database;
+  db: DatabaseInstance;
   id: string;
   createdAt: Date;
   lastUsed: Date;
@@ -154,7 +155,7 @@ export class OptimizedConnectionPool extends EventEmitter {
   /**
    * Apply optimized PRAGMA settings to a connection
    */
-  private applyPragmaSettings(db: Database.Database): void {
+  private applyPragmaSettings(db: DatabaseInstance): void {
     try {
       // Enable foreign keys if configured
       if (this.config.enableForeignKeys) {
@@ -299,7 +300,7 @@ export class OptimizedConnectionPool extends EventEmitter {
    * Execute a transaction with automatic rollback on error
    */
   public async executeTransaction<T>(
-    callback: (db: Database.Database) => T
+    callback: (db: DatabaseInstance) => T
   ): Promise<T> {
     const connection = await this.getConnection();
 
@@ -380,7 +381,7 @@ export class OptimizedConnectionPool extends EventEmitter {
     }
 
     // Close all connections
-    for (const connection of this.connections.values()) {
+    for (const connection of Array.from(this.connections.values())) {
       try {
         connection.db.close();
         this.metrics.connectionDestructions++;
@@ -443,7 +444,7 @@ export class OptimizedConnectionPool extends EventEmitter {
     const now = new Date();
     const connectionsToClose: string[] = [];
 
-    for (const [id, connection] of this.connections.entries()) {
+    for (const [id, connection] of Array.from(this.connections.entries())) {
       if (!connection.isActive && 
           (now.getTime() - connection.lastUsed.getTime()) > this.config.idleTimeout &&
           this.connections.size > this.config.minConnections) {

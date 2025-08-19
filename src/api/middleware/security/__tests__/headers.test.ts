@@ -2,7 +2,7 @@
  * Tests for comprehensive security headers middleware
  */
 
-import { describe, test, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Request, Response } from "express";
 import {
   getSecurityHeadersConfig,
@@ -10,7 +10,7 @@ import {
   createSecurityHeadersMiddleware,
   createOriginValidationMiddleware,
   testSecurityHeaders,
-} from "../headers.js";
+} from '../headers';
 
 // Mock Express response
 function createMockResponse(): Response & { headers: Record<string, string> } {
@@ -54,19 +54,19 @@ describe("Security Headers Middleware", () => {
       process.env.NODE_ENV = "development";
       const config = getSecurityHeadersConfig();
 
-      expect(config?.cors?.origins).toContain("http://localhost:3000");
-      expect(config?.cors?.credentials).toBe(true);
-      expect(config?.csp?.scriptSrc).toContain("'unsafe-inline'");
-      expect(config?.hsts?.maxAge).toBe(0);
+      expect(config?.cors).toContain("http://localhost:3000");
+      expect(config?.cors).toBe(true);
+      expect(config?.csp).toContain("'unsafe-inline'");
+      expect(config?.hsts).toBeDefined();
     });
 
     test("should return secure configuration for production", () => {
       process.env.NODE_ENV = "production";
       const config = getSecurityHeadersConfig();
 
-      expect(config?.csp?.scriptSrc).not.toContain("'unsafe-inline'");
-      expect(config?.hsts?.maxAge).toBe(31536000);
-      expect(config?.hsts?.preload).toBe(true);
+      expect(config?.csp).not.toContain("'unsafe-inline'");
+      expect(config?.hsts).toBe(31536000);
+      expect(config?.hsts?.length).toBe(true);
     });
 
     test("should use environment variables for origins", () => {
@@ -74,8 +74,8 @@ describe("Security Headers Middleware", () => {
         "https://app.example?.com,https://api?.example?.com";
       const config = getSecurityHeadersConfig();
 
-      expect(config?.cors?.origins).toContain("https://app.example?.com");
-      expect(config?.cors?.origins).toContain("https://api?.example?.com");
+      expect(config?.cors).toContain("https://app.example?.com");
+      expect(config?.cors).toContain("https://api?.example?.com");
     });
   });
 

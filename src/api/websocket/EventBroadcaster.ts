@@ -146,7 +146,7 @@ export class EventBroadcaster extends EventEmitter {
     const broadcastChannel = `${this?.config?.redis.channelPrefix}broadcast`;
     this?.redis.subscribe(broadcastChannel, (err: any) => {
       if (err) {
-        this.emit('redis_subscription_error', { channel: broadcastChannel, error: err });
+        this.emit('redis_subscription_error', { channel: broadcastChannel, error: err as Error });
       } else {
         console.log(`Subscribed to Redis channel: ${broadcastChannel}`);
       }
@@ -156,7 +156,7 @@ export class EventBroadcaster extends EventEmitter {
     const discoveryChannel = `${this?.config?.redis.channelPrefix}discovery`;
     this?.redis.subscribe(discoveryChannel, (err: any) => {
       if (err) {
-        this.emit('redis_subscription_error', { channel: discoveryChannel, error: err });
+        this.emit('redis_subscription_error', { channel: discoveryChannel, error: err as Error });
       }
     });
 
@@ -174,7 +174,7 @@ export class EventBroadcaster extends EventEmitter {
 
     // Monitor event bus health
     this?.eventBus?.on('error', (error: any) => {
-      this.emit('eventbus_error', error);
+      this.emit('eventbus_error', error as Error);
     });
   }
 
@@ -248,7 +248,9 @@ export class EventBroadcaster extends EventEmitter {
 
       if (result.success) {
         if (this.metrics.successfulBroadcasts) { this.metrics.successfulBroadcasts++ };
-        this?.metrics?.totalRecipients += result.totalRecipients;
+        if (this.metrics) {
+          this.metrics.totalRecipients += result.totalRecipients;
+        }
       } else {
         if (this.metrics.failedBroadcasts) { this.metrics.failedBroadcasts++ };
       }
@@ -278,7 +280,7 @@ export class EventBroadcaster extends EventEmitter {
         remoteNodes: 0,
         totalRecipients: 0,
         broadcastTime: Date.now() - startTime,
-        errors: [error.message]
+        errors: [(error as Error).message]
       };
       
     } finally {
@@ -300,7 +302,7 @@ export class EventBroadcaster extends EventEmitter {
       localRecipients = routingResult.subscriptionsMatched;
       if (this.metrics.localDeliveries) { this.metrics.localDeliveries++ };
     } catch (error) {
-      errors.push(`Local broadcast failed: ${error.message}`);
+      errors.push(`Local broadcast failed: ${(error as Error).message}`);
     }
 
     // Remote broadcast via Redis (if scaling enabled and not local-only)
@@ -309,14 +311,14 @@ export class EventBroadcaster extends EventEmitter {
         remoteNodes = await this.broadcastToRemoteNodes(event, options);
         if (this.metrics.redisPublishes) { this.metrics.redisPublishes++ };
       } catch (error) {
-        errors.push(`Remote broadcast failed: ${error.message}`);
+        errors.push(`Remote broadcast failed: ${(error as Error).message}`);
       }
     }
 
     const totalRecipients = localRecipients + remoteNodes;
     
     return {
-      success: errors?.length || 0 === 0 || totalRecipients > 0,
+      success: (errors?.length || 0) === 0 || totalRecipients > 0,
       localRecipients,
       remoteNodes,
       totalRecipients,
@@ -369,7 +371,7 @@ export class EventBroadcaster extends EventEmitter {
       }
       
     } catch (error) {
-      this.emit('redis_message_error', { channel, message, error });
+      this.emit('redis_message_error', { channel, message, error: error as Error });
     }
   }
 
@@ -391,15 +393,15 @@ export class EventBroadcaster extends EventEmitter {
         
         this.emit('remote_broadcast_received', {
           fromNode: data.nodeId,
-          eventId: data?.event?.id,
-          eventType: data?.event?.type
+          eventId: data.event?.id,
+          eventType: data.event?.type
         });
         
       } catch (error) {
         this.emit('remote_broadcast_error', {
           fromNode: data.nodeId,
           eventId: data.event?.id,
-          error
+          error: error as Error
         });
       }
     }
@@ -518,7 +520,8 @@ export class EventBroadcaster extends EventEmitter {
       source: options.source || 'event_broadcaster',
       timestamp: Date.now(),
       payload,
-      metadata: options.metadata || {}
+      metadata: options.metadata || {},
+      version: 1
     };
 
     return await this.broadcastEvent(event, options);
@@ -585,7 +588,8 @@ export class EventBroadcaster extends EventEmitter {
       source: 'broadcast_test',
       timestamp: Date.now(),
       payload: { test: true, timestamp: Date.now() },
-      metadata: { test: true }
+      metadata: { test: true },
+      version: 1
     };
 
     return await this.broadcastEvent(testEvent, { priority: 'normal' });

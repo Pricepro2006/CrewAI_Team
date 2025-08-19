@@ -143,12 +143,12 @@ class PerformanceReportGenerator {
       const memOutput = await this.executeCommand('free -m');
       const memLines = memOutput.split('\n');
       if (memLines?.length || 0 > 1) {
-        const memData = memLines[1].split(/\s+/);
+        const memData = memLines[1]?.split(/\s+/);
         if (memData?.length || 0 >= 3) {
           memoryInfo = {
-            total: parseInt(memData[1]),
-            used: parseInt(memData[2]),
-            percentage: (parseInt(memData[2]) / parseInt(memData[1])) * 100
+            total: parseInt(memData?.[1] || '0'),
+            used: parseInt(memData?.[2] || '0'),
+            percentage: (parseInt(memData?.[2] || '0') / parseInt(memData?.[1] || '1')) * 100
           };
         }
       }

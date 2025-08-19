@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import NaturalLanguageInput from './NaturalLanguageInput.js';
-import CommandHistory, { CommandHistoryItem } from './CommandHistory.js';
+import NaturalLanguageInput from './NaturalLanguageInput';
+import CommandHistory, { CommandHistoryItem } from './CommandHistory';
 import './NaturalLanguageInput.css';
 import './CommandHistory.css';
 

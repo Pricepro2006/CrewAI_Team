@@ -9,8 +9,20 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
-import type { DashboardMetrics } from "../../../types/unified-email?.types.js";
 import "./EmailDashboardView.css";
+
+// Define DashboardMetrics interface locally to avoid import issues
+interface DashboardMetrics {
+  totalEmails: number;
+  todaysEmails: number;
+  workflowCompletion: number;
+  avgResponseTime: number;
+  urgentCount: number;
+  pendingAssignment: number;
+  agentUtilization: number;
+  criticalAlerts: any[];
+  processedToday?: number;
+}
 
 interface EmailDashboardViewProps {
   metrics?: DashboardMetrics;

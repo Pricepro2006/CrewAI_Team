@@ -19,6 +19,7 @@
  * and prevents regression of the critical issues discovered in production.
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   describe,
   it,
@@ -30,16 +31,16 @@ import {
   afterEach,
 } from "vitest";
 import axios from "axios";
-import { EmailThreePhaseAnalysisService } from "../core/services/EmailThreePhaseAnalysisService.js";
-import { EmailChainAnalyzer } from "../core/services/EmailChainAnalyzer.js";
-import { RedisService } from "../core/cache/RedisService.js";
+import { EmailThreePhaseAnalysisService } from '../core/services/EmailThreePhaseAnalysisService';
+import { EmailChainAnalyzer } from '../core/services/EmailChainAnalyzer';
+import { RedisService } from '../core/cache/RedisService';
 
 // Mock dependencies
 vi.mock("axios");
-vi.mock("../core/cache/RedisService.js");
+vi.mock('../core/cache/RedisService');
 
 // Mock database connection with inline factory function
-vi.mock("../database/ConnectionPool.js", () => ({
+vi.mock('../database/ConnectionPool', () => ({
   getDatabaseConnection: vi.fn(() => ({
     prepare: vi.fn().mockReturnValue({
       run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
@@ -465,8 +466,8 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
         // CRITICAL: Single emails must NEVER be 100%
         expect(score).toBeLessThan(100);
         expect(score).toBeLessThanOrEqual(30); // Should be low
-        expect(analysis.chain_analysis?.chain_length).toBe(1);
-        expect(analysis.chain_analysis?.is_complete_chain).toBe(false);
+        expect(analysis.chain_analysis?).toHaveLength(1);
+        expect(analysis.chain_analysis?.length).toBe(false);
 
         globalMetrics.totalScenarios++;
         globalMetrics.jsonParsingSuccesses++;
@@ -528,7 +529,7 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
 
         expect(score).toBeGreaterThanOrEqual(test.expectedRange[0]);
         expect(score).toBeLessThanOrEqual(test.expectedRange[1]);
-        expect(analysis.chain_analysis?.chain_length).toBe(test?.length || 0);
+        expect(analysis.chain_analysis?.length).toBe(test?.length || 0);
 
         globalMetrics.totalScenarios++;
         globalMetrics.jsonParsingSuccesses++;

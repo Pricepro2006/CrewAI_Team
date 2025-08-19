@@ -5,12 +5,12 @@
  * Sets up and initializes the complete deal detection pipeline
  */
 
-import { logger } from "../../utils/logger.js";
-import { getDealPipelineConfig, validateDealPipelineConfig } from "../config/deal-pipeline?.config.js";
-import { getDatabaseManager } from "../database/DatabaseManager.js";
-import { DealPipelineIntegration } from "../api/services/DealPipelineIntegration.js";
-import { DealPipelineMonitor } from "../api/services/DealPipelineMonitor.js";
-import { DealReportingService } from "../api/services/DealReportingService.js";
+import { logger } from "../utils/logger";
+import { getDealPipelineConfig, validateDealPipelineConfig } from "../config/deal-pipeline.config";
+import { getDatabaseManager } from "../database/DatabaseManager";
+import { DealPipelineIntegration } from "../api/services/DealPipelineIntegration";
+import { DealPipelineMonitor } from "../api/services/DealPipelineMonitor";
+import { DealReportingService } from "../api/services/DealReportingService";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -25,9 +25,9 @@ interface InitializationOptions {
 
 class DealPipelineInitializer {
   private config: any;
-  private integration: DealPipelineIntegration;
-  private monitor: DealPipelineMonitor;
-  private reporting: DealReportingService;
+  private integration!: DealPipelineIntegration;
+  private monitor!: DealPipelineMonitor;
+  private reporting!: DealReportingService;
 
   constructor(private options: InitializationOptions) {
     this.loadConfiguration();
@@ -196,8 +196,8 @@ class DealPipelineInitializer {
             db.exec(statement);
           } catch (error) {
             // Ignore errors for CREATE IF NOT EXISTS, INSERT OR IGNORE, etc.
-            if (!error?.message?.includes('already exists') && 
-                !error?.message?.includes('UNIQUE constraint failed')) {
+            if (!(error as any)?.message?.includes('already exists') && 
+                !(error as any)?.message?.includes('UNIQUE constraint failed')) {
               throw error;
             }
           }
@@ -425,7 +425,6 @@ async function main() {
       case '--help':
         printHelp();
         process.exit(0);
-        break;
     }
   }
 

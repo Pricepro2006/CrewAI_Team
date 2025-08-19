@@ -3,12 +3,12 @@
  * Integrates with vector stores and applies confidence-based filtering
  */
 
-import type { VectorStore } from "../VectorStore.js";
+import type { VectorStore } from "../VectorStore";
 import type {
   RetrievalResult,
   RetrievalOptions,
   ScoredDocument,
-} from "./types.js";
+} from "./types";
 
 export class ConfidenceRAGRetriever {
   private vectorStore: VectorStore;
@@ -115,15 +115,15 @@ export class ConfidenceRAGRetriever {
 
       return {
         id: doc.id || `doc-${index}`,
-        content: doc.content,
+        content: doc.content || '',
         metadata: doc.metadata || {},
-        source: doc.metadata?.sourceId || doc.metadata?.source,
+        source: String(doc.metadata?.sourceId || doc.metadata?.source || ''),
         timestamp: doc.metadata?.createdAt || doc.metadata?.timestamp,
         score: baseScore,
         confidence,
         relevanceScore: contextRelevance,
         chunkIndex: index,
-      };
+      } as ScoredDocument;
     });
   }
 
@@ -387,15 +387,15 @@ export class ConfidenceRAGRetriever {
 
         return {
           id: doc.id || `doc-${index}`,
-          content: doc.content,
+          content: doc.content || '',
           metadata: doc.metadata || {},
-          source: doc.metadata?.sourceId || doc.metadata?.source,
+          source: String(doc.metadata?.sourceId || doc.metadata?.source || ''),
           timestamp: doc.metadata?.createdAt || doc.metadata?.timestamp,
           score: baseScore,
           confidence: combinedScore,
           relevanceScore: customScore,
           chunkIndex: index,
-        };
+        } as ScoredDocument;
       });
 
       // Filter and sort

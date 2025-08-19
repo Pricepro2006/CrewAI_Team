@@ -44,12 +44,7 @@ export class WorkerLoader {
   ): Worker {
     const resolvedPath = this.resolveWorkerPath(scriptPath);
 
-    logger.info("Creating worker", {
-      scriptPath,
-      resolvedPath,
-      nodeEnv: process.env.NODE_ENV,
-      isTypeScript: scriptPath.endsWith(".ts"),
-    });
+    logger.info(`Creating worker: scriptPath=${scriptPath}, resolvedPath=${resolvedPath}, nodeEnv=${process.env.NODE_ENV}, isTypeScript=${scriptPath.endsWith(".ts")}`);
 
     // Check if we need TypeScript support
     const isTypeScript = scriptPath.endsWith(".ts");
@@ -64,7 +59,7 @@ export class WorkerLoader {
         return this.createJavaScriptWorker(resolvedPath, options);
       }
     } catch (error) {
-      logger.error("Failed to create worker", {
+      logger.error("Failed to create worker", "WorkerLoader", {
         error: error instanceof Error ? error.message : String(error),
         scriptPath: resolvedPath,
         isTypeScript,
@@ -73,7 +68,7 @@ export class WorkerLoader {
 
       // Fallback: Try JavaScript version if TypeScript fails
       if (isTypeScript && isDevelopment) {
-        logger.warn("TypeScript worker failed, trying JavaScript fallback");
+        logger.warn("TypeScript worker failed, trying JavaScript fallback", "WorkerLoader");
         const jsPath = this.getJavaScriptPath(scriptPath);
         if (existsSync(jsPath)) {
           return this.createJavaScriptWorker(jsPath, options);
@@ -104,7 +99,7 @@ export class WorkerLoader {
       ...options.workerData,
     };
 
-    logger.debug("Creating TypeScript worker with loader", {
+    logger.debug("Creating TypeScript worker with loader", "WorkerLoader", {
       loader: this.TYPESCRIPT_LOADER_PATH,
       actualWorker: scriptPath,
     });
@@ -185,7 +180,7 @@ export class WorkerLoader {
       const jsPath = scriptPath.replace(/\.ts$/, ".js");
       const compiledPath = resolve(jsPath);
       if (existsSync(compiledPath)) {
-        logger.info("Using compiled JavaScript version", {
+        logger.info("Using compiled JavaScript version", "WorkerLoader", {
           original: scriptPath,
           compiled: compiledPath,
         });
@@ -198,7 +193,7 @@ export class WorkerLoader {
         .replace(/\.ts$/, ".js");
       const resolvedDistPath = resolve(distPath);
       if (existsSync(resolvedDistPath)) {
-        logger.info("Using dist compiled version", {
+        logger.info("Using dist compiled version", "WorkerLoader", {
           original: scriptPath,
           dist: resolvedDistPath,
         });
@@ -207,7 +202,7 @@ export class WorkerLoader {
     }
 
     // If nothing else works, return the original path and let Worker handle it
-    logger.warn("Could not resolve worker path, using original", {
+    logger.warn("Could not resolve worker path, using original", "WorkerLoader", {
       scriptPath,
     });
     return resolve(scriptPath);
@@ -221,7 +216,7 @@ export class WorkerLoader {
     const exists = existsSync(resolvedPath);
 
     if (!exists) {
-      logger.error("Worker script not found", {
+      logger.error("Worker script not found", "WorkerLoader", {
         originalPath: scriptPath,
         resolvedPath,
       });

@@ -156,7 +156,7 @@ export function sanitizeJSONOutput(content: string): {
  */
 export function sanitizeForContext(
   content: string,
-  context: "email" | "web" | "api" | "general",
+  context: "email" | "web" | "api" | "general" | "html" | "markdown",
 ): SanitizedOutput {
   const result = sanitizeLLMOutput(content);
 
@@ -185,6 +185,34 @@ export function sanitizeForContext(
         /\b[A-Za-z0-9_-]{20,}\b/g,
         "[TOKEN_REDACTED]",
       );
+      // Remove all HTML tags for API context
+      result.content = result?.content?.replace(/<[^>]*>/g, "");
+      break;
+    case "html":
+      // Allow some HTML but remove dangerous tags
+      result.content = result?.content?.replace(
+        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+        "",
+      );
+      result.content = result?.content?.replace(
+        /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
+        "",
+      );
+      result.content = result?.content?.replace(
+        /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi,
+        "",
+      );
+      result.content = result?.content?.replace(
+        /<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi,
+        "",
+      );
+      break;
+    case "markdown":
+      // Escape HTML but preserve markdown
+      result.content = result?.content?.replace(
+        /<(?!\/?(?:em|strong|code|pre|blockquote|ul|ol|li|h[1-6]|p|br)\b)[^>]*>/gi,
+        (match) => match.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      );
       break;
     case "general":
     default:
@@ -193,4 +221,34 @@ export function sanitizeForContext(
   }
 
   return result;
+}
+
+/**
+ * Auto-detect content type and sanitize appropriately
+ */
+export function autoSanitize(content: string): SanitizedOutput {
+  if (!content || typeof content !== "string") {
+    return {
+      content: "",
+      metadata: {
+        sanitized: false,
+        warnings: ["Empty or invalid input"],
+      },
+    };
+  }
+
+  // Detect content type based on patterns
+  if (content.includes('<') && content.includes('>')) {
+    return sanitizeForContext(content, "web");
+  }
+  
+  if (content.includes('#') || content.includes('**') || content.includes('*')) {
+    return sanitizeForContext(content, "general");
+  }
+  
+  if (content.includes('@') && /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(content)) {
+    return sanitizeForContext(content, "email");
+  }
+  
+  return sanitizeForContext(content, "general");
 }

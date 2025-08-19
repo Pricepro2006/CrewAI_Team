@@ -14,9 +14,10 @@ import {
   ScaleIcon
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
-import { api } from "../../../lib/trpc.js";
+import { trpc } from "../../../utils/trpc";
 import { WalmartProductCardEnhanced } from "./WalmartProductCardEnhanced.js";
 import type { WalmartProduct } from "../../../types/walmart-grocery.js";
+import type { EnhancedSearchQuery } from "./types/WalmartTypes.js";
 
 interface FilterState {
   category: string;
@@ -28,17 +29,16 @@ interface FilterState {
 }
 
 interface SortOption {
-  value: "relevance" | "price_low" | "price_high" | "rating" | "popular";
+  value: "name" | "price" | "relevance" | "savings";
   label: string;
   icon?: React.ReactNode;
 }
 
 const sortOptions: SortOption[] = [
   { value: "relevance", label: "Most Relevant" },
-  { value: "price_low", label: "Price: Low to High" },
-  { value: "price_high", label: "Price: High to Low" },
-  { value: "rating", label: "Highest Rated" },
-  { value: "popular", label: "Most Popular" },
+  { value: "price", label: "Price: Low to High" },
+  { value: "name", label: "Alphabetical" },
+  { value: "savings", label: "Highest Savings" },
 ];
 
 export const WalmartAdvancedSearch: React.FC = () => {
@@ -81,28 +81,34 @@ export const WalmartAdvancedSearch: React.FC = () => {
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
   // API calls
-  const searchProducts = api?.walmartGrocery?.searchProducts.useMutation({
+  const searchProducts = trpc?.walmartGrocery?.searchProducts?.useMutation({
     onSuccess: (data: any) => {
       setSearchResults(data.products || []);
       setTotalResults(data.metadata?.totalResults || 0);
     },
   });
 
-  const { data: categoriesData } = api?.walmartGrocery?.getCategories.useQuery();
-  const { data: brandsData } = api?.walmartGrocery?.getBrands.useQuery({
-    category: filters.category || undefined,
-  });
-  const { data: priceRangeData } = api?.walmartGrocery?.getPriceRange.useQuery({
-    category: filters.category || undefined,
-  });
+  // Mock data for components that don't have endpoints yet
+  const categoriesData = { categories: [
+    "Fresh Produce", "Dairy & Eggs", "Meat & Seafood", "Bakery & Bread", 
+    "Frozen Foods", "Pantry", "Snacks & Candy", "Beverages", "Health & Beauty"
+  ]};
   
-  const getSuggestions = api?.walmartGrocery?.getSuggestions.useQuery(
-    { query: searchQuery, limit: 5 },
-    { 
-      enabled: searchQuery?.length || 0 > 2,
-      debounce: 300,
-    }
-  );
+  const brandsData = { brands: [
+    "Great Value", "Marketside", "Equate", "Ozark Trail", "Mainstays", 
+    "Member's Mark", "Sam's Choice", "Generic"
+  ]};
+  
+  const priceRangeData = { priceRange: { min: 0, max: 200 }};
+  
+  const getSuggestions = {
+    data: { suggestions: searchQuery?.length > 2 ? [
+      `${searchQuery} organic`,
+      `${searchQuery} bulk`,
+      `${searchQuery} on sale`,
+      `${searchQuery} family size`
+    ] : [] }
+  };
 
   // Load initial data
   useEffect(() => {
@@ -143,8 +149,10 @@ export const WalmartAdvancedSearch: React.FC = () => {
 
   // Search handler
   const handleSearch = useCallback((page: number = 1) => {
-    searchProducts.mutate({
+    const searchParams: EnhancedSearchQuery = {
       query: searchQuery,
+      limit: resultsPerPage,
+      offset: (page - 1) * resultsPerPage,
       category: filters.category || undefined,
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice,
@@ -152,9 +160,9 @@ export const WalmartAdvancedSearch: React.FC = () => {
       brand: filters.brand || undefined,
       minRating: filters.minRating,
       sortBy,
-      limit: resultsPerPage,
-      offset: (page - 1) * resultsPerPage,
-    });
+    };
+    
+    searchProducts.mutate(searchParams);
     setCurrentPage(page);
     setShowSuggestions(false);
   }, [searchQuery, filters, sortBy, resultsPerPage, searchProducts]);
@@ -175,7 +183,8 @@ export const WalmartAdvancedSearch: React.FC = () => {
   const removeFilter = (filterKey: keyof FilterState) => {
     setFilters(prev => ({
       ...prev,
-      [filterKey]: filterKey === "inStock" ? false : filterKey.includes("Price") || filterKey === "minRating" ? undefined : "",
+      [filterKey]: filterKey === "inStock" ? false : 
+                  (filterKey.includes("Price") || filterKey === "minRating") ? undefined : "",
     }));
   };
   
@@ -210,16 +219,16 @@ export const WalmartAdvancedSearch: React.FC = () => {
               value={searchQuery}
               onChange={(e: any) => {
                 setSearchQuery(e?.target?.value);
-                setShowSuggestions(e?.target?.value?.length || 0 > 2);
+                setShowSuggestions((e?.target?.value?.length || 0) > 2);
               }}
               onKeyPress={(e: any) => e.key === "Enter" && handleSearch()}
-              onFocus={() => setShowSuggestions(searchQuery?.length || 0 > 2)}
+              onFocus={() => setShowSuggestions((searchQuery?.length || 0) > 2)}
               placeholder="Search for products..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             
             {/* Suggestions Dropdown */}
-            {showSuggestions && suggestions?.length || 0 > 0 && (
+            {showSuggestions && (suggestions?.length || 0) > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
                 {suggestions?.map((suggestion, index) => (
                   <button
@@ -394,7 +403,7 @@ export const WalmartAdvancedSearch: React.FC = () => {
                 value={filters.brand}
                 onChange={(e: any) => setFilters(prev => ({ ...prev, brand: e?.target?.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                disabled={brands?.length || 0 === 0}
+                disabled={(brands?.length || 0) === 0}
               >
                 <option value="">All Brands</option>
                 {brands?.map((brand: any) => (

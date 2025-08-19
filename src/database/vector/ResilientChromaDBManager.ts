@@ -49,7 +49,7 @@ export class ResilientChromaDBManager {
   private collections: Map<string, Collection> = new Map();
   private mode: StorageMode = StorageMode.CHROMADB;
   private config: Required<ResilientConfig["fallback"]>;
-  private syncTimer?: NodeJS.Timer;
+  private syncTimer?: NodeJS.Timeout;
   private pendingOperations: Map<string, ProcessedDocument[]> = new Map();
   private isInitialized: boolean = false;
 
@@ -62,6 +62,7 @@ export class ResilientChromaDBManager {
 
     // Initialize in-memory fallback
     this.inMemoryStore = new InMemoryVectorStore({
+      type: "resilient",
       collectionName: "fallback",
       path: "",
       baseUrl: "",
@@ -167,7 +168,7 @@ export class ResilientChromaDBManager {
 
     this.syncTimer = setInterval(async () => {
       await this.attemptSync();
-    }, this?.config?.syncInterval);
+    }, this?.config?.syncInterval) as NodeJS.Timeout;
   }
 
   /**
@@ -215,7 +216,7 @@ export class ResilientChromaDBManager {
       const documentsByCollection = new Map<string, ProcessedDocument[]>();
 
       for (const doc of documents) {
-        const collectionName = doc?.metadata?.collection || "default";
+        const collectionName = (doc?.metadata as any)?.collection || "default";
         if (!documentsByCollection.has(collectionName)) {
           documentsByCollection.set(collectionName, []);
         }
@@ -227,7 +228,7 @@ export class ResilientChromaDBManager {
       }
 
       // Sync each collection
-      for (const [collectionName, docs] of documentsByCollection) {
+      for (const [collectionName, docs] of Array.from(documentsByCollection.entries())) {
         try {
           await this.addDocumentsToChromaDB(collectionName, docs);
           logger.info(
@@ -305,6 +306,7 @@ export class ResilientChromaDBManager {
       id: doc.id,
       content: doc.content,
       metadata: {
+        sourceId: doc.id,
         ...doc.metadata,
         collection: collectionName,
       },
@@ -476,7 +478,7 @@ export class ResilientChromaDBManager {
     const inMemoryCount = await this?.inMemoryStore?.getDocumentCount();
     
     let pendingCount = 0;
-    for (const docs of this?.pendingOperations?.values()) {
+    for (const docs of Array.from(this?.pendingOperations?.values() || [])) {
       pendingCount += docs?.length || 0;
     }
 

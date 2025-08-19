@@ -188,10 +188,10 @@ export function getConfidenceConfigFromEnv(): Partial<ConfidenceConfig> {
   if (process.env.CONFIDENCE_RETRIEVAL_MIN || process.env.CONFIDENCE_RETRIEVAL_PREFERRED) {
     config.retrieval = {};
     if (process.env.CONFIDENCE_RETRIEVAL_MIN) {
-      config?.retrieval?.minimum = parseFloat(process.env.CONFIDENCE_RETRIEVAL_MIN);
+      config.retrieval.minimum = parseFloat(process.env.CONFIDENCE_RETRIEVAL_MIN);
     }
     if (process.env.CONFIDENCE_RETRIEVAL_PREFERRED) {
-      config?.retrieval?.preferred = parseFloat(process.env.CONFIDENCE_RETRIEVAL_PREFERRED);
+      config.retrieval.preferred = parseFloat(process.env.CONFIDENCE_RETRIEVAL_PREFERRED);
     }
   }
 
@@ -199,10 +199,10 @@ export function getConfidenceConfigFromEnv(): Partial<ConfidenceConfig> {
   if (process.env.CONFIDENCE_GENERATION_ACCEPTABLE || process.env.CONFIDENCE_GENERATION_REVIEW) {
     config.generation = {};
     if (process.env.CONFIDENCE_GENERATION_ACCEPTABLE) {
-      config?.generation?.acceptable = parseFloat(process.env.CONFIDENCE_GENERATION_ACCEPTABLE);
+      config.generation.acceptable = parseFloat(process.env.CONFIDENCE_GENERATION_ACCEPTABLE);
     }
     if (process.env.CONFIDENCE_GENERATION_REVIEW) {
-      config?.generation?.review = parseFloat(process.env.CONFIDENCE_GENERATION_REVIEW);
+      config.generation.review = parseFloat(process.env.CONFIDENCE_GENERATION_REVIEW);
     }
   }
 
@@ -210,13 +210,13 @@ export function getConfidenceConfigFromEnv(): Partial<ConfidenceConfig> {
   if (process.env.CONFIDENCE_OVERALL_HIGH || process.env.CONFIDENCE_OVERALL_MEDIUM || process.env.CONFIDENCE_OVERALL_LOW) {
     config.overall = {};
     if (process.env.CONFIDENCE_OVERALL_HIGH) {
-      config?.overall?.high = parseFloat(process.env.CONFIDENCE_OVERALL_HIGH);
+      config.overall.high = parseFloat(process.env.CONFIDENCE_OVERALL_HIGH);
     }
     if (process.env.CONFIDENCE_OVERALL_MEDIUM) {
-      config?.overall?.medium = parseFloat(process.env.CONFIDENCE_OVERALL_MEDIUM);
+      config.overall.medium = parseFloat(process.env.CONFIDENCE_OVERALL_MEDIUM);
     }
     if (process.env.CONFIDENCE_OVERALL_LOW) {
-      config?.overall?.low = parseFloat(process.env.CONFIDENCE_OVERALL_LOW);
+      config.overall.low = parseFloat(process.env.CONFIDENCE_OVERALL_LOW);
     }
   }
 

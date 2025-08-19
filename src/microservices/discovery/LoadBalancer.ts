@@ -84,7 +84,7 @@ export class LoadBalancer extends EventEmitter {
         // Get available services
         const services = await this.getAvailableServices(serviceName);
         
-        if (services?.length || 0 === 0) {
+        if (!services || services.length === 0) {
           return {
             service: null,
             error: `No healthy services available for ${serviceName}`,
@@ -199,39 +199,45 @@ export class LoadBalancer extends EventEmitter {
   /**
    * Round robin selection
    */
-  private roundRobinSelection(services: ServiceInstance[], serviceName: string): ServiceInstance {
+  private roundRobinSelection(services: ServiceInstance[], serviceName: string): ServiceInstance | null {
+    if (!services || services.length === 0) return null;
+    
     const counter = this?.roundRobinCounters?.get(serviceName) || 0;
-    const selectedIndex = counter % services?.length || 0;
+    const selectedIndex = counter % services.length;
     
     this?.roundRobinCounters?.set(serviceName, counter + 1);
-    return services[selectedIndex];
+    return services[selectedIndex] || null;
   }
 
   /**
    * Weighted round robin selection
    */
-  private weightedRoundRobinSelection(services: ServiceInstance[], serviceName: string): ServiceInstance {
-    const totalWeight = services.reduce((sum: any, service: any) => sum + service.weight, 0);
+  private weightedRoundRobinSelection(services: ServiceInstance[], serviceName: string): ServiceInstance | null {
+    if (!services || services.length === 0) return null;
+    
+    const totalWeight = services.reduce((sum: any, service: any) => sum + (service.weight || 1), 0);
     const counter = this?.roundRobinCounters?.get(serviceName) || 0;
     
     let weightSum = 0;
     const normalizedPosition = counter % totalWeight;
     
     for (const service of services) {
-      weightSum += service.weight;
+      weightSum += (service.weight || 1);
       if (normalizedPosition < weightSum) {
         this?.roundRobinCounters?.set(serviceName, counter + 1);
         return service;
       }
     }
     
-    return services[0];
+    return services[0] || null;
   }
 
   /**
    * Least connections selection
    */
-  private leastConnectionsSelection(services: ServiceInstance[]): ServiceInstance {
+  private leastConnectionsSelection(services: ServiceInstance[]): ServiceInstance | null {
+    if (!services || services.length === 0) return null;
+    
     return services.reduce((min: any, service: any) => 
       service.current_connections < min.current_connections ? service : min
     );
@@ -240,34 +246,40 @@ export class LoadBalancer extends EventEmitter {
   /**
    * Random selection
    */
-  private randomSelection(services: ServiceInstance[]): ServiceInstance {
-    const randomIndex = Math.floor(Math.random() * services?.length || 0);
-    return services[randomIndex];
+  private randomSelection(services: ServiceInstance[]): ServiceInstance | null {
+    if (!services || services.length === 0) return null;
+    
+    const randomIndex = Math.floor(Math.random() * services.length);
+    return services[randomIndex] || null;
   }
 
   /**
    * IP hash selection (sticky by IP)
    */
-  private ipHashSelection(services: ServiceInstance[], clientIp: string): ServiceInstance {
+  private ipHashSelection(services: ServiceInstance[], clientIp: string): ServiceInstance | null {
+    if (!services || services.length === 0) return null;
+    
     if (!clientIp) {
       return this.randomSelection(services);
     }
     
     // Simple hash function
     let hash = 0;
-    for (let i = 0; i < clientIp?.length || 0; i++) {
+    for (let i = 0; i < clientIp.length; i++) {
       hash = ((hash << 5) - hash) + clientIp.charCodeAt(i);
       hash = hash & hash; // Convert to 32-bit integer
     }
     
-    const index = Math.abs(hash) % services?.length || 0;
-    return services[index];
+    const index = Math.abs(hash) % services.length;
+    return services[index] || null;
   }
 
   /**
    * Least response time selection
    */
-  private leastResponseTimeSelection(services: ServiceInstance[]): ServiceInstance {
+  private leastResponseTimeSelection(services: ServiceInstance[]): ServiceInstance | null {
+    if (!services || services.length === 0) return null;
+    
     return services.reduce((min: any, service: any) => 
       service.avg_response_time < min.avg_response_time ? service : min
     );
@@ -276,7 +288,9 @@ export class LoadBalancer extends EventEmitter {
   /**
    * Resource-based selection (considering CPU and memory)
    */
-  private resourceBasedSelection(services: ServiceInstance[]): ServiceInstance {
+  private resourceBasedSelection(services: ServiceInstance[]): ServiceInstance | null {
+    if (!services || services.length === 0) return null;
+    
     return services.reduce((best: any, service: any) => {
       const serviceScore = this.calculateResourceScore(service);
       const bestScore = this.calculateResourceScore(best);
@@ -306,8 +320,9 @@ export class LoadBalancer extends EventEmitter {
 
       for (const service of services) {
         // Check connection limits
+        const connectionCount = this?.connectionCounts?.get(service.id) || 0;
         if (this?.config?.maxConnections && 
-            this?.connectionCounts?.get(service.id)! >= this?.config?.maxConnections) {
+            connectionCount >= this.config.maxConnections) {
           continue;
         }
 
@@ -365,12 +380,18 @@ export class LoadBalancer extends EventEmitter {
     this?.connectionCounts?.set(service.id, currentConnections + 1);
     
     // Record metrics
-    metrics.increment('load_balancer?.selection?.success');
-    metrics.histogram('load_balancer.selection_time', selectionTime);
-    metrics.gauge('load_balancer.connections', currentConnections + 1, {
-      service_id: service.id,
-      service_name: service.name,
-    });
+    if (metrics && typeof metrics.increment === 'function') {
+      metrics.increment('load_balancer.selection.success', 1);
+    }
+    if (metrics && typeof metrics.histogram === 'function') {
+      metrics.histogram('load_balancer.selection_time', selectionTime);
+    }
+    if (metrics && typeof metrics.gauge === 'function') {
+      metrics.gauge('load_balancer.connections', currentConnections + 1, {
+        service_id: service.id,
+        service_name: service.name,
+      });
+    }
   }
 
   /**
@@ -389,30 +410,38 @@ export class LoadBalancer extends EventEmitter {
     const history = this?.responseTimesHistory?.get(serviceId) || [];
     history.push(responseTime);
     
-    if (history?.length || 0 > this.MAX_RESPONSE_TIME_HISTORY) {
+    if (history.length > this.MAX_RESPONSE_TIME_HISTORY) {
       history.shift();
     }
     
     this?.responseTimesHistory?.set(serviceId, history);
     
     // Record metrics
-    metrics.histogram('load_balancer.response_time', responseTime, {
-      service_id: serviceId,
-      success: success.toString(),
-    });
+    if (metrics && typeof metrics.histogram === 'function') {
+      metrics.histogram('load_balancer.response_time', responseTime, {
+        service_id: serviceId,
+        success: success.toString(),
+      });
+    }
     
-    metrics.gauge('load_balancer.connections', Math.max(0, currentConnections - 1), {
-      service_id: serviceId,
-    });
+    if (metrics && typeof metrics.gauge === 'function') {
+      metrics.gauge('load_balancer.connections', Math.max(0, currentConnections - 1), {
+        service_id: serviceId,
+      });
+    }
 
     if (!success) {
-      metrics.increment('load_balancer?.request?.failed', {
-        service_id: serviceId,
-      });
+      if (metrics && typeof metrics.increment === 'function') {
+        metrics.increment('load_balancer.request.failed', 1, {
+          service_id: serviceId,
+        });
+      }
     } else {
-      metrics.increment('load_balancer?.request?.success', {
-        service_id: serviceId,
-      });
+      if (metrics && typeof metrics.increment === 'function') {
+        metrics.increment('load_balancer.request.success', 1, {
+          service_id: serviceId,
+        });
+      }
     }
   }
 
@@ -421,10 +450,10 @@ export class LoadBalancer extends EventEmitter {
    */
   private getAverageResponseTime(serviceId: string): number {
     const history = this?.responseTimesHistory?.get(serviceId) || [];
-    if (history?.length || 0 === 0) return 0;
+    if (history.length === 0) return 0;
     
     const sum = history.reduce((acc: any, time: any) => acc + time, 0);
-    return sum / history?.length || 0;
+    return sum / history.length;
   }
 
   /**
@@ -449,9 +478,11 @@ export class LoadBalancer extends EventEmitter {
       avg_response_time: number;
     }>;
   } {
-    const totalConnections = Array.from(this?.connectionCounts?.values()).reduce((sum: any, count: any) => sum + count, 0);
+    const connectionValues = this.connectionCounts ? Array.from(this.connectionCounts.values()) : [];
+    const totalConnections = connectionValues.reduce((sum: any, count: any) => sum + count, 0);
     
-    const serviceStats = Array.from(this?.connectionCounts?.entries()).map(([serviceId, connections]) => ({
+    const connectionEntries = this.connectionCounts ? Array.from(this.connectionCounts.entries()) : [];
+    const serviceStats = connectionEntries.map(([serviceId, connections]) => ({
       service_id: serviceId,
       connections,
       avg_response_time: this.getAverageResponseTime(serviceId),
@@ -460,8 +491,8 @@ export class LoadBalancer extends EventEmitter {
     return {
       total_selections: 0, // This would be tracked separately
       active_connections: totalConnections,
-      sticky_sessions: this?.stickySessionMap?.size,
-      strategy: this?.config?.strategy,
+      sticky_sessions: this.stickySessionMap?.size || 0,
+      strategy: this.config?.strategy || 'round_robin',
       service_stats: serviceStats,
     };
   }
@@ -498,9 +529,12 @@ export class LoadBalancer extends EventEmitter {
       this?.responseTimesHistory?.delete(serviceId);
       
       // Remove sticky sessions pointing to this service
-      for (const [clientId, stickyServiceId] of this?.stickySessionMap?.entries()) {
-        if (stickyServiceId === serviceId) {
-          this?.stickySessionMap?.delete(clientId);
+      if (this.stickySessionMap) {
+        const entries = Array.from(this.stickySessionMap.entries());
+        for (const [clientId, stickyServiceId] of entries) {
+          if (stickyServiceId === serviceId) {
+            this.stickySessionMap.delete(clientId);
+          }
         }
       }
     });
@@ -513,18 +547,22 @@ export class LoadBalancer extends EventEmitter {
     setInterval(() => {
       const stats = this.getStats();
       
-      metrics.gauge('load_balancer.active_connections', stats.active_connections);
-      metrics.gauge('load_balancer.sticky_sessions', stats.sticky_sessions);
-      
-      // Report per-service metrics
-      stats?.service_stats?.forEach(stat => {
-        metrics.gauge('load_balancer?.service?.connections', stat.connections, {
-          service_id: stat.service_id,
-        });
-        metrics.gauge('load_balancer?.service?.avg_response_time', stat.avg_response_time, {
-          service_id: stat.service_id,
-        });
-      });
+      if (metrics && typeof metrics.gauge === 'function') {
+        metrics.gauge('load_balancer.active_connections', stats.active_connections);
+        metrics.gauge('load_balancer.sticky_sessions', stats.sticky_sessions);
+        
+        // Report per-service metrics
+        if (stats.service_stats) {
+          stats.service_stats.forEach(stat => {
+            metrics.gauge('load_balancer.service.connections', stat.connections, {
+              service_id: stat.service_id,
+            });
+            metrics.gauge('load_balancer.service.avg_response_time', stat.avg_response_time, {
+              service_id: stat.service_id,
+            });
+          });
+        }
+      }
     }, 30000); // Every 30 seconds
   }
 
@@ -549,10 +587,10 @@ export class LoadBalancerFactory {
   private static instances = new Map<string, LoadBalancer>();
 
   static getInstance(name: string, config: LoadBalancerConfig): LoadBalancer {
-    if (!this?.instances?.has(name)) {
-      this?.instances?.set(name, new LoadBalancer(config));
+    if (!this.instances.has(name)) {
+      this.instances.set(name, new LoadBalancer(config));
     }
-    return this?.instances?.get(name)!;
+    return this.instances.get(name)!;
   }
 
   static getDefaultInstance(): LoadBalancer {
@@ -571,7 +609,7 @@ export class LoadBalancerFactory {
   }
 
   static shutdown(): void {
-    this?.instances?.forEach(lb => lb.shutdown());
-    this?.instances?.clear();
+    this.instances.forEach(lb => lb.shutdown());
+    this.instances.clear();
   }
 }

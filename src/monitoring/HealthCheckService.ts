@@ -13,13 +13,13 @@
 import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
 import { promisify } from 'node:util';
-import os from 'node:os';
-import process from 'node:process';
+import * as os from 'node:os';
+import * as process from 'node:process';
 import { logger } from '../utils/logger.js';
 import { metricsCollector } from './MetricsCollector.js';
 import Database from 'better-sqlite3';
 import Redis from 'ioredis';
-import WebSocket from 'ws';
+import * as WebSocket from 'ws';
 
 // Types and Interfaces
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
@@ -280,7 +280,7 @@ export class HealthCheckService extends EventEmitter {
     try {
       // SQLite Database
       const dbPath = process.env.DATABASE_PATH || './data/grocery.db';
-      this.database = new Database(dbPath, { readonly: true });
+      this.database = Database(dbPath, { readonly: true });
       
       // Redis
       if (process.env.REDIS_HOST) {
@@ -289,7 +289,6 @@ export class HealthCheckService extends EventEmitter {
           port: parseInt(process.env.REDIS_PORT || '6379'),
           password: process.env.REDIS_PASSWORD,
           lazyConnect: true,
-          retryDelayOnFailover: 100,
           maxRetriesPerRequest: 3
         });
       }
@@ -724,7 +723,7 @@ export class HealthCheckService extends EventEmitter {
     try {
       if (!this.database) {
         const dbPath = process.env.DATABASE_PATH || './data/grocery.db';
-        this.database = new Database(dbPath, { readonly: true });
+        this.database = Database(dbPath, { readonly: true });
       }
       
       // Simple query to test connectivity
@@ -852,7 +851,7 @@ export class HealthCheckService extends EventEmitter {
   private async checkResources(config: ServiceConfig): Promise<ResourceCheck> {
     try {
       // CPU Usage
-      const cpuUsage = os.loadavg()[0] / os.cpus().length * 100;
+      const cpuUsage = (os.loadavg()[0] || 0) / os.cpus().length * 100;
       const cpuStatus: HealthStatus = 
         cpuUsage > this.CPU_THRESHOLD_CRITICAL ? 'unhealthy' :
         cpuUsage > this.CPU_THRESHOLD_WARNING ? 'degraded' : 'healthy';
@@ -1053,7 +1052,7 @@ export class HealthCheckService extends EventEmitter {
         type: this?.services?.get(serviceId)?.type || 'unknown' 
       };
       
-      metrics[`health_status`] = {
+      metrics[`health_status_${serviceId}`] = {
         value: result.status === 'healthy' ? 1 : result.status === 'degraded' ? 0.5 : 0,
         labels,
         help: 'Service health status (1=healthy, 0.5=degraded, 0=unhealthy)',
@@ -1122,7 +1121,7 @@ export class HealthCheckService extends EventEmitter {
 
       metricsCollector.histogram('health_check_duration_ms', result.responseTime, labels);
       metricsCollector.gauge(`health_check_status`, result.status === 'healthy' ? 1 : 0, labels);
-      metricsCollector.increment('health_check_total', labels);
+      metricsCollector.increment('health_check_total', 1, labels);
       
       // Resource metrics
       if (result?.checks?.resources.cpu) {

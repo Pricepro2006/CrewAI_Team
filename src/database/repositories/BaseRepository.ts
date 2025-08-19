@@ -4,7 +4,8 @@
  * Enhanced with comprehensive SQL injection protection
  */
 
-import Database from "better-sqlite3";
+const Database = require("better-sqlite3");
+type DatabaseInstance = any;
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger.js";
 import {
@@ -41,12 +42,12 @@ export interface PaginatedResult<T> {
 }
 
 export abstract class BaseRepository<T extends BaseEntity> {
-  protected db: Database.Database;
+  protected db: DatabaseInstance;
   protected tableName: string;
   protected primaryKey: string = "id";
   protected sqlSecurity: SqlInjectionProtection;
 
-  constructor(db: Database.Database, tableName: string) {
+  constructor(db: DatabaseInstance, tableName: string) {
     this.db = db;
     this.sqlSecurity = new SqlInjectionProtection({
       enableStrictValidation: true,
@@ -529,7 +530,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     const query = `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`;
 
     try {
-      const result = this.executeQuery<Database.RunResult>(query, [id], "run");
+      const result = this.executeQuery<any>(query, [id], "run");
       const deleted = result.changes > 0;
 
       if (deleted) {
@@ -562,7 +563,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     const query = `DELETE FROM ${this.tableName} ${whereClause}`;
 
     try {
-      const result = this.executeQuery<Database.RunResult>(
+      const result = this.executeQuery<any>(
         query,
         params,
         "run",

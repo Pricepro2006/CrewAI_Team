@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { api } from "../../../lib/trpc.js";
+import { api } from "../../../client/lib/api";
 import {
   ChartBarIcon,
   CurrencyDollarIcon,
@@ -38,7 +38,27 @@ ChartJS.register(
   Legend
 );
 
-const StatusDistributionChart = ({ data, totalEmails, title, showPercentages, chartType, onClick, refreshKey, className }: any) => {
+interface StatusDistributionChartProps {
+  data: { red: number; yellow: number; green: number };
+  totalEmails: number;
+  title: string;
+  showPercentages?: boolean;
+  chartType?: 'doughnut' | 'pie' | 'bar';
+  onClick?: (status?: any, count?: any) => void;
+  refreshKey?: number;
+  className?: string;
+}
+
+const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ 
+  data, 
+  totalEmails, 
+  title, 
+  showPercentages, 
+  chartType, 
+  onClick, 
+  refreshKey, 
+  className 
+}) => {
   const chartData = {
     labels: ['Critical/High Priority', 'Medium Priority', 'Low/Normal Priority'],
     datasets: [
@@ -90,10 +110,10 @@ const StatusDistributionChart = ({ data, totalEmails, title, showPercentages, ch
       },
     },
     onClick: (event: any, elements: any) => {
-      if (elements?.length || 0 > 0 && onClick) {
+      if ((elements?.length || 0) > 0 && onClick) {
         const index = elements[0].index;
-        const label = chartData.labels[index];
-        const value = chartData.datasets[0].data[index];
+        const label = chartData?.labels?.[index];
+        const value = chartData?.datasets?.[0]?.data?.[index];
         onClick(label, value);
       }
     },
@@ -111,7 +131,23 @@ const StatusDistributionChart = ({ data, totalEmails, title, showPercentages, ch
   );
 };
 
-const WorkflowTimelineChart = ({ data, timeRange, title, showProcessingTime, chartType, onClick, refreshKey, className }: any) => {
+interface WorkflowTimelineChartProps {
+  data: Array<{
+    timestamp: string;
+    totalEmails: number;
+    completedEmails: number;
+    criticalEmails: number;
+  }>;
+  timeRange: string;
+  title: string;
+  showProcessingTime?: boolean;
+  chartType?: "line" | "bar";
+  onClick?: (dataPoint?: any) => void;
+  refreshKey?: number;
+  className?: string;
+}
+
+const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({ data, timeRange, title, showProcessingTime, chartType, onClick, refreshKey, className }) => {
   const chartData = {
     labels: data?.map((d: any) => new Date(d.timestamp).toLocaleDateString('en-US', { weekday: 'short' })),
     datasets: [
@@ -182,7 +218,7 @@ const WorkflowTimelineChart = ({ data, timeRange, title, showProcessingTime, cha
       },
     },
     onClick: (event: any, elements: any) => {
-      if (elements?.length || 0 > 0 && onClick) {
+      if ((elements?.length || 0) > 0 && onClick) {
         const index = elements[0].index;
         onClick(data[index]);
       }

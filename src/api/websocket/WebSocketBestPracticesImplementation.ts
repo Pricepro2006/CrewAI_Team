@@ -252,7 +252,9 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       existingClient.isAlive = true;
       existingClient.lastActivity = new Date();
       existingClient.reconnectCount++;
-      existingClient?.metrics?.reconnections++;
+      if (existingClient?.metrics?.reconnections !== undefined) {
+        existingClient.metrics.reconnections++;
+      }
       
       // Send queued messages
       this.flushMessageQueue(existingClient);
@@ -326,8 +328,12 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       try {
         const data = this.parseMessage(message);
         client.lastActivity = new Date();
-        client?.metrics?.messagesReceived++;
-        client?.metrics?.bytesReceived += message?.length || 0;
+        if (client?.metrics?.messagesReceived !== undefined) {
+          client.metrics.messagesReceived++;
+        }
+        if (client?.metrics?.bytesReceived !== undefined) {
+          client.metrics.bytesReceived += message?.length || 0;
+        }
         
         // Validate message
         if (!this.validateMessage(data)) {
@@ -341,15 +347,21 @@ export class BestPracticeWebSocketServer extends EventEmitter {
         
         // Calculate latency
         const latency = Date.now() - startTime;
-        client?.metrics?.lastLatency = latency;
-        client?.metrics?.avgLatency = 
-          (client?.metrics?.avgLatency * (client?.metrics?.messagesReceived - 1) + latency) / 
-          client?.metrics?.messagesReceived;
+        if (client?.metrics) {
+          client.metrics.lastLatency = latency;
+        }
+        if (client?.metrics?.avgLatency !== undefined && client?.metrics?.messagesReceived !== undefined) {
+          client.metrics.avgLatency = 
+            (client.metrics.avgLatency * (client.metrics.messagesReceived - 1) + latency) / 
+            client.metrics.messagesReceived;
+        }
         
         this.handleClientMessage(client, data);
         
       } catch (error) {
-        client?.metrics?.errorsCount++;
+        if (client?.metrics?.errorsCount !== undefined) {
+          client.metrics.errorsCount++;
+        }
         logger.error(`Message error from client ${client.id}: ${error}`, "WS_SERVER");
         this.sendError(client, "Invalid message", true);
       }
@@ -361,10 +373,12 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       client.lastActivity = new Date();
       
       // Calculate round-trip time if ping included timestamp
-      if (data?.length || 0 === 8) {
+      if (data && data.length === 8) {
         const pingTime = data.readBigInt64BE();
         const rtt = Date.now() - Number(pingTime);
-        client?.metrics?.lastLatency = rtt;
+        if (client?.metrics) {
+          client.metrics.lastLatency = rtt;
+        }
       }
     });
 
@@ -385,7 +399,9 @@ export class BestPracticeWebSocketServer extends EventEmitter {
 
     // Error handler
     ws.on("error", (error: Error) => {
-      client?.metrics?.errorsCount++;
+      if (client?.metrics?.errorsCount !== undefined) {
+        client.metrics.errorsCount++;
+      }
       logger.error(`WebSocket error for client ${client.id}: ${error.message}`, "WS_SERVER");
       this.handleClientError(client, error);
     });
@@ -540,8 +556,12 @@ export class BestPracticeWebSocketServer extends EventEmitter {
         const data = JSON.stringify(message);
         client?.ws?.send(data);
         
-        client?.metrics?.messagesSent++;
-        client?.metrics?.bytesSent += data?.length || 0;
+        if (client?.metrics?.messagesSent !== undefined) {
+          client.metrics.messagesSent++;
+        }
+        if (client?.metrics?.bytesSent !== undefined) {
+          client.metrics.bytesSent += data?.length || 0;
+        }
         
         // Set up acknowledgment timeout if required
         if (message.requiresAck) {
@@ -600,7 +620,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
     if (client?.messageQueue?.length >= this?.config?.messageQueueSize) {
       // Remove lowest priority message
       const lowestPriorityIndex = client?.messageQueue?.reduce((minIdx, msg, idx, arr) => 
-        (msg.priority || 0) < (arr[minIdx].priority || 0) ? idx : minIdx, 0);
+        (msg.priority || 0) < (arr[minIdx]?.priority || 0) ? idx : minIdx, 0);
       
       client?.messageQueue?.splice(lowestPriorityIndex, 1);
     }

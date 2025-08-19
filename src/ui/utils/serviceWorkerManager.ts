@@ -3,6 +3,8 @@
 
 import { useState } from 'react';
 
+// Add type declarations for Service Worker environment
+
 // Global gtag type definition
 declare global {
   interface Window {
@@ -43,9 +45,11 @@ class ServiceWorkerManager {
   }
 
   private isSupported(): boolean {
-    return 'serviceWorker' in navigator && 
+    return typeof navigator !== 'undefined' &&
+           'serviceWorker' in navigator && 
+           typeof window !== 'undefined' &&
            'caches' in window && 
-           process.env.NODE_ENV === 'production';
+           (typeof globalThis !== 'undefined' && globalThis.process?.env?.NODE_ENV === 'production');
   }
 
   private async register() {
@@ -133,7 +137,7 @@ class ServiceWorkerManager {
   }
 
   private async getMetrics(): Promise<ServiceWorkerMetrics | null> {
-    return new Promise((resolve: any) => {
+    return new Promise<ServiceWorkerMetrics | null>((resolve) => {
       if (!navigator?.serviceWorker?.controller) {
         resolve(null);
         return;
@@ -141,11 +145,14 @@ class ServiceWorkerManager {
 
       const messageChannel = new MessageChannel();
       
-      messageChannel?.port1?.onmessage = (event: any) => {
-        resolve(event.data);
-      };
+      // Fix: Cannot assign to optional property - use proper null check
+      if (messageChannel.port1) {
+        messageChannel.port1.onmessage = (event: MessageEvent) => {
+          resolve(event.data);
+        };
+      }
 
-      navigator?.serviceWorker?.controller.postMessage(
+      navigator.serviceWorker.controller.postMessage(
         { type: 'GET_METRICS' },
         [messageChannel.port2]
       );
@@ -226,17 +233,19 @@ class ServiceWorkerManager {
       ${options.type === 'error' ? 'bg-red-500 text-white' : ''}
     `;
 
-    notification.innerHTML = `
-      <div class="flex items-center justify-between">
-        <span class="mr-3">${message}</span>
-        ${options.action ? `
-          <button class="px-3 py-1 bg-white/20 rounded text-sm hover:bg-white/30 transition-colors">
-            ${options.action}
-          </button>
-        ` : ''}
-        <button class="ml-2 text-lg font-bold hover:opacity-70 transition-opacity">&times;</button>
-      </div>
-    `;
+    if (typeof document !== 'undefined') {
+      notification.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="mr-3">${message}</span>
+          ${options.action ? `
+            <button class="px-3 py-1 bg-white/20 rounded text-sm hover:bg-white/30 transition-colors">
+              ${options.action}
+            </button>
+          ` : ''}
+          <button class="ml-2 text-lg font-bold hover:opacity-70 transition-opacity">&times;</button>
+        </div>
+      `;
+    }
 
     document?.body?.appendChild(notification);
 
@@ -308,7 +317,7 @@ class ServiceWorkerManager {
 
   // Preload critical routes
   async preloadRoute(path: string) {
-    if (!navigator?.serviceWorker?.controller) return;
+    if (typeof navigator === 'undefined' || !navigator?.serviceWorker?.controller) return;
 
     try {
       await fetch(path, { 
@@ -323,6 +332,8 @@ class ServiceWorkerManager {
 
   // Preload critical assets
   async preloadAssets(urls: string[]) {
+    if (typeof fetch === 'undefined') return;
+    
     const promises = urls?.map(url => 
       fetch(url, { cache: 'force-cache' }).catch(err => 
         console.warn(`[SW Manager] Failed to preload asset: ${url}`, err)
@@ -358,9 +369,11 @@ export const preloadCriticalAssets = async () => {
 
 // React hook for service worker state
 export const useServiceWorker = () => {
-  const [isSupported] = useState(serviceWorkerManager.isUpdateAvailable);
-  const [updateAvailable] = useState(serviceWorkerManager.isUpdateAvailable);
-  const [cacheStats] = useState(serviceWorkerManager.getCacheStats);
+  const [isSupported] = useState(() => {
+    return typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+  });
+  const [updateAvailable] = useState(() => serviceWorkerManager.isUpdateAvailable());
+  const [cacheStats] = useState(() => serviceWorkerManager.getCacheStats());
 
   return {
     isSupported,

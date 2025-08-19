@@ -13,7 +13,7 @@ import type {
   WorkflowWebSocketEvent,
   SystemWebSocketEvent,
   WebSocketError,
-} from '../../shared/types/websocket-events.js';
+} from '../../shared/types/websocket-events';
 
 interface PendingUpdate {
   id: string;
@@ -127,7 +127,7 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
 
       // Connection management
       setConnectionStatus: (endpoint, status) => {
-        set((state: any) => {
+        set((state: WebSocketStateManager) => {
           state?.connections?.set(endpoint, {
             endpoint,
             status,
@@ -140,8 +140,8 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
       },
 
       // Event queue management with deduplication
-      queueEvent: (event: any) => {
-        set((state: any) => {
+      queueEvent: (event: WebSocketEvent) => {
+        set((state: WebSocketStateManager) => {
           const eventKey = getEventKey(event);
           
           // Check if we're already processing this event
@@ -152,7 +152,7 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
           
           // Check if this event is already in the queue
           const existingIndex = state?.eventQueue?.findIndex(
-            e => getEventKey(e) === eventKey
+            (e: WebSocketEvent) => getEventKey(e) === eventKey
           );
           
           if (existingIndex !== -1) {
@@ -171,7 +171,7 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
       },
 
       // Process event with race condition prevention
-      processEvent: async (eventId: any) => {
+      processEvent: async (eventId: string) => {
         const state = get();
         const event = state?.eventQueue?.find(e => e.id === eventId);
         
@@ -186,63 +186,69 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
         }
         
         // Mark as processing
-        set((state: any) => {
+        set((state: WebSocketStateManager) => {
           state?.processingEvents?.add(eventKey);
         });
         
         try {
           // Process based on event type
           if (event.type === 'email:stats_updated') {
-            set((state: any) => {
-              state.updateStatsCache((event as any).data.stats);
+            set((state: WebSocketStateManager) => {
+              if (state.updateStatsCache) {
+                state.updateStatsCache((event as any).data.stats);
+              }
             });
           } else if (event?.type?.startsWith('email:')) {
             const emailEvent = event as EmailWebSocketEvent;
             if ('data' in emailEvent && 'emailId' in emailEvent.data) {
               const emailId = (emailEvent.data as any).emailId;
-              set((state: any) => {
-                state.updateEmailCache(emailId, emailEvent.data);
+              set((state: WebSocketStateManager) => {
+                if (state.updateEmailCache) {
+                  state.updateEmailCache(emailId, emailEvent.data);
+                }
               });
             }
           }
           
           // Remove from queue after successful processing
-          set((state: any) => {
-            state.eventQueue = state?.eventQueue?.filter(e => e.id !== eventId);
+          set((state: WebSocketStateManager) => {
+            state.eventQueue = state?.eventQueue?.filter((e: WebSocketEvent) => e.id !== eventId);
           });
           
         } catch (error) {
           console.error('Error processing event:', error);
-          set((state: any) => {
-            state.addError({
-              code: 'EVENT_PROCESSING_ERROR',
-              message: `Failed to process event ${eventKey}`,
-              recoverable: true,
-            });
+          set((state: WebSocketStateManager) => {
+            if (state.addError) {
+              state.addError({
+                code: 'EVENT_PROCESSING_ERROR',
+                message: `Failed to process event ${eventKey}`,
+                recoverable: true,
+              });
+            }
           });
         } finally {
           // Remove from processing set
-          set((state: any) => {
+          set((state: WebSocketStateManager) => {
             state?.processingEvents?.delete(eventKey);
           });
         }
       },
 
       // Pending update management
-      addPendingUpdate: (update: any) => {
-        set((state: any) => {
+      addPendingUpdate: (update: PendingUpdate) => {
+        set((state: WebSocketStateManager) => {
           state?.pendingUpdates?.set(update.id, update);
         });
       },
 
-      confirmUpdate: (updateId: any) => {
-        set((state: any) => {
+      confirmUpdate: (updateId: string) => {
+        set((state: WebSocketStateManager) => {
           state?.pendingUpdates?.delete(updateId);
         });
       },
 
-      retryUpdate: (updateId: any) => {
-        set((state: any) => {
+      retryUpdate: (updateId: string) => {
+        set((state: WebSocketStateManager) => {
           const update = state?.pendingUpdates?.get(updateId);
           if (update && update.retries < update.maxRetries) {
             update.retries++;
@@ -250,18 +256,20 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
           } else if (update) {
             // Max retries reached, remove update
             state?.pendingUpdates?.delete(updateId);
-            state.addError({
-              code: 'UPDATE_FAILED',
-              message: `Failed to apply update ${updateId} after ${update.retries} retries`,
-              recoverable: false,
-            });
+            if (state.addError) {
+              state.addError({
+                code: 'UPDATE_FAILED',
+                message: `Failed to apply update ${updateId} after ${update.retries} retries`,
+                recoverable: false,
+              });
+            }
           }
         });
       },
 
       // Optimistic update management
-      applyOptimisticUpdate: (update: any) => {
-        set((state: any) => {
+      applyOptimisticUpdate: (update: OptimisticUpdate) => {
+        set((state: WebSocketStateManager) => {
           // Apply the update
           update.apply(state);
           
@@ -270,14 +278,14 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
         });
       },
 
-      confirmOptimisticUpdate: (updateId: any) => {
-        set((state: any) => {
+      confirmOptimisticUpdate: (updateId: string) => {
+        set((state: WebSocketStateManager) => {
           const update = state?.optimisticUpdates?.get(updateId);
           if (update) {
             update.confirmed = true;
             // Remove after confirmation
             setTimeout(() => {
-              set((state: any) => {
+              set((state: WebSocketStateManager) => {
                 state?.optimisticUpdates?.delete(updateId);
               });
             }, 5000);
@@ -285,8 +293,8 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
         });
       },
 
-      rollbackOptimisticUpdate: (updateId: any) => {
-        set((state: any) => {
+      rollbackOptimisticUpdate: (updateId: string) => {
+        set((state: WebSocketStateManager) => {
           const update = state?.optimisticUpdates?.get(updateId);
           if (update && !update.confirmed) {
             // Rollback the update
@@ -297,8 +305,8 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
       },
 
       // Cache management
-      updateEmailCache: (emailId, data) => {
-        set((state: any) => {
+      updateEmailCache: (emailId: string, data: any) => {
+        set((state: WebSocketStateManager) => {
           const existing = state?.emailCache?.get(emailId);
           state?.emailCache?.set(emailId, {
             data: { ...(existing?.data || {}), ...data },
@@ -309,7 +317,8 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
           // Limit cache size
           if (state?.emailCache?.size > 500) {
             // Remove oldest entries
-            const entries = Array.from(state?.emailCache?.entries());
+            const entries: Array<[string, { data: any; version: number; lastUpdated: Date }]> = 
+              Array.from(state?.emailCache?.entries() || []);
             entries.sort((a, b) => 
               a[1].lastUpdated.getTime() - b[1].lastUpdated.getTime()
             );
@@ -321,7 +330,7 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
       },
 
       updateStatsCache: (stats: any) => {
-        set((state: any) => {
+        set((state: WebSocketStateManager) => {
           state.statsCache = {
             ...stats,
             lastUpdated: new Date(),
@@ -330,8 +339,8 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
       },
 
       // Error management
-      addError: (error: any) => {
-        set((state: any) => {
+      addError: (error: WebSocketError) => {
+        set((state: WebSocketStateManager) => {
           state?.errors?.push(error);
           
           // Limit error history
@@ -342,37 +351,42 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
       },
 
       clearErrors: () => {
-        set((state: any) => {
+        set((state: WebSocketStateManager) => {
           state.errors = [];
         });
       },
 
       // Utilities
-      isProcessingEvent: (eventId: any) => {
-        return get().processingEvents.has(eventId);
+      isProcessingEvent: (eventId: string) => {
+        const state = get();
+        return state?.processingEvents?.has(eventId) || false;
       },
 
       getEventQueue: () => {
-        return [...get().eventQueue];
+        const state = get();
+        return [...(state?.eventQueue || [])];
       },
 
       getPendingUpdates: () => {
-        return Array.from(get().pendingUpdates.values());
+        const state = get();
+        return Array.from(state?.pendingUpdates?.values() || []);
       },
 
       getOptimisticUpdates: () => {
-        return Array.from(get().optimisticUpdates.values());
+        const state = get();
+        return Array.from(state?.optimisticUpdates?.values() || []);
       },
 
       // Cleanup
-      clearOldEvents: (olderThan: any) => {
-        set((state: any) => {
+      clearOldEvents: (olderThan: Date) => {
+        set((state: WebSocketStateManager) => {
           state.eventQueue = state?.eventQueue?.filter(
-            e => e.timestamp > olderThan
+            (e: WebSocketEvent) => e.timestamp > olderThan
           );
           
           // Clean up old pending updates
-          const pendingEntries = Array.from(state?.pendingUpdates?.entries());
+          const pendingEntries: Array<[string, PendingUpdate]> = 
+            Array.from(state?.pendingUpdates?.entries() || []);
           pendingEntries.forEach(([id, update]) => {
             if (update.timestamp < olderThan) {
               state?.pendingUpdates?.delete(id);
@@ -380,7 +394,8 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
           });
           
           // Clean up old optimistic updates
-          const optimisticEntries = Array.from(state?.optimisticUpdates?.entries());
+          const optimisticEntries: Array<[string, OptimisticUpdate]> = 
+            Array.from(state?.optimisticUpdates?.entries() || []);
           optimisticEntries.forEach(([id, update]) => {
             if (update.timestamp < olderThan && update.confirmed) {
               state?.optimisticUpdates?.delete(id);

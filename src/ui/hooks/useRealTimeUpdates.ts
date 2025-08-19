@@ -196,7 +196,7 @@ export const useRealTimeUpdates = (options: UseRealTimeUpdatesOptions = {}) => {
     sendMessage, 
     connect, 
     disconnect,
-    connectionStatus,
+    isConnected: connected,
     reconnectAttempts 
   } = useWebSocketConnection({
     onMessage: handleMessage,
@@ -300,7 +300,7 @@ export const useRealTimeUpdates = (options: UseRealTimeUpdatesOptions = {}) => {
   return {
     // Connection state
     isConnected: state.isConnected,
-    connectionStatus,
+    connectionStatus: state.isConnected ? 'connected' : 'disconnected',
     reconnectAttempts,
     lastUpdate: state.lastUpdate,
 

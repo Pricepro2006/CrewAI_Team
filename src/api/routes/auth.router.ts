@@ -8,6 +8,7 @@ import {
   createCustomErrorHandler,
 } from "../trpc/enhanced-router.js";
 import { UserService } from "../services/UserService.js";
+import type { CreateUserInput, ChangePasswordInput } from "../../database/models/User.js";
 import { jwtManager } from "../utils/jwt.js";
 import { passwordManager } from "../utils/password.js";
 import { randomUUID } from "crypto";
@@ -94,8 +95,15 @@ export const authRouter = router({
           });
         }
 
-        // Create user
-        const user = await userService.createUser(input);
+        // Create user with properly typed input
+        const createUserInput: CreateUserInput = {
+          email: input.email,
+          username: input.username, 
+          password: input.password,
+          first_name: input.first_name,
+          last_name: input.last_name,
+        };
+        const user = await userService.createUser(createUserInput);
 
         logger.info("User registered successfully", "AUTH", {
           userId: user.id,
@@ -287,7 +295,10 @@ export const authRouter = router({
         userService.revokeRefreshToken(payload.tokenId);
 
         // Also revoke all user sessions for security
-        userService.revokeAllUserSessions(ctx?.user?.id);
+        const userId = ctx?.user?.id;
+        if (userId) {
+          userService.revokeAllUserSessions(userId);
+        }
 
         logger.info("User logged out successfully", "AUTH", {
           userId: ctx?.user?.id,
@@ -321,8 +332,11 @@ export const authRouter = router({
 
       try {
         // Revoke all refresh tokens and sessions
-        userService.revokeAllUserRefreshTokens(ctx?.user?.id);
-        userService.revokeAllUserSessions(ctx?.user?.id);
+        const userId = ctx?.user?.id;
+        if (userId) {
+          userService.revokeAllUserRefreshTokens(userId);
+          userService.revokeAllUserSessions(userId);
+        }
 
         logger.info("User logged out from all devices", "AUTH", {
           userId: ctx?.user?.id,
@@ -356,7 +370,14 @@ export const authRouter = router({
       const userService = new UserService();
 
       try {
-        const updatedUser = await userService.updateUser(ctx?.user?.id, input);
+        const userId = ctx?.user?.id;
+        if (!userId) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "User ID not found in context",
+          });
+        }
+        const updatedUser = await userService.updateUser(userId, input);
 
         logger.info("User profile updated", "AUTH", {
           userId: ctx?.user?.id,
@@ -382,7 +403,19 @@ export const authRouter = router({
       const userService = new UserService();
 
       try {
-        await userService.changePassword(ctx?.user?.id, input);
+        // Type assertion for password change input
+        const changePasswordInput: ChangePasswordInput = {
+          currentPassword: input.currentPassword,
+          newPassword: input.newPassword,
+        };
+        const userId = ctx?.user?.id;
+        if (!userId) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "User ID not found in context",
+          });
+        }
+        await userService.changePassword(userId, changePasswordInput);
 
         logger.info("Password changed successfully", "AUTH", {
           userId: ctx?.user?.id,

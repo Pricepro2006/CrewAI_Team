@@ -82,39 +82,6 @@ export function useRealtimePrices(
   const animationTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const subscribedProductsRef = useRef<Set<string>>(new Set(productIds));
 
-  // WebSocket connection
-  const { 
-    isConnected, 
-    connectionStatus, 
-    subscribe, 
-    unsubscribe 
-  } = useGroceryWebSocket({
-    conversationId,
-    userId,
-    onEvent: handleWebSocketEvent,
-    enableLogging: true,
-  });
-
-  // Handle incoming WebSocket events - use useCallback for stable reference
-  const handleWebSocketEvent = useCallback((event: GroceryWebSocketEvent) => {
-    switch (event.type) {
-      case 'price_updated':
-        handlePriceUpdate(event);
-        break;
-      case 'deal_detected':
-        handleDealDetected(event);
-        break;
-      case 'totals_calculated':
-        handleTotalsCalculated(event);
-        break;
-      case 'cart_updated':
-        handleCartUpdate(event);
-        break;
-      default:
-        break;
-    }
-  }, []);
-
   // Handle price update events
   const handlePriceUpdate = useCallback((event: GroceryWebSocketEvent) => {
     const { productId, oldPrice, newPrice, reason } = event.data;
@@ -148,7 +115,9 @@ export function useRealtimePrices(
       if (newPriceUpdates.size > maxPriceHistory) {
         const oldest = Array.from(newPriceUpdates.entries())
           .sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
-        newPriceUpdates.delete(oldest[0]);
+        if (oldest) {
+          newPriceUpdates.delete(oldest[0]);
+        }
       }
 
       const newIndicators = new Map(prevState.priceChangeIndicators);
@@ -228,30 +197,61 @@ export function useRealtimePrices(
     logger.info(`Totals recalculated: ${total} (savings: ${savings})`, "REALTIME_PRICES");
   }, [onTotalRecalculated]);
 
-  // Handle cart update events
-  const handleCartUpdate = useCallback((event: GroceryWebSocketEvent) => {
-    // Update subscriptions based on cart changes
-    const { items } = event.data;
-    if (items && Array.isArray(items)) {
-      const newProductIds = items?.map((item: any) => item.productId).filter(Boolean);
-      subscribeToPrices(newProductIds);
+  // Handle incoming WebSocket events
+  const handleWebSocketEvent = useCallback((event: GroceryWebSocketEvent) => {
+    switch (event.type) {
+      case 'price_updated':
+        handlePriceUpdate(event);
+        break;
+      case 'deal_detected':
+        handleDealDetected(event);
+        break;
+      case 'totals_calculated':
+        handleTotalsCalculated(event);
+        break;
+      case 'cart_updated':
+        const { items } = event.data;
+        if (items && Array.isArray(items)) {
+          const newProductIds = items?.map((item: any) => item.productId).filter(Boolean);
+          subscribeToPrices(newProductIds);
+        }
+        break;
+      default:
+        break;
     }
-  }, []);
+  }, [handlePriceUpdate, handleDealDetected, handleTotalsCalculated]);
+
+  // WebSocket connection
+  const { 
+    isConnected, 
+    connectionStatus, 
+    subscribe, 
+    unsubscribe 
+  } = useGroceryWebSocket({
+    conversationId,
+    userId,
+    onEvent: handleWebSocketEvent,
+    enableLogging: true,
+  });
 
   // Subscribe to price updates for specific products
   const subscribeToPrices = useCallback((newProductIds: string[]) => {
-    const uniqueIds = [...new Set(newProductIds)];
-    const newSubscriptions = uniqueIds?.filter(id => !subscribedProductsRef?.current?.has(id));
+    const uniqueIds = Array.from(new Set(newProductIds));
+    const currentSubscriptions = Array.from(subscribedProductsRef?.current || []);
+    const newSubscriptions = uniqueIds.filter(id => !currentSubscriptions.includes(id));
     
-    if (newSubscriptions?.length || 0 > 0) {
-      newSubscriptions.forEach(id => subscribedProductsRef?.current?.add(id));
+    if ((newSubscriptions?.length || 0) > 0) {
+      // Use Array.from to avoid downlevelIteration issues
+      Array.from(newSubscriptions).forEach(id => subscribedProductsRef?.current?.add(id));
       
-      // Subscribe to price update events
-      subscribe(['price_updated', 'deal_detected']);
+      // Subscribe to price update events if connected
+      if (subscribe && isConnected) {
+        subscribe(['price_updated', 'deal_detected']);
+      }
       
       logger.info(`Subscribed to price updates for ${newSubscriptions?.length || 0} products`, "REALTIME_PRICES", newSubscriptions);
     }
-  }, [subscribe]);
+  }, [subscribe, isConnected]);
 
   // Unsubscribe from price updates
   const unsubscribeFromPrices = useCallback((productIds: string[]) => {
@@ -340,7 +340,7 @@ export function useRealtimePrices(
       animationTimersRef?.current?.forEach(timer => clearTimeout(timer));
       animationTimersRef?.current?.clear();
     };
-  }, [productIds]); // Removed subscribeToPrices to prevent dependency cycles
+  }, [productIds, subscribeToPrices]);
 
   return {
     ...state,

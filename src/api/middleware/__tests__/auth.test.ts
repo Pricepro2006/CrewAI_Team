@@ -3,9 +3,9 @@
  * Tests the JWT authentication implementation for security vulnerabilities
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import jwt from "jsonwebtoken";
-import { verifyJWT, type AuthUser } from "../auth.js";
+import { verifyJWT, type AuthUser } from '../auth';
 
 const TEST_JWT_SECRET = "test-secret-key-for-unit-tests-only";
 

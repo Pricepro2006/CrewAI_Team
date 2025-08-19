@@ -113,8 +113,8 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
 
   // Handle search results
   useEffect(() => {
-    if (results?.length || 0 > 0 && onSearchResults) {
-      onSearchResults(results);
+    if ((results?.length || 0) > 0 && onSearchResults) {
+      onSearchResults?.(results);
     }
   }, [results, onSearchResults]);
 

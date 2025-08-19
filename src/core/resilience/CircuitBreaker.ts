@@ -37,8 +37,8 @@ export class CircuitBreaker extends EventEmitter {
   private failuresInWindow: number = 0;
 
   constructor(
-    private name: string,
-    private options: CircuitBreakerOptions,
+    private readonly name: string,
+    private readonly options: CircuitBreakerOptions,
   ) {
     super();
     this.resetMonitoringWindow();
@@ -84,7 +84,7 @@ export class CircuitBreaker extends EventEmitter {
       );
     } else {
       const waitTime = this.nextRetryTime
-        ? Math.ceil((this?.nextRetryTime?.getTime() - now.getTime()) / 1000)
+        ? Math.ceil((this.nextRetryTime.getTime() - now.getTime()) / 1000)
         : 0;
 
       throw new Error(
@@ -106,7 +106,8 @@ export class CircuitBreaker extends EventEmitter {
 
       // Check if we've had enough successful attempts
       this.halfOpenAttempts++;
-      if (this.halfOpenAttempts >= (this?.options?.halfOpenMaxAttempts || 3)) {
+      const maxAttempts = this.options.halfOpenMaxAttempts ?? 3;
+      if (this.halfOpenAttempts >= maxAttempts) {
         this.transitionTo(CircuitState.CLOSED);
         logger.info("Circuit breaker recovered and closed", "CIRCUIT_BREAKER", {
           name: this.name,
@@ -143,7 +144,7 @@ export class CircuitBreaker extends EventEmitter {
 
       // Check if we should open the circuit
       const failureRate = this.calculateFailureRate();
-      if (this.failures >= this?.options?.failureThreshold || failureRate > 0.5) {
+      if (this.failures >= this.options.failureThreshold || failureRate > 0.5) {
         this.transitionTo(CircuitState.OPEN);
         logger.error(
           "Circuit breaker opened due to failures",
@@ -152,7 +153,7 @@ export class CircuitBreaker extends EventEmitter {
             name: this.name,
             failures: this.failures,
             failureRate,
-            threshold: this?.options?.failureThreshold,
+            threshold: this.options.failureThreshold,
           },
         );
       }
@@ -192,11 +193,11 @@ export class CircuitBreaker extends EventEmitter {
    * Transition to a new state
    */
   private transitionTo(newState: CircuitState): void {
-    const oldState = this?.state;
+    const oldState = this.state;
     this.state = newState;
 
     if (newState === CircuitState.OPEN) {
-      this.nextRetryTime = new Date(Date.now() + this?.options?.resetTimeout);
+      this.nextRetryTime = new Date(Date.now() + this.options.resetTimeout);
       this.halfOpenAttempts = 0;
     } else if (newState === CircuitState.CLOSED) {
       this.reset();
@@ -206,8 +207,8 @@ export class CircuitBreaker extends EventEmitter {
 
     this.emit("stateChange", oldState, newState);
 
-    if (this?.options?.onStateChange) {
-      this?.options?.onStateChange(oldState, newState);
+    if (this.options.onStateChange) {
+      this.options.onStateChange(oldState, newState);
     }
 
     logger.info("Circuit breaker state changed", "CIRCUIT_BREAKER", {
@@ -222,9 +223,9 @@ export class CircuitBreaker extends EventEmitter {
    */
   private checkMonitoringWindow(): void {
     const now = new Date();
-    const windowAge = now.getTime() - this?.monitoringWindowStart?.getTime();
+    const windowAge = now.getTime() - this.monitoringWindowStart.getTime();
 
-    if (windowAge >= this?.options?.monitoringPeriod) {
+    if (windowAge >= this.options.monitoringPeriod) {
       this.resetMonitoringWindow();
     }
   }
@@ -334,18 +335,22 @@ export class CircuitBreakerFactory {
     name: string,
     options?: Partial<CircuitBreakerOptions>,
   ): CircuitBreaker {
-    if (!this?.instances?.has(name)) {
-      const finalOptions = { ...this.defaultOptions, ...options };
-      this?.instances?.set(name, new CircuitBreaker(name, finalOptions));
+    if (!this.instances.has(name)) {
+      const finalOptions: CircuitBreakerOptions = { ...this.defaultOptions, ...options };
+      this.instances.set(name, new CircuitBreaker(name, finalOptions));
     }
 
-    return this?.instances?.get(name)!;
+    const instance = this.instances.get(name);
+    if (!instance) {
+      throw new Error(`Failed to create or retrieve circuit breaker for ${name}`);
+    }
+    return instance;
   }
 
   /**
    * Get all circuit breakers
    */
-  static getAllInstances(): Map<string, CircuitBreaker> {
+  static getAllInstances(): ReadonlyMap<string, CircuitBreaker> {
     return new Map(this.instances);
   }
 
@@ -355,7 +360,7 @@ export class CircuitBreakerFactory {
   static getAllStats(): Record<string, CircuitBreakerStats> {
     const stats: Record<string, CircuitBreakerStats> = {};
 
-    this?.instances?.forEach((breaker, name) => {
+    this.instances.forEach((breaker, name) => {
       stats[name] = breaker.getStats();
     });
 
@@ -366,7 +371,7 @@ export class CircuitBreakerFactory {
    * Reset a specific circuit breaker
    */
   static reset(name: string): void {
-    const breaker = this?.instances?.get(name);
+    const breaker = this.instances.get(name);
     if (breaker) {
       breaker.forceClose();
     }
@@ -376,7 +381,7 @@ export class CircuitBreakerFactory {
    * Reset all circuit breakers
    */
   static resetAll(): void {
-    this?.instances?.forEach((breaker: any) => {
+    this.instances.forEach((breaker) => {
       breaker.forceClose();
     });
   }

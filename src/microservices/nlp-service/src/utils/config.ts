@@ -4,8 +4,8 @@
  */
 
 import { z } from 'zod';
-import { logger } from './logger.js';
-import type { NLPServiceConfig } from '../types/index.js';
+import { logger } from './logger';
+import type { NLPServiceConfig } from '../types/index';
 
 // Configuration schema for validation
 const configSchema = z.object({
@@ -73,7 +73,7 @@ export function loadConfig(): NLPServiceConfig {
     port: parseInt(process.env.PORT || '3001'),
     grpcPort: parseInt(process.env.GRPC_PORT || '50051'),
     host: process.env.HOST || '0.0.0.0',
-    environment: process.env.NODE_ENV || 'development',
+    environment: (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'test',
     
     // Queue configuration
     queue: {
@@ -135,8 +135,8 @@ export function loadConfig(): NLPServiceConfig {
   };
 
   try {
-    // Validate configuration
-    const validatedConfig = configSchema.parse(rawConfig);
+    // Validate configuration with proper typing
+    const validatedConfig = configSchema.parse(rawConfig) as NLPServiceConfig;
     
     logger.logConfiguration(validatedConfig);
     
@@ -147,10 +147,10 @@ export function loadConfig(): NLPServiceConfig {
     
     if (error instanceof z.ZodError) {
       logger.error('Configuration errors:', 'CONFIG', {
-        errors: error?.errors?.map(err => ({
-          path: err?.path?.join('.'),
+        errors: error.errors.map(err => ({
+          path: err.path.join('.'),
           message: err.message,
-          received: err.received
+          received: 'received' in err ? err.received : undefined
         }))
       });
     }
@@ -169,34 +169,67 @@ export function getEnvironmentConfig(): Partial<NLPServiceConfig> {
     development: {
       monitoring: {
         enabled: true,
-        healthCheckInterval: 10000 // Check every 10 seconds in dev
+        healthCheckInterval: 10000, // Check every 10 seconds in dev
+        alertThresholds: {
+          queueSize: 50,
+          errorRate: 0.1,
+          processingTime: 5000,
+          memoryUsage: 80
+        }
       },
       security: {
         rateLimiting: {
-          enabled: false // Disable rate limiting in dev
+          enabled: false, // Disable rate limiting in dev
+          max: 100,
+          timeWindow: '1 minute'
         },
         cors: {
+          enabled: true,
           origins: ['*'] // Allow all origins in dev
+        },
+        apiKeys: {
+          enabled: false,
+          required: false
         }
       }
     },
     
     test: {
       queue: {
-        persistenceEnabled: false // Don't persist queue state in tests
+        maxConcurrent: 2,
+        defaultTimeout: 30000,
+        maxRetries: 2,
+        persistenceEnabled: false, // Don't persist queue state in tests
+        persistencePath: './test-data'
       },
       monitoring: {
-        enabled: false // Disable monitoring in tests
+        enabled: false, // Disable monitoring in tests
+        healthCheckInterval: 30000,
+        alertThresholds: {
+          queueSize: 50,
+          errorRate: 0.1,
+          processingTime: 5000,
+          memoryUsage: 80
+        }
       },
       discovery: {
-        enabled: false // Disable service discovery in tests
+        enabled: false, // Disable service discovery in tests
+        serviceName: 'nlp-service-test',
+        serviceVersion: '1.0.0-test',
+        heartbeatInterval: 10000
       }
     },
     
     production: {
       monitoring: {
         enabled: true,
-        healthCheckInterval: 30000
+        healthCheckInterval: 30000,
+        alertThresholds: {
+          queueSize: 100,
+          errorRate: 0.05,
+          processingTime: 3000,
+          memoryUsage: 85
+        }
       },
       security: {
         rateLimiting: {
@@ -204,13 +237,20 @@ export function getEnvironmentConfig(): Partial<NLPServiceConfig> {
           max: 1000, // Higher limit for production
           timeWindow: '1 minute'
         },
+        cors: {
+          enabled: true,
+          origins: ['https://yourdomain.com']
+        },
         apiKeys: {
           enabled: true,
           required: true // Require API keys in production
         }
       },
       discovery: {
-        enabled: true // Enable service discovery in production
+        enabled: true, // Enable service discovery in production
+        serviceName: 'nlp-service',
+        serviceVersion: '1.0.0',
+        heartbeatInterval: 10000
       }
     }
   };
@@ -235,8 +275,8 @@ export function mergeEnvironmentConfig(baseConfig: NLPServiceConfig): NLPService
       ...baseConfig.monitoring,
       ...envConfig.monitoring,
       alertThresholds: {
-        ...baseConfig?.monitoring?.alertThresholds,
-        ...envConfig.monitoring?.alertThresholds
+        ...baseConfig.monitoring.alertThresholds,
+        ...(envConfig.monitoring?.alertThresholds || {})
       }
     },
     discovery: {
@@ -247,16 +287,16 @@ export function mergeEnvironmentConfig(baseConfig: NLPServiceConfig): NLPService
       ...baseConfig.security,
       ...envConfig.security,
       rateLimiting: {
-        ...baseConfig?.security?.rateLimiting,
-        ...envConfig.security?.rateLimiting
+        ...baseConfig.security.rateLimiting,
+        ...(envConfig.security?.rateLimiting || {})
       },
       cors: {
-        ...baseConfig?.security?.cors,
-        ...envConfig.security?.cors
+        ...baseConfig.security.cors,
+        ...(envConfig.security?.cors || {})
       },
       apiKeys: {
-        ...baseConfig?.security?.apiKeys,
-        ...envConfig.security?.apiKeys
+        ...baseConfig.security.apiKeys,
+        ...(envConfig.security?.apiKeys || {})
       }
     },
     shutdown: {
@@ -281,9 +321,9 @@ export function validateEnvironment(): void {
     requiredVars.push('ADMIN_API_KEY');
   }
   
-  const missingVars = requiredVars?.filter(varName => !process.env[varName]);
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
   
-  if (missingVars?.length || 0 > 0) {
+  if (missingVars.length > 0) {
     logger.error('Missing required environment variables', 'CONFIG', {
       missingVariables: missingVars
     });

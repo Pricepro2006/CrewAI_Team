@@ -167,7 +167,7 @@ export class WriterAgent extends BaseAgent {
     let audience = "general audience";
     const audienceMatch = response.match(/audience[:\s]+([^.\n]+)/i) || 
                          response.match(/for\s+([^.\n]+audience[^.\n]*)/i);
-    if (audienceMatch) {
+    if (audienceMatch && audienceMatch[1]) {
       audience = audienceMatch[1].trim();
     }
     
@@ -192,7 +192,7 @@ export class WriterAgent extends BaseAgent {
       contentType,
       style,
       audience,
-      requirements: requirements.slice(0, 5), // Limit to 5 requirements
+      requirements: requirements.slice(0, 5) || [], // Limit to 5 requirements
       length,
     };
   }
@@ -290,7 +290,7 @@ export class WriterAgent extends BaseAgent {
       Write an email with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Purpose: ${analysis.requirements.join(", ")}
+      Purpose: ${(analysis.requirements || []).join(", ")}
       
       ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       

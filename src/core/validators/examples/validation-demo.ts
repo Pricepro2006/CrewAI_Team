@@ -13,7 +13,7 @@ async function basicValidationExample() {
   const response = `
     Welcome to Joe's Pizza! We're located at 123 Main Street, Suite 100, 
     New York, NY 10001. Call us at (555) 123-4567 or visit our website 
-    at www?.joespizza?.com. We're open Monday-Friday 9am-10pm, 
+    at www.joespizza.com. We're open Monday-Friday 9am-10pm, 
     Saturday-Sunday 11am-11pm. Email: info@joespizza.com
   `;
 
@@ -135,10 +135,12 @@ async function patternMatchingExample() {
 
     const matches = [];
     let match;
-    testCase?.pattern?.lastIndex = 0;
-
-    while ((match = testCase?.pattern?.exec(testCase.text)) !== null) {
-      matches.push(match[0]);
+    const pattern = testCase?.pattern;
+    if (pattern) {
+      pattern.lastIndex = 0;
+      while ((match = pattern.exec(testCase.text)) !== null) {
+        matches.push(match[0]);
+      }
     }
 
     console.log("Matches:", matches);
@@ -236,6 +238,6 @@ export {
 };
 
 // Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (typeof require !== 'undefined' && require.main === module) {
   runAllExamples().catch(console.error);
 }

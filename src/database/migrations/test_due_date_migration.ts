@@ -9,12 +9,12 @@
  * Usage: npx ts-node test_due_date_migration.ts
  */
 
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { existsSync, copyFileSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename: string = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const config = {
@@ -31,7 +31,7 @@ interface TestResult {
 }
 
 class MigrationTester {
-  private db: Database.Database | null = null;
+  private db: DatabaseInstance | null = null;
   private results: TestResult[] = [];
 
   constructor(private dbPath: string) {}
@@ -39,7 +39,7 @@ class MigrationTester {
   /**
    * Initialize test database
    */
-  private initDb(): Database.Database {
+  private initDb(): DatabaseInstance {
     this.db = new Database(this.dbPath);
     this?.db?.pragma('foreign_keys = ON');
     return this.db;
@@ -242,7 +242,7 @@ class MigrationTester {
 
       this.addResult(
         "Verification: Indexes created",
-        missingIndexes?.length || 0 === 0,
+        (missingIndexes?.length || 0) === 0,
         `${createdIndexes?.length || 0}/${expectedIndexes?.length || 0} indexes created`,
         {
           expectedIndexes,
@@ -511,12 +511,12 @@ class MigrationTester {
 
       // Check foreign key constraints
       const foreignKeyResult = db.prepare("PRAGMA foreign_key_check").all();
-      const foreignKeysPassed = foreignKeyResult?.length || 0 === 0;
+      const foreignKeysPassed = (foreignKeyResult?.length || 0) === 0;
 
       this.addResult(
         "Integrity: Database validation",
         integrityPassed && foreignKeysPassed,
-        `Database integrity maintained`,
+        "Database integrity maintained",
         {
           integrityCheck: integrityResult.integrity_check,
           foreignKeyViolations: foreignKeyResult?.length || 0,

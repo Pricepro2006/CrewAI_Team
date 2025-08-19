@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import Database from "better-sqlite3";
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import {
   up as addCompositeIndexes,
   down as removeCompositeIndexes,
-} from "../migrations/007_add_composite_indexes.js";
-import { logger } from "../utils/logger.js";
+} from '../migrations/007_add_composite_indexes';
+import { logger } from '../../utils/logger';
 
 describe("Composite Index Performance Tests", () => {
   let db: Database.Database;
@@ -68,9 +68,9 @@ describe("Composite Index Performance Tests", () => {
         "idx_analysis_confidence_workflow",
       ];
 
-      const indexNames = indexes?.map((idx: any) => idx.name);
+      const indexNames = indexes.map((idx: any) => idx.name);
 
-      expectedIndexes.forEach((expectedIndex: any) => {
+      expectedIndexes.forEach((expectedIndex) => {
         expect(indexNames).toContain(expectedIndex);
       });
     });
@@ -171,7 +171,7 @@ describe("Composite Index Performance Tests", () => {
       const results = stmt.all();
       const executionTime = Date.now() - startTime;
 
-      expect(results?.length || 0).toBeGreaterThan(0);
+      expect(results.length).toBeGreaterThan(0);
       expect(executionTime).toBeLessThan(30); // Should execute in under 30ms
     });
 
@@ -583,11 +583,11 @@ async function insertTestData(db: Database.Database): Promise<void> {
     analysisStmt.run(
       `analysis_${i}`,
       `email_${i}`,
-      workflows[i % workflows?.length || 0],
-      priorities[i % priorities?.length || 0],
-      states[i % states?.length || 0],
-      workflows[i % workflows?.length || 0],
-      slaStatuses[i % slaStatuses?.length || 0],
+      workflows[i % workflows.length],
+      priorities[i % priorities.length],
+      states[i % states.length],
+      workflows[i % workflows.length],
+      slaStatuses[i % slaStatuses.length],
       Math.floor(Math.random() * 5000), // Random processing time
     );
   }
@@ -614,9 +614,9 @@ async function insertTestData(db: Database.Database): Promise<void> {
       `sender${i % 5}@company.com`,
       `Sender ${i % 5}`,
       receivedAt.toISOString(),
-      statuses[i % statuses?.length || 0],
-      priorities[i % priorities?.length || 0].toLowerCase(),
-      users[i % users?.length || 0],
+      statuses[i % statuses.length],
+      priorities[i % priorities.length].toLowerCase(),
+      users[i % users.length],
     );
   }
 }

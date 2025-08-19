@@ -30,6 +30,13 @@ interface CSRFValidationResponse {
   error?: string;
 }
 
+interface HealthCheckResponse {
+  status: string;
+  responseTime: number;
+  timestamp?: string;
+  services?: Record<string, unknown>;
+}
+
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -297,7 +304,7 @@ async function checkServerHealth(): Promise<void> {
       throw new Error(`Server health check failed: ${response.status}`);
     }
     
-    const health = await response.json();
+    const health = await response.json() as HealthCheckResponse;
     console.log('✅ Server is healthy');
     console.log(`   Status: ${health.status}`);
     console.log(`   Response time: ${health.responseTime}ms\n`);

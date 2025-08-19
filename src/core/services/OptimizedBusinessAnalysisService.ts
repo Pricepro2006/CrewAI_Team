@@ -106,7 +106,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     const cachedResult = this?.analysisCache?.get(cacheKey);
     if (cachedResult) {
       this.updatePerformanceMetrics({ cacheHit: true, processingTime: 0 });
-      return cachedResult as BusinessAnalysisResult;
+      return cachedResult as unknown as BusinessAnalysisResult;
     }
 
     return withUnitOfWork(async (uow: IUnitOfWork) => {
@@ -122,7 +122,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
             modelType: "llama3.2",
             priorityLevel: this.determinePriority(email),
             focusAreas: this.determineFocusAreas(email),
-            includeHistorical: !!historicalData && historicalData?.length || 0 > 0,
+            includeHistorical: Boolean(historicalData && historicalData.length > 0),
             compressionLevel: "moderate",
             preserveEntities: true,
             includeChainContext: !!chainData,
@@ -195,7 +195,9 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         };
 
         // Cache result
-        this?.analysisCache?.set(cacheKey, result);
+        if (this.analysisCache) {
+          this.analysisCache.set(cacheKey, result as any);
+        }
 
         // Update performance metrics
         this.updatePerformanceMetrics({
@@ -251,7 +253,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         logger.info(`Processing chunk ${i + 1}/${chunks?.length || 0} (${chunk?.length || 0} emails)`);
         
         // Process chunk with controlled concurrency
-        const chunkResults = await this.processChunkConcurrently(chunk, options);
+        const chunkResults = await this.processChunkConcurrently(chunk || [], options);
         results.push(...chunkResults);
         
         // Emit progress
@@ -328,6 +330,12 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     // Extract entities with high-performance regex patterns
     const entities = {
       po_numbers: this.extractPattern(emailText, /\b(?:po|p\.o\.?|purchase\s+order)[\s#-]?(\d{4,})/gi),
+      quotes: this.extractPattern(emailText, /\b(?:quote|qt|quotation)[\s#-]?(\d{4,})/gi),
+      cases: this.extractPattern(emailText, /\b(?:case|ticket|incident)[\s#-]?(\w+\d+|\d+\w*)/gi),
+      parts: this.extractPattern(emailText, /\b[A-Z0-9]{6,}(?:#[A-Z]{3})?\b/gi),
+      people: [], // Will be filled by more advanced extraction if needed
+      companies: [], // Will be filled by more advanced extraction if needed
+      // Keep these for internal use
       quote_numbers: this.extractPattern(emailText, /\b(?:quote|qt|quotation)[\s#-]?(\d{4,})/gi),
       dollar_amounts: this.extractDollarAmounts(emailText),
       part_numbers: this.extractPattern(emailText, /\b[A-Z0-9]{6,}(?:#[A-Z]{3})?\b/gi),
@@ -350,12 +358,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       entities,
       key_phrases: this.extractKeyPhrases(emailText, 10),
       sentiment: this.fastSentimentAnalysis(emailText),
-      processing_time_ms: Date.now() - startTime,
-      workflow_state: this.determineWorkflowState(emailText),
-      priority: classification.priority,
-      financial_impact: financialImpact,
-      detected_patterns: this.detectPatterns(emailText),
-      chain_analysis: undefined // Will be set by chain analyzer if needed
+      processing_time_ms: Date.now() - startTime
     };
   }
 
@@ -373,17 +376,18 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         email,
         phase1Results,
         threadContext?.chainId ? 
-          await threadContextManager.getExistingContext(threadContext.chainId) :
+          await (threadContextManager as any).getExistingContext(threadContext.chainId) :
           undefined
       );
 
       // Build business intelligence prompt
-      const prompt = biPromptBuilder.buildPhase2Prompt(
-        businessContext,
-        phase1Results,
-        `${email.subject}\n${email.body_text || ''}`,
-        businessContext.financialContext ? ["financial", "workflow"] : ["workflow"]
-      );
+      // Build prompt using biPromptBuilder class
+      const promptBuilder = new biPromptBuilder('');
+      const prompt = promptBuilder
+        .set('content', `${email.subject}\n${email.body_text || ''}`)
+        .set('context', businessContext)
+        .set('phase1', phase1Results)
+        .build();
 
       // Call Llama 3.2 with optimized parameters
       const llmResponse = await this.callLLMOptimized("llama3.2", prompt, {
@@ -393,7 +397,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       });
 
       // Parse business intelligence response
-      const businessIntelligence = biResponseParser.parsePhase2Response(llmResponse);
+      const businessIntelligence = biResponseParser.parseEntities(llmResponse) || {};
 
       // Create enhanced Phase 2 results
       const enhanced: Phase2Results & { businessIntelligence: any } = {
@@ -418,7 +422,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       return enhanced;
 
     } catch (error) {
-      logger.error("Phase 2 analysis failed, using fallback:", error);
+      logger.error("Phase 2 analysis failed, using fallback:", error as string);
       
       // Return fallback results
       return {
@@ -428,7 +432,12 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
           secondary_intents: [],
           confidence: 0.5
         },
-        missed_entities: {},
+        missed_entities: {
+          company_names: [],
+          people: [],
+          technical_terms: [],
+          deadlines: []
+        },
         action_items: [],
         contextual_insights: {
           business_impact: "unknown",
@@ -468,19 +477,21 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         phase1Results,
         phase2Results,
         threadContext?.chainId ?
-          await threadContextManager.getExistingContext(threadContext.chainId) :
+          await (threadContextManager as any).getExistingContext(threadContext.chainId) :
           undefined,
         historicalData
       );
 
       // Build executive analysis prompt
-      const prompt = biPromptBuilder.buildPhase3Prompt(
-        businessContext,
-        phase1Results,
-        phase2Results,
-        threadContext ? await threadContextManager.generateLLMContext(threadContext.chainId, "phase3", 4000) : undefined,
-        historicalData
-      );
+      // Build prompt using biPromptBuilder class  
+      const promptBuilder = new biPromptBuilder('');
+      const prompt = promptBuilder
+        .set('thread', threadContext ? await (threadContextManager as any).generateLLMContext(threadContext.chainId, "phase3", 4000) : undefined)
+        .set('content', `${email.subject}\n${email.body_text || ''}`)
+        .set('phase1', phase1Results)
+        .set('phase2', phase2Results)
+        .set('historical', historicalData)
+        .build();
 
       // Call Phi-4 with strategic analysis parameters
       const llmResponse = await this.callLLMOptimized("phi-4", prompt, {
@@ -490,7 +501,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       });
 
       // Parse executive analysis response
-      const executiveAnalysis = biResponseParser.parsePhase3Response(llmResponse);
+      const executiveAnalysis = biResponseParser.parseEntities(llmResponse) || {};
 
       // Create comprehensive Phase 3 results
       const strategic: Phase3Results & { executiveAnalysis: any } = {
@@ -523,7 +534,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       return strategic;
 
     } catch (error) {
-      logger.error("Phase 3 analysis failed, using fallback:", error);
+      logger.error("Phase 3 analysis failed, using fallback:", error as string);
       
       // Return fallback strategic results
       return {
@@ -888,20 +899,27 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
 
   private extractMissedEntities(businessIntelligence: any): any {
     // Extract entities that were missed in Phase 1 but caught by LLM
-    return businessIntelligence.business_intelligence?.operational_insights?.resource_constraints || {};
+    const constraints = businessIntelligence.business_intelligence?.operational_insights?.resource_constraints || {};
+    
+    return {
+      company_names: constraints.companies || [],
+      people: constraints.people || [],
+      technical_terms: constraints.technical_terms || [],
+      deadlines: constraints.deadlines || []
+    };
   }
 
   private extractTimeValue(value: any): number {
     if (!value || typeof value !== 'string') return 0;
-    const match = value.match(/(\d+).*(?:hour|hr|day|week|month)/i);
-    return match ? parseInt(match[1]) : 0;
+    const match = (value || '').match(/(\d+).*(?:hour|hr|day|week|month)/i);
+    return match ? parseInt(match[1] || '0') : 0;
   }
 
   private extractEfficiencyGain(gains: string[] | undefined): number {
     if (!gains || !Array.isArray(gains)) return 0;
     const percentageGains = gains?.map(gain => {
       const match = gain.match(/(\d+)%/);
-      return match ? parseInt(match[1]) : 0;
+      return match ? parseInt(match[1] || '0') : 0;
     });
     return Math.max(...percentageGains, 0);
   }
@@ -909,7 +927,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
   private extractAutomationPotential(opportunities: string[] | undefined): number {
     if (!opportunities || !Array.isArray(opportunities)) return 0;
     // Simple scoring based on number of automation opportunities
-    return Math.min(opportunities?.length || 0 * 0.2, 1);
+    return Math.min((opportunities?.length || 0) * 0.2, 1);
   }
 
   /**

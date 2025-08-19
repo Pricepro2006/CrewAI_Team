@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../../lib/trpc.js";
+import { trpc as api } from "../../utils/trpc";
 import "./Agents.css";
 
 interface AgentData {
@@ -32,7 +32,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www?.w3?.org/2000/svg"
+        xmlns="http://www.w3.org/2000/svg"
       >
         <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
         <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" />
@@ -136,7 +136,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www?.w3?.org/2000/svg"
+        xmlns="http://www.w3.org/2000/svg"
       >
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
         <path
@@ -158,11 +158,11 @@ const formatAgentName = (type: string): string => {
     .trim();
 };
 
-const mapCapabilitiesToExpertise = (capabilities: string[]): string[] => {
-  return capabilities?.map((cap: any) =>
+const mapCapabilitiesToExpertise = (capabilities: string[] = []): string[] => {
+  return capabilities.map((cap: string) =>
     cap
       .split("_")
-      .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" "),
   );
 };
@@ -170,36 +170,42 @@ const mapCapabilitiesToExpertise = (capabilities: string[]): string[] => {
 export const Agents: React.FC = () => {
   const navigate = useNavigate();
 
-  // Fetch agents data from API
+  // Fetch agents data from API with proper null checking
+  const agentListQuery = (api as any).agent?.list?.useQuery?.();
   const {
     data: agentsData,
     isLoading,
     error,
-  } = (api.agent as any).list.useQuery();
+  } = agentListQuery || { data: undefined, isLoading: false, error: null };
 
   // Poll agent status every 5 seconds for real-time updates
-  const { data: agentStatus } = (api.agent as any).status.useQuery(undefined, {
+  const agentStatusQuery = (api as any).agent?.status?.useQuery?.(undefined, {
     refetchInterval: 5000, // Refresh every 5 seconds
     refetchIntervalInBackground: true,
   });
+  const { data: agentStatus } = agentStatusQuery || { data: undefined };
 
   // Transform API data to match our UI interface
   const agents: Agent[] = React.useMemo(() => {
     if (!agentsData) return [];
 
-    return agentsData?.map((agent: AgentData) => {
+    // Handle the response structure - it contains an agents array
+    const agentsList = Array.isArray(agentsData) ? agentsData : agentsData?.agents || [];
+
+    return agentsList.map((agent: AgentData) => {
       // Check if this agent is currently active/busy
-      const isActive = agentStatus?.some(
-        (status: any) => status.type === agent.type && status.status === "busy",
+      const isActive = Array.isArray(agentStatus) && agentStatus.some(
+        (status: { type: string; status: string }) => 
+          status.type === agent.type && status.status === "busy",
       );
 
       return {
-        id: agent?.type?.toLowerCase().replace("agent", "-agent"),
-        name: formatAgentName(agent.type),
-        description: agent.description,
+        id: agent?.type?.toLowerCase().replace("agent", "-agent") || 'unknown-agent',
+        name: formatAgentName(agent.type || 'Unknown Agent'),
+        description: agent.description || 'No description available',
         expertise: mapCapabilitiesToExpertise(agent.capabilities),
-        icon: getAgentIcon(agent.type),
-        status: isActive ? "busy" : agent.available ? "online" : "offline",
+        icon: getAgentIcon(agent.type || ''),
+        status: isActive ? "busy" as const : agent.available ? "online" as const : "offline" as const,
       };
     });
   }, [agentsData, agentStatus]);
@@ -208,7 +214,7 @@ export const Agents: React.FC = () => {
     navigate("/chat");
   };
 
-  const getStatusColor = (status: Agent["status"]) => {
+  const getStatusColor = (status: Agent["status"]): string => {
     switch (status) {
       case "online":
         return "#10b981";
@@ -231,7 +237,7 @@ export const Agents: React.FC = () => {
         </div>
         <div className="agents-grid">
           {/* Loading skeleton */}
-          {[1, 2, 3, 4, 5].map((i: any) => (
+          {[1, 2, 3, 4, 5].map((i: number) => (
             <div key={i} className="agent-card" style={{ opacity: 0.5 }}>
               <div className="agent-card-header">
                 <div className="agent-icon">
@@ -314,7 +320,7 @@ export const Agents: React.FC = () => {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            xmlns="http://www?.w3?.org/2000/svg"
+            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
@@ -329,7 +335,7 @@ export const Agents: React.FC = () => {
       </div>
 
       <div className="agents-grid">
-        {agents?.map((agent: any) => (
+        {agents?.map((agent: Agent) => (
           <div key={agent.id} className="agent-card">
             <div className="agent-card-header">
               <div className="agent-icon">{agent.icon}</div>
@@ -343,7 +349,7 @@ export const Agents: React.FC = () => {
             <div className="agent-expertise">
               <h4 className="expertise-title">Expertise:</h4>
               <div className="expertise-tags">
-                {agent?.expertise?.map((skill, index) => (
+                {agent?.expertise?.map((skill: string, index: number) => (
                   <span key={index} className="expertise-tag">
                     {skill}
                   </span>

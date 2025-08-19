@@ -288,15 +288,15 @@ describe('XSS Protection', () => {
   describe('Zod Schema Integration', () => {
     it('should sanitize strings through schema', () => {
       const input = 'Hello <script>alert("XSS")</script> World';
-      const result = XSSSchemas?.safeString?.parse(input);
+      const result = XSSSchemas.safeString.parse(input);
       
       expect(result).not.toContain('<script>');
-      expect(result).toBe('Hello <script>alert("XSS")</script> World');
+      expect(result).toBe('Hello  World');
     });
 
     it('should sanitize HTML content through schema', () => {
       const input = '<p>Hello</p><script>alert("XSS")</script>';
-      const result = XSSSchemas?.htmlContent?.parse(input);
+      const result = XSSSchemas.htmlContent.parse(input);
       
       expect(result).toContain('<p>Hello</p>');
       expect(result).not.toContain('<script>');
@@ -306,14 +306,14 @@ describe('XSS Protection', () => {
       const safeURL = 'https://example.com';
       const dangerousURL = 'javascript:alert("XSS")';
       
-      expect(XSSSchemas?.safeURL?.parse(safeURL)).toBe(encodeURIComponent(safeURL));
-      expect(XSSSchemas?.safeURL?.parse(dangerousURL)).toBe('');
+      expect(XSSSchemas.safeURL.parse(safeURL)).toBe(encodeURIComponent(safeURL));
+      expect(XSSSchemas.safeURL.parse(dangerousURL)).toBe('');
     });
 
     it('should validate safe identifiers', () => {
-      expect(() => XSSSchemas?.safeId?.parse('valid-id_123')).not.toThrow();
-      expect(() => XSSSchemas?.safeId?.parse('invalid<id>')).toThrow();
-      expect(() => XSSSchemas?.safeId?.parse('../../etc/passwd')).toThrow();
+      expect(() => XSSSchemas.safeId.parse('valid-id_123')).not.toThrow();
+      expect(() => XSSSchemas.safeId.parse('invalid<id>')).toThrow();
+      expect(() => XSSSchemas.safeId.parse('../../etc/passwd')).toThrow();
     });
   });
 

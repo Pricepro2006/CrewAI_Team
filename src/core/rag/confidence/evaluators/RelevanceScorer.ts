@@ -3,7 +3,7 @@
  * Measures semantic similarity and intent fulfillment
  */
 
-import type { ScoredDocument } from "../types.js";
+import type { ScoredDocument } from "../types";
 
 export interface RelevanceResult {
   score: number;

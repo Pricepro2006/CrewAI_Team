@@ -162,7 +162,7 @@ function cleanupOldTokens(): void {
   const now = Date.now();
   const expiredTokens: string[] = [];
 
-  for (const [token, metadata] of tokenMetadata.entries()) {
+  for (const [token, metadata] of Array.from(tokenMetadata.entries())) {
     if (now - metadata.lastUsedAt > CSRF_TOKEN_MAX_AGE) {
       expiredTokens.push(token);
     }
@@ -374,7 +374,7 @@ export function getCSRFStats() {
 
   let totalRotations = 0;
 
-  for (const [token, metadata] of tokenMetadata.entries()) {
+  for (const [token, metadata] of Array.from(tokenMetadata.entries())) {
     if (now - metadata.lastUsedAt <= CSRF_TOKEN_MAX_AGE) {
       stats.activeTokens++;
     } else {

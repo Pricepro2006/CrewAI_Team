@@ -83,6 +83,7 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 
 // Timestamp utilities
 export type Timestamp = string; // ISO 8601 string
+
 export type UnixTimestamp = number;
 
 export interface TimestampedEntity {
@@ -123,7 +124,7 @@ export interface BaseFilter {
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
-  error?: ApiError;
+  error?: import('./errors.js').ApiError;
   metadata?: ResponseMetadata;
 }
 

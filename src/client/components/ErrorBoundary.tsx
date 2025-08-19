@@ -161,7 +161,9 @@ export class ErrorBoundary extends Component<Props, State> {
       }
     );
     
-    window?.location?.href = '/';
+    if (window?.location) {
+      window.location.href = '/';
+    }
   };
 
   handleReportBug = () => {

@@ -172,7 +172,7 @@ export class CSRFErrorBoundary extends React.Component<
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     if (this?.state?.hasError) {
       console.error("CSRF Error caught by boundary:", error, errorInfo);
     }
@@ -183,7 +183,7 @@ export class CSRFErrorBoundary extends React.Component<
     window?.location?.reload();
   };
 
-  render() {
+  override render() {
     if (this?.state?.hasError && this?.state?.error) {
       if (this?.props?.fallback) {
         const FallbackComponent = this?.props?.fallback;

@@ -4,9 +4,9 @@
  * Ensures PCI DSS and GDPR compliance for data at rest
  */
 
-import crypto from "crypto";
+import * as crypto from "crypto";
 import { logger } from "../../utils/logger.js";
-import type Database from "better-sqlite3";
+import type * as Database from "better-sqlite3";
 
 interface EncryptionConfig {
   algorithm: "aes-256-gcm";
@@ -42,7 +42,7 @@ export class DataEncryptionService {
     iterations: 100000,
   };
 
-  private masterKey: Buffer;
+  private masterKey!: Buffer; // Initialized in initializeMasterKey()
   private keyCache: Map<string, { key: Buffer; expiry: number }> = new Map();
   private readonly CACHE_TTL = 3600000; // 1 hour
 
@@ -69,7 +69,7 @@ export class DataEncryptionService {
       );
     }
 
-    if (masterKeyEnv?.length || 0 < 64) {
+    if ((masterKeyEnv?.length || 0) < 64) {
       throw new Error(
         "ENCRYPTION_MASTER_KEY must be at least 64 characters for security"
       );
@@ -124,7 +124,7 @@ export class DataEncryptionService {
    */
   private cleanKeyCache(): void {
     const now = Date.now();
-    for (const [key, value] of this?.keyCache?.entries()) {
+    const entries = Array.from(this?.keyCache?.entries() || []); for (const [key, value] of entries) {
       if (value.expiry < now) {
         this?.keyCache?.delete(key);
       }
@@ -235,10 +235,10 @@ export class DataEncryptionService {
   verifyHash(data: string, hash: string): boolean {
     const [hashValue, salt] = hash.split(":");
     const computedHash = crypto
-      .pbkdf2Sync(data, salt, 10000, 32, "sha256")
+      .pbkdf2Sync(data, salt || "", 10000, 32, "sha256")
       .toString("hex");
     return crypto.timingSafeEqual(
-      Buffer.from(hashValue),
+      Buffer.from(hashValue || ""),
       Buffer.from(computedHash)
     );
   }
@@ -366,7 +366,7 @@ export class DataEncryptionService {
   /**
    * Apply encryption to database operations
    */
-  static applyEncryption(db: Database): void {
+  static applyEncryption(db: Database.Database): void {
     const encryption = DataEncryptionService.getInstance();
 
     // Hook into database operations to automatically encrypt/decrypt
@@ -414,7 +414,7 @@ export class DataEncryptionService {
 /**
  * Middleware to automatically encrypt/decrypt database fields
  */
-export function createEncryptionMiddleware(db: Database) {
+export function createEncryptionMiddleware(db: Database.Database) {
   const encryption = DataEncryptionService.getInstance();
 
   return {

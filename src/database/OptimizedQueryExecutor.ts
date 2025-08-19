@@ -10,6 +10,7 @@
  */
 
 import Database from 'better-sqlite3';
+import type { Database as DatabaseType, Statement } from 'better-sqlite3';
 import { Logger } from '../utils/logger.js';
 import * as crypto from 'crypto';
 
@@ -45,9 +46,9 @@ interface QueryStats {
 }
 
 export class OptimizedQueryExecutor {
-  private db: Database.Database;
+  private db: DatabaseType;
   private queryCache = new Map<string, CachedResult>();
-  private preparedStatements = new Map<string, Database.Statement>();
+  private preparedStatements = new Map<string, Statement>();
   private queryMetrics: QueryMetrics[] = [];
   
   // Configuration
@@ -64,7 +65,7 @@ export class OptimizedQueryExecutor {
     // Periodic cache cleanup
     setInterval(() => this.cleanupCache(), 30000); // Every 30 seconds
     
-    logger.info('OptimizedQueryExecutor initialized', { dbPath });
+    logger.info('OptimizedQueryExecutor initialized', 'database', { dbPath });
   }
 
   /**
@@ -91,9 +92,9 @@ export class OptimizedQueryExecutor {
       let result;
       
       if (isReadQuery) {
-        result = params ? stmt.all(...params) : stmt.all();
+        result = params && params.length > 0 ? stmt.all(...params) : stmt.all();
       } else {
-        result = params ? stmt.run(...params) : stmt.run();
+        result = params && params.length > 0 ? stmt.run(...params) : stmt.run();
       }
       
       // Cache read query results
@@ -113,9 +114,10 @@ export class OptimizedQueryExecutor {
       return result as T;
 
     } catch (error) {
-      logger.error('Query execution failed', {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Query execution failed', 'database', {
         sql: sql.substring(0, 100),
-        error: error.message,
+        error: errorMessage,
         executionTime: Date.now() - startTime
       });
       throw error;
@@ -125,7 +127,12 @@ export class OptimizedQueryExecutor {
   /**
    * Get or create a synchronous prepared statement wrapper
    */
-  prepare(sql: string): any {
+  prepare(sql: string): {
+    run: (...params: any[]) => any;
+    get: (...params: any[]) => any;
+    all: (...params: any[]) => any;
+    iterate: (...params: any[]) => Iterator<any>;
+  } {
     const stmt = this.getPreparedStatement(sql);
     const self = this;
     
@@ -133,7 +140,7 @@ export class OptimizedQueryExecutor {
       run: (...params: any[]) => self.executeSync(sql, params),
       get: (...params: any[]) => {
         const stmt = self.getPreparedStatement(sql);
-        return params ? stmt.get(...params) : stmt.get();
+        return params.length > 0 ? stmt.get(...params) : stmt.get();
       },
       all: (...params: any[]) => self.executeSync(sql, params),
       iterate: function* (...params: any[]) {
@@ -185,9 +192,10 @@ export class OptimizedQueryExecutor {
       return result as T;
 
     } catch (error) {
-      logger.error('Query execution failed', {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Query execution failed', 'database', {
         sql: sql.substring(0, 100),
-        error: error.message,
+        error: errorMessage,
         executionTime: Date.now() - startTime
       });
       throw error;
@@ -197,14 +205,18 @@ export class OptimizedQueryExecutor {
   /**
    * Execute a synchronous transaction (for backwards compatibility)
    */
-  transaction<T = any>(fn: (db: any) => T): T {
+  transaction<T = any>(fn: (db: {
+    prepare: (sql: string) => any;
+    exec: (sql: string) => any;
+    pragma: (pragma: string, value?: any) => any;
+  }) => T): T {
     const wrappedDb = {
       prepare: (sql: string) => this.prepare(sql),
       exec: (sql: string) => this.db.exec(sql),
       pragma: (pragma: string, value?: any) => this.db.pragma(pragma, value)
     };
     
-    const transaction = this.db.transaction((db: any) => fn(wrappedDb));
+    const transaction = this.db.transaction(() => fn(wrappedDb));
     return transaction();
   }
 
@@ -215,10 +227,10 @@ export class OptimizedQueryExecutor {
     const startTime = Date.now();
     const results: T[] = [];
 
-    const transaction = this.db.transaction((queries) => {
+    const transaction = this.db.transaction((queries: Array<{ sql: string; params?: any[] }>) => {
       for (const { sql, params } of queries) {
         const stmt = this.getPreparedStatement(sql);
-        const result = params ? stmt.all(...params) : stmt.all();
+        const result = params && params.length > 0 ? stmt.all(...params) : stmt.all();
         results.push(result as T);
       }
     });
@@ -226,7 +238,7 @@ export class OptimizedQueryExecutor {
     try {
       transaction(queries);
       
-      logger.debug('Transaction completed', {
+      logger.debug('Transaction completed', 'database', {
         queryCount: queries.length,
         executionTime: Date.now() - startTime
       });
@@ -234,8 +246,9 @@ export class OptimizedQueryExecutor {
       return results;
 
     } catch (error) {
-      logger.error('Transaction failed', {
-        error: error.message,
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Transaction failed', 'database', {
+        error: errorMessage,
         queryCount: queries.length
       });
       throw error;
@@ -245,7 +258,7 @@ export class OptimizedQueryExecutor {
   /**
    * Execute query with prepared statement
    */
-  private executeQuery(sql: string, params?: any[]): any {
+  private executeQuery(sql: string, params?: any[]): Promise<any> {
     const stmt = this.getPreparedStatement(sql);
     
     // Use setImmediate to avoid blocking the event loop
@@ -255,9 +268,9 @@ export class OptimizedQueryExecutor {
           let result;
           
           if (this.isReadQuery(sql)) {
-            result = params ? stmt.all(...params) : stmt.all();
+            result = params && params.length > 0 ? stmt.all(...params) : stmt.all();
           } else {
-            result = params ? stmt.run(...params) : stmt.run();
+            result = params && params.length > 0 ? stmt.run(...params) : stmt.run();
           }
           
           resolve(result);
@@ -271,7 +284,7 @@ export class OptimizedQueryExecutor {
   /**
    * Get or create prepared statement
    */
-  private getPreparedStatement(sql: string): Database.Statement {
+  private getPreparedStatement(sql: string): Statement {
     if (!this.preparedStatements.has(sql)) {
       const stmt = this.db.prepare(sql);
       this.preparedStatements.set(sql, stmt);
@@ -279,7 +292,9 @@ export class OptimizedQueryExecutor {
       // Limit prepared statement cache size
       if (this.preparedStatements.size > 100) {
         const firstKey = this.preparedStatements.keys().next().value;
-        this.preparedStatements.delete(firstKey);
+        if (firstKey !== undefined) {
+          this.preparedStatements.delete(firstKey);
+        }
       }
     }
     
@@ -307,7 +322,7 @@ export class OptimizedQueryExecutor {
     // Enable query planner optimizations
     this.db.pragma('optimize');
     
-    logger.info('Database optimizations applied');
+    logger.info('Database optimizations applied', 'database');
   }
 
   /**
@@ -329,14 +344,15 @@ export class OptimizedQueryExecutor {
       try {
         this.db.exec(index);
       } catch (error) {
-        logger.warn('Index creation failed', {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.warn('Index creation failed', 'database', {
           index: index.substring(0, 50),
-          error: error.message
+          error: errorMessage
         });
       }
     }
     
-    logger.info('Database indexes verified', { indexCount: indexes.length });
+    logger.info('Database indexes verified', 'database', { indexCount: indexes.length });
   }
 
   /**
@@ -391,7 +407,9 @@ export class OptimizedQueryExecutor {
     // Evict oldest entries if cache is full
     if (this.queryCache.size >= this.maxCacheSize) {
       const firstKey = this.queryCache.keys().next().value;
-      this.queryCache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.queryCache.delete(firstKey);
+      }
     }
 
     this.queryCache.set(key, {
@@ -408,7 +426,7 @@ export class OptimizedQueryExecutor {
     const now = Date.now();
     let cleaned = 0;
 
-    for (const [key, entry] of this.queryCache.entries()) {
+    for (const [key, entry] of Array.from(this.queryCache.entries())) {
       if (now - entry.timestamp > this.cacheTTL * 2) {
         this.queryCache.delete(key);
         cleaned++;
@@ -416,7 +434,7 @@ export class OptimizedQueryExecutor {
     }
 
     if (cleaned > 0) {
-      logger.debug('Cache cleanup completed', {
+      logger.debug('Cache cleanup completed', 'database', {
         entriesRemoved: cleaned,
         cacheSize: this.queryCache.size
       });
@@ -447,7 +465,7 @@ export class OptimizedQueryExecutor {
    * Analyze slow queries and suggest optimizations
    */
   private analyzeSlowQuery(sql: string, executionTime: number, params?: any[]): void {
-    logger.warn('Slow query detected', {
+    logger.warn('Slow query detected', 'database', {
       sql: sql.substring(0, 200),
       executionTime,
       params: params?.slice(0, 3)
@@ -455,7 +473,8 @@ export class OptimizedQueryExecutor {
 
     // Analyze query plan
     try {
-      const explain = this.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...(params || []));
+      const explainParams = params || [];
+      const explain = this.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...explainParams);
       
       // Check for missing indexes
       const needsIndex = explain.some((row: any) => 
@@ -464,7 +483,7 @@ export class OptimizedQueryExecutor {
       );
 
       if (needsIndex) {
-        logger.warn('Query needs index optimization', {
+        logger.warn('Query needs index optimization', 'database', {
           sql: sql.substring(0, 100),
           suggestion: 'Consider adding an index on the WHERE clause columns'
         });
@@ -493,7 +512,7 @@ export class OptimizedQueryExecutor {
 
     // Calculate cache memory usage (rough estimate)
     let cacheMemoryUsage = 0;
-    for (const [key, value] of this.queryCache.entries()) {
+    for (const [key, value] of Array.from(this.queryCache.entries())) {
       cacheMemoryUsage += key.length + JSON.stringify(value.data).length;
     }
 
@@ -535,7 +554,7 @@ export class OptimizedQueryExecutor {
   clearCache(): void {
     this.queryCache.clear();
     this.queryMetrics = [];
-    logger.info('Query cache cleared');
+    logger.info('Query cache cleared', 'database');
   }
 
   /**
@@ -559,6 +578,6 @@ export class OptimizedQueryExecutor {
     this.preparedStatements.clear();
     this.queryCache.clear();
     this.db.close();
-    logger.info('Database connection closed');
+    logger.info('Database connection closed', 'database');
   }
 }

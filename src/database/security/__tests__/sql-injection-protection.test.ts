@@ -3,12 +3,12 @@
  * Comprehensive test suite to verify SQL injection protection mechanisms
  */
 
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   SqlInjectionProtection,
   SqlInjectionError,
   DatabaseInputSchemas,
-} from "../SqlInjectionProtection.js";
+} from '../SqlInjectionProtection';
 
 describe("SqlInjectionProtection", () => {
   let sqlSecurity: SqlInjectionProtection;

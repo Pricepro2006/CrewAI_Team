@@ -1,0 +1,171 @@
+import { logger } from "../../utils/logger.js";
+export class AgentRouter {
+    constructor() {
+        logger.info("AgentRouter initialized", "ROUTER");
+    }
+    async routeQuery(analysis) {
+        logger.debug("Routing query", "ROUTER", { analysis });
+        // Determine which agent type to use based on query analysis
+        const agentType = this.determineAgentType(analysis);
+        // Create routing plan
+        const routingPlan = {
+            selectedAgents: [
+                {
+                    agentType: agentType,
+                    priority: 1,
+                    confidence: 0.8,
+                    rationale: `Selected ${agentType} based on query analysis`,
+                    expectedDuration: 30,
+                    requiredCapabilities: this.getRequiredCapabilities(agentType, analysis),
+                },
+            ],
+            fallbackAgents: this.getFallbackAgents(agentType),
+            confidence: 0.8,
+            executionStrategy: "sequential",
+            estimatedCost: 0.1,
+            riskAssessment: {
+                level: "low",
+                factors: [],
+                mitigations: [],
+            },
+        };
+        logger.debug("Query routed", "ROUTER", { plan: routingPlan });
+        return routingPlan;
+    }
+    determineAgentType(analysis) {
+        const { intent, entities, domains } = analysis;
+        const intentLower = intent.toLowerCase();
+        // Create a scoring system for each agent
+        const agentScores = {
+            ResearchAgent: 0,
+            CodeAgent: 0,
+            DataAnalysisAgent: 0,
+            WriterAgent: 0,
+            ToolExecutorAgent: 0
+        };
+        // Score based on domains (highest weight)
+        domains.forEach(domain => {
+            switch (domain.toLowerCase()) {
+                case 'research':
+                case 'information':
+                case 'web':
+                    agentScores.ResearchAgent += 3;
+                    break;
+                case 'code':
+                case 'programming':
+                case 'development':
+                    agentScores.CodeAgent += 3;
+                    break;
+                case 'analysis':
+                case 'data':
+                case 'statistics':
+                    agentScores.DataAnalysisAgent += 3;
+                    break;
+                case 'writing':
+                case 'documentation':
+                case 'content':
+                    agentScores.WriterAgent += 3;
+                    break;
+                case 'automation':
+                case 'tools':
+                case 'execution':
+                    agentScores.ToolExecutorAgent += 3;
+                    break;
+            }
+        });
+        // Score based on intent keywords (medium weight)
+        const intentPatterns = {
+            ResearchAgent: ['search', 'find', 'research', 'investigate', 'explore',
+                'discover', 'lookup', 'query', 'information', 'latest',
+                'trends', 'news', 'updates'],
+            CodeAgent: ['code', 'implement', 'debug', 'fix', 'create function',
+                'write function', 'program', 'script', 'develop', 'compile',
+                'syntax', 'algorithm', 'class', 'method'],
+            DataAnalysisAgent: ['analyze', 'analysis', 'data', 'metrics', 'statistics',
+                'visualize', 'chart', 'graph', 'pattern', 'trend',
+                'correlation', 'insight', 'report data'],
+            WriterAgent: ['write article', 'write blog', 'compose', 'draft', 'document',
+                'summarize', 'explain', 'describe', 'create content',
+                'narrative', 'story', 'report writing'],
+            ToolExecutorAgent: ['execute', 'run', 'automate', 'deploy', 'integrate',
+                'workflow', 'pipeline', 'orchestrate', 'coordinate']
+        };
+        Object.entries(intentPatterns).forEach(([agent, patterns]) => {
+            patterns.forEach(pattern => {
+                if (intentLower.includes(pattern)) {
+                    agentScores[agent] += 2;
+                }
+            });
+        });
+        // Score based on entities (lower weight)
+        if (entities) {
+            if (entities.code || entities.functions || entities.classes) {
+                agentScores.CodeAgent += 1;
+            }
+            if (entities.data || entities.metrics || entities.numbers) {
+                agentScores.DataAnalysisAgent += 1;
+            }
+            if (entities.topics || entities.concepts) {
+                agentScores.ResearchAgent += 1;
+            }
+            if (entities.documents || entities.text) {
+                agentScores.WriterAgent += 1;
+            }
+        }
+        // Special case: prioritize CodeAgent for explicit code requests
+        if (intentLower.includes('write') && intentLower.includes('function')) {
+            agentScores.CodeAgent += 5;
+        }
+        // Find agent with highest score
+        let selectedAgent = 'ResearchAgent'; // Default
+        let highestScore = 0;
+        Object.entries(agentScores).forEach(([agent, score]) => {
+            if (score > highestScore) {
+                highestScore = score;
+                selectedAgent = agent;
+            }
+        });
+        // Log scoring for debugging
+        logger.debug("Agent scoring results", "ROUTER", {
+            scores: agentScores,
+            selected: selectedAgent,
+            intent: intentLower
+        });
+        return selectedAgent;
+    }
+    getFallbackAgents(primaryAgent) {
+        const fallbackMap = {
+            ResearchAgent: ["ToolExecutorAgent"],
+            CodeAgent: ["ToolExecutorAgent", "ResearchAgent"],
+            DataAnalysisAgent: ["ResearchAgent", "ToolExecutorAgent"],
+            WriterAgent: ["ResearchAgent"],
+            ToolExecutorAgent: ["ResearchAgent"],
+        };
+        return fallbackMap[primaryAgent] || ["ResearchAgent"];
+    }
+    getRequiredCapabilities(agentType, analysis) {
+        const baseCapabilities = {
+            ResearchAgent: ["research", "web_search", "information_gathering"],
+            CodeAgent: ["code_generation", "debugging", "syntax_analysis"],
+            DataAnalysisAgent: [
+                "data_processing",
+                "statistical_analysis",
+                "visualization",
+            ],
+            WriterAgent: ["content_creation", "grammar_check", "style_analysis"],
+            ToolExecutorAgent: ["tool_execution", "api_integration", "automation"],
+        };
+        const capabilities = baseCapabilities[agentType] || ["general_processing"];
+        // Add domain-specific capabilities based on analysis
+        if (analysis?.resourceRequirements?.requiresInternet) {
+            capabilities.push("internet_access");
+        }
+        if (analysis?.resourceRequirements?.requiresDatabase) {
+            capabilities.push("database_access");
+        }
+        if (analysis?.resourceRequirements?.requiresVector) {
+            capabilities.push("vector_search");
+        }
+        return capabilities;
+    }
+}

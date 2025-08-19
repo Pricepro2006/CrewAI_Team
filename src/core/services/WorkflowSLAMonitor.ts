@@ -402,9 +402,9 @@ export class WorkflowSLAMonitor {
         .get();
 
       return {
-        ...stats,
+        ...(stats ?? {}),
         isMonitoring: this.isRunning,
-        checkInterval: this?.config?.checkIntervalMinutes,
+        checkInterval: this.config?.checkIntervalMinutes,
         lastCheck: new Date().toISOString(),
       };
     } finally {

@@ -2,24 +2,25 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { EmailDashboardMultiPanel } from '../EmailDashboardMultiPanel.js';
-import type { EmailRecord, EmailStatus } from '../../../../types/email-dashboard?.interfaces.js';
+import '@testing-library/jest-dom';
+import { EmailDashboardMultiPanel } from '../EmailDashboardMultiPanel';
+import type { EmailRecord, EmailStatus } from '../../../../types/email-dashboard.interfaces';
 
 // Mock dependencies
-vi.mock('../../../../components/ui/card.js', () => ({
+vi.mock('../../../../components/ui/card', () => ({
   Card: ({ children, className }: any) => <div className={`card ${className || ''}`}>{children}</div>,
   CardContent: ({ children, className }: any) => <div className={`card-content ${className || ''}`}>{children}</div>,
   CardHeader: ({ children }: any) => <div className="card-header">{children}</div>,
   CardTitle: ({ children }: any) => <h3 className="card-title">{children}</h3>,
 }));
 
-vi.mock('../../../../components/ui/badge.js', () => ({
+vi.mock('../../../../components/ui/badge', () => ({
   Badge: ({ children, variant, className }: any) => (
     <span className={`badge badge-${variant} ${className || ''}`}>{children}</span>
   ),
 }));
 
-vi.mock('../../../../components/ui/button.js', () => ({
+vi.mock('../../../../components/ui/button', () => ({
   Button: ({ children, onClick, className, variant }: any) => (
     <button className={`button ${variant} ${className || ''}`} onClick={onClick}>
       {children}
@@ -27,7 +28,7 @@ vi.mock('../../../../components/ui/button.js', () => ({
   ),
 }));
 
-vi.mock('../email/EmailTable.js', () => ({
+vi.mock('../email/EmailTable', () => ({
   EmailTable: ({ emails, onRowClick, onAssignEmail, selectedEmails, teamMembers }: any) => (
     <div data-testid="email-table">
       <div>Emails: {emails.length}</div>
@@ -47,7 +48,7 @@ vi.mock('../email/EmailTable.js', () => ({
   ),
 }));
 
-vi.mock('../email/StatusIndicator.js', () => ({
+vi.mock('../email/StatusIndicator', () => ({
   StatusIndicator: ({ status, statusText, size, showPulse }: any) => (
     <div
       data-testid="status-indicator"
@@ -61,11 +62,11 @@ vi.mock('../email/StatusIndicator.js', () => ({
   ),
 }));
 
-vi.mock('../../../../lib/utils.js', () => ({
+vi.mock('../../../../lib/utils', () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(' '),
 }));
 
-vi.mock('../../../../config/team-members?.config.js', () => ({
+vi.mock('../../../../config/team-members?.config', () => ({
   TEAM_MEMBERS: [
     { id: '1', name: 'John Doe', email: 'john@example.com' },
     { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
@@ -80,10 +81,11 @@ const createMockEmail = (overrides: Partial<EmailRecord> = {}): EmailRecord => (
   email_alias: 'test@example.com',
   status: 'yellow' as EmailStatus,
   status_text: 'In Progress',
-  priority: 'normal' as const,
+  summary: 'Test email summary content',
+  workflow_state: 'IN_PROGRESS' as const,
+  priority: 'medium' as const,
   timestamp: new Date().toISOString(),
-  assigned_to: null,
-  chain_id: null,
+  assignedTo: undefined,
   ...overrides,
 });
 
@@ -193,12 +195,12 @@ describe('EmailDashboardMultiPanel', () => {
       );
 
       // Marketing-Splunk panel should show 2 emails (marketing and splunk)
-      const marketingPanel = screen.getByText('Marketing-Splunk').closest('.card');
-      expect(within(marketingPanel!).getByText('2')).toBeInTheDocument();
+      const marketingPanel = screen.getByText('Marketing-Splunk').closest('.card') as HTMLElement;
+      expect(within(marketingPanel).getByText('2')).toBeInTheDocument();
 
       // VMware@TDSynnex panel should show 2 emails (vmware and tdsynnex)
-      const vmwarePanel = screen.getByText('VMware@TDSynnex').closest('.card');
-      expect(within(vmwarePanel!).getByText('2')).toBeInTheDocument();
+      const vmwarePanel = screen.getByText('VMware@TDSynnex').closest('.card') as HTMLElement;
+      expect(within(vmwarePanel).getByText('2')).toBeInTheDocument();
     });
 
     it('filters emails correctly for marketing panel', () => {
@@ -213,9 +215,9 @@ describe('EmailDashboardMultiPanel', () => {
         />
       );
 
-      const marketingPanel = screen.getByText('Marketing-Splunk').closest('.card');
-      expect(within(marketingPanel!).getByText('Marketing Team')).toBeInTheDocument();
-      expect(within(marketingPanel!).getByText('IT Team')).toBeInTheDocument();
+      const marketingPanel = screen.getByText('Marketing-Splunk').closest('.card') as HTMLElement;
+      expect(within(marketingPanel).getByText('Marketing Team')).toBeInTheDocument();
+      expect(within(marketingPanel).getByText('IT Team')).toBeInTheDocument();
     });
 
     it('filters emails correctly for vmware panel', () => {
@@ -230,9 +232,9 @@ describe('EmailDashboardMultiPanel', () => {
         />
       );
 
-      const vmwarePanel = screen.getByText('VMware@TDSynnex').closest('.card');
-      expect(within(vmwarePanel!).getByText('Procurement')).toBeInTheDocument();
-      expect(within(vmwarePanel!).getByText('Business Dev')).toBeInTheDocument();
+      const vmwarePanel = screen.getByText('VMware@TDSynnex').closest('.card') as HTMLElement;
+      expect(within(vmwarePanel).getByText('Procurement')).toBeInTheDocument();
+      expect(within(vmwarePanel).getByText('Business Dev')).toBeInTheDocument();
     });
 
     it('shows empty state when no emails match filter criteria', () => {
@@ -288,10 +290,10 @@ describe('EmailDashboardMultiPanel', () => {
       );
 
       // Find marketing panel and click on an email
-      const marketingPanel = screen.getByText('Marketing-Splunk').closest('.card');
-      const emailItem = within(marketingPanel!).getByText('Marketing Team');
+      const marketingPanel = screen.getByText('Marketing-Splunk').closest('.card') as HTMLElement;
+      const emailItem = within(marketingPanel).getByText('Marketing Team');
       
-      await user.click(emailItem.closest('div')!);
+      await user.click(emailItem.closest('div') as HTMLElement);
       
       expect(mockOnEmailSelect).toHaveBeenCalled();
     });
@@ -569,10 +571,9 @@ describe('EmailDashboardMultiPanel', () => {
           email_alias: '',
           status: 'green' as EmailStatus,
           status_text: '',
-          priority: 'normal' as const,
+          priority: 'medium' as const,
           timestamp: '',
           assigned_to: null,
-          chain_id: null,
         } as any,
       ];
       

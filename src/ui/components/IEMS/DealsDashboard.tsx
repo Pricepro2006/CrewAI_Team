@@ -36,7 +36,7 @@ export const DealsDashboard: React.FC<DealsDashboardProps> = ({
   // Handle deal search
   const handleDealSearch = () => {
     const trimmedId = inputDealId.trim();
-    if (trimmedId?.length || 0 !== 8 || !/^\d+$/.test(trimmedId)) {
+    if ((trimmedId?.length || 0) !== 8 || !/^\d+$/.test(trimmedId)) {
       setSearchError("Deal ID must be exactly 8 digits");
       return;
     }

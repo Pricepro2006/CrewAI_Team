@@ -183,7 +183,7 @@ export class KnowledgeIndexer {
             `Skipping large file ${filePath} (${stats.size} bytes)`,
             "KNOWLEDGE_INDEXER"
           );
-          result?.skippedFiles?.push(filePath);
+          result.skippedFiles.push(filePath);
           continue;
         }
 
@@ -192,7 +192,7 @@ export class KnowledgeIndexer {
         
         // Skip empty files
         if (!content.trim()) {
-          result?.skippedFiles?.push(filePath);
+          result.skippedFiles.push(filePath);
           continue;
         }
 
@@ -210,7 +210,7 @@ export class KnowledgeIndexer {
           `Failed to process file ${filePath}: ${error instanceof Error ? error.message : "Unknown error"}`,
           "KNOWLEDGE_INDEXER"
         );
-        result?.failedFiles?.push(filePath);
+        result.failedFiles.push(filePath || 'unknown-file');
       }
     }
 
@@ -228,8 +228,8 @@ export class KnowledgeIndexer {
           "KNOWLEDGE_INDEXER"
         );
         // Add all files in batch to failed list
-        result?.failedFiles?.push(...files);
-        result.successfulFiles -= documents?.length || 0;
+        result.failedFiles.push(...files.filter((f): f is string => typeof f === 'string' && f.length > 0));
+        result.successfulFiles -= (documents?.length ?? 0);
       }
     }
   }
@@ -253,7 +253,7 @@ export class KnowledgeIndexer {
     let title = fileName.replace(extension, "");
     if (extension === ".md") {
       const titleMatch = content.match(/^#\s+(.+)$/m);
-      if (titleMatch) {
+      if (titleMatch && titleMatch[1]) {
         title = titleMatch[1];
       }
     }
@@ -262,7 +262,7 @@ export class KnowledgeIndexer {
     let description = "";
     if (extension === ".md") {
       const paragraphMatch = content.match(/^(?!#)(.+)$/m);
-      if (paragraphMatch) {
+      if (paragraphMatch && paragraphMatch[1]) {
         description = paragraphMatch[1].substring(0, 200);
       }
     } else if (extension === ".json") {
@@ -308,8 +308,9 @@ export class KnowledgeIndexer {
     if (relativePath.includes("section-")) return "project-sections";
     
     // Default category based on first directory
-    if (pathParts?.length || 0 > 1) {
-      return pathParts[0].toLowerCase().replace(/_/g, "-");
+    const pathPartsLength = pathParts?.length ?? 0;
+    if (pathPartsLength > 1) {
+      return pathParts[0]!.toLowerCase().replace(/_/g, "-");
     }
     
     return "general";

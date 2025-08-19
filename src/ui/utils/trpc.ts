@@ -1,7 +1,7 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { createTRPCMsw } from "msw-trpc";
 import { httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "../../api/trpc/router.js";
+import type { AppRouter } from "../../api/trpc/router";
 
 /**
  * TRPC React utilities for type-safe API communication

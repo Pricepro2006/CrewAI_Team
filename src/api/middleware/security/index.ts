@@ -229,7 +229,7 @@ export function createRateLimitMiddleware(options: {
     // Clean up old entries periodically
     if (Math.random() < 0.01) {
       // 1% chance
-      for (const [k, v] of requests.entries()) {
+      for (const [k, v] of Array.from(requests.entries())) {
         if (v.resetAt < windowStart) {
           requests.delete(k);
         }

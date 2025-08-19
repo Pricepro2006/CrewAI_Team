@@ -41,7 +41,15 @@ export const PerformanceDashboard: React.FC = () => {
   }
 
   const refreshStats = () => {
-    const cacheStats = getCacheStats();
+    const rawCacheStats = getCacheStats();
+    // Transform cache stats to match expected interface
+    const cacheStats = {
+      totalQueries: rawCacheStats.queries + rawCacheStats.mutations,
+      activeQueries: rawCacheStats.activeQueries,
+      staleQueries: rawCacheStats.staleQueries,
+      errorQueries: rawCacheStats.errorQueries,
+      cacheSize: 0, // Not available from tRPC utils, provide default
+    };
     const renderStats = {
       averageRenderTime: performanceTracker.getAverageRenderTime(),
       slowComponents: performanceTracker.getSlowComponents(),

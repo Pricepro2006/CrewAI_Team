@@ -3,9 +3,9 @@
  * Creates tables for persistent cart storage with session and user support
  */
 
-import type { Database } from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 
-export const up = (db: Database) => {
+export const up = (db: DatabaseInstance) => {
   // Shopping carts table
   db.exec(`
     CREATE TABLE IF NOT EXISTS shopping_carts (
@@ -202,7 +202,7 @@ export const up = (db: Database) => {
   `);
 };
 
-export const down = (db: Database) => {
+export const down = (db: DatabaseInstance) => {
   db.exec(`
     DROP TRIGGER IF EXISTS log_cart_item_removed;
     DROP TRIGGER IF EXISTS log_cart_item_added;

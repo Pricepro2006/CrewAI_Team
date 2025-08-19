@@ -211,7 +211,7 @@ export class BusinessContextManager {
     logger.info(`Building business context for ${options.modelType} with ${availableTokens} tokens`);
 
     // Extract raw context from email and chain
-    const rawContext = await this.extractRawContext(email, chainData, historicalData, options);
+    const rawContext = await this.extractRawContext(email, options, chainData, historicalData);
     
     // Prioritize and optimize context based on focus areas
     const optimizedContext = await this.optimizeContext(rawContext, availableTokens, options);
@@ -220,12 +220,18 @@ export class BusinessContextManager {
     const contextMetadata = this.calculateContextMetadata(optimizedContext, availableTokens, options);
     
     const processingTime = Date.now() - startTime;
-    logger.info(`Business context built in ${processingTime}ms with ${contextMetadata?.tokenUsage?.used} tokens`);
+    logger.info(`Business context built in ${processingTime}ms with ${contextMetadata.tokenUsage.used} tokens`);
     
-    return {
-      ...optimizedContext,
+    const result: BusinessContext = {
+      financialContext: optimizedContext.financialContext!,
+      technicalContext: optimizedContext.technicalContext!,
+      relationshipContext: optimizedContext.relationshipContext!,
+      temporalContext: optimizedContext.temporalContext!,
+      workflowContext: optimizedContext.workflowContext!,
       ...contextMetadata,
     };
+    
+    return result;
   }
 
   /**
@@ -291,34 +297,34 @@ export class BusinessContextManager {
    */
   private async extractRawContext(
     email: EmailRecord,
+    options: ContextOptimizationOptions,
     chainData?: EmailChain,
-    historicalData?: any[],
-    options: ContextOptimizationOptions = {} as ContextOptimizationOptions
+    historicalData?: any[]
   ): Promise<Partial<BusinessContext>> {
     const context: Partial<BusinessContext> = {};
 
     // Financial Context Extraction
-    if (options?.focusAreas?.includes("financial")) {
+    if (options.focusAreas.includes("financial")) {
       context.financialContext = await this.extractFinancialContext(email, chainData);
     }
 
     // Technical Context Extraction
-    if (options?.focusAreas?.includes("technical")) {
+    if (options.focusAreas.includes("technical")) {
       context.technicalContext = await this.extractTechnicalContext(email, chainData);
     }
 
     // Relationship Context Extraction
-    if (options?.focusAreas?.includes("relationship")) {
+    if (options.focusAreas.includes("relationship")) {
       context.relationshipContext = await this.extractRelationshipContext(email, chainData, historicalData);
     }
 
     // Temporal Context Extraction
-    if (options?.focusAreas?.includes("temporal")) {
+    if (options.focusAreas.includes("temporal")) {
       context.temporalContext = await this.extractTemporalContext(email, chainData);
     }
 
     // Workflow Context Extraction
-    if (options?.focusAreas?.includes("workflow")) {
+    if (options.focusAreas.includes("workflow")) {
       context.workflowContext = await this.extractWorkflowContext(email, chainData);
     }
 
@@ -556,15 +562,15 @@ export class BusinessContextManager {
     const sections = [];
     
     if (context.financialContext) {
-      sections.push(`FINANCIAL: $${context?.financialContext?.totalValue} value, ${context?.financialContext?.poNumbers?.length || 0} POs, Risk: ${context?.financialContext?.riskLevel}`);
+      sections.push(`FINANCIAL: ${context.financialContext.totalValue} value, ${context.financialContext.poNumbers.length} POs, Risk: ${context.financialContext.riskLevel}`);
     }
     
     if (context.workflowContext) {
-      sections.push(`WORKFLOW: Stage=${context?.workflowContext?.currentStage}, Actions=${context?.workflowContext?.nextActions?.length || 0}`);
+      sections.push(`WORKFLOW: Stage=${context.workflowContext.currentStage}, Actions=${context.workflowContext.nextActions.length}`);
     }
     
-    if (context.temporalContext && context?.temporalContext?.deadlines?.length || 0 > 0) {
-      const urgentDeadlines = context?.temporalContext?.deadlines?.filter(d => d.criticality === 'critical').length;
+    if (context.temporalContext && context.temporalContext.deadlines.length > 0) {
+      const urgentDeadlines = context.temporalContext.deadlines.filter(d => d.criticality === 'critical').length;
       sections.push(`TEMPORAL: ${urgentDeadlines} critical deadlines`);
     }
     
@@ -582,21 +588,21 @@ export class BusinessContextManager {
     // Executive summary section
     sections.push("=== EXECUTIVE CONTEXT ===");
     if (context.financialContext) {
-      sections.push(`Revenue Impact: $${context?.financialContext?.totalValue}`);
-      sections.push(`Financial Risk: ${context?.financialContext?.riskLevel}`);
+      sections.push(`Revenue Impact: ${context.financialContext.totalValue}`);
+      sections.push(`Financial Risk: ${context.financialContext.riskLevel}`);
     }
     
     if (context.relationshipContext) {
-      sections.push(`Relationship Status: ${context?.relationshipContext?.sentimentTrend}`);
-      sections.push(`Stakeholders: ${context?.relationshipContext?.stakeholders?.length || 0}`);
+      sections.push(`Relationship Status: ${context.relationshipContext.sentimentTrend}`);
+      sections.push(`Stakeholders: ${context.relationshipContext.stakeholders.length}`);
     }
     
     // Detailed analysis sections...
     if (context.workflowContext) {
       sections.push("\n=== WORKFLOW INTELLIGENCE ===");
-      sections.push(`Current Stage: ${context?.workflowContext?.currentStage}`);
-      sections.push(`Bottlenecks: ${context?.workflowContext?.bottlenecks.join(', ')}`);
-      sections.push(`Automation Opportunities: ${context?.workflowContext?.automationOpportunities.join(', ')}`);
+      sections.push(`Current Stage: ${context.workflowContext.currentStage}`);
+      sections.push(`Bottlenecks: ${context.workflowContext.bottlenecks.join(', ')}`);
+      sections.push(`Automation Opportunities: ${context.workflowContext.automationOpportunities.join(', ')}`);
     }
     
     return sections.join('\n');
@@ -604,7 +610,8 @@ export class BusinessContextManager {
 
   // Utility methods (simplified implementations)
   private extractEntities(text: string, pattern: RegExp): string[] {
-    const matches = text.match(pattern) || [];
+    const matches = text.match(pattern);
+    if (!matches) return [];
     return [...new Set(matches)].slice(0, 10); // Limit to prevent token overflow
   }
 
@@ -622,7 +629,7 @@ export class BusinessContextManager {
 
   private estimateTokenUsage(context: any): number {
     const text = JSON.stringify(context);
-    return Math.ceil(text?.length || 0 / 4); // Rough token estimation
+    return Math.ceil((text?.length || 0) / 4); // Rough token estimation
   }
 
   private calculateEfficiency(context: any, tokens: number): number {
@@ -637,7 +644,7 @@ export class BusinessContextManager {
     phase2Results?: Phase2Results
   ): BusinessPriority {
     if (email.importance === "high") return "high";
-    if ((phase2Results?.enhanced_classification?.confidence || 0) > 0.9) return "high";
+    if (phase2Results?.enhanced_classification?.confidence && phase2Results.enhanced_classification.confidence > 0.9) return "high";
     return "medium";
   }
 
@@ -725,12 +732,14 @@ export class BusinessContextManager {
 
   private async extractStakeholders(email: EmailRecord, chainData?: EmailChain): Promise<Stakeholder[]> {
     // Extract stakeholders from email addresses and signatures
+    const fromAddress = email.from_address || '';
+    const fromName = fromAddress ? fromAddress.split('@')[0] : 'unknown';
     return [{
-      name: email?.from_address?.split('@')[0],
+      name: fromName || 'unknown',  // Ensure name is always a string
       role: "unknown",
       influence: "medium",
       decisionMaker: false,
-      contactInfo: email.from_address
+      contactInfo: fromAddress
     }];
   }
 

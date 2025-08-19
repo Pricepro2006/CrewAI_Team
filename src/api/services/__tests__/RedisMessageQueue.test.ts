@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
-import { RedisMessageQueue, BaseMessage, GroceryMessage } from '../RedisMessageQueue.js';
+import { RedisMessageQueue, BaseMessage, GroceryMessage } from '../RedisMessageQueue';
 
 // Mock Redis
 const mockRedisInstance = {
@@ -283,7 +283,7 @@ describe('RedisMessageQueue', () => {
 
       await expect(
         messageQueue.registerConsumer('test_queue', mockConsumer)
-      ).resolves?.not?.toThrow();
+      ).resolves.not.toThrow();
 
       expect(mockRedisInstance.xgroup).toHaveBeenCalledWith(
         'CREATE',
@@ -306,7 +306,7 @@ describe('RedisMessageQueue', () => {
 
       await expect(
         messageQueue.registerConsumer('test_queue', mockConsumer)
-      ).resolves?.not?.toThrow();
+      ).resolves.not.toThrow();
     });
 
     it('should start consumer workers', async () => {
@@ -423,8 +423,8 @@ describe('RedisMessageQueue', () => {
     });
 
     it('should pause and resume queues', async () => {
-      await expect(messageQueue.pauseQueue('test_queue')).resolves?.not?.toThrow();
-      await expect(messageQueue.resumeQueue('test_queue')).resolves?.not?.toThrow();
+      await expect(messageQueue.pauseQueue('test_queue')).resolves.not.toThrow();
+      await expect(messageQueue.resumeQueue('test_queue')).resolves.not.toThrow();
     });
 
     it('should get queue statistics', async () => {

@@ -44,6 +44,7 @@ export class OptimizedEmailProcessingService {
   private readonly BATCH_SIZE = 50;
   private readonly MAX_CONCURRENT_BATCHES = 3;
   private activeBatches: Set<string> = new Set();
+  private processedEmails: Map<string, any> = new Map();
 
   private constructor() {
     this.dbManager = getDatabaseManager();
@@ -198,7 +199,7 @@ export class OptimizedEmailProcessingService {
    */
   async processEmailsInBatches(
     emailBatch: EmailBatch,
-    processingFunction: (email: any) => Promise<any>
+    processingFunction: (email: EmailBatch['emails'][0]) => Promise<any>
   ): Promise<BatchProcessingStats> {
     const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.activeBatches.add(batchId);
@@ -374,6 +375,49 @@ export class OptimizedEmailProcessingService {
       chunks.push(array.slice(i, i + size));
     }
     return chunks;
+  }
+
+  /**
+   * Get processing statistics
+   */
+  async getProcessingStats(): Promise<{
+    processedEmails: number;
+    activeBatches: number;
+    successCount: number;
+    errorCount: number;
+    averageProcessingTime: number;
+    lastProcessedAt: Date | null;
+  }> {
+    const stats = {
+      processedEmails: this.processedEmails.size,
+      activeBatches: this.activeBatches.size,
+      successCount: 0,
+      errorCount: 0,
+      averageProcessingTime: 0,
+      lastProcessedAt: null as Date | null,
+    };
+
+    // Calculate success and error counts from processed emails
+    for (const email of this.processedEmails.values()) {
+      if ((email as any).status === 'success') {
+        stats.successCount++;
+      } else if ((email as any).status === 'error') {
+        stats.errorCount++;
+      }
+      
+      // Track last processed time
+      const processedAt = (email as any).processedAt;
+      if (processedAt && (!stats.lastProcessedAt || processedAt > stats.lastProcessedAt)) {
+        stats.lastProcessedAt = processedAt;
+      }
+    }
+
+    // Calculate average processing time if we have metrics
+    if (stats.processedEmails > 0) {
+      stats.averageProcessingTime = 0; // Would need to track timing data
+    }
+
+    return stats;
   }
 
   /**

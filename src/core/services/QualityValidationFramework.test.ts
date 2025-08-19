@@ -5,8 +5,9 @@
  * from replacing high-quality fallbacks.
  */
 
-import { EmailThreePhaseAnalysisService } from "./EmailThreePhaseAnalysisService.js";
-import { Logger } from "../../utils/logger.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmailThreePhaseAnalysisService } from './EmailThreePhaseAnalysisService';
+import { Logger } from '../../utils/logger';
 
 const logger = new Logger("QualityValidationTest");
 

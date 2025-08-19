@@ -3,7 +3,7 @@
  * Checks response claims against source documents
  */
 
-import type { ScoredDocument } from "../types.js";
+import type { ScoredDocument } from "../types";
 
 export interface FactualityResult {
   score: number;
@@ -196,8 +196,8 @@ export class FactualityChecker {
     }
 
     return {
-      isSupported: supportingEvidence?.length || 0 > 0,
-      isContradicted: contradictingEvidence?.length || 0 > 0,
+      isSupported: Boolean(supportingEvidence?.length && supportingEvidence.length > 0),
+      isContradicted: Boolean(contradictingEvidence?.length && contradictingEvidence.length > 0),
       supportingEvidence,
       contradictingEvidence,
     };
@@ -217,7 +217,9 @@ export class FactualityChecker {
       sourceText.includes(word.toLowerCase()),
     );
 
-    return matchingWords?.length || 0 >= Math.min(3, claimWords?.length || 0 * 0.6);
+    const matchingWordsLength = matchingWords?.length ?? 0;
+    const claimWordsLength = claimWords?.length ?? 0;
+    return matchingWordsLength >= Math.min(3, claimWordsLength * 0.6);
   }
 
   /**

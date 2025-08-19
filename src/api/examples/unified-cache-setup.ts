@@ -23,22 +23,34 @@ export async function setupUnifiedCacheSystem(app?: Express): Promise<UnifiedCac
     cache: {
       memory: {
         maxSize: 50000,        // 50K items in memory
-        ttl: 300              // 5 minute default TTL
+        ttl: 300,              // 5 minute default TTL
+        checkInterval: 60000   // Check for expired items every minute
       },
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
-        ttl: 3600             // 1 hour in Redis
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_CACHE_DB || '0'), // Default DB for cache
+        ttl: 3600,             // 1 hour in Redis
+        keyPrefix: 'cache:',   // Default cache prefix
+        maxRetries: 3          // Maximum retry attempts
       },
       sqlite: {
         path: './data/unified_cache.db',
-        ttl: 86400            // 24 hours in SQLite
+        ttl: 86400,            // 24 hours in SQLite
+        tableName: 'unified_cache', // Default table name
+        maxEntries: 1000000,   // 1M entries default
+        cleanupInterval: 3600000 // Clean up every hour
       }
     },
     integration: {
       enablePricingCache: true,
       enableListCache: true,
-      warmOnStartup: false,    // Don't warm on startup for demo
+      pricingCacheTtl: 3600,   // 1 hour for pricing data
+      listCacheTtl: 1800,       // 30 minutes for list data
+      enableCacheWarm: true,    // Enable cache warming feature
+      warmOnStartup: false,     // Don't warm on startup for demo
+      cacheKeyPrefix: 'integrated:', // Prefix for integrated cache keys
       invalidationStrategy: 'immediate'
     },
     monitoring: {

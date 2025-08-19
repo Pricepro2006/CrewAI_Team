@@ -440,7 +440,7 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
                     {transition.label}
                   </div>
                   <div className="text-xs text-gray-500">
-                    → {STATUS_CONFIG[transition.to].label}
+                    → {STATUS_CONFIG[transition.to as EmailStatus].label}
                     {transition.requiresComment && " (requires comment)"}
                   </div>
                 </div>
@@ -480,9 +480,9 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
                   <span className="text-gray-600"> changed status to </span>
                   <span
                     className="font-medium"
-                    style={{ color: STATUS_CONFIG[entry.toStatus].color }}
+                    style={{ color: STATUS_CONFIG[entry.toStatus as EmailStatus].color }}
                   >
-                    {STATUS_CONFIG[entry.toStatus].label}
+                    {STATUS_CONFIG[entry.toStatus as EmailStatus].label}
                   </span>
                   <div className="text-gray-500">
                     {formatTimestamp(entry.timestamp).relative}

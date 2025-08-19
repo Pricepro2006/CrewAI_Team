@@ -10,7 +10,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui
 import { Button } from "../../../components/ui/button.js";
 import { Badge } from "../../../components/ui/badge.js";
 import { cn } from "../../../lib/utils.js";
-import type { EmailRecord } from "../../../types/email-dashboard?.interfaces.js";
+import type { EmailRecord } from "../../../types/email-dashboard.interfaces.js";
+
+// Error handling utility
+function extractErrorMessage(error: unknown, fallback: string = "An error occurred"): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String(error.message);
+  }
+  return fallback;
+}
 
 interface OptimizedEmailTableProps {
   className?: string;
@@ -71,7 +82,7 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
   const {
     data: searchResponse,
     isLoading: isSearching,
-  } = useOptimizedEmailSearch(debouncedSearchTerm, debouncedSearchTerm?.length || 0 >= 2);
+  } = useOptimizedEmailSearch(debouncedSearchTerm, (debouncedSearchTerm?.length || 0) >= 2);
   
   // Extract search results array from response
   const searchResults = useMemo(() => {
@@ -125,8 +136,9 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
         )
       );
       setSelectedEmails([]);
-    } catch (error) {
-      console.error("Failed to bulk assign emails:", error);
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error, "Unknown error occurred");
+      console.error("Failed to bulk assign emails:", errorMessage, error);
     }
   }, [selectedEmails, updateEmail]);
 
@@ -157,12 +169,14 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
 
   // Error state
   if (error) {
+    const errorMessage = extractErrorMessage(error, "Failed to load emails");
+
     return (
       <Card className={className}>
         <CardContent className="flex items-center justify-center h-96">
           <div className="text-center">
             <div className="text-red-500 text-lg mb-2">⚠️ Error Loading Emails</div>
-            <p className="text-gray-600 mb-4">{error.message || "Failed to load emails"}</p>
+            <p className="text-gray-600 mb-4">{errorMessage}</p>
             <Button onClick={() => window?.location?.reload()}>Retry</Button>
           </div>
         </CardContent>
@@ -255,7 +269,7 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
             <EmailTable
               emails={displayEmails}
               loading={isLoadingData}
-              error={error?.message || null}
+              error={error ? extractErrorMessage(error, "An error occurred") : null}
               selectedEmails={selectedEmails}
               teamMembers={teamMembers}
               onRowClick={handleEmailSelect}

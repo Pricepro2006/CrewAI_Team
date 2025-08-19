@@ -86,12 +86,12 @@ class Semaphore {
 
     return new Promise((resolve, reject) => {
       const timestamp = Date.now();
-      this?.queue?.push({ resolve, reject, timestamp });
+      this.queue.push({ resolve, reject, timestamp });
 
       const timeout = setTimeout(() => {
-        const index = this?.queue?.findIndex(item => item.timestamp === timestamp);
+        const index = this.queue.findIndex(item => item.timestamp === timestamp);
         if (index !== -1) {
-          this?.queue?.splice(index, 1);
+          this.queue.splice(index, 1);
           reject(new Error('Semaphore acquisition timeout'));
         }
       }, timeoutMs);
@@ -104,7 +104,7 @@ class Semaphore {
         originalResolve();
       };
 
-      this.queue[this?.queue?.length - 1].resolve = wrappedResolve;
+      this.queue[this.queue.length - 1]!.resolve = wrappedResolve;
     });
   }
 
@@ -112,8 +112,8 @@ class Semaphore {
     this.active--;
     this.permits++;
 
-    if (this?.queue?.length > 0) {
-      const next = this?.queue?.shift();
+    if (this.queue.length > 0) {
+      const next = this.queue.shift();
       if (next) {
         next.resolve();
       }
@@ -123,7 +123,7 @@ class Semaphore {
   getStats(): { active: number; queued: number; available: number } {
     return {
       active: this.active,
-      queued: this?.queue?.length,
+      queued: this.queue.length,
       available: this.permits,
     };
   }
@@ -153,14 +153,14 @@ class DeadLetterQueue {
       timestamp: new Date(),
     };
 
-    this?.items?.set(id, dlqItem);
+    this.items.set(id, dlqItem);
 
     // Prevent memory leaks
-    if (this?.items?.size > this.maxSize) {
-      const oldest = Array.from(this.items?.entries() || [])
+    if (this.items.size > this.maxSize) {
+      const oldest = Array.from(this.items.entries())
         .sort((a, b) => a[1].timestamp.getTime() - b[1].timestamp.getTime())[0];
       if (oldest) {
-        this.items?.delete(oldest[0]);
+        this.items.delete(oldest[0]);
       }
     }
 
@@ -173,29 +173,29 @@ class DeadLetterQueue {
   }
 
   getAll(): DeadLetterItem[] {
-    return Array.from(this?.items?.values());
+    return Array.from(this.items.values());
   }
 
   get(id: string): DeadLetterItem | undefined {
-    return this?.items?.get(id);
+    return this.items.get(id);
   }
 
   remove(id: string): boolean {
-    return this?.items?.delete(id);
+    return this.items.delete(id);
   }
 
   clear(): void {
-    this?.items?.clear();
+    this.items.clear();
   }
 
   getStats(): { total: number; byService: Record<string, number> } {
-    const items = Array.from(this?.items?.values());
-    const byService = items.reduce((acc: any, item: any) => {
+    const items = Array.from(this.items.values());
+    const byService = items.reduce((acc, item) => {
       acc[item.service] = (acc[item.service] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    return { total: items?.length || 0, byService };
+    return { total: items.length, byService };
   }
 }
 
@@ -239,7 +239,7 @@ export class CircuitBreakerService extends EventEmitter {
     this.initialized = true;
 
     logger.info('Circuit Breaker Service initialized successfully', 'CIRCUIT_BREAKER', {
-      services: Array.from(this?.serviceConfigs?.keys()),
+      services: Array.from(this.serviceConfigs.keys()),
     });
 
     this.emit('initialized');
@@ -258,7 +258,7 @@ export class CircuitBreakerService extends EventEmitter {
       timeout?: number;
     } = {}
   ): Promise<T> {
-    const serviceConfig = this?.serviceConfigs?.get(service);
+    const serviceConfig = this.serviceConfigs.get(service);
     if (!serviceConfig) {
       throw new Error(`No circuit breaker configuration found for service: ${service}`);
     }
@@ -273,11 +273,11 @@ export class CircuitBreakerService extends EventEmitter {
 
       try {
         // Execute with circuit breaker
-        const result = await this?.circuitBreakerManager?.execute(
+        const result = await this.circuitBreakerManager.execute(
           circuitBreakerName,
           async () => {
             // Add operation timeout
-            const timeoutMs = options.timeout || serviceConfig?.config?.timeout;
+            const timeoutMs = options.timeout || serviceConfig.config.timeout;
             return this.withTimeout(fn(), timeoutMs);
           },
           this.buildFallbackOptions(service, options.fallbackOptions),
@@ -298,13 +298,13 @@ export class CircuitBreakerService extends EventEmitter {
       // Add to dead letter queue if max retries exceeded
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (errorMsg.includes('Circuit breaker') || errorMsg.includes('Maximum retry')) {
-        this?.deadLetterQueue?.add({
+        this.deadLetterQueue.add({
           service,
           operation,
           payload: options,
           error: errorMsg,
-          retryCount: serviceConfig?.retryPolicy?.maxAttempts,
-          maxRetries: serviceConfig?.retryPolicy?.maxAttempts,
+          retryCount: serviceConfig.retryPolicy.maxAttempts,
+          maxRetries: serviceConfig.retryPolicy.maxAttempts,
         });
       }
 
@@ -339,7 +339,7 @@ export class CircuitBreakerService extends EventEmitter {
   ): Promise<T> {
     return this.executeWithCircuitBreaker('redis', operation, fn, {
       fallbackOptions: {
-        fallbackValue: fallbackValue || null,
+        fallbackValue: (fallbackValue || null) as T,
         useCache: false, // Redis is the cache, use in-memory fallback
       },
     });
@@ -355,7 +355,7 @@ export class CircuitBreakerService extends EventEmitter {
   ): Promise<T> {
     return this.executeWithCircuitBreaker('sqlite', operation, fn, {
       fallbackOptions: {
-        fallbackValue: fallbackData || null,
+        fallbackValue: (fallbackData || null) as T,
         useCache: true,
         cacheKey: `db_fallback_${operation}`,
       },
@@ -392,7 +392,7 @@ export class CircuitBreakerService extends EventEmitter {
       fallbackOptions: queueFallback ? {
         fallbackFunction: async () => {
           // Queue message for later delivery
-          this?.deadLetterQueue?.add({
+          this.deadLetterQueue.add({
             service: 'websocket',
             operation,
             payload: { queued: true },
@@ -428,7 +428,7 @@ export class CircuitBreakerService extends EventEmitter {
    * Get circuit breaker state for monitoring
    */
   getCircuitBreakerState(service?: string): Record<string, any> {
-    const allStats = this?.circuitBreakerManager?.getAllStats();
+    const allStats = this.circuitBreakerManager.getAllStats();
     
     if (service) {
       return Object.fromEntries(
@@ -448,12 +448,12 @@ export class CircuitBreakerService extends EventEmitter {
     bulkheads: Record<string, BulkheadStats>;
     deadLetterQueue: any;
   } {
-    const overallHealth = this?.circuitBreakerManager?.getOverallHealth();
+    const overallHealth = this.circuitBreakerManager.getOverallHealth();
     const services: Record<string, any> = {};
 
     // Get service-specific health
-    for (const [serviceName] of this.serviceConfigs) {
-      const serviceStats = Object.entries(this?.circuitBreakerManager?.getAllStats())
+    for (const [serviceName] of Array.from(this.serviceConfigs)) {
+      const serviceStats = Object.entries(this.circuitBreakerManager.getAllStats())
         .filter(([name]) => name.startsWith(serviceName))
         .reduce((acc, [name, stats]) => {
           acc[name] = stats;
@@ -470,7 +470,7 @@ export class CircuitBreakerService extends EventEmitter {
       overall: overallHealth.status,
       services,
       bulkheads: this.getAllBulkheadStats(),
-      deadLetterQueue: this?.deadLetterQueue?.getStats(),
+      deadLetterQueue: this.deadLetterQueue.getStats(),
     };
   }
 
@@ -478,7 +478,7 @@ export class CircuitBreakerService extends EventEmitter {
    * Update service configuration
    */
   updateServiceConfig(service: string, config: Partial<ServiceCircuitBreakerConfig>): void {
-    const currentConfig = this?.serviceConfigs?.get(service);
+    const currentConfig = this.serviceConfigs.get(service);
     if (!currentConfig) {
       throw new Error(`Service ${service} not found`);
     }
@@ -488,11 +488,11 @@ export class CircuitBreakerService extends EventEmitter {
       ...config,
     });
 
-    this?.serviceConfigs?.set(service, updatedConfig);
+    this.serviceConfigs.set(service, updatedConfig);
 
     // Update bulkhead if configuration changed
     if (config.bulkhead) {
-      this?.bulkheads?.set(service, new Semaphore(config?.bulkhead?.maxConcurrent || 10));
+      this.bulkheads.set(service, new Semaphore(config.bulkhead.maxConcurrent || 10));
     }
 
     logger.info('Service configuration updated', 'CIRCUIT_BREAKER', {
@@ -509,15 +509,15 @@ export class CircuitBreakerService extends EventEmitter {
   resetCircuitBreaker(service: string, operation?: string): void {
     if (operation) {
       const breakerName = `${service}_${operation}`;
-      const breaker = this?.circuitBreakerManager?.getCircuitBreaker(breakerName);
+      const breaker = this.circuitBreakerManager.getCircuitBreaker(breakerName);
       breaker.reset();
     } else {
       // Reset all circuit breakers for the service
-      const allStats = this?.circuitBreakerManager?.getAllStats();
+      const allStats = this.circuitBreakerManager.getAllStats();
       Object.keys(allStats)
         .filter(name => name.startsWith(service))
         .forEach(name => {
-          const breaker = this?.circuitBreakerManager?.getCircuitBreaker(name);
+          const breaker = this.circuitBreakerManager.getCircuitBreaker(name);
           breaker.reset();
         });
     }
@@ -767,7 +767,7 @@ export class CircuitBreakerService extends EventEmitter {
     });
 
     // Initialize bulkheads
-    for (const [service, config] of this.serviceConfigs) {
+    for (const [service, config] of Array.from(this.serviceConfigs)) {
       if (config.bulkhead) {
         this?.bulkheads?.set(service, new Semaphore(config?.bulkhead?.maxConcurrent));
       }
@@ -803,8 +803,10 @@ export class CircuitBreakerService extends EventEmitter {
 
   private getAllBulkheadStats(): Record<string, BulkheadStats> {
     const stats: Record<string, BulkheadStats> = {};
-    for (const service of this?.serviceConfigs?.keys()) {
-      stats[service] = this.getBulkheadStats(service);
+    if (this.serviceConfigs) {
+      for (const service of Array.from(this.serviceConfigs.keys())) {
+        stats[service] = this.getBulkheadStats(service);
+      }
     }
     return stats;
   }
@@ -939,5 +941,4 @@ export class CircuitBreakerService extends EventEmitter {
 // Export singleton instance
 export const circuitBreakerService = CircuitBreakerService.getInstance();
 
-// Export types for external use
-export type { DeadLetterItem, BulkheadStats };
+// Types DeadLetterItem and BulkheadStats are already defined above in the file

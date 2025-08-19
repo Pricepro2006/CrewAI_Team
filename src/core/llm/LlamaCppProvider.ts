@@ -220,18 +220,18 @@ export class LlamaCppProvider extends EventEmitter {
 
       // Track performance
       const duration = Date.now() - startTime;
-      performanceMonitor.recordMetric("llama_cpp_generation_time", duration);
-      metricsCollector.recordHistogram("llama_cpp?.generation?.duration", duration);
+      performanceMonitor.measure("llama_cpp_generation", { duration });
+      metricsCollector.histogram("llama_cpp.generation.duration", duration);
 
       // Sanitize output
-      response.response = sanitizeLLMOutput(response.response);
+      const sanitizedOutput = sanitizeLLMOutput(response.response);
+      response.response = sanitizedOutput.content;
 
       return response;
     } catch (error) {
       // Track errors
-      errorTracker.captureError(error as Error, {
-        context: "llama_cpp_generation",
-        prompt: prompt.substring(0, 100),
+      errorTracker.trackError(error as Error, {
+        endpoint: "llama_cpp_generation",
       });
       metricsCollector.increment("llama_cpp?.requests?.failed");
       throw error;
@@ -342,11 +342,10 @@ export class LlamaCppProvider extends EventEmitter {
 
       // Track metrics
       const duration = Date.now() - startTime;
-      performanceMonitor.recordMetric("llama_cpp_stream_time", duration);
+      performanceMonitor.measure("llama_cpp_stream_time", { duration });
     } catch (error) {
-      errorTracker.captureError(error as Error, {
-        context: "llama_cpp_stream",
-        prompt: prompt.substring(0, 100),
+      errorTracker.trackError(error as Error, {
+        endpoint: "llama_cpp_stream",
       });
       throw error;
     }

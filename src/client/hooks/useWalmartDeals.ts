@@ -3,8 +3,8 @@
  * Fetches and manages deal information for products
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { trpc } from '../../utils/trpc.js';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { api } from '../lib/api.js';
 import type { DealMatch } from '../../types/walmart-grocery.js';
 
 interface UseWalmartDealsResult {
@@ -33,8 +33,8 @@ export const useWalmartDeals = (productIds: string[]): UseWalmartDealsResult => 
   const dealsCache = useRef<DealsCache>({});
   const lastProductIds = useRef<string>('');
 
-  const fetchDeals = async (ids: string[]) => {
-    if (ids?.length || 0 === 0) {
+  const fetchDeals = useCallback(async (ids: string[]) => {
+    if ((ids?.length || 0) === 0) {
       setDeals({});
       setTotalSavings(0);
       return;
@@ -60,9 +60,8 @@ export const useWalmartDeals = (productIds: string[]): UseWalmartDealsResult => 
       // Fetch uncached deals
       const newDeals = { ...cachedDeals };
       
-      if (uncachedIds?.length || 0 > 0) {
-        // TODO: Replace with proper tRPC vanilla client call
-        // For now, simulate the response to fix TypeScript errors
+      if ((uncachedIds?.length || 0) > 0) {
+        // Use mock response since deal analysis service is not implemented yet
         const response = {
           success: true,
           deals: [] as DealMatch[],
@@ -86,7 +85,7 @@ export const useWalmartDeals = (productIds: string[]): UseWalmartDealsResult => 
       }
 
       // Calculate total savings
-      const savings = Object.values(newDeals).reduce((total: any, productDeals: any) => {
+      const savings = Object.values(newDeals).reduce((total: number, productDeals: DealMatch[]) => {
         const bestDeal = productDeals.sort((a, b) => b.savings - a.savings)[0];
         return total + (bestDeal?.savings || 0);
       }, 0);
@@ -94,30 +93,31 @@ export const useWalmartDeals = (productIds: string[]): UseWalmartDealsResult => 
       setDeals(newDeals);
       setTotalSavings(savings);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to analyze deals');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to analyze deals';
+      setError(errorMessage);
     } finally {
       setAnalyzingDeals(false);
     }
-  };
+  }, []);
 
-  const refreshDeals = async () => {
+  const refreshDeals = useCallback(async () => {
     // Clear cache for current products
-    productIds.forEach(id => {
+    productIds.forEach((id: string) => {
       delete dealsCache.current[id];
     });
     
     // Refetch deals
     await fetchDeals(productIds);
-  };
+  }, [productIds, fetchDeals]);
 
   useEffect(() => {
     // Check if product IDs have changed
     const currentIds = productIds.sort().join(',');
     if (currentIds !== lastProductIds.current) {
       lastProductIds.current = currentIds;
-      fetchDeals(productIds);
+      void fetchDeals(productIds);
     }
-  }, [productIds]);
+  }, [productIds, fetchDeals]);
 
   return {
     deals,

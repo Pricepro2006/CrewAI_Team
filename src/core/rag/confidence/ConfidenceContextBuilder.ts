@@ -3,7 +3,7 @@
  * Optimizes context for confidence-aware generation
  */
 
-import type { ScoredDocument, ContextOptions, BuiltContext } from "./types.js";
+import type { ScoredDocument, ContextOptions, BuiltContext } from "./types";
 
 export class ConfidenceContextBuilder {
   private readonly maxTokensDefault = 4000;

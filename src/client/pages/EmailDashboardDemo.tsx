@@ -9,7 +9,7 @@ import type {
   EmailRecord,
   EmailStatus,
   WorkflowState,
-} from "../../types/email-dashboard?.interfaces.js";
+} from "../../types/email-dashboard.interfaces.js";
 
 // Sample email data matching the screenshot
 const generateSampleEmails = (): EmailRecord[] => {
@@ -152,30 +152,32 @@ export function EmailDashboardDemo() {
         return [];
       }
 
-      return tableData.data.emails.map((email: any) => {
-        // Validate required fields
-        if (!email.id) {
-          console.warn('Email record missing ID:', email);
-          return null;
-        }
+      return tableData.data.emails
+        .map((email: any): EmailRecord | null => {
+          // Validate required fields
+          if (!email.id) {
+            console.warn('Email record missing ID:', email);
+            return null;
+          }
 
-        return {
-          id: email.id,
-          email_alias: email.email_alias || "Unknown Alias",
-          requested_by: email.requested_by || "Unknown",
-          subject: email.subject || "No Subject",
-          summary: email.summary || "No summary",
-          status: (email.status || "yellow") as EmailStatus,
-          status_text: email.status_text || "Pending",
-          workflow_state: (email.workflow_state || "START_POINT") as WorkflowState,
-          timestamp: email.received_date || new Date().toISOString(),
-          priority: email.priority || "medium",
-          assignedTo: email.assigned_to || undefined,
-          hasAttachments: Boolean(email.has_attachments),
-          isRead: Boolean(email.is_read),
-          lastUpdated: email.received_date || email.updated_at || new Date().toISOString(),
-        };
-      }).filter(Boolean); // Remove null entries
+          return {
+            id: email.id,
+            email_alias: email.email_alias || "Unknown Alias",
+            requested_by: email.requested_by || "Unknown",
+            subject: email.subject || "No Subject",
+            summary: email.summary || "No summary",
+            status: (email.status || "yellow") as EmailStatus,
+            status_text: email.status_text || "Pending",
+            workflow_state: (email.workflow_state || "START_POINT") as WorkflowState,
+            timestamp: email.received_date || new Date().toISOString(),
+            priority: email.priority || "medium",
+            assignedTo: email.assigned_to || undefined,
+            hasAttachments: Boolean(email.has_attachments),
+            isRead: Boolean(email.is_read),
+            lastUpdated: email.received_date || email.updated_at || new Date().toISOString(),
+          };
+        })
+        .filter((email): email is EmailRecord => email !== null); // Type-safe filter to remove null entries
     } catch (error) {
       console.error('Error transforming email data:', error);
       return [];

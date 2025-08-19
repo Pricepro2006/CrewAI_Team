@@ -21,7 +21,7 @@ import {
   type UserPreferences,
 } from "../repositories/WalmartProductRepository.js";
 import { GroceryVectorCollections } from "../vector/GroceryVectorCollections.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 export interface CreateListParams {
   userId: string;
@@ -76,7 +76,7 @@ export class GroceryDataService {
   private vectorCollections: GroceryVectorCollections;
 
   constructor() {
-    const db = this?.dbManager?.getSQLiteDatabase();
+    const db = this.dbManager.getSQLiteDatabase();
 
     // Initialize repositories
     this.listRepo = new GroceryListRepository(db);
@@ -88,7 +88,7 @@ export class GroceryDataService {
 
     // Initialize vector collections
     this.vectorCollections = new GroceryVectorCollections(
-      this?.dbManager?.getVectorDatabase(),
+      this.dbManager.getVectorDatabase(),
     );
   }
 
@@ -100,7 +100,7 @@ export class GroceryDataService {
 
     try {
       // Initialize vector collections
-      await this?.vectorCollections?.initializeCollections();
+      await this.vectorCollections.initializeCollections();
 
       logger.info(
         "Grocery Data Service initialized successfully",
@@ -123,25 +123,36 @@ export class GroceryDataService {
     items: GroceryItem[];
   }> {
     // Create the list
-    const list = await this?.listRepo?.createList({
+    const list = await this.listRepo.createList({
+      id: crypto.randomUUID(),
       user_id: params.userId,
       list_name: params.listName,
       description: params.description,
       budget_limit: params.budgetLimit,
       is_recurring: params.isRecurring,
       recurrence_pattern: params.recurrencePattern,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: 'active',
+      estimated_total: 0,
+      actual_total: 0
     });
 
     // Add items if provided
     const items: GroceryItem[] = [];
     if (params.items && params?.items?.length > 0) {
       for (const itemData of params.items) {
-        const item = await this?.itemRepo?.addItem({
-          list_id: list.id!,
+        const item = await this.itemRepo.addItem({
+          id: crypto.randomUUID(),
+          list_id: list.id,
           item_name: itemData.name,
-          quantity: itemData.quantity,
+          quantity: itemData.quantity || 1,
+          unit: 'unit',
           brand_preference: itemData.brand,
           notes: itemData.notes,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
         items.push(item);
 
@@ -150,7 +161,7 @@ export class GroceryDataService {
       }
 
       // Update list total
-      await this?.itemRepo?.updateListTotal(list.id!);
+      await this.itemRepo.updateListTotal(list.id);
     }
 
     logger.info(
@@ -164,21 +175,25 @@ export class GroceryDataService {
    * Add item to existing list
    */
   async addItemToList(params: AddItemParams): Promise<GroceryItem> {
-    const item = await this?.itemRepo?.addItem({
+    const item = await this.itemRepo.addItem({
+      id: crypto.randomUUID(),
       list_id: params.listId,
       item_name: params.itemName,
-      quantity: params.quantity,
-      unit: params.unit,
+      quantity: params.quantity || 1,
+      unit: params.unit || 'unit',
       brand_preference: params.brandPreference,
-      priority: params.priority,
+      priority: params.priority || 'normal',
       notes: params.notes,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     });
 
     // Try to match with Walmart product
     await this.matchItemToProduct(item);
 
     // Update list total
-    await this?.itemRepo?.updateListTotal(params.listId);
+    await this.itemRepo.updateListTotal(params.listId);
 
     return item;
   }
@@ -193,14 +208,14 @@ export class GroceryDataService {
         ? `${item.brand_preference} ${item.item_name}`
         : item.item_name;
 
-      const products = await this?.productRepo?.searchProducts(searchQuery, 5);
+      const products = await this.productRepo.searchProducts(searchQuery, 5);
 
       if (products?.length || 0 > 0) {
         // Use the first match for now (could be improved with better matching logic)
         const bestMatch = products[0];
         
         if (bestMatch) {
-          await this?.itemRepo?.updateItem(item.id!, {
+          await this.itemRepo.updateItem(item.id, {
             product_id: bestMatch.product_id,
             category: bestMatch.category_path?.split("/")[0],
             estimated_price: bestMatch.current_price,
@@ -225,13 +240,13 @@ export class GroceryDataService {
    */
   async searchProducts(params: ProductSearchParams): Promise<WalmartProduct[]> {
     // First try database search
-    const dbResults = await this?.productRepo?.searchProducts(
+    const dbResults = await this.productRepo.searchProducts(
       params.query,
       params.limit || 20,
     );
 
     // Then enhance with vector search for better results
-    const vectorResults = await this?.vectorCollections?.searchSimilarProducts(
+    const vectorResults = await this.vectorCollections.searchSimilarProducts(
       params.query,
       {
         category: params.category,
@@ -256,7 +271,7 @@ export class GroceryDataService {
     for (const vectorResult of vectorResults) {
       if (!productIds.has(vectorResult.product_id)) {
         try {
-          const product = await this?.productRepo?.getProduct(
+          const product = await this.productRepo.getProduct(
             vectorResult.product_id,
           );
           if (params.inStockOnly && !product.in_stock) continue;
@@ -277,7 +292,7 @@ export class GroceryDataService {
     params: StartShoppingParams,
   ): Promise<ShoppingSession> {
     // Get active session if exists
-    const activeSession = await this?.sessionRepo?.getActiveSession(
+    const activeSession = await this.sessionRepo.getActiveSession(
       params.userId,
     );
     if (activeSession) {
@@ -291,18 +306,24 @@ export class GroceryDataService {
     // Get list items count if list provided
     let itemsTotal = 0;
     if (params.listId) {
-      const items = await this?.itemRepo?.getListItems(params.listId);
-      itemsTotal = items?.filter((item: any) => item.status === "pending").length;
+      const items = await this.itemRepo.getListItems(params.listId);
+      itemsTotal = items.filter((item: any) => item.status === "pending").length;
     }
 
     // Create new session
-    const session = await this?.sessionRepo?.createSession({
+    const session = await this.sessionRepo.createSession({
+      id: crypto.randomUUID(),
       user_id: params.userId,
       list_id: params.listId,
-      session_type: params.sessionType,
+      session_type: params.sessionType || 'online',
       items_total: itemsTotal,
       fulfillment_type: params.fulfillmentType,
       delivery_address: params.deliveryAddress,
+      status: 'active',
+      started_at: new Date().toISOString(),
+      items_found: 0,
+      items_unavailable: 0,
+      items_substituted: 0
     });
 
     logger.info(`Started shopping session ${session.id}`, "GROCERY_SERVICE");
@@ -318,19 +339,19 @@ export class GroceryDataService {
     actualPrice?: number,
   ): Promise<void> {
     // Mark item as in cart
-    await this?.itemRepo?.markAsCart(itemId);
+    await this.itemRepo.markAsCart(itemId);
 
     // Update session progress
-    const session = await this?.sessionRepo?.getSession(sessionId);
-    await this?.sessionRepo?.updateProgress(sessionId, {
+    const session = await this.sessionRepo.getSession(sessionId);
+    await this.sessionRepo.updateProgress(sessionId, {
       itemsFound: (session.items_found || 0) + 1,
     });
 
     // Record price if different from estimated
     if (actualPrice !== undefined) {
-      const item = await this?.itemRepo?.getItem(itemId);
+      const item = await this.itemRepo.getItem(itemId);
       if (item.product_id) {
-        await this?.productRepo?.recordPriceHistory(
+        await this.productRepo.recordPriceHistory(
           item.product_id,
           actualPrice,
           actualPrice < (item.estimated_price || 0),
@@ -347,13 +368,13 @@ export class GroceryDataService {
     itemId: string,
     findSubstitute: boolean = true,
   ): Promise<GrocerySubstitution | null> {
-    const item = await this?.itemRepo?.getItem(itemId);
+    const item = await this.itemRepo.getItem(itemId);
 
     if (!findSubstitute || !item.product_id) {
-      await this?.itemRepo?.updateItem(itemId, { status: "unavailable" });
+      await this.itemRepo.updateItem(itemId, { status: "unavailable" });
 
-      const session = await this?.sessionRepo?.getSession(sessionId);
-      await this?.sessionRepo?.updateProgress(sessionId, {
+      const session = await this.sessionRepo.getSession(sessionId);
+      await this.sessionRepo.updateProgress(sessionId, {
         itemsUnavailable: (session.items_unavailable || 0) + 1,
       });
 
@@ -361,12 +382,12 @@ export class GroceryDataService {
     }
 
     // Find substitutions
-    const substitutions = await this?.vectorCollections?.findSubstitutions(
+    const substitutions = await this.vectorCollections.findSubstitutions(
       item.product_id,
     );
 
     if (substitutions?.length || 0 === 0) {
-      await this?.itemRepo?.updateItem(itemId, { status: "unavailable" });
+      await this.itemRepo.updateItem(itemId, { status: "unavailable" });
       return null;
     }
 
@@ -375,39 +396,45 @@ export class GroceryDataService {
     if (!bestSub) {
       return null;
     }
-    const substituteProduct = await this?.productRepo?.getProduct(
+    const substituteProduct = await this.productRepo.getProduct(
       bestSub.substitute_id,
     );
 
     // Create substitution item
-    const subItem = await this?.itemRepo?.addItem({
+    const subItem = await this.itemRepo.addItem({
+      id: crypto.randomUUID(),
       list_id: item.list_id,
       item_name: substituteProduct.name,
       brand_preference: substituteProduct.brand,
       product_id: substituteProduct.product_id,
       quantity: item.quantity,
-      unit: item.unit,
+      unit: item.unit || 'unit',
       estimated_price: substituteProduct.current_price,
-      priority: item.priority,
+      priority: item.priority || 'normal',
       notes: `Substitute for ${item.item_name}`,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     });
 
     // Mark original as substituted
-    await this?.itemRepo?.substituteItem(itemId, subItem.id!);
+    await this.itemRepo.substituteItem(itemId, subItem.id);
 
     // Record substitution
-    const substitution = await this?.substitutionRepo?.recordSubstitution({
+    const substitution = await this.substitutionRepo.recordSubstitution({
+      id: crypto.randomUUID(),
       original_product_id: item.product_id,
       substitute_product_id: substituteProduct.product_id,
       reason: bestSub?.reason,
       similarity_score: bestSub?.similarity,
       price_difference: bestSub?.price_difference,
-      user_id: (await this?.sessionRepo?.getSession(sessionId)).user_id,
+      user_id: (await this.sessionRepo.getSession(sessionId)).user_id,
+      created_at: new Date().toISOString()
     });
 
     // Update session progress
-    const session = await this?.sessionRepo?.getSession(sessionId);
-    await this?.sessionRepo?.updateProgress(sessionId, {
+    const session = await this.sessionRepo.getSession(sessionId);
+    await this.sessionRepo.updateProgress(sessionId, {
       itemsSubstituted: (session.items_substituted || 0) + 1,
     });
 
@@ -429,7 +456,7 @@ export class GroceryDataService {
     },
   ): Promise<ShoppingSession> {
     // Update session with final details
-    await this?.sessionRepo?.updateSession(sessionId, {
+    await this.sessionRepo.updateSession(sessionId, {
       subtotal: orderDetails.subtotal,
       tax_amount: orderDetails.tax,
       delivery_fee: orderDetails.deliveryFee,
@@ -443,23 +470,23 @@ export class GroceryDataService {
     });
 
     // Complete the session
-    const completedSession = await this?.sessionRepo?.completeSession(
+    const completedSession = await this.sessionRepo.completeSession(
       sessionId,
       orderDetails.orderNumber,
     );
 
     // If there was a list, mark purchased items and complete it
     if (completedSession.list_id) {
-      const items = await this?.itemRepo?.getListItems(completedSession.list_id);
+      const items = await this.itemRepo.getListItems(completedSession.list_id);
 
       for (const item of items) {
         if (item.status === "in_cart") {
-          await this?.itemRepo?.markAsPurchased(item.id!);
+          await this.itemRepo.markAsPurchased(item.id);
         }
       }
 
       // Complete the list
-      await this?.listRepo?.completeList(
+      await this.listRepo.completeList(
         completedSession.list_id,
         completedSession.total_amount,
       );
@@ -481,13 +508,13 @@ export class GroceryDataService {
     if (!session.list_id) return;
 
     try {
-      const items = await this?.itemRepo?.getListItems(
+      const items = await this.itemRepo.getListItems(
         session.list_id,
         "purchased",
       );
-      const itemNames = items?.map((item: any) => item.item_name);
+      const itemNames = items.map((item: any) => item.item_name);
 
-      await this?.vectorCollections?.storeShoppingPattern({
+      await this.vectorCollections.storeShoppingPattern({
         pattern_id: `pattern_${session.id}`,
         user_id: session.user_id,
         pattern_type: "weekly", // Could be determined by analyzing frequency
@@ -507,7 +534,7 @@ export class GroceryDataService {
    * Get user preferences
    */
   async getUserPreferences(userId: string): Promise<UserPreferences | null> {
-    return await this?.preferencesRepo?.getPreferences(userId);
+    return await this.preferencesRepo.getPreferences(userId);
   }
 
   /**
@@ -517,18 +544,19 @@ export class GroceryDataService {
     userId: string,
     preferences: Partial<UserPreferences>,
   ): Promise<UserPreferences> {
-    const existing = await this?.preferencesRepo?.getPreferences(userId);
+    const existing = await this.preferencesRepo.getPreferences(userId);
 
     if (!existing) {
       // Create new preferences
-      return await this?.preferencesRepo?.upsertPreferences({
+      return await this.preferencesRepo.upsertPreferences({
+        id: preferences.id || crypto.randomUUID(),
         ...preferences,
         user_id: userId,
       });
     }
 
     // Update existing
-    return await this?.preferencesRepo?.upsertPreferences({
+    return await this.preferencesRepo.upsertPreferences({
       ...existing,
       ...preferences,
       user_id: userId,
@@ -547,17 +575,17 @@ export class GroceryDataService {
     dealsOfTheWeek: WalmartProduct[];
   }> {
     // Get user preferences
-    const preferences = await this?.preferencesRepo?.getPreferences(userId);
+    const preferences = await this.preferencesRepo.getPreferences(userId);
 
     // Get current list items if provided
     let currentItems: string[] = [];
     if (currentListId) {
-      const items = await this?.itemRepo?.getListItems(currentListId);
-      currentItems = items?.map((item: any) => item.item_name);
+      const items = await this.itemRepo.getListItems(currentListId);
+      currentItems = items.map((item: any) => item.item_name);
     }
 
     // Get frequent items from shopping patterns
-    const frequentItems = await this?.vectorCollections?.getUserRecommendations(
+    const frequentItems = await this.vectorCollections.getUserRecommendations(
       userId,
       currentItems,
     );
@@ -566,7 +594,7 @@ export class GroceryDataService {
     const newProducts: WalmartProduct[] = [];
     if (preferences?.preferred_brands) {
       for (const brand of Object.values(preferences.preferred_brands)) {
-        const products = await this?.productRepo?.searchProducts(
+        const products = await this.productRepo.searchProducts(
           brand as string,
           3,
         );

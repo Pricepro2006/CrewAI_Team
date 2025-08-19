@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import Database from "better-sqlite3";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger";
 import path from "path";
-import { up as fixNegativeProcessingTimes } from "../database/migrations/006_fix_negative_processing_times.js";
+import { up as fixNegativeProcessingTimes } from "../database/migrations/006_fix_negative_processing_times";
 
 /**
  * Script to fix negative processing times in the database
@@ -42,7 +42,7 @@ async function main() {
       )
       .get() as any;
 
-    logger.info("Before migration:", {
+    logger.info("Before migration:", JSON.stringify({
       totalRecords: beforeStats.total_records,
       negativeRecords: beforeStats.negative_records,
       percentageNegative:
@@ -53,7 +53,7 @@ async function main() {
       minNegative: beforeStats.min_negative,
       maxNegative: beforeStats.max_negative,
       avgPositive: Math.round(beforeStats.avg_positive || 0),
-    });
+    }));
 
     if (beforeStats.negative_records === 0) {
       logger.info(
@@ -79,14 +79,12 @@ async function main() {
       )
       .all() as any[];
 
-    logger.info(
-      "Example negative records:",
-      examples?.map((e: any) => ({
-        emailId: String(e.email_id).substring(0, 8) + "...",
-        processingTime: e.processing_time_ms,
-        timestamp: e.analysis_timestamp,
-      })),
-    );
+    const exampleRecords = examples?.map((e: any) => ({
+      emailId: String(e.email_id).substring(0, 8) + "...",
+      processingTime: e.processing_time_ms,
+      timestamp: e.analysis_timestamp,
+    }));
+    logger.info("Example negative records:", JSON.stringify(exampleRecords));
 
     // 3. Run the migration
     logger.info("Running migration to fix negative processing times...");
@@ -109,13 +107,14 @@ async function main() {
       )
       .get() as any;
 
-    logger.info("After migration:", {
+    const afterStatsData = {
       totalRecords: afterStats.total_records,
       negativeRecords: afterStats.negative_records,
       minTime: afterStats.min_time,
       maxTime: afterStats.max_time,
       avgTime: Math.round(afterStats.avg_time || 0),
-    });
+    };
+    logger.info("After migration:", JSON.stringify(afterStatsData));
 
     // 5. Check backup table
     const backupCount = db

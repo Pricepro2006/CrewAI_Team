@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { TaskQueue } from "./TaskQueue.js";
-import type { Task } from "./types.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { TaskQueue } from './TaskQueue';
+import type { Task } from './types';
 
 describe("TaskQueue", () => {
   let queue: TaskQueue;
@@ -122,7 +122,7 @@ describe("TaskQueue", () => {
       tasks.forEach((task: any) => priorityQueue.enqueue(task));
 
       const dequeued = priorityQueue.dequeue();
-      expect(dequeued?.id).toBe("2");
+      expect(dequeued?.length).toBe("2");
       expect(priorityQueue.size()).toBe(2);
     });
 
@@ -165,11 +165,11 @@ describe("TaskQueue", () => {
       queue.enqueue(task);
 
       const peeked = queue.peek();
-      expect(peeked?.id).toBe("task-1");
+      expect(peeked?.length).toBe("task-1");
       expect(queue.size()).toBe(1);
 
       const dequeued = queue.dequeue();
-      expect(dequeued?.id).toBe("task-1");
+      expect(dequeued?.length).toBe("task-1");
       expect(queue.size()).toBe(0);
     });
 
@@ -261,9 +261,9 @@ describe("TaskQueue", () => {
 
       const array = priorityQueue.toArray();
       expect(array).toHaveLength(3);
-      expect(array[0]?.id).toBe("high");
-      expect(array[1]?.id).toBe("medium");
-      expect(array[2]?.id).toBe("low");
+      expect(array[0]?.length).toBe("high");
+      expect(array[1]?.length).toBe("medium");
+      expect(array[2]?.length).toBe("low");
     });
 
     it("should not modify the original queue", () => {
@@ -291,7 +291,7 @@ describe("TaskQueue", () => {
       });
 
       const found = queue.findById("unique-id");
-      expect(found?.id).toBe("unique-id");
+      expect(found?.length).toBe("unique-id");
       expect(found?.data.value).toBe(42);
     });
 

@@ -200,6 +200,7 @@ export class RetryManager extends EventEmitter {
         logger.warn(
           `Operation failed (attempt ${attempts}/${retryOptions.maxAttempts}), ` +
             `retrying in ${delay}ms...`,
+          'RETRY_MANAGER',
           { error: error instanceof Error ? error.message : String(error) },
         );
 
@@ -236,7 +237,7 @@ export class RetryManager extends EventEmitter {
 
     results.forEach((result, index) => {
       if (result.status === "fulfilled") {
-        values.push(result.value);
+        values.push(result.value as T);
       } else {
         errors.push({
           index,
@@ -272,6 +273,7 @@ export class RetryManager extends EventEmitter {
 
     logger.info(
       `Circuit breaker enabled for policy: ${policyName}`,
+      'RETRY_MANAGER',
       circuitOptions,
     );
   }
@@ -416,10 +418,10 @@ export class RetryManager extends EventEmitter {
   ): Required<RetryOptions> {
     if (typeof options === "string") {
       const policy = this?.policies?.get(options);
-      return policy ? policy.options : this.DEFAULT_OPTIONS;
+      return policy ? { ...this.DEFAULT_OPTIONS, ...policy.options } : { ...this.DEFAULT_OPTIONS };
     }
 
-    return { ...this.DEFAULT_OPTIONS, ...options };
+    return { ...this.DEFAULT_OPTIONS, ...options } as Required<RetryOptions>;
   }
 
   /**

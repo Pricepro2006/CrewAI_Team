@@ -1,4 +1,4 @@
-import type { Database } from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 
 /**
  * Migration: Create deal alerts table
@@ -6,7 +6,7 @@ import type { Database } from "better-sqlite3";
  * Description: Creates comprehensive deal alerts system for price drop alerts, notifications, and deal tracking
  */
 
-export function up(db: Database) {
+export function up(db: DatabaseInstance) {
   console.log("Creating deal alerts tables...");
 
   // Create deal_alerts table
@@ -338,7 +338,7 @@ export function up(db: Database) {
   console.log("✅ Deal alerts tables created successfully");
 }
 
-export function down(db: Database) {
+export function down(db: DatabaseInstance) {
   console.log("Dropping deal alerts tables...");
 
   db.exec(`DROP TABLE IF EXISTS tracked_deals;`);

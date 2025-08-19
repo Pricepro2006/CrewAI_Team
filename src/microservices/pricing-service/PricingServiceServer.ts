@@ -34,10 +34,11 @@ app.post("/calculate", async (req, res) => {
     const { productId, quantity = 1, customerId } = req.body;
     
     if (!productId) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Product ID is required"
       });
+      return;
     }
     
     logger.info(`Calculating price for product ${productId}, qty: ${quantity}`, "PRICING_SERVICE");
@@ -69,10 +70,11 @@ app.post("/bulk", async (req, res) => {
     const { items } = req.body;
     
     if (!Array.isArray(items)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Items must be an array"
       });
+      return;
     }
     
     const results = await pricingEngine.calculateBulkPricing(items);

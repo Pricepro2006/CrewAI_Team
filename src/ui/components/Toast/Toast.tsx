@@ -45,6 +45,13 @@ export function Toast({
   const [progress, setProgress] = useState(100);
   const Icon = icons[type];
 
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose(id);
+    }, 300); // Match animation duration
+  };
+
   useEffect(() => {
     if (duration > 0) {
       const interval = 100; // Update progress every 100ms
@@ -64,14 +71,9 @@ export function Toast({
 
       return () => clearInterval(timer);
     }
-  }, [duration, id]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onClose(id);
-    }, 300); // Match animation duration
-  };
+    // Return cleanup function for when duration is 0
+    return () => {};
+  }, [duration, id, handleClose]);
 
   return (
     <div

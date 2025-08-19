@@ -33,9 +33,9 @@ export class RAGSystem {
 
     try {
       // Initialize vector store (will automatically fallback to in-memory if ChromaDB fails)
-      await this?.vectorStore?.initialize();
+      await this.vectorStore.initialize();
       
-      const storeInfo = this?.vectorStore?.getStoreInfo();
+      const storeInfo = this.vectorStore.getStoreInfo();
       if (storeInfo.fallbackUsed) {
         logger.warn(
           "RAG system initialized with in-memory fallback - advanced RAG features may be limited",
@@ -50,7 +50,7 @@ export class RAGSystem {
 
       // Initialize embedding service (gracefully handle failure)
       try {
-        await this?.embeddingService?.initialize();
+        await this.embeddingService.initialize();
         logger.info("Embedding service initialized successfully", "RAG_SYSTEM");
       } catch (error) {
         logger.warn(
@@ -83,7 +83,7 @@ export class RAGSystem {
     }
 
     // Process document into chunks
-    const processedDocs = await this?.documentProcessor?.processDocument(
+    const processedDocs = await this.documentProcessor.processDocument(
       content,
       {
         sourceId: metadata["id"] || `doc-${Date.now()}`,
@@ -92,7 +92,7 @@ export class RAGSystem {
     );
 
     // Add to vector store
-    await this?.vectorStore?.addDocuments(processedDocs);
+    await this.vectorStore.addDocuments(processedDocs);
   }
 
   async addDocuments(
@@ -105,7 +105,7 @@ export class RAGSystem {
     const allProcessedDocs: ProcessedDocument[] = [];
 
     for (const doc of documents) {
-      const processed = await this?.documentProcessor?.processDocument(
+      const processed = await this.documentProcessor.processDocument(
         doc.content,
         {
           sourceId: doc.metadata["id"] || `doc-${Date.now()}-${Math.random()}`,
@@ -115,7 +115,7 @@ export class RAGSystem {
       allProcessedDocs.push(...processed);
     }
 
-    await this?.vectorStore?.addDocuments(allProcessedDocs);
+    await this.vectorStore.addDocuments(allProcessedDocs);
   }
 
   async search(query: string, limit: number = 5): Promise<QueryResult[]> {
@@ -124,10 +124,10 @@ export class RAGSystem {
     }
 
     // Get initial results from vector store
-    const vectorResults = await this?.vectorStore?.search(query, limit * 2);
+    const vectorResults = await this.vectorStore.search(query, limit * 2);
 
     // Apply retrieval enhancements (reranking, filtering)
-    const enhancedResults = await this?.retrievalService?.enhance(
+    const enhancedResults = await this.retrievalService.enhance(
       query,
       vectorResults,
     );
@@ -145,13 +145,13 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    const vectorResults = await this?.vectorStore?.searchWithFilter(
+    const vectorResults = await this.vectorStore.searchWithFilter(
       query,
       filter,
       limit * 2,
     );
 
-    const enhancedResults = await this?.retrievalService?.enhance(
+    const enhancedResults = await this.retrievalService.enhance(
       query,
       vectorResults,
     );
@@ -198,20 +198,20 @@ export class RAGSystem {
         contextParts.push(`### Context ${index + 1} (Score: ${result?.score?.toFixed(3)})`);
         
         if (includeMetadata && result.metadata) {
-          const { title, category, fileName, filePath } = result.metadata;
+          const { title, category, fileName, filePath } = result.metadata || {};
           if (title) contextParts.push(`**Title:** ${title}`);
           if (category) contextParts.push(`**Category:** ${category}`);
           if (fileName) contextParts.push(`**Source:** ${fileName}`);
         }
         
-        contextParts.push("\n" + result?.content?.trim());
+        contextParts.push("\n" + (result?.content?.trim() || ''));
         contextParts.push(""); // Empty line between contexts
       });
       
       return contextParts.join("\n");
     } else {
       // Return raw concatenated content
-      return results?.map(r => r.content).join("\n\n");
+      return results?.map(r => r.content || '').join("\n\n");
     }
   }
 
@@ -419,14 +419,14 @@ export class RAGSystem {
     const results = await this.searchWithFilter(query, filter, limit);
 
     return results.map(result => ({
-      emailId: result.metadata.emailId || '',
-      subject: result.metadata.subject || '',
+      emailId: String(result.metadata.emailId || ''),
+      subject: String(result.metadata.subject || ''),
       snippet: includeBody 
         ? result.content.substring(0, 300) + (result.content.length > 300 ? '...' : '')
-        : result.metadata.subject || '',
+        : String(result.metadata.subject || ''),
       score: result.score,
-      sender: result.metadata.sender,
-      date: result.metadata.date,
+      sender: result.metadata.sender as string | undefined,
+      date: result.metadata.date as string | undefined,
       metadata: result.metadata,
     }));
   }
@@ -470,7 +470,7 @@ export class RAGSystem {
       // Include content based on focus area
       if (focusArea === 'both' || focusArea === 'body') {
         const bodyContent = result.content
-          .replace(/^Subject:.*?\n\nBody:\s*/s, '') // Remove subject prefix
+          .replace(/^Subject:[\s\S]*?\n\nBody:\s*/, '') // Remove subject prefix
           .trim();
         if (bodyContent) {
           contextParts.push("\n" + bodyContent.substring(0, 500) + (bodyContent.length > 500 ? '...' : ''));
@@ -532,7 +532,7 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    await this?.vectorStore?.deleteBySourceId(documentId);
+    await this.vectorStore.deleteBySourceId(documentId);
   }
 
   async getDocument(documentId: string): Promise<Document | null> {
@@ -540,7 +540,7 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    return await this?.vectorStore?.getDocument(documentId);
+    return await this.vectorStore.getDocument(documentId);
   }
 
   async getAllDocuments(
@@ -551,7 +551,7 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    return await this?.vectorStore?.getAllDocuments(limit, offset);
+    return await this.vectorStore.getAllDocuments(limit, offset);
   }
 
   async getStats(): Promise<RAGStats> {
@@ -559,10 +559,10 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    const totalDocuments = await this?.vectorStore?.getDocumentCount();
-    const totalChunks = await this?.vectorStore?.getChunkCount();
-    const collections = await this?.vectorStore?.getCollections();
-    const storeInfo = this?.vectorStore?.getStoreInfo();
+    const totalDocuments = await this.vectorStore.getDocumentCount?.() || 0;
+    const totalChunks = await this.vectorStore.getChunkCount?.() || 0;
+    const collections = await this.vectorStore.getCollections?.() || [];
+    const storeInfo = this.vectorStore.getStoreInfo();
 
     return {
       totalDocuments,
@@ -596,7 +596,7 @@ export class RAGSystem {
     let embeddingHealth;
 
     try {
-      vectorStoreHealth = await this?.vectorStore?.healthCheck();
+      vectorStoreHealth = await this.vectorStore.healthCheck();
     } catch (error) {
       vectorStoreHealth = {
         status: "error" as const,
@@ -609,7 +609,7 @@ export class RAGSystem {
     // Check embedding service
     try {
       // Try a simple embedding operation
-      await this?.embeddingService?.embed("test");
+      await this.embeddingService.embed("test");
       embeddingHealth = {
         status: "healthy" as const,
         message: "Embedding service operational",
@@ -641,7 +641,7 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    await this?.vectorStore?.clear();
+    await this.vectorStore.clear?.();
   }
 
   async updateDocument(

@@ -277,7 +277,7 @@ export class FileUploadScanner {
       let buffer = Buffer.alloc(0);
       
       stream.on('data', chunk => {
-        buffer = Buffer.concat([buffer, chunk]);
+        buffer = Buffer.concat([buffer, Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)]);
       });
       
       stream.on('end', () => {
@@ -408,8 +408,11 @@ export class FileUploadScanner {
         const matches = stdout.match(/(.+): (.+) FOUND/g);
         if (matches) {
           matches.forEach(match => {
-            const threat = match.split(': ')[1].replace(' FOUND', '');
-            threats.push(`Virus detected: ${threat}`);
+            const parts = match.split(': ');
+            if (parts[1]) {
+              const threat = parts[1].replace(' FOUND', '');
+              threats.push(`Virus detected: ${threat}`);
+            }
           });
         }
       }
@@ -428,7 +431,7 @@ export class FileUploadScanner {
     try {
       const { stdout } = await execAsync(`unzip -l "${filePath}" | tail -1`);
       const match = stdout.match(/(\d+) files?/);
-      return match ? parseInt(match[1]) : 0;
+      return match && match[1] ? parseInt(match[1]) : 0;
     } catch {
       return 0;
     }

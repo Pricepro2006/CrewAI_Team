@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Request, Response } from "express";
 import { TRPCError } from "@trpc/server";
 import {
@@ -11,7 +11,7 @@ import {
   ensureCSRFToken,
   shouldRotateToken,
   updateTokenMetadata,
-} from "../csrf.js";
+} from '../csrf';
 
 // Mock logger
 vi.mock("../../../../utils/logger", () => ({

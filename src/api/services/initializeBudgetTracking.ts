@@ -22,7 +22,7 @@ export async function initializeBudgetTracking(): Promise<void> {
   try {
     // Open database connection
     const dbPath = process.env['WALMART_DB_PATH'] || 
-                   appConfig.database?.walmartDbPath || 
+                   appConfig.database?.walmart?.path || 
                    "./data/walmart_grocery.db";
     
     const db = new Database(dbPath);

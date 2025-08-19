@@ -8,7 +8,7 @@ import { spawn } from "child_process";
 import { existsSync, statSync, readFileSync } from "fs";
 import { join, extname } from "path";
 import { writeFile } from "fs/promises";
-import * as glob from "glob";
+import { glob } from "glob";
 
 interface BundleAnalysis {
   file: string;
@@ -84,12 +84,16 @@ class FrontendPerformanceAnalyzer {
       const gzip = spawn('gzip', ['-c'], { stdio: ['pipe', 'pipe', 'pipe'] });
       const wc = spawn('wc', ['-c'], { stdio: ['pipe', 'pipe', 'pipe'] });
       
-      gzip?.stdout?.pipe(wc.stdin);
+      if (gzip?.stdout && wc?.stdin) {
+        gzip.stdout.pipe(wc.stdin);
+      }
       
       let output = '';
-      wc?.stdout?.on('data', (data: any) => {
-        output += data.toString();
-      });
+      if (wc?.stdout) {
+        wc.stdout.on('data', (data: any) => {
+          output += data.toString();
+        });
+      }
       
       wc.on('close', () => {
         const size = parseInt(output.trim()) || 0;
@@ -101,8 +105,10 @@ class FrontendPerformanceAnalyzer {
       
       try {
         const content = readFileSync(filePath);
-        gzip?.stdin?.write(content);
-        gzip?.stdin?.end();
+        if (gzip?.stdin) {
+          gzip.stdin.write(content);
+          gzip.stdin.end();
+        }
       } catch {
         resolve(0);
       }
@@ -136,12 +142,7 @@ class FrontendPerformanceAnalyzer {
       return [];
     }
 
-    const files = await new Promise<string[]>((resolve, reject) => {
-      glob.glob(`${this.distPath}/**/*`, { nodir: true }, (err, matches) => {
-        if (err) reject(err);
-        else resolve(matches);
-      });
-    });
+    const files = await glob(`${this.distPath}/**/*`, { nodir: true }) as string[];
     const analyses: BundleAnalysis[] = [];
     
     for (const file of files) {
@@ -215,20 +216,21 @@ class FrontendPerformanceAnalyzer {
     const importRegex = /import\s+(?:{[^}]+}|\w+|\*\s+as\s+\w+)\s+from\s+['"]([^'"]+)['"]/g;
     let match;
     while ((match = importRegex.exec(content)) !== null) {
-      dependencies.push(match[1]);
+      if (match?.[1]) dependencies.push(match[1]);
     }
     
     // Extract require statements
     const requireRegex = /require\s*\(['"]([^'"]+)['"]\)/g;
     while ((match = requireRegex.exec(content)) !== null) {
-      dependencies.push(match[1]);
+      if (match?.[1]) dependencies.push(match[1]);
     }
     
-    return [...new Set(dependencies)];
+    return Array.from(new Set(dependencies));
   }
 
   private calculateRenderPotential(complexity: number, loc: number, dependencies: string[]): 'low' | 'medium' | 'high' {
-    const score = complexity * 0.5 + loc * 0.01 + dependencies?.length || 0 * 0.3;
+    const dependencyScore = dependencies ? dependencies.length * 0.3 : 0;
+    const score = complexity * 0.5 + loc * 0.01 + dependencyScore;
     
     if (score > 50) return 'high';
     if (score > 20) return 'medium';
@@ -243,14 +245,9 @@ class FrontendPerformanceAnalyzer {
       return [];
     }
 
-    const componentFiles = await new Promise<string[]>((resolve, reject) => {
-      glob.glob(`${this.srcPath}/**/*.{tsx,jsx}`, { 
-        ignore: ['**/*.test.*', '**/*.spec.*', '**/*.d.ts']
-      }, (err, matches) => {
-        if (err) reject(err);
-        else resolve(matches);
-      });
-    });
+    const componentFiles = await glob(`${this.srcPath}/**/*.{tsx,jsx}`, { 
+      ignore: ['**/*.test.*', '**/*.spec.*', '**/*.d.ts']
+    }) as string[];
     
     const metrics: ComponentMetrics[] = [];
     
@@ -272,7 +269,7 @@ class FrontendPerformanceAnalyzer {
           file: relativePath,
           linesOfCode: loc,
           complexity,
-          dependencies: dependencies?.filter(dep => !dep.startsWith('.')), // External deps only
+          dependencies: dependencies ? dependencies.filter(dep => !dep.startsWith('.')) : [], // External deps only
           renderPotential
         });
         
@@ -297,9 +294,11 @@ class FrontendPerformanceAnalyzer {
       ], { stdio: ['inherit', 'pipe', 'pipe'] });
       
       let output = '';
-      lighthouse?.stdout?.on('data', (data: any) => {
-        output += data.toString();
-      });
+      if (lighthouse?.stdout) {
+        lighthouse.stdout.on('data', (data: any) => {
+          output += data.toString();
+        });
+      }
       
       lighthouse.on('close', (code: any) => {
         if (code === 0) {
@@ -372,8 +371,8 @@ class FrontendPerformanceAnalyzer {
     });
     
     // Bundle size recommendations
-    const largeBundles = bundleAnalysis?.filter(item => item.size > 500 * 1024); // > 500KB
-    if (largeBundles?.length || 0 > 0) {
+    const largeBundles = bundleAnalysis ? bundleAnalysis.filter(item => item.size > 500 * 1024) : []; // > 500KB
+    if (largeBundles.length > 0) {
       console.log('\n⚠️ Large bundles detected (>500KB):');
       largeBundles.forEach(bundle => {
         console.log(`  • ${bundle.file}: ${bundle.sizeHuman}`);
@@ -385,21 +384,26 @@ class FrontendPerformanceAnalyzer {
     console.log('\n🧩 COMPONENT COMPLEXITY ANALYSIS');
     console.log('-'.repeat(50));
     
-    const highComplexity = componentMetrics?.filter(c => c.renderPotential === 'high');
-    const mediumComplexity = componentMetrics?.filter(c => c.renderPotential === 'medium');
+    const highComplexity = componentMetrics ? componentMetrics.filter(c => c.renderPotential === 'high') : [];
+    const mediumComplexity = componentMetrics ? componentMetrics.filter(c => c.renderPotential === 'medium') : [];
     
-    console.log(`\nTotal Components: ${componentMetrics?.length || 0}`);
-    console.log(`High Complexity: ${highComplexity?.length || 0}`);
-    console.log(`Medium Complexity: ${mediumComplexity?.length || 0}`);
-    console.log(`Low Complexity: ${componentMetrics?.length || 0 - highComplexity?.length || 0 - mediumComplexity?.length || 0}`);
+    const totalComponents = componentMetrics ? componentMetrics.length : 0;
+    const highCount = highComplexity.length;
+    const mediumCount = mediumComplexity.length;
+    const lowCount = totalComponents - highCount - mediumCount;
     
-    if (highComplexity?.length || 0 > 0) {
+    console.log(`\nTotal Components: ${totalComponents}`);
+    console.log(`High Complexity: ${highCount}`);
+    console.log(`Medium Complexity: ${mediumCount}`);
+    console.log(`Low Complexity: ${lowCount}`);
+    
+    if (highComplexity.length > 0) {
       console.log('\n🔴 High Complexity Components (optimization candidates):');
       highComplexity.slice(0, 5).forEach((comp, index) => {
         console.log(`  ${index + 1}. ${comp.component}`);
         console.log(`     File: ${comp.file}`);
         console.log(`     Lines: ${comp.linesOfCode}, Complexity: ${comp.complexity}`);
-        console.log(`     External Dependencies: ${comp?.dependencies?.length}`);
+        console.log(`     External Dependencies: ${comp.dependencies ? comp.dependencies.length : 0}`);
       });
     }
     
@@ -443,7 +447,7 @@ class FrontendPerformanceAnalyzer {
     console.log('\n💡 OPTIMIZATION RECOMMENDATIONS');
     console.log('-'.repeat(50));
     
-    const recommendations = [];
+    const recommendations: Array<{priority: string; category: string; issue: string; solution: string}> = [];
     
     // Bundle size recommendations
     if (totalSize > 2 * 1024 * 1024) { // > 2MB
@@ -499,7 +503,7 @@ class FrontendPerformanceAnalyzer {
     // Display recommendations by priority
     const priorities = ['HIGH', 'MEDIUM', 'LOW'];
     priorities.forEach(priority => {
-      const priorityRecs = recommendations?.filter(r => r.priority === priority);
+      const priorityRecs = recommendations?.filter((r: any) => r.priority === priority);
       if (priorityRecs?.length || 0 === 0) return;
       
       console.log(`\n🔴 ${priority} PRIORITY:`);
@@ -574,9 +578,11 @@ async function main() {
 }
 
 // Run if this is the main module
-const isMainModule = process.argv[1] === new URL(import.meta.url).pathname;
+// Use process.argv[1] to detect if this file is being run directly
+const isMainModule = process.argv[1]?.endsWith('frontend-performance-analysis.ts') || process.argv[1]?.endsWith('frontend-performance-analysis.js');
 if (isMainModule) {
   main();
 }
 
-export { FrontendPerformanceAnalyzer, BundleAnalysis, ComponentMetrics };
+export type { BundleAnalysis, ComponentMetrics };
+export { FrontendPerformanceAnalyzer };
