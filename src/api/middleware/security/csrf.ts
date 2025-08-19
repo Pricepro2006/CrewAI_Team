@@ -246,6 +246,15 @@ export function createEnhancedCSRFProtection(
   }) => {
     const { ctx, next, type, path } = opts;
 
+    // Skip CSRF protection in development mode
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      logger.debug("Skipping CSRF check in development mode", "CSRF", { 
+        env: process.env.NODE_ENV,
+        path 
+      });
+      return next();
+    }
+
     // Skip CSRF check for safe methods
     if (type && ["query", "subscription"].includes(type)) {
       return next();
