@@ -1,4 +1,5 @@
 import * as jwt from 'jsonwebtoken';
+import type { Secret, SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 
 // JWT payload schema
@@ -26,20 +27,31 @@ export class JWTError extends Error {
  * JWT Manager class for token operations
  */
 export class JWTManager {
-  private secret: string;
+  private secret: Secret;
 
   constructor(secret?: string) {
-    this.secret = secret || process.env.JWT_SECRET || '';
-    if (!this.secret) {
+    const secretValue = secret || process.env.JWT_SECRET || '';
+    if (!secretValue) {
       throw new JWTError('JWT_SECRET is not configured');
     }
+    this.secret = secretValue as Secret;
   }
 
   /**
    * Generate a JWT token
    */
   generateToken(payload: JWTPayload, expiresIn: string = '7d'): string {
-    return jwt.sign(payload, this.secret, { expiresIn });
+    // Ensure payload is a plain object for jwt.sign
+    const plainPayload: Record<string, unknown> = {
+      userId: payload.userId,
+      ...(payload.email && { email: payload.email }),
+      ...(payload.roles && { roles: payload.roles }),
+      ...(payload.iat && { iat: payload.iat }),
+      ...(payload.exp && { exp: payload.exp })
+    };
+    // Use proper SignOptions type and ensure type compatibility
+    const options: SignOptions = expiresIn ? { expiresIn } : {};
+    return jwt.sign(plainPayload as jwt.JwtPayload, this.secret, options);
   }
 
   /**
@@ -136,7 +148,9 @@ export function generateToken(payload: JWTPayload, secret: string = process.env.
     throw new JWTError('JWT_SECRET is not configured');
   }
   
-  return jwt.sign(payload, secret, { expiresIn });
+  // Cast payload to any type for jwt.sign compatibility
+  const options: SignOptions = expiresIn ? { expiresIn } : {};
+  return jwt.sign(payload as jwt.JwtPayload, secret as Secret, options);
 }
 
 /**

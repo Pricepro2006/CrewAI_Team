@@ -90,7 +90,7 @@ export function useSafeTRPCQuery<T>(
     refetchInterval?: number;
     staleTime?: number;
   }
-): UseQueryResult<T, Error> & { data: T | undefined } {
+): UseQueryResult<T, Error> {
   const reportError = useErrorReporter();
   
   const query = queryFn();
@@ -108,7 +108,7 @@ export function useSafeTRPCQuery<T>(
   return {
     ...query,
     data: query.data ?? options?.fallbackData,
-  };
+  } as UseQueryResult<T, Error>;
 }
 
 // Hook for mutations with optimistic updates

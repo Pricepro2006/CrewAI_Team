@@ -103,7 +103,7 @@ async function processEmailNotification(job: any) {
 }
 
 // Create the worker only if Redis is available
-let emailNotificationWorker: unknown;
+let emailNotificationWorker: any;
 
 try {
   emailNotificationWorker = new Worker(
@@ -121,14 +121,14 @@ try {
   );
 
   // Worker event handlers
-  emailNotificationWorker.on("completed", (job: any) => {
+  (emailNotificationWorker as any).on("completed", (job: any) => {
     logger.info("Email notification job completed", "EMAIL_WORKER", {
       jobId: job.id,
       emailId: (job as any).returnValue?.emailId,
     });
   });
 
-  emailNotificationWorker.on("failed", (job: any | undefined, error: Error) => {
+  (emailNotificationWorker as any).on("failed", (job: any | undefined, error: Error) => {
     logger.error("Email notification job failed", "EMAIL_WORKER", {
       jobId: job?.id,
       error: error.message,
@@ -153,7 +153,7 @@ process.on("SIGTERM", async () => {
       "SIGTERM received, closing email notification worker",
       "EMAIL_WORKER",
     );
-    await emailNotificationWorker.close();
+    await (emailNotificationWorker as any).close();
   }
 });
 

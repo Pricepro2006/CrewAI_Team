@@ -545,7 +545,7 @@ class MemoryManager extends EventEmitter {
   createWeakRef<T extends object>(key: string, obj: T): any {
     if (typeof (globalThis as any).WeakRef === 'undefined') {
       // Fallback for environments without WeakRef support
-      this?.weakRefs?.set(key, obj);
+      this?.weakRefs?.set(key, obj as any);
       return { deref: () => obj };
     }
     

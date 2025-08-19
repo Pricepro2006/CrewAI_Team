@@ -440,9 +440,9 @@ export class TRPCPerformanceMonitor {
   }
 
   private percentile(values: number[], p: number): number {
-    if (values?.length || 0 === 0) return 0;
-    const index = Math.ceil(values?.length || 0 * p) - 1;
-    return values[Math.max(0, Math.min(index, values?.length || 0 - 1))];
+    if (!values?.length) return 0;
+    const index = Math.ceil(values.length * p) - 1;
+    return values[Math.max(0, Math.min(index, values.length - 1))] || 0;
   }
 
   private getErrorTypes(failedMetrics: TRPCCallMetrics[]): Record<string, number> {

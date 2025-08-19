@@ -684,7 +684,7 @@ export class ThreadContextManager {
 
     // Try Redis
     try {
-      const cached = await this?.redisService?.get(`thread_context:${chainId}`);
+      const cached = await this?.redisService?.get<string>(`thread_context:${chainId}`);
       if (cached) {
         const context = JSON.parse(cached) as ThreadContext;
         this?.contextCache?.set(chainId, context);
@@ -1066,7 +1066,7 @@ export class ThreadContextManager {
     if ((olderEntries?.length || 0) > 0) {
       const summaryEntry: ChronologicalEntry = {
         emailId: "summary_older",
-        timestamp: olderEntries[0].timestamp,
+        timestamp: olderEntries[0]?.timestamp || new Date(),
         sender: "System Summary",
         keyPoints: [`Summary of ${olderEntries?.length || 0} earlier emails`],
         businessImpact: this.aggregateBusinessImpact(olderEntries || []),
@@ -1115,7 +1115,7 @@ export class ThreadContextManager {
         await (this.redisService as any).disconnect();
       }
     } catch (error) {
-      logger.warn('Redis disconnect failed:', error);
+      logger.warn('Redis disconnect failed:', String(error));
     }
     this?.contextCache?.clear();
     logger.info("ThreadContextManager shutdown complete");

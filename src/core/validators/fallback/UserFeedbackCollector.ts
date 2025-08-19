@@ -363,7 +363,7 @@ export class UserFeedbackCollector {
       .map(([field]) => field);
 
     return {
-      lowConfidencePatterns: [...new Set(lowRatedQueries)].slice(0, 5),
+      lowConfidencePatterns: Array.from(new Set(lowRatedQueries)).slice(0, 5),
       frequentlyIncorrectFields,
       reliableDataSources: [], // Would be populated from actual data source feedback
       suggestedPatternImprovements: [], // Would be generated from pattern analysis

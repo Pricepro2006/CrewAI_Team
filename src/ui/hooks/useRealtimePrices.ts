@@ -115,7 +115,9 @@ export function useRealtimePrices(
       if (newPriceUpdates.size > maxPriceHistory) {
         const oldest = Array.from(newPriceUpdates.entries())
           .sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
-        newPriceUpdates.delete(oldest[0]);
+        if (oldest) {
+          newPriceUpdates.delete(oldest[0]);
+        }
       }
 
       const newIndicators = new Map(prevState.priceChangeIndicators);

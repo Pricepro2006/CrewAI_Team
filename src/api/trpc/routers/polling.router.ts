@@ -15,7 +15,7 @@ import type {
   WalmartPollingData, 
   EmailPollingData,
   ProcessingStatus 
-} from '../validation/pollingSchemas.js';
+} from '../../validation/pollingSchemas.js';
 
 // Response schemas
 const PollingDataSchema = z.object({

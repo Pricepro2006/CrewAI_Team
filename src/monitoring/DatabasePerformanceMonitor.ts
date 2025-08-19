@@ -439,8 +439,8 @@ class DatabasePerformanceMonitor extends EventEmitter {
       const results: any = {};
       for (const [key, query] of Object.entries(pragmaQueries)) {
         try {
-          const result = db.prepare(query).get();
-          results[key] = Object.values(result)[0];
+          const result = db.prepare(query).get() as Record<string, any>;
+          results[key] = result ? Object.values(result)[0] : 0;
         } catch (error) {
           results[key] = 0;
         }

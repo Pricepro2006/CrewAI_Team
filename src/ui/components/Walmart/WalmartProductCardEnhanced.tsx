@@ -22,7 +22,7 @@ import {
   HeartIcon as HeartSolidIcon,
   StarIcon as StarSolidIcon
 } from "@heroicons/react/24/solid";
-import { api } from "../../../lib/trpc";
+import { trpc } from "../../../utils/trpc";
 import { useGroceryStore } from "../../../client/store/groceryStore";
 import type { WalmartProduct } from "../../../types/walmart-grocery";
 import type { ExtendedWalmartProduct } from "./types/WalmartTypes";
@@ -63,10 +63,10 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
   } = useGroceryStore();
 
   // Track product view
-  const trackView = api?.cart?.trackView.useMutation();
+  const trackView = trpc?.cart?.trackView?.useMutation();
   
   // Price alert mutation
-  const setPriceAlert = api?.priceAlerts?.createAlert.useMutation({
+  const setPriceAlert = trpc?.priceAlerts?.createAlert?.useMutation({
     onSuccess: (): void => {
       showNotification("Price alert set successfully!");
       setShowPriceAlert(false);
@@ -155,11 +155,11 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     }
     
     const target = Number(targetPrice);
-    const currentPrice = typeof product.price === "number" 
+    const alertCurrentPrice = typeof product.price === "number" 
       ? product.price 
-      : product?.price?.sale || product?.price?.regular;
+      : (product.price as any)?.sale || (product.price as any)?.regular || 0;
     
-    if (target >= currentPrice) {
+    if (target >= alertCurrentPrice) {
       showNotification("Target price should be lower than current price");
       return;
     }
@@ -170,10 +170,8 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
       alertName: `Price drop for ${product.name}`,
       productName: product.name,
       productBrand: product.brand,
-      productCategory: typeof product.category === 'string' ? product.category : product.category?.name,
+      productCategory: typeof product.category === 'string' ? product.category : (product.category as any)?.name || 'Unknown',
       targetPrice: target,
-      currentPrice,
-      userId: "current-user",
       notificationMethods: ["email"]
     });
   };
@@ -202,10 +200,10 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
 
   const currentPrice = typeof product.price === "number" 
     ? product.price 
-    : product?.price?.sale || product?.price?.regular;
+    : (product.price as any)?.sale || (product.price as any)?.regular || 0;
     
-  const originalPrice = typeof product.price === "object" && product?.price?.wasPrice
-    ? product?.price?.wasPrice
+  const originalPrice = typeof product.price === "object" && (product.price as any)?.wasPrice
+    ? (product.price as any)?.wasPrice
     : product.originalPrice;
     
   const savings = originalPrice && originalPrice > currentPrice 
@@ -315,7 +313,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
           {product.brand && <span>{product.brand}</span>}
           {product.brand && product.category && <span>•</span>}
           {product.category && (
-            <span>{typeof product.category === "string" ? product.category : product?.category?.name}</span>
+            <span>{typeof product.category === "string" ? product.category : (product.category as any)?.name || 'Unknown'}</span>
           )}
         </div>
 
@@ -360,7 +358,12 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
         {product.deliveryInfo && (
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
             <TruckIcon className="h-4 w-4" />
-            <span>{product.deliveryInfo}</span>
+            <span>
+              {typeof product.deliveryInfo === 'string' 
+                ? product.deliveryInfo 
+                : `Available: ${product.deliveryInfo.available ? 'Yes' : 'No'}${product.deliveryInfo.estimatedDays ? ` (${product.deliveryInfo.estimatedDays} days)` : ''}`
+              }
+            </span>
           </div>
         )}
 

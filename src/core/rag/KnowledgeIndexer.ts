@@ -253,7 +253,7 @@ export class KnowledgeIndexer {
     let title = fileName.replace(extension, "");
     if (extension === ".md") {
       const titleMatch = content.match(/^#\s+(.+)$/m);
-      if (titleMatch) {
+      if (titleMatch && titleMatch[1]) {
         title = titleMatch[1];
       }
     }
@@ -262,7 +262,7 @@ export class KnowledgeIndexer {
     let description = "";
     if (extension === ".md") {
       const paragraphMatch = content.match(/^(?!#)(.+)$/m);
-      if (paragraphMatch) {
+      if (paragraphMatch && paragraphMatch[1]) {
         description = paragraphMatch[1].substring(0, 200);
       }
     } else if (extension === ".json") {

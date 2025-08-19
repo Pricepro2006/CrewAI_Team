@@ -612,13 +612,20 @@ export class EventRouter extends EventEmitter {
     const parts = path.split('.');
     const result = JSON.parse(JSON.stringify(obj));
     
+    if (!parts || parts.length === 0) return result;
+    
     let current = result;
-    for (let i = 0; i < parts?.length || 0 - 1; i++) {
-      if (!(parts[i] in current)) return result;
-      current = current[parts[i]];
+    const partsLength = parts.length;
+    for (let i = 0; i < partsLength - 1; i++) {
+      const part = parts[i];
+      if (!part || !(part in current)) return result;
+      current = current[part];
     }
     
-    delete current[parts[parts?.length || 0 - 1]];
+    const lastPart = parts[partsLength - 1];
+    if (lastPart && current && typeof current === 'object') {
+      delete current[lastPart];
+    }
     return result;
   }
 

@@ -4,13 +4,6 @@
 import { useState } from 'react';
 
 // Add type declarations for Service Worker environment
-declare global {
-  var process: {
-    env: {
-      NODE_ENV?: string;
-    };
-  };
-}
 
 // Global gtag type definition
 declare global {
@@ -56,7 +49,7 @@ class ServiceWorkerManager {
            'serviceWorker' in navigator && 
            typeof window !== 'undefined' &&
            'caches' in window && 
-           (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production');
+           (typeof globalThis !== 'undefined' && globalThis.process?.env?.NODE_ENV === 'production');
   }
 
   private async register() {

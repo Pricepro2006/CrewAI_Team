@@ -34,7 +34,7 @@ import type { WebSocketService } from "../../api/services/WebSocketService.js";
 export class WalmartIntegrationCoordinator extends EventEmitter {
   private static instance: WalmartIntegrationCoordinator;
   private services: WalmartServiceRegistry;
-  private monitoring: WalmartMonitoringSystem;
+  private monitoring!: WalmartMonitoringSystem; // Using definite assignment assertion since it's initialized in initialize()
   private eventBus: WalmartEventBus;
   private config: IntegrationConfig;
   private healthStatus: IntegrationHealth;
@@ -86,7 +86,10 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     try {
       // Initialize monitoring system
       this.monitoring = WalmartMonitoringSystem.create(this.config.monitoring);
-      this.services.register("monitoring", this.monitoring);
+      this.services.register("monitoring", {
+        name: "monitoring",
+        ...this.monitoring
+      } as WalmartService);
 
       // Register error handlers
       this.setupErrorHandling();
@@ -230,7 +233,12 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     eventType: WalmartWebSocketEventType,
     handler?: WalmartEventHandler<T>,
   ): void {
-    this.eventBus.off(eventType, handler);
+    // If handler is provided, remove specific handler; otherwise remove all handlers for this event type
+    if (handler) {
+      this.eventBus.off(eventType, handler);
+    } else {
+      this.eventBus.removeAllListeners(eventType);
+    }
   }
 
   // =====================================================
@@ -261,7 +269,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       );
 
       // Publish search event
-      await this.publishEvent("walmart.search.completed", {
+      await this.publishEvent("walmart.search?.completed", {
         operationId,
         query,
         results: result,
@@ -278,7 +286,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         executionTime: Date.now() - startTime,
         metadata: {
           cached: result.metadata?.cached || false,
-          totalResults: (result?.data as any[])?.length || 0,
+          totalResults: Array.isArray(result?.data) ? result.data.length : 0,
         },
       };
     } catch (error) {
@@ -334,7 +342,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       );
 
       // Publish cart event
-      await this.publishEvent("walmart.cart.item_updated", {
+      await this.publishEvent("walmart.cart?.item_updated", {
         operationId,
         operation,
         cart: result,
@@ -405,7 +413,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         await transaction.commit();
 
         // Publish order events
-        await this.publishEvent("walmart.order.placed", {
+        await this.publishEvent("walmart.order?.placed", {
           operationId,
           order,
           userId: orderRequest.userId,
@@ -769,7 +777,15 @@ class WalmartEventBus extends EventEmitter {
 
     // Publish via WebSocket if available
     if (this.wsService) {
-      await this.wsService.broadcast(eventType, event);
+      try {
+        // Use the event type as the channel and the event as data
+        await (this.wsService as any).broadcast?.(eventType, event);
+      } catch (error) {
+        logger.warn("Failed to broadcast WebSocket event", "WALMART_INTEGRATION", {
+          eventType,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
     }
 
     logger.debug("Event published", "WALMART_INTEGRATION", {

@@ -62,7 +62,7 @@ export class QueryEnhancer {
       alternatives: enhancedQueries.slice(1),
       metadata: {
         hasLocation: !!enhancedLocation.corrected,
-        hasTimeConstraint: optimization?.components?.timeConstraints?.length || 0 > 0,
+        hasTimeConstraint: (optimization?.components?.timeConstraints?.length ?? 0) > 0,
         serviceCategory: optimization?.components?.serviceType,
         urgencyLevel: optimization?.components?.urgency,
         searchOperators: optimization?.components?.searchOperators?.map(
@@ -181,7 +181,7 @@ export class QueryEnhancer {
     const primaryParts: string[] = [];
 
     // Add service (use first enhanced term)
-    if (enhancedService?.length || 0 > 0 && enhancedService[0]) {
+    if ((enhancedService?.length ?? 0) > 0 && enhancedService[0]) {
       primaryParts.push(enhancedService[0]);
     }
 

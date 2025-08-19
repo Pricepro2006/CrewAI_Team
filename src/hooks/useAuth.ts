@@ -200,7 +200,7 @@ export const useAuthState = (): AuthState => {
     logout,
     refreshToken,
     clearError
-  };
+  } as any;
 };
 
 /**
@@ -228,7 +228,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const auth = useAuthState();
   return React.createElement(
     AuthContext.Provider,
-    { value: auth },
+    { value: auth } as any,
     children
   );
 };

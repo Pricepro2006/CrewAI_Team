@@ -92,7 +92,7 @@ export interface LoadBalancerState {
  */
 export class ServiceRegistry extends EventEmitter {
   private config: ServiceDiscoveryConfig;
-  private client: Redis;
+  private client!: Redis;
   private isConnected = false;
   
   private services = new Map<string, ServiceInfo>();
@@ -545,14 +545,24 @@ export class ServiceRegistry extends EventEmitter {
       case 'least_connections':
         return this.selectLeastConnections(services);
       
-      case 'random':
-        return services[Math.floor(Math.random() * services.length)];
+      case 'random': {
+        const randomService = services[Math.floor(Math.random() * services.length)];
+        if (!randomService) {
+          throw new Error('No services available for random selection');
+        }
+        return randomService;
+      }
       
       case 'weighted':
         return this.selectWeighted(services);
       
-      default:
-        return services[0];
+      default: {
+        const defaultService = services[0];
+        if (!defaultService) {
+          throw new Error('No services available for default selection');
+        }
+        return defaultService;
+      }
     }
   }
 
@@ -567,6 +577,9 @@ export class ServiceRegistry extends EventEmitter {
 
     const currentIndex = this.loadBalancerState.roundRobinIndex.get(serviceName) || 0;
     const selectedService = services[currentIndex % services.length];
+    if (!selectedService) {
+      throw new Error(`No service available at index ${currentIndex % services.length} for ${serviceName}`);
+    }
     
     this.loadBalancerState.roundRobinIndex.set(serviceName, currentIndex + 1);
     
@@ -580,6 +593,9 @@ export class ServiceRegistry extends EventEmitter {
 
     let minConnections = Infinity;
     let selectedService = services[0];
+    if (!selectedService) {
+      throw new Error('No services available for least connections selection');
+    }
 
     for (const service of services) {
       const connections = this.loadBalancerState.connectionCounts.get(service.id) || 0;
@@ -603,7 +619,11 @@ export class ServiceRegistry extends EventEmitter {
 
     if (totalWeight <= 0) {
       // Fallback to first service if no valid weights
-      return services[0];
+      const fallbackService = services[0];
+      if (!fallbackService) {
+        throw new Error('No services available for weighted selection with zero weights');
+      }
+      return fallbackService;
     }
 
     const random = Math.random() * totalWeight;
@@ -616,7 +636,11 @@ export class ServiceRegistry extends EventEmitter {
       }
     }
 
-    return services[services.length - 1];
+    const lastService = services[services.length - 1];
+    if (!lastService) {
+      throw new Error('No services available for weighted selection fallback');
+    }
+    return lastService;
   }
 
   public incrementConnectionCount(serviceId: string): void {
@@ -849,9 +873,9 @@ export class ServiceRegistry extends EventEmitter {
       eventTypes: this.safeJsonParse(data.eventTypes || '{"publishes":[],"subscribes":[]}', defaultEventTypes),
       metadata: this.safeJsonParse(data.metadata || '{}', defaultMetadata),
       health: this.safeJsonParse(data.health || '', defaultHealth),
-      registeredAt: parseInt(data.registeredAt) || Date.now(),
-      lastSeen: parseInt(data.lastSeen) || Date.now(),
-      heartbeatInterval: parseInt(data.heartbeatInterval) || 15000
+      registeredAt: parseInt(data.registeredAt || '0') || Date.now(),
+      lastSeen: parseInt(data.lastSeen || '0') || Date.now(),
+      heartbeatInterval: parseInt(data.heartbeatInterval || '15000') || 15000
     };
   }
 

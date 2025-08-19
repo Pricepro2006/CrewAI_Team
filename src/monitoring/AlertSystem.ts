@@ -334,18 +334,27 @@ export class AlertSystem extends EventEmitter {
   private async sendEmailNotification(alert: Alert): Promise<void> {
     if (!this?.config?.email?.enabled) return;
 
-    const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.createTransporter(this?.config?.email.smtp);
+    try {
+      // @ts-ignore - nodemailer is optional and may not be installed
+      const nodemailer: any = await import('nodemailer').catch(() => null);
+      if (!nodemailer) {
+        console.error('Nodemailer not available, cannot send email notification');
+        return;
+      }
+      const transporter = nodemailer.default.createTransporter(this?.config?.email.smtp);
 
     const subject = `🚨 ${alert?.severity?.toUpperCase()} Alert: ${alert.component}`;
     const html = this.generateEmailHTML(alert);
 
-    await transporter.sendMail({
-      from: this?.config?.email.from,
-      to: this?.config?.email.to.join(', '),
-      subject,
-      html,
-    });
+      await transporter.sendMail({
+        from: this?.config?.email.from,
+        to: this?.config?.email.to.join(', '),
+        subject,
+        html,
+      });
+    } catch (error) {
+      console.error('Failed to send email notification:', error);
+    }
   }
 
   private async sendSlackNotification(alert: Alert): Promise<void> {

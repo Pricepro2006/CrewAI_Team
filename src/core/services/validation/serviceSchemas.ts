@@ -41,7 +41,11 @@ export class ServiceError extends Error {
 /**
  * Proper BullMQ imports for v5
  */
-export { Queue, Worker, QueueEvents, Job } from 'bullmq';
+// BullMQ types - using any to avoid import issues
+export type Queue = any;
+export type Worker = any;
+export type QueueEvents = any;
+export type Job = any;
 
 // ============================================================================
 // Email Service Schemas

@@ -11,7 +11,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
   const utils = api.useUtils();
 
   // Queries with proper error handling
-  const teamMembersQuery = api.emailAssignment?.getTeamMembers?.useQuery?.(undefined, {
+  const teamMembersQuery = api.emailAssignment.getTeamMembers.useQuery(undefined, {
     retry: (failureCount: number, error: unknown) => {
       // Only retry for network errors, not auth/business logic errors
       const errorData = error as { data?: { code?: string } };
@@ -22,7 +22,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
     },
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 5 * 60 * 1000, // 5 minutes
-  }) || { data: [], isLoading: false, error: null, refetch: async () => ({}) };
+  });
 
   const {
     data: teamMembers = [],
@@ -31,7 +31,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
     refetch: refetchTeamMembers
   } = teamMembersQuery;
 
-  const workloadQuery = api.emailAssignment?.getWorkloadDistribution?.useQuery?.(undefined, {
+  const workloadQuery = api.emailAssignment.getWorkloadDistribution.useQuery(undefined, {
     retry: (failureCount: number, error: unknown) => {
       const errorData = error as { data?: { code?: string } };
       if (failureCount < 2 && !errorData?.data?.code) {
@@ -41,7 +41,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
     },
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 2 * 60 * 1000, // 2 minutes
-  }) || { data: null, isLoading: false, error: null, refetch: async () => ({}) };
+  });
 
   const {
     data: workloadData,
@@ -51,7 +51,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
   } = workloadQuery;
 
   // Mutations with enhanced error handling
-  const assignEmailMutation = api.emailAssignment?.assignEmail?.useMutation({
+  const assignEmailMutation = api.emailAssignment.assignEmail.useMutation({
     onSuccess: async (data: unknown) => {
       try {
         // Invalidate relevant queries
@@ -85,9 +85,9 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
       return false;
     },
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 10000),
-  }) || { mutateAsync: async () => ({}), isPending: false, error: null };
+  });
 
-  const bulkAssignMutation = api.emailAssignment?.bulkAssignEmails?.useMutation({
+  const bulkAssignMutation = api.emailAssignment.bulkAssignEmails.useMutation({
     onSuccess: async (data: unknown) => {
       try {
         await Promise.all([
@@ -118,7 +118,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
       return false;
     },
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 10000),
-  }) || { mutateAsync: async () => ({}), isPending: false, error: null };
+  });
 
   // Assignment functions with proper error handling
   const assignEmail = useCallback(
@@ -164,7 +164,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
       }
       
       try {
-        return await utils.emailAssignment?.getAssignmentSuggestions?.fetch?.(emailId) || [];
+        return await utils.emailAssignment.getAssignmentSuggestions.fetch(emailId) || [];
       } catch (error) {
         const errorMessage = handleTrpcError(error);
         console.error('Failed to get assignment suggestions:', errorMessage);
@@ -192,7 +192,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
   );
 
   // Subscription for real-time updates with error handling
-  api.emailAssignment?.onEmailUpdate?.useSubscription?.(undefined, {
+  api.emailAssignment.onEmailUpdate?.useSubscription?.(undefined, {
     onData: async (data: unknown) => {
       console.log("Email update received:", data);
       try {

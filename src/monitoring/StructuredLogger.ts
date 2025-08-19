@@ -81,7 +81,7 @@ export class StructuredLogger {
   private winston: winston.Logger;
   private aggregations: Map<string, LogAggregation> = new Map();
   private logBuffer: StructuredLogEntry[] = [];
-  private bufferFlushInterval: NodeJS.Timeout;
+  private bufferFlushInterval!: NodeJS.Timeout;
   private readonly maxBufferSize = 1000;
   private readonly flushIntervalMs = 5000; // 5 seconds
   private readonly version: string;

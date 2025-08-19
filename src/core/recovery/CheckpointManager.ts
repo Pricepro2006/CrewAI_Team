@@ -403,7 +403,14 @@ export class CheckpointManager extends EventEmitter {
         // Process items
         for (let i = startIndex; i < items.length; i++) {
           try {
-            await processor(items[i], i, checkpoint);
+            const item = items[i];
+            if (!item) continue; // Skip if item is undefined
+            
+            if (checkpoint) {
+              await processor(item, i, checkpoint);
+            } else {
+              await processor(item, i);
+            }
             completed++;
             itemsProcessed++;
 
@@ -449,6 +456,7 @@ export class CheckpointManager extends EventEmitter {
         );
         if (checkpoints.length > 0) {
           const latest = checkpoints[0];
+          if (!latest) return;
           await checkpointManager.updateCheckpoint(latest.id, { state: updates });
         }
       },

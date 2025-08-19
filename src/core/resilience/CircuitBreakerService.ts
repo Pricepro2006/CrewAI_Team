@@ -104,7 +104,7 @@ class Semaphore {
         originalResolve();
       };
 
-      this.queue[this.queue.length - 1].resolve = wrappedResolve;
+      this.queue[this.queue.length - 1]!.resolve = wrappedResolve;
     });
   }
 
@@ -339,7 +339,7 @@ export class CircuitBreakerService extends EventEmitter {
   ): Promise<T> {
     return this.executeWithCircuitBreaker('redis', operation, fn, {
       fallbackOptions: {
-        fallbackValue: fallbackValue || null,
+        fallbackValue: (fallbackValue || null) as T,
         useCache: false, // Redis is the cache, use in-memory fallback
       },
     });
@@ -355,7 +355,7 @@ export class CircuitBreakerService extends EventEmitter {
   ): Promise<T> {
     return this.executeWithCircuitBreaker('sqlite', operation, fn, {
       fallbackOptions: {
-        fallbackValue: fallbackData || null,
+        fallbackValue: (fallbackData || null) as T,
         useCache: true,
         cacheKey: `db_fallback_${operation}`,
       },

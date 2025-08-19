@@ -30,8 +30,8 @@ export function useWalmartProductSearch() {
     total: 0
   });
 
-  const searchProducts = trpc?.walmartGrocery?.searchProducts?.useMutation?.({
-    onSuccess: (data: { success: boolean; products: WalmartProduct[]; metadata?: { totalResults?: number } }) => {
+  const searchProducts = trpc.walmartGrocery.searchProducts.useMutation({
+    onSuccess: (data: any) => {
       if (data.success) {
         setSearchResults({
           products: data.products || [],
@@ -39,10 +39,7 @@ export function useWalmartProductSearch() {
         });
       }
     }
-  }) || {
-    mutateAsync: async () => ({ success: false, products: [], metadata: { totalResults: 0 } }),
-    error: null
-  };
+  });
 
   const search = useCallback(async (params: SearchParams): Promise<void> => {
     setIsSearching(true);
@@ -66,7 +63,7 @@ export function useWalmartProductSearch() {
 
 // Hook for getting product details (fallback implementation)
 export function useWalmartProduct(productId: string) {
-  const [mockProduct] = useState<WalmartProduct | null>(
+  const [mockProduct] = useState<any>(
     productId ? {
       id: productId,
       productId: productId,
@@ -104,7 +101,7 @@ interface RecommendationParams {
 
 // Hook for product recommendations (fallback implementation)
 export function useWalmartRecommendations(params: RecommendationParams) {
-  const [mockRecommendations] = useState<WalmartProduct[]>([{
+  const [mockRecommendations] = useState<any>([{
     id: 'rec1',
     productId: 'REC001',
     name: 'Recommended Product 1',

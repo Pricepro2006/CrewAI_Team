@@ -735,7 +735,7 @@ export class BusinessContextManager {
     const fromAddress = email.from_address || '';
     const fromName = fromAddress ? fromAddress.split('@')[0] : 'unknown';
     return [{
-      name: fromName,
+      name: fromName || 'unknown',  // Ensure name is always a string
       role: "unknown",
       influence: "medium",
       decisionMaker: false,

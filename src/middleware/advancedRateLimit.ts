@@ -132,8 +132,8 @@ export class AdvancedRateLimit {
       port: this?.config?.redis.port,
       password: this?.config?.redis.password,
       db: this?.config?.redis.db,
-      retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
+      lazyConnect: true,
     });
 
     this?.redis.on("error", (err: any) => {
@@ -260,7 +260,7 @@ export class AdvancedRateLimit {
   ) {
     return rateLimit({
       store: new RedisStore({
-        client: this.redis,
+        sendCommand: (command: string, ...args: (string | number | Buffer)[]) => this.redis.call(command, ...args) as Promise<any>,
         prefix: "rl:",
       }),
       windowMs: config.windowMs,
@@ -296,7 +296,7 @@ export class AdvancedRateLimit {
           violations: violations + 1,
         });
       },
-      onLimitReached: config.onLimitReached,
+      // onLimitReached is handled by the handler function
     });
   }
 

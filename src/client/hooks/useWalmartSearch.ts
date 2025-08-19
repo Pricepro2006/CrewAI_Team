@@ -50,7 +50,7 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
   const currentPage = useRef(0);
 
   // Set up tRPC mutation for search
-  const searchMutation = api.walmartGrocery?.searchProducts?.useMutation({
+  const searchMutation = api.walmartGrocery.searchProducts.useMutation({
     onError: (error: unknown) => {
       const errorMessage = error instanceof Error ? error.message : 'Search failed';
       setError(errorMessage);
@@ -66,7 +66,7 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
       inStock: options.inStock,
       dietary: options.dietary ? [...options.dietary].sort() : undefined,
     });
-  }, []);
+  }, [searchMutation]);
 
   const search = useCallback(async (options: ExtendedSearchOptions) => {
     try {
@@ -89,9 +89,6 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
       currentPage.current = 0;
 
       // Use real tRPC mutation for search
-      if (!searchMutation) {
-        throw new Error('Search service not available');
-      }
       
       const response = await searchMutation.mutateAsync({
         query: options.query,
@@ -126,9 +123,6 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
       currentPage.current += 1;
 
       // Use real tRPC mutation for loading more
-      if (!searchMutation) {
-        throw new Error('Search service not available');
-      }
       
       const response = await searchMutation.mutateAsync({
         query: currentSearchOptions.current.query,

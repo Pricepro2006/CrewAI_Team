@@ -9,11 +9,14 @@ const logger = new Logger("test:error-handling");
 export function setupTestErrorHandling(): void {
   // Set up error handling for tests
   process.on("unhandledRejection", (reason, promise) => {
-    logger.error("Unhandled Rejection at:", String(promise), "reason:", String(reason));
+    logger.error("Unhandled Rejection at:", `Promise: ${String(promise)}, Reason: ${String(reason)}`);
   });
 
   process.on("uncaughtException", (error: any) => {
-    logger.error("Uncaught Exception:", String(error));
+    logger.error("Uncaught Exception:", error instanceof Error ? error.message : String(error));
+    if (error instanceof Error && error.stack) {
+      logger.error("Stack trace:", error.stack);
+    }
   });
 }
 
@@ -37,7 +40,7 @@ export async function validateTestEnvironment(): Promise<{
   }
 
   return {
-    isValid: issues?.length || 0 === 0,
+    isValid: (issues?.length || 0) === 0,
     issues,
     recommendations,
   };

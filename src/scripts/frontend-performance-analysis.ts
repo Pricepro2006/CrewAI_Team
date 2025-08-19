@@ -142,12 +142,7 @@ class FrontendPerformanceAnalyzer {
       return [];
     }
 
-    const files = await new Promise<string[]>((resolve, reject) => {
-      glob(`${this.distPath}/**/*`, { nodir: true }, (err: any, matches: string[]) => {
-        if (err) reject(err);
-        else resolve(matches);
-      });
-    });
+    const files = await glob(`${this.distPath}/**/*`, { nodir: true }) as string[];
     const analyses: BundleAnalysis[] = [];
     
     for (const file of files) {
@@ -230,7 +225,7 @@ class FrontendPerformanceAnalyzer {
       if (match?.[1]) dependencies.push(match[1]);
     }
     
-    return [...new Set(dependencies)];
+    return Array.from(new Set(dependencies));
   }
 
   private calculateRenderPotential(complexity: number, loc: number, dependencies: string[]): 'low' | 'medium' | 'high' {
@@ -250,14 +245,9 @@ class FrontendPerformanceAnalyzer {
       return [];
     }
 
-    const componentFiles = await new Promise<string[]>((resolve, reject) => {
-      glob(`${this.srcPath}/**/*.{tsx,jsx}`, { 
-        ignore: ['**/*.test.*', '**/*.spec.*', '**/*.d.ts']
-      }, (err: any, matches: string[]) => {
-        if (err) reject(err);
-        else resolve(matches);
-      });
-    });
+    const componentFiles = await glob(`${this.srcPath}/**/*.{tsx,jsx}`, { 
+      ignore: ['**/*.test.*', '**/*.spec.*', '**/*.d.ts']
+    }) as string[];
     
     const metrics: ComponentMetrics[] = [];
     
@@ -588,7 +578,8 @@ async function main() {
 }
 
 // Run if this is the main module
-const isMainModule = process.argv[1] === new URL(import.meta.url).pathname;
+// Use process.argv[1] to detect if this file is being run directly
+const isMainModule = process.argv[1]?.endsWith('frontend-performance-analysis.ts') || process.argv[1]?.endsWith('frontend-performance-analysis.js');
 if (isMainModule) {
   main();
 }

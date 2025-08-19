@@ -20,8 +20,8 @@ async function testRAGIntegration() {
   // Create RAG system with test configuration
   const ragConfig = {
     vectorStore: {
-      type: "adaptive" as const,
-      baseUrl: "http://localhost:8001",
+      type: "chromadb" as const,  // Changed from "adaptive" to match MasterOrchestratorConfig
+      path: "http://localhost:8001",  // Changed from baseUrl to path
       collectionName: "test-rag-collection",
       dimension: 4096,
     },
@@ -29,14 +29,13 @@ async function testRAGIntegration() {
       size: 1000,
       overlap: 100,
       method: "sentence" as const,
-      trimWhitespace: true,
-      preserveFormatting: false,
+      // Removed trimWhitespace and preserveFormatting as they're not in MasterOrchestratorConfig
     },
     retrieval: {
       topK: 10,
       minScore: 0.3,
       reranking: false,
-      boostRecent: true,
+      // Removed boostRecent as it's not in MasterOrchestratorConfig
     },
   };
 
@@ -163,11 +162,6 @@ async function testRAGIntegration() {
   console.log("- RAG methods are available on BaseAgent ✅");
   console.log("- AgentRegistry properly passes RAG system to agents ✅");
   console.log("- MasterOrchestrator initializes RAG for all agents ✅");
-}
-
-// Run the test if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  testRAGIntegration().catch(console.error);
 }
 
 export { testRAGIntegration };

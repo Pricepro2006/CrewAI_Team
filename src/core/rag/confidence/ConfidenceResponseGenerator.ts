@@ -3,7 +3,7 @@
  * Uses LLM to generate responses with token-level confidence tracking
  */
 
-import type { OllamaProvider } from "../../llm/OllamaProvider";
+import type { LLMProvider } from "../../llm/LLMProviderManager";
 import type {
   GenerationRequest,
   GenerationResult,
@@ -12,7 +12,7 @@ import type {
 } from "./types";
 
 export class ConfidenceResponseGenerator {
-  private llm: OllamaProvider;
+  private llm: LLMProvider;
   private defaultOptions: GenerationOptions = {
     temperature: 0.7,
     maxTokens: 1000,
@@ -20,7 +20,7 @@ export class ConfidenceResponseGenerator {
     format: "text",
   };
 
-  constructor(llm: OllamaProvider) {
+  constructor(llm: LLMProvider) {
     this.llm = llm;
   }
 
@@ -38,24 +38,26 @@ export class ConfidenceResponseGenerator {
       const prompt = this.buildConfidencePrompt(request, options);
 
       // Generate response
-      const response = await this?.llm?.generate(prompt, {
+      const llmResponse = await this?.llm?.generate(prompt, {
         temperature: options.temperature,
         maxTokens: options.maxTokens,
-        format: options.format,
+        format: options.format as "json" | "text",
       });
 
+      const responseText = llmResponse.response;
+
       // Extract confidence information
-      const tokenConfidence = this.extractTokenConfidence(response);
+      const tokenConfidence = this.extractTokenConfidence(responseText);
       const rawConfidence = this.calculateRawConfidence(tokenConfidence);
-      const uncertaintyAreas = this.identifyUncertaintyAreas(response, request);
+      const uncertaintyAreas = this.identifyUncertaintyAreas(responseText, request);
       const reasoning = this.generateReasoning(
         request,
-        response,
+        responseText,
         rawConfidence,
       );
 
       return {
-        response,
+        response: responseText,
         rawConfidence,
         tokenConfidence,
         reasoning,

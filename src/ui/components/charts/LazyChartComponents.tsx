@@ -1,5 +1,13 @@
 import React, { lazy, Suspense } from 'react';
-import { SkeletonLoader } from '../../client/components/loading/SkeletonLoader';
+// import { SkeletonLoader } from '../../client/components/loading/SkeletonLoader'; // Module not found
+interface SkeletonLoaderProps {
+  height?: string;
+  width?: string;
+  className?: string;
+}
+const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ height = '300px', width = '100%', className = '' }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`} style={{ height, width }}>Loading...</div>
+);
 
 // Define chart component types without importing recharts
 type ChartComponent = React.ComponentType<any>;
@@ -19,7 +27,7 @@ export interface LazyChartProps {
 }
 
 // Lazy load heavy chart components to reduce initial bundle size
-const LazyRecharts = lazy(() => import('recharts'));
+const LazyRecharts = lazy(() => import('recharts') as any);
 
 // Chart component wrapper with lazy loading  
 export const LazyLineChart: React.FC<LazyChartProps> = ({ 

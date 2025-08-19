@@ -254,10 +254,9 @@ export const useReportGeneration = (
         prev.map((template: ReportTemplate) => {
           if (template.id !== templateId) return template;
 
-          const maxOrder = Math.max(
-            ...template.sections.map((s: ReportSection) => s.order),
-            0,
-          );
+          const maxOrder = template.sections.length > 0
+            ? Math.max(...template.sections.map((s: ReportSection) => s.order))
+            : 0;
           const newSection: ReportSection = {
             ...section,
             id: generateId(),
@@ -293,7 +292,7 @@ export const useReportGeneration = (
             ...template,
             sections: template.sections.map((section: ReportSection) =>
               section.id === sectionId ? { ...section, ...updates } : section,
-            ),
+            ) as ReportSection[],
             metadata: {
               ...template.metadata,
               updatedAt: new Date().toISOString(),
@@ -315,7 +314,7 @@ export const useReportGeneration = (
           ...template,
           sections: template.sections.filter(
             (section: ReportSection) => section.id !== sectionId,
-          ),
+          ) as ReportSection[],
           metadata: {
             ...template.metadata,
             updatedAt: new Date().toISOString(),
@@ -337,7 +336,7 @@ export const useReportGeneration = (
               const section = template.sections.find((s: ReportSection) => s.id === id);
               return section ? { ...section, order: index } : null;
             })
-            .filter((section): section is ReportSection => section !== null);
+            .filter((section): section is ReportSection => section !== null) as ReportSection[];
 
           return {
             ...template,
@@ -396,9 +395,9 @@ export const useReportGeneration = (
         // Process each section
         const processedSections = (await Promise.all(
           template.sections
-            .filter((section: any) => section.visible)
-            .sort((a, b) => a.order - b.order)
-            .map(async (section: any) => {
+            .filter((section: ReportSection) => section.visible)
+            .sort((a: ReportSection, b: ReportSection) => a.order - b.order)
+            .map(async (section: ReportSection) => {
               let sectionData = [...data];
 
               // Apply section-specific filters

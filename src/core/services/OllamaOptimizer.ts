@@ -72,7 +72,7 @@ export class OllamaOptimizer extends EventEmitter {
   private modelStats: Map<string, ModelStats> = new Map();
   private latencyHistory: Map<string, number[]> = new Map();
   private warmModels: Set<string> = new Set();
-  private metricsTimer?: NodeJS.Timer;
+  private metricsTimer?: NodeJS.Timeout;
 
   constructor(
     baseUrl: string = "http://localhost:11434",
@@ -215,7 +215,38 @@ export class OllamaOptimizer extends EventEmitter {
     }
 
     // Direct inference through queue
-    const result = this.inferenceQueue?.add(async () => {
+    if (!this.inferenceQueue) {
+      // If queue is not initialized, perform direct inference
+      try {
+        const response = await this.performInference(prompt, model, options);
+        this.recordLatency(model, performance.now() - startTime);
+        return response;
+      } catch (error) {
+        // Try fallback models if enabled
+        if (this.config?.enableFallback) {
+          for (const fallbackModel of this.config?.fallbackModels ?? []) {
+            try {
+              logger.warn(
+                `Falling back to ${fallbackModel}`,
+                "OLLAMA_OPTIMIZER",
+              );
+              const response = await this.performInference(
+                prompt,
+                fallbackModel,
+                options,
+              );
+              this.recordLatency(fallbackModel, performance.now() - startTime);
+              return response;
+            } catch (fallbackError) {
+              continue;
+            }
+          }
+        }
+        throw error;
+      }
+    }
+
+    const result = await this.inferenceQueue.add(async () => {
       try {
         const response = await this.performInference(prompt, model, options);
         this.recordLatency(model, performance.now() - startTime);
@@ -245,7 +276,7 @@ export class OllamaOptimizer extends EventEmitter {
       }
     });
     
-    return result ?? Promise.resolve('');
+    return result || '';
   }
 
   /**

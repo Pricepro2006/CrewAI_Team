@@ -290,7 +290,10 @@ export class BERTRanker {
     // Normalize
     const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
     for (let i = 0; i < embedding.length; i++) {
-      embedding[i] /= norm || 1;
+      const currentValue = embedding[i];
+      if (currentValue !== undefined) {
+        embedding[i] = currentValue / (norm || 1);
+      }
     }
 
     // Cache the result
@@ -314,9 +317,14 @@ export class BERTRanker {
     let normB = 0;
 
     for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
+      const aVal = a[i];
+      const bVal = b[i];
+      
+      if (aVal !== undefined && bVal !== undefined) {
+        dotProduct += aVal * bVal;
+        normA += aVal * aVal;
+        normB += bVal * bVal;
+      }
     }
 
     const denominator = Math.sqrt(normA) * Math.sqrt(normB);

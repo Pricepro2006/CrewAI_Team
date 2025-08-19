@@ -4,6 +4,7 @@
  */
 
 import Database from "better-sqlite3";
+import type { Database as DatabaseType } from "better-sqlite3";
 import { existsSync, mkdirSync } from "fs";
 import { dirname, join } from "path";
 import { logger } from "../utils/logger.js";

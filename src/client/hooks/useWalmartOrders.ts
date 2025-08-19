@@ -36,7 +36,7 @@ export function useWalmartOrders(params: OrdersParams) {
   const [mockData] = useState<WalmartOrder[]>([]);
   
   // Use available getBudget as a placeholder to maintain tRPC structure
-  const budgetQuery = trpc?.walmartGrocery?.getBudget?.useQuery?.({ userId: params.userId }, {
+  const budgetQuery = trpc.walmartGrocery.getBudget.useQuery({ userId: params.userId }, {
     enabled: false // Disabled since we're not actually fetching orders
   });
   

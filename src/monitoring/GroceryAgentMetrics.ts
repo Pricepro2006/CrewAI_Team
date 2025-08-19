@@ -386,13 +386,13 @@ export class GroceryAgentMetrics extends EventEmitter {
     
     try {
       sentryErrorTracker.recordCustomMetric('price_fetch_success_rate', successRate, {
-        store_id: storeId,
+        store_id: storeId || 'unknown',
         component: 'price_fetcher',
       });
 
       sentryErrorTracker.recordCustomMetric('price_fetch_time', responseTime, {
         success: success.toString(),
-        store_id: storeId,
+        store_id: storeId || 'unknown',
         component: 'price_fetcher',
       });
     } catch (error) {
@@ -538,7 +538,7 @@ export class GroceryAgentMetrics extends EventEmitter {
     // Send to Sentry
     try {
       sentryErrorTracker.recordCustomMetric('session_duration', sessionDuration, {
-        device_type: deviceType,
+        device_type: deviceType || 'unknown',
         component: 'session_tracker',
       });
 

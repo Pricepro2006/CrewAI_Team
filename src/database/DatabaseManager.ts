@@ -3,7 +3,8 @@
  * Coordinates SQLite and ChromaDB operations with proper initialization
  */
 
-import Database, { type Database as DatabaseType } from "better-sqlite3";
+import Database from "better-sqlite3";
+import type { Database as DatabaseType } from "better-sqlite3";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { logger } from "../utils/logger.js";

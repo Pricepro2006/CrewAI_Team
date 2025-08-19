@@ -3,6 +3,41 @@ import { api } from "../../lib/api";
 import "./Dashboard.css";
 // Note: Removed non-existent imports for utils/logger and api-error-handler
 
+interface ApiAgent {
+  name?: string;
+  type?: string;
+  status?: 'active' | 'idle' | 'busy';
+  specialty?: string;
+  description?: string;
+}
+
+interface AgentStatsResponse {
+  agents?: ApiAgent[];
+  activeAgents?: number;
+  totalAgents?: number;
+}
+
+interface ConversationStatsResponse {
+  totalMessages?: number;
+  totalConversations?: number;
+}
+
+interface RagStatsResponse {
+  documentCount?: number;
+  totalDocuments?: number;
+  chunksCount?: number;
+  totalChunks?: number;
+}
+
+interface HealthResponse {
+  status?: string;
+  services?: {
+    ollama?: {
+      status?: string;
+    };
+  };
+}
+
 interface StatsCardProps {
   title: string;
   value: number;
@@ -47,24 +82,24 @@ export const Dashboard: React.FC = () => {
   const { data: health, error: healthError } = api?.health?.status?.useQuery?.(undefined, {
     retry: false,
     staleTime: 30000
-  }) || { data: null, error: null };
+  }) || { data: null as HealthResponse | null, error: null };
   
   // Safely handle optional agent queries
-  const { data: agentStats, error: agentError } = api?.agent?.list?.useQuery?.(undefined, {
+  const { data: agentStats, error: agentError } = (api as any)?.agent?.list?.useQuery?.(undefined, {
     retry: false,
     staleTime: 30000
-  }) || { data: null, error: null };
+  }) || { data: null as AgentStatsResponse | null, error: null };
   
   const { data: conversationStats, error: chatError } = api?.chat?.stats?.useQuery?.(undefined, {
     retry: false,
     staleTime: 30000
-  }) || { data: null, error: null };
+  }) || { data: null as ConversationStatsResponse | null, error: null };
   
   // Safely handle optional rag queries  
-  const { data: ragStats, error: ragError } = api?.rag?.stats?.useQuery?.(undefined, {
+  const { data: ragStats, error: ragError } = (api as any)?.rag?.stats?.useQuery?.(undefined, {
     retry: false,
     staleTime: 30000
-  }) || { data: null, error: null };
+  }) || { data: null as RagStatsResponse | null, error: null };
 
   // Handle API errors with graceful degradation
   React.useEffect(() => {
@@ -244,7 +279,7 @@ export const Dashboard: React.FC = () => {
   // Get agent list from real data or fallback to known agents
   const availableAgents = React.useMemo(() => {
     if (agentStats?.agents && Array.isArray(agentStats.agents)) {
-      return agentStats.agents.map((agent: any) => ({
+      return agentStats.agents.map((agent: ApiAgent) => ({
         name: agent.name || agent.type || 'Unknown Agent',
         status: (agent.status === 'active' || agent.status === 'idle' || agent.status === 'busy') ? agent.status : 'idle' as const,
         specialty: agent.specialty || agent.description || "General",
@@ -329,13 +364,13 @@ export const Dashboard: React.FC = () => {
           <div className="agents-section">
             <h2>Available Agents</h2>
             <div className="agent-grid">
-              {availableAgents?.map((agent, index) => (
+              {availableAgents?.map((agent: any, index: number) => (
                 <AgentCard key={index} {...agent} />
               ))}
             </div>
             <p className="agents-count">
               {agentStats?.activeAgents ||
-                availableAgents?.filter((a) => a.status === "active")
+                availableAgents?.filter((a: any) => a.status === "active")
                   .length}{" "}
               of {agentStats?.totalAgents || availableAgents?.length || 0} agents
               available

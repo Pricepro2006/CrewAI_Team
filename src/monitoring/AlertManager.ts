@@ -496,13 +496,28 @@ class AlertManager extends EventEmitter {
                     alert.severity === 'error' ? 'error' :
                     alert.severity === 'warning' ? 'warn' : 'info';
     
-    const logFn = logger[logLevel as keyof typeof logger];
-    if (typeof logFn === 'function') {
-      logFn(`ALERT: ${alert.title}`, 'ALERT', {
-      id: alert.id,
-      type: alert.type,
-      component: alert.component,
-      message: alert.message,
+    if (logLevel === 'error') {
+      logger.error(`ALERT: ${alert.title}`, 'ALERT', {
+        id: alert.id,
+        type: alert.type,
+        component: alert.component,
+        message: alert.message,
+        metadata: alert.metadata,
+      }, undefined);
+    } else if (logLevel === 'warn') {
+      logger.warn(`ALERT: ${alert.title}`, 'ALERT', {
+        id: alert.id,
+        type: alert.type,
+        component: alert.component,
+        message: alert.message,
+        metadata: alert.metadata,
+      });
+    } else {
+      logger.info(`ALERT: ${alert.title}`, 'ALERT', {
+        id: alert.id,
+        type: alert.type,
+        component: alert.component,
+        message: alert.message,
         metadata: alert.metadata,
       });
     }

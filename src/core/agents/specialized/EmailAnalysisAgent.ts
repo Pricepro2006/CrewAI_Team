@@ -17,7 +17,6 @@ import {
 
 export class EmailAnalysisAgent extends BaseAgent {
   private cache: any; // Will be initialized later to avoid circular import
-  private initialized: boolean = false;
 
   // TD SYNNEX specific categories
   private readonly categories = {

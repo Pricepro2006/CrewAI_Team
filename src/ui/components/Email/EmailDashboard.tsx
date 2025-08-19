@@ -171,7 +171,7 @@ export const EmailDashboard: React.FC = () => {
 
     // Observe all sections with animate class
     const sections = dashboardRef.current?.querySelectorAll(".section-animate");
-    sections?.forEach((section: HTMLElement) => observer.observe(section));
+    sections?.forEach((section: Element) => observer.observe(section as HTMLElement));
 
     return () => observer.disconnect();
   }, [activeTab]);
@@ -329,7 +329,7 @@ export const EmailDashboard: React.FC = () => {
       }
       
       // Count emails by date
-      tableData?.data?.emails?.forEach((email: { receivedDate: string; entities?: Array<{ type: string; value: string }> }) => {
+      tableData?.data?.emails?.forEach((email: any) => {
         const emailDate = new Date(email.receivedDate).toISOString().split('T')[0];
         if (emailDate && volumeByDate.has(emailDate)) {
           volumeByDate.set(emailDate, (volumeByDate.get(emailDate) || 0) + 1);
@@ -816,7 +816,7 @@ export const EmailDashboard: React.FC = () => {
         ORDER_REF: 0,
       };
       
-      tableData?.data?.emails?.forEach((email: { receivedDate: string; entities?: Array<{ type: string; value: string }> }) => {
+      tableData?.data?.emails?.forEach((email: any) => {
         if (email.entities && Array.isArray(email.entities)) {
           email?.entities?.forEach((entity: { type: string; value: string }) => {
             const type = entity.type?.toUpperCase() || '';
@@ -1043,8 +1043,8 @@ export const EmailDashboard: React.FC = () => {
 
   const renderAutomation = () => {
     // Fetch automation rules from the database/API (handle missing endpoint gracefully)
-    const automationQuery = api?.emails?.getAutomationRules?.useQuery ? 
-      api.emails.getAutomationRules.useQuery({}) : 
+    const automationQuery = (api as any)?.emails?.getAutomationRules?.useQuery ? 
+      (api as any).emails.getAutomationRules.useQuery({}) : 
       { data: null, isLoading: false };
     const { data: automationRules, isLoading: rulesLoading } = automationQuery;
     

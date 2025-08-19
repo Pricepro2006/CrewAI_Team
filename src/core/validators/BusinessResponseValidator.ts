@@ -290,13 +290,16 @@ export class BusinessResponseValidator {
       ContactPatterns?.hours?.twentyFourSeven,
     );
 
-    if (twentyFourSevenMatches?.length || 0 > 0 && twentyFourSevenMatches[0]) {
-      hours.push({
-        value: twentyFourSevenMatches[0].value,
-        type: "24/7",
-        confidence: 0.95,
-        index: twentyFourSevenMatches[0].index || 0,
-      });
+    if (twentyFourSevenMatches?.length && twentyFourSevenMatches.length > 0 && twentyFourSevenMatches[0]) {
+      const match = twentyFourSevenMatches[0];
+      if (match && match.value !== undefined) {
+        hours.push({
+          value: match.value,
+          type: "24/7",
+          confidence: 0.95,
+          index: match.index || 0,
+        });
+      }
     }
 
     // Extract standard hours
