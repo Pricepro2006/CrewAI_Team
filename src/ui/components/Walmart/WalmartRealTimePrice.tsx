@@ -5,10 +5,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWalmartRealTime } from '../../../client/hooks/useWalmartRealTime';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Button } from '../../../components/ui/button.js';
+import { Alert, AlertDescription } from '../../../components/ui/alert.js';
 import {
   LineChart,
   Line,
@@ -79,6 +79,7 @@ export const WalmartRealTimePrice: React.FC<WalmartRealTimePriceProps> = ({
         }
       };
     }
+    return undefined;
   }, [productId, autoRefresh, refreshInterval, subscribeToUpdates, unsubscribe]);
 
   // Update last update time

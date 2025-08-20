@@ -83,18 +83,19 @@ export class WalmartRealTimeAPI {
   private async initializeServices() {
     try {
       // Initialize WebSocket if available
-      if (typeof WebSocketGateway !== 'undefined') {
-        this.webSocketGateway = WebSocketGateway.getInstance();
+      try {
+        this.webSocketGateway = new WebSocketGateway();
         logger.info("WebSocket gateway initialized for real-time updates", "WALMART_RT");
+      } catch (err) {
+        logger.debug("WebSocket gateway not available", "WALMART_RT");
       }
 
       // Initialize Bright Data service if credentials are available
       if (process.env.BRIGHT_DATA_CUSTOMER_ID) {
         this.brightDataService = new BrightDataService({
           customerId: process.env.BRIGHT_DATA_CUSTOMER_ID,
-          password: process.env.BRIGHT_DATA_PASSWORD || '',
-          zone: process.env.BRIGHT_DATA_ZONE || 'static'
-        });
+          password: process.env.BRIGHT_DATA_PASSWORD || ''
+        } as any);
         logger.info("Bright Data service initialized", "WALMART_RT");
       }
 
@@ -172,13 +173,12 @@ export class WalmartRealTimeAPI {
       const brightDataResult = await this.brightDataService.collectEcommerceData({
         platform: 'walmart',
         productUrl,
-        includeReviews: false,
         includePricing: true,
         includeAvailability: true
-      });
+      } as any);
 
-      if (brightDataResult && brightDataResult.length > 0) {
-        const data = brightDataResult[0].data;
+      if (brightDataResult && (brightDataResult as any).length > 0) {
+        const data = (brightDataResult as any)[0].data;
         
         return {
           productId,
@@ -339,13 +339,17 @@ export class WalmartRealTimeAPI {
       const realTimeResults: RealTimeProduct[] = [];
       
       for (const product of searchResults) {
+        const productPrice = typeof product.price === 'number' 
+          ? product.price 
+          : (product.price as any)?.regular || 0;
+        
         const rtProduct: RealTimeProduct = {
           productId: product.walmartId,
           name: product.name,
-          price: product.price,
+          price: productPrice,
           salePrice: product.livePrice?.salePrice,
           wasPrice: product.livePrice?.wasPrice,
-          inStock: product.inStock,
+          inStock: product.inStock || false,
           stockLevel: undefined,
           storeLocation: product.livePrice?.storeLocation,
           lastUpdated: product.livePrice?.lastUpdated || new Date().toISOString(),
@@ -356,7 +360,7 @@ export class WalmartRealTimeAPI {
         // Get price history if available
         if (this.priceHistory.has(product.walmartId)) {
           rtProduct.priceHistory = this.priceHistory.get(product.walmartId);
-          rtProduct.priceChange = this.calculatePriceChange(product.walmartId, product.price);
+          rtProduct.priceChange = this.calculatePriceChange(product.walmartId, productPrice);
         }
 
         realTimeResults.push(rtProduct);
@@ -413,7 +417,7 @@ export class WalmartRealTimeAPI {
           
           // Send WebSocket update to specific user
           if (this.webSocketGateway) {
-            this.webSocketGateway.sendToUser(subscription.userId, 'walmart.subscription.update', {
+            (this.webSocketGateway as any).broadcast('walmart.subscription.update', {
               subscriptionId,
               product: productData
             });

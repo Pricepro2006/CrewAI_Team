@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { trpc } from '../trpc';
+import { trpc } from '../../lib/trpc.js';
 import type { RealTimeProduct, OrderHistory } from '../../api/services/WalmartRealTimeAPI';
 
 interface StoreAvailability {
@@ -59,11 +59,11 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
     {
       enabled: !!productId,
       refetchInterval: false, // We'll use subscription for updates
-      onSuccess: (data) => {
+      onSuccess: (data: any) => {
         setProduct(data);
         setPriceHistory(data.priceHistory || null);
       },
-      onError: (err) => {
+      onError: (err: any) => {
         setError(err);
       }
     }
@@ -73,7 +73,7 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
     { productId: productId!, days: 30 },
     {
       enabled: !!productId,
-      onSuccess: (data) => {
+      onSuccess: (data: any) => {
         setPriceHistory(data.history);
       }
     }
@@ -83,7 +83,7 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
     { limit: 10 },
     {
       enabled: false, // Only fetch when requested
-      onSuccess: (data) => {
+      onSuccess: (data: any) => {
         setOrderHistory(data.orders);
       }
     }
@@ -102,7 +102,7 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
     },
     {
       enabled: false, // We'll control this manually
-      onData: (update) => {
+      onData: (update: any) => {
         if (update.type === 'price_update' && update.data) {
           setProduct(update.data);
           // Update price history with new data point
@@ -114,7 +114,7 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
           });
         }
       },
-      onError: (err) => {
+      onError: (err: any) => {
         console.error('Subscription error:', err);
       }
     }
