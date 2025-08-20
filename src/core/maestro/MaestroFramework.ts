@@ -30,10 +30,10 @@ export class MaestroFramework extends EventEmitter {
       config: this.config,
     });
 
-    this.executionContexts.set(taskId, context);
+    this?.executionContexts?.set(taskId, context);
 
     // Queue task
-    await this.taskQueue.enqueue({
+    await this?.taskQueue?.enqueue({
       id: taskId,
       type: "agent",
       priority: task.priority || 0,
@@ -55,13 +55,13 @@ export class MaestroFramework extends EventEmitter {
 
     while (this.isProcessing) {
       // Check if we can process more tasks
-      if (this.activeTaskCount >= this.config.maxConcurrentTasks) {
+      if (this.activeTaskCount >= this?.config?.maxConcurrentTasks) {
         await this.delay(100);
         continue;
       }
 
       // Get next task from queue
-      const queueItem = await this.taskQueue.dequeue();
+      const queueItem = await this?.taskQueue?.dequeue();
       if (!queueItem) {
         // No more tasks, wait a bit
         await this.delay(100);
@@ -69,7 +69,7 @@ export class MaestroFramework extends EventEmitter {
       }
 
       // Process task asynchronously
-      this.processTask(queueItem).catch((error) => {
+      this.processTask(queueItem).catch((error: any) => {
         console.error("Task processing error:", error);
       });
     }
@@ -79,10 +79,10 @@ export class MaestroFramework extends EventEmitter {
     const { id, task, context } = queueItem;
 
     // Check if task was cancelled before starting
-    if (this.cancelledTasks.has(id)) {
-      this.cancelledTasks.delete(id);
+    if (this?.cancelledTasks?.has(id)) {
+      this?.cancelledTasks?.delete(id);
       this.emit("task:cancelled", { taskId: id });
-      this.executionContexts.delete(id);
+      this?.executionContexts?.delete(id);
       return;
     }
 
@@ -97,16 +97,16 @@ export class MaestroFramework extends EventEmitter {
       this.emit("task:completed", { taskId: id, result });
 
       // Clean up
-      this.executionContexts.delete(id);
+      this?.executionContexts?.delete(id);
     } catch (error) {
       this.emit("task:failed", { taskId: id, error });
 
       // Check if we should retry
       if (task.retries && context.retryCount < task.retries) {
         context.retryCount++;
-        await this.taskQueue.enqueue(queueItem);
+        await this?.taskQueue?.enqueue(queueItem);
       } else {
-        this.executionContexts.delete(id);
+        this?.executionContexts?.delete(id);
       }
     } finally {
       this.activeTaskCount--;
@@ -162,7 +162,7 @@ export class MaestroFramework extends EventEmitter {
     // For now, return a placeholder
     return {
       type: "agent",
-      agentType: task.data.agentType,
+      agentType: task?.data?.agentType,
       result: "Agent task completed",
     };
   }
@@ -174,7 +174,7 @@ export class MaestroFramework extends EventEmitter {
     // This would integrate with the Tool system
     return {
       type: "tool",
-      toolName: task.data.toolName,
+      toolName: task?.data?.toolName,
       result: "Tool task completed",
     };
   }
@@ -186,7 +186,7 @@ export class MaestroFramework extends EventEmitter {
     // Execute multiple sub-tasks
     const subResults = [];
 
-    for (const subTask of task.data.subTasks || []) {
+    for (const subTask of task?.data?.subTasks || []) {
       const subTaskId = await this.submitTask(subTask);
       // Wait for completion (simplified - in reality would track separately)
       subResults.push({ subTaskId });
@@ -203,7 +203,7 @@ export class MaestroFramework extends EventEmitter {
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve: any) => setTimeout(resolve, ms));
   }
 
   async shutdown(): Promise<void> {
@@ -215,31 +215,31 @@ export class MaestroFramework extends EventEmitter {
     }
 
     // Clear queue
-    this.taskQueue.clear();
-    this.executionContexts.clear();
+    this?.taskQueue?.clear();
+    this?.executionContexts?.clear();
   }
 
   getQueueStatus(): any {
     return {
-      ...this.taskQueue.getStatus(),
+      ...this?.taskQueue?.getStatus(),
       activeTasks: this.activeTaskCount,
     };
   }
 
   getTaskContext(taskId: string): ExecutionContext | undefined {
-    return this.executionContexts.get(taskId);
+    return this?.executionContexts?.get(taskId);
   }
 
   async cancelTask(taskId: string): Promise<boolean> {
     // Mark task as cancelled
-    this.cancelledTasks.add(taskId);
+    this?.cancelledTasks?.add(taskId);
 
     // Try to remove from queue if still pending
-    const removed = await this.taskQueue.remove(taskId);
+    const removed = await this?.taskQueue?.remove(taskId);
 
     if (removed) {
       this.emit("task:cancelled", { taskId });
-      this.executionContexts.delete(taskId);
+      this?.executionContexts?.delete(taskId);
       return true;
     }
 

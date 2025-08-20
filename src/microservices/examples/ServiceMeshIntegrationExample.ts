@@ -16,7 +16,7 @@ import { logger } from '../../utils/logger.js';
 export class ServiceMeshExample {
   private app: express.Express;
   private server: any;
-  private wsServer: WebSocket.Server | null = null;
+  private wsServer: any | null = null;
 
   constructor() {
     this.app = express();
@@ -28,11 +28,11 @@ export class ServiceMeshExample {
    */
   private setupExpress(): void {
     // Basic middleware
-    this.app.use(express.json());
-    this.app.use(express.urlencoded({ extended: true }));
+    this?.app.use(express.json());
+    this?.app.use(express.urlencoded({ extended: true }));
 
     // Request logging
-    this.app.use((req, res, next) => {
+    this?.app.use((req, res, next) => {
       logger.info('Incoming request', 'SERVICE_MESH_EXAMPLE', {
         method: req.method,
         path: req.path,
@@ -43,19 +43,19 @@ export class ServiceMeshExample {
     });
 
     // Health check endpoint
-    this.app.get('/health', async (req, res) => {
+    this?.app.get('/health', async (req, res) => {
       const healthCheck = await walmartServiceMesh.healthCheck();
       res.status(healthCheck.healthy ? 200 : 503).json(healthCheck);
     });
 
     // Service mesh status endpoint
-    this.app.get('/status', async (req, res) => {
+    this?.app.get('/status', async (req, res) => {
       const status = await walmartServiceMesh.getStatus();
       res.json(status);
     });
 
     // Service discovery endpoints
-    this.app.get('/services', async (req, res) => {
+    this?.app.get('/services', async (req, res) => {
       try {
         const services = await serviceDiscovery.getStats();
         res.json({
@@ -72,7 +72,7 @@ export class ServiceMeshExample {
     });
 
     // Scale service endpoint
-    this.app.post('/services/:serviceName/scale', async (req, res) => {
+    this?.app.post('/services/:serviceName/scale', async (req, res) => {
       try {
         const { serviceName } = req.params;
         const { instances } = req.body;
@@ -86,14 +86,14 @@ export class ServiceMeshExample {
 
         const success = await walmartServiceMesh.scaleService(serviceName, instances);
         
-        res.json({
+        return res.json({
           success,
           message: success 
             ? `Service ${serviceName} scaled to ${instances} instances`
             : `Failed to scale service ${serviceName}`,
         });
       } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -101,7 +101,7 @@ export class ServiceMeshExample {
     });
 
     // Service proxy example endpoint
-    this.app.get('/proxy/:serviceName/*', async (req, res) => {
+    this?.app.get('/proxy/:serviceName/*', async (req, res) => {
       try {
         const { serviceName } = req.params;
         const proxy = walmartServiceMesh.getServiceProxy(serviceName);
@@ -115,16 +115,17 @@ export class ServiceMeshExample {
 
         // Use the proxy middleware
         const proxyMiddleware = proxy.createHttpMiddleware();
-        await proxyMiddleware(req, res, (err) => {
+        return await proxyMiddleware(req, res, (err: any) => {
           if (err) {
-            res.status(500).json({
+            return res.status(500).json({
               success: false,
               error: err.message,
             });
           }
+          return; // Explicitly return void
         });
       } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -132,7 +133,7 @@ export class ServiceMeshExample {
     });
 
     // Error handling
-    this.app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    this?.app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
       logger.error('Express error handler', 'SERVICE_MESH_EXAMPLE', {
         error: err.message,
         stack: err.stack,
@@ -172,7 +173,7 @@ export class ServiceMeshExample {
 
       // Start listening
       await new Promise<void>((resolve, reject) => {
-        this.server.listen(port, (err: any) => {
+        this?.server?.listen(port, (err: any) => {
           if (err) reject(err);
           else resolve();
         });
@@ -208,9 +209,9 @@ export class ServiceMeshExample {
 
     console.log('\n=== Walmart Service Mesh Status ===');
     console.log(`Status: ${status.status}`);
-    console.log(`Total Services: ${status.services.total}`);
-    console.log(`Healthy Services: ${status.services.healthy}`);
-    console.log(`Running Services: ${status.services.running}`);
+    console.log(`Total Services: ${status?.services?.total}`);
+    console.log(`Healthy Services: ${status?.services?.healthy}`);
+    console.log(`Running Services: ${status?.services?.running}`);
     console.log(`Uptime: ${Math.round(status.uptime / 1000)}s`);
 
     console.log('\n=== Available Services ===');
@@ -218,7 +219,7 @@ export class ServiceMeshExample {
       console.log(`- ${name}: ${config.protocol}://${config.host}:${config.port}`);
       console.log(`  Health: ${config.health_endpoint || '/health'}`);
       console.log(`  Load Balancing: ${config.load_balancing_strategy}`);
-      console.log(`  Scaling: ${config.scaling.min_instances}-${config.scaling.max_instances} instances`);
+      console.log(`  Scaling: ${config?.scaling?.min_instances}-${config?.scaling?.max_instances} instances`);
     });
 
     console.log('\n=== Example API Calls ===');
@@ -228,9 +229,9 @@ export class ServiceMeshExample {
     console.log('Scale Pricing Service: curl -X POST -H "Content-Type: application/json" -d \'{"instances": 2}\' http://localhost:8000/services/walmart-pricing/scale');
     console.log('Proxy to Pricing Service: curl http://localhost:8000/walmart-pricing/api/health');
 
-    if (status.errors.length > 0) {
+    if (status?.errors?.length > 0) {
       console.log('\n=== Deployment Errors ===');
-      status.errors.forEach((error, index) => {
+      status?.errors?.forEach((error, index) => {
         console.log(`${index + 1}. ${error}`);
       });
     }
@@ -273,8 +274,8 @@ export class ServiceMeshExample {
       const pricingServices = await serviceDiscovery.discoverServices('walmart-pricing');
       logger.info('Service discovery results', 'SERVICE_MESH_EXAMPLE', {
         service: 'walmart-pricing',
-        instances: pricingServices.length,
-        endpoints: pricingServices.map(s => `${s.protocol}://${s.host}:${s.port}`),
+        instances: pricingServices?.length || 0,
+        endpoints: pricingServices?.map(s => `${s.protocol}://${s.host}:${s.port}`),
       });
 
       // Example 3: Load balancer statistics
@@ -335,17 +336,17 @@ export class ServiceMeshExample {
     });
 
     const results = await Promise.allSettled(requests);
-    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const successful = results?.filter(r => r.status === 'fulfilled').length;
     const totalResponseTime = results
       .filter(r => r.status === 'fulfilled')
-      .reduce((sum: number, r: any) => sum + r.value.responseTime, 0);
+      .reduce((sum: number, r: any) => sum + r?.value?.responseTime, 0);
     
     const avgResponseTime = successful > 0 ? totalResponseTime / successful : 0;
 
     logger.info('Load simulation completed', 'SERVICE_MESH_EXAMPLE', {
-      totalRequests: requests.length,
+      totalRequests: requests?.length || 0,
       successful,
-      failed: requests.length - successful,
+      failed: requests?.length || 0 - successful,
       avgResponseTime,
     });
 
@@ -354,7 +355,7 @@ export class ServiceMeshExample {
       const pricingServices = await serviceDiscovery.discoverServices('walmart-pricing');
       logger.info('Post-load service instances', 'SERVICE_MESH_EXAMPLE', {
         service: 'walmart-pricing',
-        instances: pricingServices.length,
+        instances: pricingServices?.length || 0,
       });
     }, 5000);
   }
@@ -368,13 +369,13 @@ export class ServiceMeshExample {
     try {
       // Close WebSocket server
       if (this.wsServer) {
-        this.wsServer.close();
+        this?.wsServer?.close();
       }
 
       // Close HTTP server
       if (this.server) {
-        await new Promise<void>((resolve) => {
-          this.server.close(() => resolve());
+        await new Promise<void>((resolve: any) => {
+          this?.server?.close(() => resolve());
         });
       }
 

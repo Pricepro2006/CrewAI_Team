@@ -104,8 +104,8 @@ export function readinessProbe(serviceId: string, readinessChecks?: (() => Promi
       const checkResults: Array<{ check: string; ready: boolean; error?: string }> = [];
 
       // Run custom readiness checks
-      if (readinessChecks && readinessChecks.length > 0) {
-        for (let i = 0; i < readinessChecks.length; i++) {
+      if (readinessChecks && (readinessChecks?.length || 0) > 0) {
+        for (let i = 0; i < (readinessChecks?.length || 0); i++) {
           try {
             const checkFn = readinessChecks[i];
             if (!checkFn) {
@@ -154,7 +154,7 @@ export function readinessProbe(serviceId: string, readinessChecks?: (() => Promi
         healthCheck: healthResult ? {
           status: healthResult.status,
           lastCheck: healthResult.timestamp,
-          dependencies: healthResult.checks.dependencies.map(dep => ({
+          dependencies: healthResult?.checks?.dependencies?.map(dep => ({
             name: dep.name,
             status: dep.status
           }))
@@ -167,7 +167,7 @@ export function readinessProbe(serviceId: string, readinessChecks?: (() => Promi
         serviceId,
         ready,
         responseTime,
-        checksPerformed: checkResults.length
+        checksPerformed: checkResults?.length || 0
       });
 
     } catch (error) {
@@ -220,20 +220,20 @@ export function healthEndpoint(serviceId: string) {
         status: healthResult.status,
         service: healthResult.serviceName,
         serviceId: healthResult.serviceId,
-        timestamp: healthResult.timestamp.toISOString(),
+        timestamp: healthResult?.timestamp?.toISOString(),
         uptime: healthResult.uptime,
         version: healthResult.version,
         responseTime: Math.round(responseTime),
         checks: {
           liveness: {
-            status: healthResult.checks.liveness.status,
-            responseTime: healthResult.checks.liveness.responseTime
+            status: healthResult?.checks?.liveness.status,
+            responseTime: healthResult?.checks?.liveness.responseTime
           },
           readiness: {
-            status: healthResult.checks.readiness.status,
-            message: healthResult.checks.readiness.message
+            status: healthResult?.checks?.readiness.status,
+            message: healthResult?.checks?.readiness.message
           },
-          dependencies: healthResult.checks.dependencies.map(dep => ({
+          dependencies: healthResult?.checks?.dependencies?.map(dep => ({
             name: dep.name,
             status: dep.status,
             message: dep.message,
@@ -241,20 +241,20 @@ export function healthEndpoint(serviceId: string) {
           })),
           resources: {
             cpu: {
-              usage: healthResult.checks.resources.cpu.usage,
-              status: healthResult.checks.resources.cpu.status
+              usage: healthResult?.checks?.resources.cpu.usage,
+              status: healthResult?.checks?.resources.cpu.status
             },
             memory: {
-              usage: Math.round((healthResult.checks.resources.memory.usage || 0) / 1024 / 1024),
-              total: Math.round((healthResult.checks.resources.memory.total || 0) / 1024 / 1024),
-              percentage: healthResult.checks.resources.memory.percentage,
-              status: healthResult.checks.resources.memory.status
+              usage: Math.round((healthResult?.checks?.resources.memory.usage || 0) / 1024 / 1024),
+              total: Math.round((healthResult?.checks?.resources.memory.total || 0) / 1024 / 1024),
+              percentage: healthResult?.checks?.resources.memory.percentage,
+              status: healthResult?.checks?.resources.memory.status
             },
-            connections: healthResult.checks.resources.connections ? {
-              active: healthResult.checks.resources.connections.active,
-              max: healthResult.checks.resources.connections.max,
-              percentage: healthResult.checks.resources.connections.percentage,
-              status: healthResult.checks.resources.connections.status
+            connections: healthResult?.checks?.resources.connections ? {
+              active: healthResult?.checks?.resources.connections.active,
+              max: healthResult?.checks?.resources.connections.max,
+              percentage: healthResult?.checks?.resources.connections.percentage,
+              status: healthResult?.checks?.resources.connections.status
             } : undefined
           }
         },
@@ -302,40 +302,40 @@ export function aggregatedHealthEndpoint() {
       const httpStatus =
         aggregatedHealth.overall === 'healthy' ? 200 :
         aggregatedHealth.overall === 'degraded' ? 200 :
-        aggregatedHealth.summary.critical_down.length > 0 ? 503 :
+        aggregatedHealth?.summary?.critical_down?.length || 0 > 0 ? 503 :
         200; // Non-critical services down
 
       const response = {
         status: aggregatedHealth.overall,
-        timestamp: aggregatedHealth.lastCheck.toISOString(),
+        timestamp: aggregatedHealth?.lastCheck?.toISOString(),
         uptime: Math.floor(aggregatedHealth.uptime / 1000),
         version: aggregatedHealth.version,
         environment: aggregatedHealth.environment,
         responseTime: Math.round(responseTime),
         summary: aggregatedHealth.summary,
-        services: aggregatedHealth.services.map(service => ({
+        services: aggregatedHealth?.services?.map(service => ({
           id: service.serviceId,
           name: service.serviceName,
           status: service.status,
           responseTime: service.responseTime,
-          lastCheck: service.timestamp.toISOString(),
+          lastCheck: service?.timestamp?.toISOString(),
           type: service.metadata?.type,
           critical: service.metadata?.critical,
           tags: service.metadata?.tags
         })),
-        criticalServices: aggregatedHealth.summary.critical_down,
-        healthyServices: aggregatedHealth.summary.healthy,
-        degradedServices: aggregatedHealth.summary.degraded,
-        unhealthyServices: aggregatedHealth.summary.unhealthy,
-        totalServices: aggregatedHealth.summary.total
+        criticalServices: aggregatedHealth?.summary?.critical_down,
+        healthyServices: aggregatedHealth?.summary?.healthy,
+        degradedServices: aggregatedHealth?.summary?.degraded,
+        unhealthyServices: aggregatedHealth?.summary?.unhealthy,
+        totalServices: aggregatedHealth?.summary?.total
       };
 
       res.status(httpStatus).json(response);
 
       logger.debug('Aggregated health endpoint completed', 'HEALTH_MIDDLEWARE', {
         overallStatus: aggregatedHealth.overall,
-        totalServices: aggregatedHealth.summary.total,
-        criticalDown: aggregatedHealth.summary.critical_down.length,
+        totalServices: aggregatedHealth?.summary?.total,
+        criticalDown: aggregatedHealth?.summary?.critical_down?.length || 0,
         responseTime: Math.round(responseTime)
       });
 
@@ -445,7 +445,7 @@ export function serviceConfigEndpoint() {
       
       const response = {
         timestamp: new Date().toISOString(),
-        services: configs.map(config => ({
+        services: configs?.map(config => ({
           id: config.id,
           name: config.name,
           type: config.type,
@@ -462,7 +462,7 @@ export function serviceConfigEndpoint() {
       res.json(response);
 
       logger.debug('Service config endpoint completed', 'HEALTH_MIDDLEWARE', {
-        serviceCount: configs.length
+        serviceCount: configs?.length || 0
       });
 
     } catch (error) {
@@ -476,6 +476,36 @@ export function serviceConfigEndpoint() {
       });
     }
   };
+}
+
+/**
+ * Create a basic health router for Express apps
+ */
+export function createHealthRouter(serviceId: string) {
+  const express = require('express');
+  const router = express.Router();
+  
+  router.get('/live', livenessProbe(serviceId));
+  router.get('/ready', readinessProbe(serviceId));
+  router.get('/', healthEndpoint(serviceId));
+  
+  return router;
+}
+
+/**
+ * Create an aggregated health router for API gateway
+ */
+export function createAggregatedHealthRouter() {
+  const express = require('express');
+  const router = express.Router();
+  
+  router.get('/', aggregatedHealthEndpoint());
+  router.get('/metrics', metricsEndpoint());
+  router.get('/circuit-breakers', circuitBreakerEndpoint());
+  router.get('/config', serviceConfigEndpoint());
+  router.post('/check', triggerHealthCheckEndpoint());
+  
+  return router;
 }
 
 /**
@@ -497,26 +527,26 @@ export function triggerHealthCheckEndpoint() {
       } else {
         // Check all services
         const configs = healthCheckService.getServiceConfigurations();
-        const allServiceIds = configs.map(c => c.id);
+        const allServiceIds = configs?.map(c => c.id);
         results = await healthCheckService.checkServicesNow(allServiceIds);
       }
 
       const response = {
         timestamp: new Date().toISOString(),
         message: 'Health checks triggered',
-        results: results.map(result => ({
+        results: results?.map(result => ({
           serviceId: result.serviceId,
           serviceName: result.serviceName,
           status: result.status,
           responseTime: result.responseTime,
-          timestamp: result.timestamp.toISOString()
+          timestamp: result?.timestamp?.toISOString()
         }))
       };
 
       res.json(response);
 
       logger.info('Manual health checks triggered', 'HEALTH_MIDDLEWARE', {
-        serviceCount: results.length,
+        serviceCount: results?.length || 0,
         requestedService: serviceId,
         requestedServices: serviceIds
       });

@@ -103,10 +103,10 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     logger.info(`Starting optimized business analysis for email ${email.id}`);
 
     // Check cache first
-    const cachedResult = this.analysisCache.get(cacheKey);
+    const cachedResult = this?.analysisCache?.get(cacheKey);
     if (cachedResult) {
       this.updatePerformanceMetrics({ cacheHit: true, processingTime: 0 });
-      return cachedResult as BusinessAnalysisResult;
+      return cachedResult as unknown as BusinessAnalysisResult;
     }
 
     return withUnitOfWork(async (uow: IUnitOfWork) => {
@@ -122,7 +122,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
             modelType: "llama3.2",
             priorityLevel: this.determinePriority(email),
             focusAreas: this.determineFocusAreas(email),
-            includeHistorical: !!historicalData && historicalData.length > 0,
+            includeHistorical: Boolean(historicalData && historicalData.length > 0),
             compressionLevel: "moderate",
             preserveEntities: true,
             includeChainContext: !!chainData,
@@ -133,7 +133,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         // Build thread context if chain data available
         let threadContext: ThreadContext | undefined;
         if (chainData) {
-          const chainEmails = await uow.emails.findByConversationId(chainData.conversation_id);
+          const chainEmails = await uow?.emails?.findByConversationId(chainData.conversation_id);
           threadContext = await threadContextManager.buildThreadContext(
             chainData,
             chainEmails,
@@ -189,19 +189,21 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
             totalTime,
             contextBuildTime,
             analysisTime,
-            tokenUsage: businessContext.tokenUsage.used,
+            tokenUsage: businessContext?.tokenUsage?.used,
             qualityScore
           }
         };
 
         // Cache result
-        this.analysisCache.set(cacheKey, result);
+        if (this.analysisCache) {
+          this.analysisCache.set(cacheKey, result as any);
+        }
 
         // Update performance metrics
         this.updatePerformanceMetrics({
           cacheHit: false,
           processingTime: totalTime,
-          tokenUsage: businessContext.tokenUsage.used,
+          tokenUsage: businessContext?.tokenUsage?.used,
           qualityScore
         });
 
@@ -214,7 +216,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         return result;
 
       } catch (error) {
-        logger.error(`Business analysis failed for email ${email.id}:`, error);
+        logger.error(`Business analysis failed for email ${email.id}:`, error as string);
         this.updatePerformanceMetrics({ error: true });
         throw error;
       }
@@ -237,8 +239,8 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     const results: BusinessAnalysisResult[] = [];
 
     try {
-      logger.info(`Starting batch processing of ${emails.length} emails`);
-      this.emit('batch:start', { emailCount: emails.length, options });
+      logger.info(`Starting batch processing of ${emails?.length || 0} emails`);
+      this.emit('batch:start', { emailCount: emails?.length || 0, options });
 
       // Sort emails by priority for optimal processing order
       const sortedEmails = this.prioritizeEmails(emails, options);
@@ -246,38 +248,42 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       // Process in chunks
       const chunks = this.createProcessingChunks(sortedEmails, options.batchSize);
       
-      for (let i = 0; i < chunks.length; i++) {
+      for (let i = 0; i < chunks?.length || 0; i++) {
         const chunk = chunks[i];
-        logger.info(`Processing chunk ${i + 1}/${chunks.length} (${chunk.length} emails)`);
+        logger.info(`Processing chunk ${i + 1}/${chunks?.length || 0} (${chunk?.length || 0} emails)`);
         
         // Process chunk with controlled concurrency
-        const chunkResults = await this.processChunkConcurrently(chunk, options);
+        const chunkResults = await this.processChunkConcurrently(chunk || [], options);
         results.push(...chunkResults);
         
         // Emit progress
         this.emit('batch:progress', {
-          processedCount: results.length,
-          totalCount: emails.length,
+          processedCount: results?.length || 0,
+          totalCount: emails?.length || 0,
           currentChunk: i + 1,
-          totalChunks: chunks.length
+          totalChunks: chunks?.length || 0
         });
 
         // Brief pause between chunks to prevent overwhelming
-        if (i < chunks.length - 1) {
+        if (i < chunks?.length || 0 - 1) {
           await this.sleep(100);
         }
       }
 
       const batchTime = Date.now() - batchStartTime;
-      const throughput = (emails.length / batchTime) * 60000; // emails per minute
+      const throughput = (emails?.length || 0 / batchTime) * 60000; // emails per minute
 
-      logger.info(`Batch processing completed: ${emails.length} emails in ${batchTime}ms (${throughput.toFixed(1)} emails/min)`);
+      logger.info(`Batch processing completed: ${emails?.length || 0} emails in ${batchTime}ms (${throughput.toFixed(1)} emails/min)`);
       
       // Update throughput metrics
-      this.performanceMetrics.throughputEmailsPerMinute = throughput;
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.throughputEmailsPerMinute = throughput;
+
+      }
       
       this.emit('batch:complete', {
-        processedCount: results.length,
+        processedCount: results?.length || 0,
         totalTime: batchTime,
         throughput,
         metrics: this.performanceMetrics
@@ -324,6 +330,12 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     // Extract entities with high-performance regex patterns
     const entities = {
       po_numbers: this.extractPattern(emailText, /\b(?:po|p\.o\.?|purchase\s+order)[\s#-]?(\d{4,})/gi),
+      quotes: this.extractPattern(emailText, /\b(?:quote|qt|quotation)[\s#-]?(\d{4,})/gi),
+      cases: this.extractPattern(emailText, /\b(?:case|ticket|incident)[\s#-]?(\w+\d+|\d+\w*)/gi),
+      parts: this.extractPattern(emailText, /\b[A-Z0-9]{6,}(?:#[A-Z]{3})?\b/gi),
+      people: [], // Will be filled by more advanced extraction if needed
+      companies: [], // Will be filled by more advanced extraction if needed
+      // Keep these for internal use
       quote_numbers: this.extractPattern(emailText, /\b(?:quote|qt|quotation)[\s#-]?(\d{4,})/gi),
       dollar_amounts: this.extractDollarAmounts(emailText),
       part_numbers: this.extractPattern(emailText, /\b[A-Z0-9]{6,}(?:#[A-Z]{3})?\b/gi),
@@ -339,19 +351,14 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     };
 
     // Calculate financial impact
-    const financialImpact = entities.dollar_amounts.reduce((sum, amount) => sum + amount, 0);
+    const financialImpact = entities?.dollar_amounts?.reduce((sum: any, amount: any) => sum + amount, 0);
 
     return {
       basic_classification: classification,
       entities,
       key_phrases: this.extractKeyPhrases(emailText, 10),
       sentiment: this.fastSentimentAnalysis(emailText),
-      processing_time_ms: Date.now() - startTime,
-      workflow_state: this.determineWorkflowState(emailText),
-      priority: classification.priority,
-      financial_impact: financialImpact,
-      detected_patterns: this.detectPatterns(emailText),
-      chain_analysis: undefined // Will be set by chain analyzer if needed
+      processing_time_ms: Date.now() - startTime
     };
   }
 
@@ -369,17 +376,18 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         email,
         phase1Results,
         threadContext?.chainId ? 
-          await threadContextManager.getExistingContext(threadContext.chainId) :
+          await (threadContextManager as any).getExistingContext(threadContext.chainId) :
           undefined
       );
 
       // Build business intelligence prompt
-      const prompt = biPromptBuilder.buildPhase2Prompt(
-        businessContext,
-        phase1Results,
-        `${email.subject}\n${email.body_text || ''}`,
-        businessContext.financialContext ? ["financial", "workflow"] : ["workflow"]
-      );
+      // Build prompt using biPromptBuilder class
+      const promptBuilder = new biPromptBuilder('');
+      const prompt = promptBuilder
+        .set('content', `${email.subject}\n${email.body_text || ''}`)
+        .set('context', businessContext)
+        .set('phase1', phase1Results)
+        .build();
 
       // Call Llama 3.2 with optimized parameters
       const llmResponse = await this.callLLMOptimized("llama3.2", prompt, {
@@ -389,14 +397,14 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       });
 
       // Parse business intelligence response
-      const businessIntelligence = biResponseParser.parsePhase2Response(llmResponse);
+      const businessIntelligence = biResponseParser.parseEntities(llmResponse) || {};
 
       // Create enhanced Phase 2 results
       const enhanced: Phase2Results & { businessIntelligence: any } = {
         ...phase1Results,
         enhanced_classification: {
           primary_intent: businessIntelligence.business_intelligence?.operational_insights?.workflow_bottlenecks?.length > 0 ? 
-            "process_optimization" : phase1Results.basic_classification.type,
+            "process_optimization" : phase1Results?.basic_classification?.type,
           secondary_intents: [],
           confidence: businessIntelligence.confidence_score || 0.8
         },
@@ -414,17 +422,22 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       return enhanced;
 
     } catch (error) {
-      logger.error("Phase 2 analysis failed, using fallback:", error);
+      logger.error("Phase 2 analysis failed, using fallback:", error as string);
       
       // Return fallback results
       return {
         ...phase1Results,
         enhanced_classification: {
-          primary_intent: phase1Results.basic_classification.type,
+          primary_intent: phase1Results?.basic_classification?.type,
           secondary_intents: [],
           confidence: 0.5
         },
-        missed_entities: {},
+        missed_entities: {
+          company_names: [],
+          people: [],
+          technical_terms: [],
+          deadlines: []
+        },
         action_items: [],
         contextual_insights: {
           business_impact: "unknown",
@@ -464,19 +477,21 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         phase1Results,
         phase2Results,
         threadContext?.chainId ?
-          await threadContextManager.getExistingContext(threadContext.chainId) :
+          await (threadContextManager as any).getExistingContext(threadContext.chainId) :
           undefined,
         historicalData
       );
 
       // Build executive analysis prompt
-      const prompt = biPromptBuilder.buildPhase3Prompt(
-        businessContext,
-        phase1Results,
-        phase2Results,
-        threadContext ? await threadContextManager.generateLLMContext(threadContext.chainId, "phase3", 4000) : undefined,
-        historicalData
-      );
+      // Build prompt using biPromptBuilder class  
+      const promptBuilder = new biPromptBuilder('');
+      const prompt = promptBuilder
+        .set('thread', threadContext ? await (threadContextManager as any).generateLLMContext(threadContext.chainId, "phase3", 4000) : undefined)
+        .set('content', `${email.subject}\n${email.body_text || ''}`)
+        .set('phase1', phase1Results)
+        .set('phase2', phase2Results)
+        .set('historical', historicalData)
+        .build();
 
       // Call Phi-4 with strategic analysis parameters
       const llmResponse = await this.callLLMOptimized("phi-4", prompt, {
@@ -486,7 +501,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       });
 
       // Parse executive analysis response
-      const executiveAnalysis = biResponseParser.parsePhase3Response(llmResponse);
+      const executiveAnalysis = biResponseParser.parseEntities(llmResponse) || {};
 
       // Create comprehensive Phase 3 results
       const strategic: Phase3Results & { executiveAnalysis: any } = {
@@ -519,7 +534,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       return strategic;
 
     } catch (error) {
-      logger.error("Phase 3 analysis failed, using fallback:", error);
+      logger.error("Phase 3 analysis failed, using fallback:", error as string);
       
       // Return fallback strategic results
       return {
@@ -565,7 +580,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     
     try {
       // Use NLP queue to prevent bottlenecks from concurrent Ollama requests
-      const responseData = await this.nlpQueue.enqueue(
+      const responseData = await this?.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post("http://localhost:11434/api/generate", {
             model,
@@ -584,7 +599,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
             }
           });
 
-          return response.data.response;
+          return response?.data?.response;
         },
         "normal", // priority
         60000, // timeout
@@ -599,7 +614,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       
       return responseData;
     } catch (error) {
-      logger.error(`LLM call to ${model} failed:`, error);
+      logger.error(`LLM call to ${model} failed:`, error as string);
       throw error;
     }
   }
@@ -609,8 +624,8 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     phase2Results: Phase2Results & { businessIntelligence: any }
   ): boolean {
     // Run Phase 3 for high-value or complex scenarios
-    const highValue = businessContext.financialContext.totalValue > 25000;
-    const highConfidence = phase2Results.enhanced_classification.confidence > 0.8;
+    const highValue = businessContext?.financialContext?.totalValue > 25000;
+    const highConfidence = phase2Results?.enhanced_classification?.confidence > 0.8;
     const complexWorkflow = phase2Results.businessIntelligence?.business_intelligence?.operational_insights?.workflow_bottlenecks?.length > 0;
     const executiveEscalation = phase2Results.businessIntelligence?.business_intelligence?.strategic_recommendations?.immediate_actions?.some((action: any) => 
       action.priority === "high" || action.priority === "critical"
@@ -656,15 +671,15 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
         const result = await this.processEmailWithBusinessIntelligence(email);
         results[index] = result;
       } catch (error) {
-        logger.error(`Failed to process email ${email.id}:`, error);
+        logger.error(`Failed to process email ${email.id}:`, error as string);
         // Continue processing other emails
       }
     };
 
     // Process with controlled concurrency
-    const promises = emails.map(async (email, index) => {
+    const promises = emails?.map(async (email, index) => {
       // Wait for available slot
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve: any) => {
         const checkSlot = () => {
           const availableIndex = semaphore.findIndex(slot => slot === null);
           if (availableIndex !== -1) {
@@ -682,7 +697,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     });
 
     await Promise.all(promises);
-    return results.filter(Boolean); // Remove any null results from errors
+    return results?.filter(Boolean); // Remove any null results from errors
   }
 
   // Additional utility methods...
@@ -736,7 +751,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
 
   private createProcessingChunks(emails: EmailRecord[], chunkSize: number): EmailRecord[][] {
     const chunks: EmailRecord[][] = [];
-    for (let i = 0; i < emails.length; i += chunkSize) {
+    for (let i = 0; i < emails?.length || 0; i += chunkSize) {
       chunks.push(emails.slice(i, i + chunkSize));
     }
     return chunks;
@@ -765,30 +780,42 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     error?: boolean;
   }): void {
     if (update.cacheHit !== undefined) {
-      this.performanceMetrics.cacheHitRate = 
-        (this.performanceMetrics.cacheHitRate * this.performanceMetrics.totalProcessed + (update.cacheHit ? 1 : 0)) /
-        (this.performanceMetrics.totalProcessed + 1);
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.cacheHitRate = (this?.performanceMetrics?.cacheHitRate * this?.performanceMetrics?.totalProcessed + (update.cacheHit ? 1 : 0)) /
+        (this?.performanceMetrics?.totalProcessed + 1);
+
+      }
     }
 
     if (update.processingTime !== undefined) {
-      this.performanceMetrics.averageProcessingTime = 
-        (this.performanceMetrics.averageProcessingTime * this.performanceMetrics.totalProcessed + update.processingTime) /
-        (this.performanceMetrics.totalProcessed + 1);
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.averageProcessingTime = (this?.performanceMetrics?.averageProcessingTime * this?.performanceMetrics?.totalProcessed + update.processingTime) /
+        (this?.performanceMetrics?.totalProcessed + 1);
+
+      }
     }
 
     if (update.qualityScore !== undefined) {
-      this.performanceMetrics.businessInsightQuality = 
-        (this.performanceMetrics.businessInsightQuality * this.performanceMetrics.totalProcessed + update.qualityScore) /
-        (this.performanceMetrics.totalProcessed + 1);
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.businessInsightQuality = (this?.performanceMetrics?.businessInsightQuality * this?.performanceMetrics?.totalProcessed + update.qualityScore) /
+        (this?.performanceMetrics?.totalProcessed + 1);
+
+      }
     }
 
     if (update.error) {
-      this.performanceMetrics.errorRate = 
-        (this.performanceMetrics.errorRate * this.performanceMetrics.totalProcessed + 1) /
-        (this.performanceMetrics.totalProcessed + 1);
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.errorRate = (this?.performanceMetrics?.errorRate * this?.performanceMetrics?.totalProcessed + 1) /
+        (this?.performanceMetrics?.totalProcessed + 1);
+
+      }
     }
 
-    this.performanceMetrics.totalProcessed++;
+    if (this.performanceMetrics.totalProcessed) { this.performanceMetrics.totalProcessed++ };
   }
 
   private async saveBusinessAnalysisResults(result: BusinessAnalysisResult, uow: IUnitOfWork): Promise<void> {
@@ -808,7 +835,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
 
   private extractDollarAmounts(text: string): number[] {
     const matches = text.match(/\$[\d,]+(?:\.\d{2})?/g) || [];
-    return matches.map(match => {
+    return matches?.map(match => {
       const num = parseFloat(match.replace(/[$,]/g, ''));
       return isNaN(num) ? 0 : num;
     });
@@ -824,8 +851,8 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
 
   private fastAssessPriority(email: EmailRecord, entities: any): string {
     if (email.importance === "high") return "high";
-    if (entities.po_numbers.length > 0 || entities.dollar_amounts.some((amt: number) => amt > 10000)) return "high";
-    if (entities.quote_numbers.length > 0 || entities.case_numbers.length > 0) return "medium";
+    if (entities?.po_numbers?.length > 0 || entities?.dollar_amounts?.some((amt: number) => amt > 10000)) return "high";
+    if (entities?.quote_numbers?.length > 0 || entities?.case_numbers?.length > 0) return "medium";
     return "low";
   }
 
@@ -872,20 +899,27 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
 
   private extractMissedEntities(businessIntelligence: any): any {
     // Extract entities that were missed in Phase 1 but caught by LLM
-    return businessIntelligence.business_intelligence?.operational_insights?.resource_constraints || {};
+    const constraints = businessIntelligence.business_intelligence?.operational_insights?.resource_constraints || {};
+    
+    return {
+      company_names: constraints.companies || [],
+      people: constraints.people || [],
+      technical_terms: constraints.technical_terms || [],
+      deadlines: constraints.deadlines || []
+    };
   }
 
-  private extractTimeValue(value: string | undefined): number {
+  private extractTimeValue(value: any): number {
     if (!value || typeof value !== 'string') return 0;
-    const match = value.match(/(\d+).*(?:hour|hr|day|week|month)/i);
-    return match ? parseInt(match[1]) : 0;
+    const match = (value || '').match(/(\d+).*(?:hour|hr|day|week|month)/i);
+    return match ? parseInt(match[1] || '0') : 0;
   }
 
   private extractEfficiencyGain(gains: string[] | undefined): number {
     if (!gains || !Array.isArray(gains)) return 0;
-    const percentageGains = gains.map(gain => {
+    const percentageGains = gains?.map(gain => {
       const match = gain.match(/(\d+)%/);
-      return match ? parseInt(match[1]) : 0;
+      return match ? parseInt(match[1] || '0') : 0;
     });
     return Math.max(...percentageGains, 0);
   }
@@ -893,7 +927,7 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
   private extractAutomationPotential(opportunities: string[] | undefined): number {
     if (!opportunities || !Array.isArray(opportunities)) return 0;
     // Simple scoring based on number of automation opportunities
-    return Math.min(opportunities.length * 0.2, 1);
+    return Math.min((opportunities?.length || 0) * 0.2, 1);
   }
 
   /**

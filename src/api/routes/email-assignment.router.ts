@@ -37,7 +37,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     res.json({
       success: true,
-      data: TEAM_MEMBERS.map((member) => ({
+      data: TEAM_MEMBERS?.map((member: any) => ({
         id: member.id,
         name: member.name,
         email: member.email,
@@ -160,10 +160,10 @@ router.post(
       action: "bulk_assigned",
       userId: req.user?.id || "system",
       details: {
-        emailCount: updatedEmails.length,
+        emailCount: updatedEmails?.length || 0,
         assignedTo: assignedTo || null,
         assigneeName,
-        errors: errors.length > 0 ? errors : undefined,
+        errors: errors?.length || 0 > 0 ? errors : undefined,
       },
       timestamp: new Date().toISOString(),
     });
@@ -207,7 +207,7 @@ router.get(
       data: {
         emailId,
         emailAlias: email.email_alias,
-        suggestions: suggestions.map((member) => ({
+        suggestions: suggestions?.map((member: any) => ({
           id: member.id,
           name: member.name,
           email: member.email,

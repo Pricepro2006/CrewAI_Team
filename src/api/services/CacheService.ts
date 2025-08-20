@@ -3,7 +3,7 @@
  * Implements multi-tier caching strategy for API optimization
  */
 
-import { createClient, RedisClientType } from 'redis';
+import { createClient, type RedisClientType } from 'redis';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 
@@ -66,7 +66,7 @@ export class CacheService {
       }
     };
 
-    this.MAX_MEMORY_SIZE = (this.config.memory?.maxSize || 100) * 1024 * 1024;
+    this.MAX_MEMORY_SIZE = (this?.config?.memory?.maxSize || 100) * 1024 * 1024;
     this.initializeRedis();
     this.startMemoryManagement();
   }
@@ -85,24 +85,24 @@ export class CacheService {
     try {
       this.redisClient = createClient({
         socket: {
-          host: this.config.redis?.host,
-          port: this.config.redis?.port
+          host: this?.config?.redis?.host || 'localhost',
+          port: this?.config?.redis?.port || 6379
         },
-        password: this.config.redis?.password,
-        database: this.config.redis?.db
+        password: this?.config?.redis?.password,
+        database: this?.config?.redis?.db || 0
       });
 
-      this.redisClient.on('error', (err: Error) => {
+      this?.redisClient?.on('error', (err: Error) => {
         logger.error('Redis error', 'CACHE_SERVICE', { error: err });
         this.isRedisAvailable = false;
       });
 
-      this.redisClient.on('connect', () => {
+      this?.redisClient?.on('connect', () => {
         logger.info('Redis connected', 'CACHE_SERVICE');
         this.isRedisAvailable = true;
       });
 
-      await this.redisClient.connect();
+      await this?.redisClient?.connect();
     } catch (error) {
       logger.warn('Redis not available, falling back to memory cache', 'CACHE_SERVICE', { error });
       this.isRedisAvailable = false;
@@ -116,7 +116,7 @@ export class CacheService {
     setInterval(() => {
       this.evictExpiredEntries();
       this.enforceMemoryLimit();
-    }, this.config.memory?.checkPeriod || 60000);
+    }, this?.config?.memory?.checkPeriod || 60000);
   }
 
   /**
@@ -138,19 +138,19 @@ export class CacheService {
     try {
       // Try Redis first
       if (this.isRedisAvailable && this.redisClient) {
-        const cached = await this.redisClient.get(key);
+        const cached = await this?.redisClient?.get(key);
         if (cached) {
           const entry: CacheEntry<T> = JSON.parse(cached);
           
           // Check if expired
           if (Date.now() - entry.timestamp > entry.ttl * 1000) {
-            await this.redisClient.del(key);
+            await this?.redisClient?.del(key);
             return null;
           }
           
           // Update hit count
           entry.hits++;
-          await this.redisClient.setEx(key, entry.ttl, JSON.stringify(entry));
+          await this?.redisClient?.setEx(key, entry.ttl, JSON.stringify(entry));
           
           logger.debug('Cache hit (Redis)', 'CACHE_SERVICE', { key, hits: entry.hits });
           return entry.data;
@@ -158,11 +158,11 @@ export class CacheService {
       }
 
       // Fallback to memory cache
-      const memEntry = this.memoryCache.get(key);
+      const memEntry = this?.memoryCache?.get(key);
       if (memEntry) {
         // Check if expired
         if (Date.now() - memEntry.timestamp > memEntry.ttl * 1000) {
-          this.memoryCache.delete(key);
+          this?.memoryCache?.delete(key);
           return null;
         }
         
@@ -200,12 +200,12 @@ export class CacheService {
     try {
       // Store in Redis if available
       if (this.isRedisAvailable && this.redisClient) {
-        await this.redisClient.setEx(key, finalTtl, JSON.stringify(entry));
+        await this?.redisClient?.setEx(key, finalTtl, JSON.stringify(entry));
       }
 
       // Also store in memory cache
       const dataSize = this.estimateSize(entry);
-      this.memoryCache.set(key, entry);
+      this?.memoryCache?.set(key, entry);
       this.memorySizeBytes += dataSize;
       
       logger.debug('Cache set', 'CACHE_SERVICE', { key, ttl: finalTtl, size: dataSize });
@@ -222,13 +222,13 @@ export class CacheService {
     
     try {
       if (this.isRedisAvailable && this.redisClient) {
-        await this.redisClient.del(key);
+        await this?.redisClient?.del(key);
       }
       
-      const entry = this.memoryCache.get(key);
+      const entry = this?.memoryCache?.get(key);
       if (entry) {
         this.memorySizeBytes -= this.estimateSize(entry);
-        this.memoryCache.delete(key);
+        this?.memoryCache?.delete(key);
       }
       
       logger.debug('Cache delete', 'CACHE_SERVICE', { key });
@@ -246,17 +246,17 @@ export class CacheService {
       
       // Clear from Redis
       if (this.isRedisAvailable && this.redisClient) {
-        const keys = await this.redisClient.keys(pattern);
-        if (keys.length > 0) {
-          await this.redisClient.del(keys);
+        const keys = await this?.redisClient?.keys(pattern);
+        if (keys?.length || 0 > 0) {
+          await this?.redisClient?.del(keys);
         }
       }
       
       // Clear from memory
-      for (const [key, entry] of this.memoryCache.entries()) {
+      for (const [key, entry] of this?.memoryCache?.entries()) {
         if (key.startsWith(`${namespace}:`)) {
           this.memorySizeBytes -= this.estimateSize(entry);
-          this.memoryCache.delete(key);
+          this?.memoryCache?.delete(key);
         }
       }
       
@@ -298,17 +298,17 @@ export class CacheService {
     
     // Use Redis pipeline if available
     if (this.isRedisAvailable && this.redisClient) {
-      const pipeline = this.redisClient.multi();
-      const keys = identifiers.map(id => this.generateKey(namespace, id));
+      const pipeline = this?.redisClient?.multi();
+      const keys = identifiers?.map(id => this.generateKey(namespace, id));
       
       keys.forEach(key => pipeline.get(key));
       
       try {
         const replies = await pipeline.exec();
         identifiers.forEach((id, index) => {
-          const cached = replies[index];
-          if (cached) {
-            const entry: CacheEntry<T> = JSON.parse(cached as string);
+          const cached = replies?.[index];
+          if (cached && Array.isArray(cached) && cached[1]) {
+            const entry: CacheEntry<T> = JSON.parse(String(cached[1]));
             if (Date.now() - entry.timestamp <= entry.ttl * 1000) {
               results.set(id, entry.data);
             } else {
@@ -337,11 +337,11 @@ export class CacheService {
    */
   private getTTLForNamespace(namespace: string): number {
     const ttlMap: { [key: string]: number } = {
-      'product': this.config.ttl.products,
-      'price': this.config.ttl.prices,
-      'history': this.config.ttl.userHistory,
-      'search': this.config.ttl.searchResults,
-      'analytics': this.config.ttl.analytics
+      'product': this?.config?.ttl.products,
+      'price': this?.config?.ttl.prices,
+      'history': this?.config?.ttl.userHistory,
+      'search': this?.config?.ttl.searchResults,
+      'analytics': this?.config?.ttl.analytics
     };
     
     for (const [key, value] of Object.entries(ttlMap)) {
@@ -350,7 +350,7 @@ export class CacheService {
       }
     }
     
-    return this.config.ttl.default;
+    return this?.config?.ttl.default;
   }
 
   /**
@@ -367,10 +367,10 @@ export class CacheService {
     const now = Date.now();
     let evicted = 0;
     
-    for (const [key, entry] of this.memoryCache.entries()) {
+    for (const [key, entry] of this?.memoryCache?.entries()) {
       if (now - entry.timestamp > entry.ttl * 1000) {
         this.memorySizeBytes -= this.estimateSize(entry);
-        this.memoryCache.delete(key);
+        this?.memoryCache?.delete(key);
         evicted++;
       }
     }
@@ -389,7 +389,7 @@ export class CacheService {
     }
     
     // Sort by least recently used (timestamp + hits consideration)
-    const entries = Array.from(this.memoryCache.entries())
+    const entries = Array.from(this?.memoryCache?.entries())
       .sort((a, b) => {
         const scoreA = a[1].timestamp + (a[1].hits * 60000); // 1 hit = 1 minute bonus
         const scoreB = b[1].timestamp + (b[1].hits * 60000);
@@ -403,7 +403,7 @@ export class CacheService {
       }
       
       this.memorySizeBytes -= this.estimateSize(entry);
-      this.memoryCache.delete(key);
+      this?.memoryCache?.delete(key);
       evicted++;
     }
     
@@ -427,7 +427,7 @@ export class CacheService {
   }> {
     const stats = {
       redis: this.isRedisAvailable,
-      memoryEntries: this.memoryCache.size,
+      memoryEntries: this?.memoryCache?.size,
       memorySize: this.memorySizeBytes,
       hitRate: 0
     };
@@ -436,7 +436,7 @@ export class CacheService {
     let totalHits = 0;
     let totalEntries = 0;
     
-    for (const entry of this.memoryCache.values()) {
+    for (const entry of this?.memoryCache?.values()) {
       totalHits += entry.hits;
       totalEntries++;
     }
@@ -453,9 +453,9 @@ export class CacheService {
    */
   async shutdown(): Promise<void> {
     if (this.redisClient) {
-      await this.redisClient.quit();
+      await this?.redisClient?.quit();
     }
-    this.memoryCache.clear();
+    this?.memoryCache?.clear();
     logger.info('Cache service shutdown', 'CACHE_SERVICE');
   }
 }

@@ -10,8 +10,8 @@ import { createContext } from "./trpc/context.js";
 import { appRouter } from "./trpc/router.js";
 import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
+import type { IncomingMessage } from "http";
 import appConfig from "../config/app.config.js";
-import ollamaConfig from "../config/ollama.config.js";
 import type { Express } from "express";
 import {
   apiRateLimiter,
@@ -34,6 +34,9 @@ import emailAssignmentRouter from "./routes/email-assignment.router.js";
 import csrfRouter from "./routes/csrf.router.js";
 import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
 import metricsRouter from "./routes/metrics.router.js";
+import databasePerformanceRouter from "./routes/database-performance.router.js";
+import optimizationMetricsRouter from "./routes/optimization-metrics.router.js";
+import { databaseManager } from "../core/database/DatabaseManager.js";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -41,7 +44,7 @@ import {
 import { setupWalmartWebSocket } from "./websocket/walmart-updates.js";
 import { walmartWSServer } from "./websocket/WalmartWebSocketServer.js";
 import { DealDataService } from "./services/DealDataService.js";
-import { EmailStorageService } from "./services/EmailStorageService.js";
+import { emailProcessingWebSocket } from "./websocket/EmailProcessingWebSocket.js";
 import { applySecurityHeaders } from "./middleware/security/headers.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { 
@@ -66,7 +69,7 @@ import { errorTracker } from "../monitoring/ErrorTracker.js";
 
 const app: Express = express();
 const gracefulShutdown = new GracefulShutdown();
-const PORT = appConfig.api.port;
+const PORT = appConfig?.api?.port;
 
 // Add error listener to prevent crashes
 errorTracker.on("error", () => {
@@ -83,8 +86,8 @@ app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
 // Apply comprehensive security headers (includes CORS)
 applySecurityHeaders(app, {
   cors: {
-    origins: appConfig.api.cors.origin as string[],
-    credentials: appConfig.api.cors.credentials,
+    origins: appConfig?.api?.cors.origin as string[],
+    credentials: appConfig?.api?.cors.credentials,
   },
 });
 
@@ -95,13 +98,13 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Add response compression (Performance Optimization - 60-70% bandwidth reduction)
 // Compression should come after parsers but before routes
 app.use(compression({
-  filter: (req, res) => {
+  filter: (req: express.Request, res: express.Response) => {
     // Don't compress if client explicitly requests no compression
     if (req.headers['x-no-compression']) {
       return false;
     }
     // Compress all responses by default for JSON/text content
-    return compression.filter(req, res);
+    return compression?.filter(req, res);
   },
   threshold: 1024, // Only compress responses larger than 1KB
   level: 6 // Balanced compression level (1=fast, 9=best compression)
@@ -130,21 +133,17 @@ app.get("/health", async (_req, res) => {
   };
 
   try {
-    // Check Ollama connection with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const ollamaResponse = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    services.ollama = ollamaResponse.ok ? "connected" : "disconnected";
-  } catch (error) {
-    if ((error as Error).name === "AbortError") {
-      services.ollama = "timeout";
+    // Check llama.cpp provider status
+    const { LLMProviderFactory } = await import("../core/llm/LLMProviderFactory.js");
+    const provider = LLMProviderFactory.getInstance();
+    
+    if (provider && provider.isReady && provider.isReady()) {
+      services.ollama = "connected"; // Keep field name for compatibility but it's actually llama.cpp
     } else {
-      services.ollama = "error";
+      services.ollama = "disconnected";
     }
+  } catch (error) {
+    services.ollama = "error";
   }
 
   try {
@@ -168,7 +167,7 @@ app.get("/health", async (_req, res) => {
 
   try {
     // Check database connection
-    const Database = (await import("better-sqlite3")).default;
+    const { default: Database } = await import("better-sqlite3") as any;
     const db = new Database(appConfig.database?.path || "./data/app.db", {
       readonly: true,
     });
@@ -187,7 +186,7 @@ app.get("/health", async (_req, res) => {
   };
   
   const overallStatus = Object.values(criticalServices).every(
-    (s) => s === "running" || s === "connected",
+    (s: any) => s === "running" || s === "connected",
   )
     ? "healthy"
     : "degraded";
@@ -210,7 +209,7 @@ app.get("/api/rate-limit-status", async (req: AuthenticatedRequest, res) => {
     const authReq = req as AuthenticatedRequest;
 
     // Only allow admins to check rate limit status
-    if (!authReq.user || authReq.user.role !== "admin") {
+    if (!authReq.user || authReq?.user?.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -243,7 +242,7 @@ app.use(csrfValidator([
   "/health",              // Skip root health check
   "/api/webhooks",        // Skip webhooks (they use different auth)
   "/api/rate-limit-status", // Skip rate limit status
-  "/trpc"                 // TEMPORARILY skip tRPC for testing
+  // "/trpc" - CSRF protection ENABLED for tRPC (security hardening)
 ]));
 
 // Webhook routes (needs to be before tRPC)
@@ -278,6 +277,26 @@ app.use("/api/health", emailPipelineHealthRouter);
 // Add credential health endpoint
 app.get("/api/health/credentials", credentialHealthCheck);
 app.use("/api/metrics", metricsRouter);
+
+// Database performance monitoring routes
+app.use("/api/database", databasePerformanceRouter);
+
+// Optimization metrics routes (for OptimizedQueryExecutor and CachedLLMProvider)
+app.use("/api/optimization", optimizationMetricsRouter);
+
+// Debug middleware for tRPC input issues
+app.use("/trpc", (req, res, next) => {
+  console.log("DEBUG - tRPC Request:", {
+    method: req.method,
+    path: req.path,
+    body: req.body,
+    bodyType: typeof req.body,
+    hasBody: !!req.body,
+    contentType: req.headers['content-type'],
+    contentLength: req.headers['content-length']
+  });
+  next();
+});
 
 // tRPC middleware
 app.use(
@@ -315,15 +334,21 @@ registerDefaultCleanupTasks();
 // Register graceful shutdown handlers
 gracefulShutdown.register(async () => {
   logger.info("Shutting down HTTP server...");
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve: any) => {
     server.close(() => resolve());
   });
 });
 
 gracefulShutdown.register(async () => {
-  logger.info("Shutting down WebSocket server...");
+  logger.info("Shutting down WebSocket servers...");
   wss.close();
+  mainWSS.close();
   wsService.shutdown();
+});
+
+gracefulShutdown.register(async () => {
+  logger.info("Shutting down Database Manager...");
+  await databaseManager.closeAll();
 });
 
 gracefulShutdown.register(async () => {
@@ -345,7 +370,8 @@ const server = app.listen(PORT, async () => {
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`🔐 Credential health: http://localhost:${PORT}/api/health/credentials`);
 
-    // Initialize Walmart WebSocket server
+    // Initialize Walmart WebSocket server on main port temporarily
+    // The separate port 8080 server will be started by the websocket server script
     walmartWSServer.initialize(server, "/ws/walmart");
     console.log(`🛒 Walmart WebSocket: ws://localhost:${PORT}/ws/walmart`);
 
@@ -366,7 +392,7 @@ const wss = new WebSocketServer({
   path: "/trpc-ws",
   // Add origin validation and rate limiting
   verifyClient: (info: { origin?: string; req: any }) => {
-    const origin = info.origin;
+    const origin = info?.origin;
 
     // Get allowed origins from environment or use defaults
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ||
@@ -410,7 +436,7 @@ wss.on("connection", async (ws, req) => {
   try {
     // Create a mock Express request for rate limiting
     const mockReq = {
-      ip: req.socket.remoteAddress,
+      ip: req?.socket?.remoteAddress,
       path: "/ws",
       method: "GET",
       headers: req.headers,
@@ -436,13 +462,13 @@ wss.on("connection", async (ws, req) => {
     });
 
     console.log("WebSocket connection established:", {
-      ip: req.socket.remoteAddress,
+      ip: req?.socket?.remoteAddress,
       userAgent: req.headers["user-agent"],
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.warn("WebSocket rate limit exceeded:", {
-      ip: req.socket.remoteAddress,
+      ip: req?.socket?.remoteAddress,
       error: error instanceof Error ? error.message : "Unknown error",
     });
 
@@ -452,7 +478,7 @@ wss.on("connection", async (ws, req) => {
 });
 
 const wsHandler = applyWSSHandler({
-  wss,
+  wss: wss as any,
   router: appRouter,
   createContext: ({ req }: { req: any }) =>
     createContext({
@@ -465,22 +491,184 @@ const wsHandler = applyWSSHandler({
     }),
 });
 
+// Create dedicated WebSocket server for /ws endpoint on same port
+const mainWSS = new WebSocketServer({
+  noServer: true,
+  path: '/ws',
+  perMessageDeflate: true,
+  maxPayload: 1024 * 1024 // 1MB
+});
+
+// Setup main WebSocket connection handling
+mainWSS.on('connection', (ws, request) => {
+  const clientId = `main_ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Register with WebSocket service
+  wsService.registerClient(clientId, ws as any);
+  
+  // Subscribe to all message types for main WebSocket
+  wsService.subscribe(clientId, ['*']);
+  
+  logger.info(`Main WebSocket connection established: ${clientId}`, 'WEBSOCKET');
+  
+  // Send welcome message
+  ws.send(JSON.stringify({
+    type: 'welcome',
+    connectionId: clientId,
+    serverTime: Date.now(),
+    message: 'Connected to main WebSocket server'
+  }));
+  
+  // Handle incoming messages
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      logger.info(`Main WebSocket message received:`, 'WEBSOCKET', message);
+      
+      // Handle subscription requests
+      if (message.type === 'subscribe' && message.topics) {
+        wsService.subscribe(clientId, message.topics);
+        ws.send(JSON.stringify({
+          type: 'subscription_confirmed',
+          topics: message.topics,
+          timestamp: Date.now()
+        }));
+      }
+      
+      // Echo other messages back with timestamp
+      if (message.type !== 'subscribe') {
+        ws.send(JSON.stringify({
+          type: 'echo',
+          originalMessage: message,
+          serverTimestamp: Date.now(),
+          connectionId: clientId
+        }));
+      }
+    } catch (error) {
+      logger.error('Error processing main WebSocket message:', 'WEBSOCKET', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+    }
+  });
+  
+  ws.on('close', () => {
+    logger.info(`Main WebSocket connection closed: ${clientId}`, 'WEBSOCKET');
+    wsService.unregisterClient(clientId, ws as any);
+  });
+  
+  ws.on('error', (error) => {
+    logger.error(`Main WebSocket error for ${clientId}:`, 'WEBSOCKET', error);
+  });
+});
+
 // Handle HTTP upgrade for WebSocket connections on the same port
 server.on('upgrade', (request, socket, head) => {
   const pathname = request.url || '';
   
+  logger.info(`HTTP upgrade request for path: ${pathname}`, 'WEBSOCKET');
+  
   if (pathname === '/trpc-ws') {
-    wss.handleUpgrade(request, socket, head, (ws) => {
+    // Verify client before upgrading
+    const verifyClient = wss.options.verifyClient;
+    const clientInfo = { 
+      origin: request.headers.origin || '', 
+      secure: (request.connection as any)?.encrypted || false,
+      req: request 
+    };
+    
+    if (verifyClient) {
+      let result: boolean = true;
+      if (typeof verifyClient === 'function') {
+        // Handle both sync and async verifyClient
+        try {
+          const verifyResult = verifyClient(clientInfo, (res: boolean) => {
+            result = res;
+          });
+          // If verifyClient returns a value directly (sync), use it
+          if (typeof verifyResult === 'boolean') {
+            result = verifyResult;
+          }
+        } catch (error) {
+          logger.error('Error in verifyClient function:', 'WEBSOCKET', error as Error);
+          result = false;
+        }
+      }
+      
+      if (!result) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+    }
+    
+    wss.handleUpgrade(request, socket, head, (ws: any) => {
       wss.emit('connection', ws, request);
     });
+  } else if (pathname === '/ws') {
+    // Handle main WebSocket connections directly on same port
+    logger.info('Handling /ws WebSocket connection on main port', 'WEBSOCKET');
+    
+    // Apply rate limiting
+    const mockReq = {
+      ip: request.socket.remoteAddress,
+      path: "/ws",
+      method: "GET",
+      headers: request.headers,
+      connection: request.socket,
+      user: null,
+    } as any;
+
+    const mockRes = {
+      status: () => mockRes,
+      json: () => {},
+      end: () => {},
+    } as any;
+
+    // Check WebSocket rate limit
+    websocketRateLimit(mockReq, mockRes, (err?: any) => {
+      if (err) {
+        logger.warn("WebSocket rate limit exceeded for /ws:", 'WEBSOCKET', {
+          ip: request.socket.remoteAddress,
+          error: err.message,
+        });
+        socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+      
+      // Proceed with WebSocket upgrade
+      mainWSS.handleUpgrade(request, socket, head, (ws: any) => {
+        mainWSS.emit('connection', ws, request);
+      });
+    });
+  } else if (pathname === '/ws/walmart') {
+    // Handle Walmart WebSocket upgrades
+    if (walmartWSServer && 'handleUpgrade' in walmartWSServer && typeof walmartWSServer.handleUpgrade === 'function') {
+      walmartWSServer.handleUpgrade(request, socket, head);
+    } else {
+      socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+      socket.destroy();
+    }
   } else {
-    // Let other handlers deal with non-tRPC WebSocket connections
-    // (e.g., Walmart WebSocket is already handled by its own server)
+    // Reject unknown WebSocket requests
+    logger.warn(`Unknown WebSocket path: ${pathname}`, 'WEBSOCKET');
+    socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+    socket.destroy();
   }
 });
 
 console.log(
-  `🔌 WebSocket server running on ws://localhost:${PORT}/trpc-ws (using HTTP upgrade)`,
+  `🔌 WebSocket endpoints available:`,
+);
+console.log(
+  `   📡 Main WebSocket: ws://localhost:${PORT}/ws`,
+);
+console.log(
+  `   🔧 tRPC WebSocket: ws://localhost:${PORT}/trpc-ws`,
+);
+console.log(
+  `   🛒 Walmart WebSocket: ws://localhost:${PORT}/ws/walmart`,
 );
 
 // Setup Walmart-specific WebSocket handlers
@@ -504,6 +692,20 @@ cleanupManager.register({
 });
 
 console.log(`🛒 Walmart WebSocket handlers initialized`);
+
+// Initialize Email Processing WebSocket
+emailProcessingWebSocket.initialize(wss as any);
+
+// Register email processing WebSocket for cleanup
+cleanupManager.register({
+  name: "email-processing-websocket",
+  cleanup: async () => {
+    emailProcessingWebSocket.shutdown();
+  },
+  priority: 4,
+});
+
+console.log(`📧 Email Processing WebSocket initialized`);
 
 // Note: Graceful shutdown is now handled by the GracefulShutdown class
 // which prevents duplicate signal handler registration and infinite loops

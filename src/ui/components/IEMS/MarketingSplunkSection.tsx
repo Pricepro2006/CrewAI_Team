@@ -24,7 +24,7 @@ export const MarketingSplunkSection: React.FC<MarketingSplunkSectionProps> = ({
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
   const toggleDropdown = (emailId: string) => {
-    setOpenDropdowns((prev) => {
+    setOpenDropdowns((prev: Set<string>) => {
       const newSet = new Set(prev);
       if (newSet.has(emailId)) {
         newSet.delete(emailId);
@@ -37,20 +37,20 @@ export const MarketingSplunkSection: React.FC<MarketingSplunkSectionProps> = ({
 
   const handleAssign = (emailId: string, member: TeamMember) => {
     onAssign(emailId, member.id, member.name);
-    setOpenDropdowns((prev) => {
+    setOpenDropdowns((prev: Set<string>) => {
       const newSet = new Set(prev);
       newSet.delete(emailId);
       return newSet;
     });
   };
 
-  const availableMembers = teamMembers.filter((m) => m.available);
+  const availableMembers = teamMembers?.filter((m: any) => m.available);
 
   return (
     <div className="marketing-splunk-section">
       <div className="section-header">
         <h2 className="section-title">Marketing / Splunk</h2>
-        <span className="section-count">{emails.length} emails</span>
+        <span className="section-count">{emails?.length || 0} emails</span>
       </div>
 
       <div className="section-table">
@@ -76,12 +76,12 @@ export const MarketingSplunkSection: React.FC<MarketingSplunkSectionProps> = ({
         </div>
 
         <div className="table-body">
-          {emails.length === 0 ? (
+          {emails?.length || 0 === 0 ? (
             <div className="table-empty">
               <p>No emails in this category</p>
             </div>
           ) : (
-            emails.map((email) => (
+            emails?.map((email: any) => (
               <div key={email.id} className="table-row">
                 <div className="table-cell table-cell--alias">
                   <div className="email-alias-name">{email.emailAlias}</div>
@@ -144,12 +144,12 @@ export const MarketingSplunkSection: React.FC<MarketingSplunkSectionProps> = ({
                             <div className="dropdown-header">
                               Select Team Member
                             </div>
-                            {availableMembers.length === 0 ? (
+                            {availableMembers?.length || 0 === 0 ? (
                               <div className="dropdown-empty">
                                 No available members
                               </div>
                             ) : (
-                              availableMembers.map((member) => (
+                              availableMembers?.map((member: any) => (
                                 <button
                                   key={member.id}
                                   className="dropdown-item"

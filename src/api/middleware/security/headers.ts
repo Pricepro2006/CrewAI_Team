@@ -28,6 +28,7 @@ interface SecurityHeadersConfig {
     connectSrc: string[];
     frameSrc?: string[];
     workerSrc?: string[];
+    objectSrc?: string[];
     reportUri?: string;
   };
 
@@ -77,7 +78,7 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
       scriptSrc: [
         "'self'",
         ...(isDevelopment ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
-        "https://cdn.jsdelivr.net", // For any CDN scripts
+        "https://cdn.jsdelivr?.net", // For any CDN scripts
         "https://unpkg.com",
         // Add nonce support for production builds
         ...(isProduction ? ["'nonce-{NONCE}'"] : []),
@@ -85,8 +86,8 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
       styleSrc: [
         "'self'",
         "'unsafe-inline'", // Required for React and many UI libraries
-        "https://fonts.googleapis.com",
-        "https://cdn.jsdelivr.net",
+        "https://fonts?.googleapis?.com",
+        "https://cdn.jsdelivr?.net",
       ],
       imgSrc: [
         "'self'",
@@ -95,7 +96,7 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
         "https:",
         "http://localhost:*", // For development
       ],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      fontSrc: ["'self'", "https://fonts?.gstatic?.com", "data:"],
       connectSrc: [
         "'self'",
         "ws://localhost:*", // WebSocket in development
@@ -108,13 +109,12 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
         process.env.OLLAMA_URL || "http://localhost:11434",
         process.env.CHROMA_URL || "http://localhost:8001",
         // Add any external APIs the frontend needs
-        "https://api.openai.com", // If using OpenAI
+        "https://api?.openai?.com", // If using OpenAI
         "https://*.huggingface.co", // If using Hugging Face models
       ],
       frameSrc: ["'none'"],
       workerSrc: ["'self'", "blob:"],
-      // mediaSrc: ["'self'", "blob:", "data:"], // For any media elements - Not a valid CSP directive
-      // objectSrc: ["'none'"], // Block plugins like Flash - Use object-src instead
+      objectSrc: ["'none'"], // Block plugins like Flash
       reportUri: process.env.CSP_REPORT_URI,
     },
 
@@ -155,7 +155,7 @@ export function createCorsMiddleware(config: SecurityHeadersConfig) {
       }
 
       // Check if origin is in allowlist
-      if (config.cors.origins.includes(origin)) {
+      if (config?.cors?.origins.includes(origin)) {
         callback(null, true);
       } else {
         logger.warn(
@@ -163,14 +163,14 @@ export function createCorsMiddleware(config: SecurityHeadersConfig) {
           "SECURITY",
           {
             origin,
-            allowedOrigins: config.cors.origins,
+            allowedOrigins: config?.cors?.origins,
           },
         );
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: config.cors.credentials,
-    maxAge: config.cors.maxAge,
+    credentials: config?.cors?.credentials,
+    maxAge: config?.cors?.maxAge,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
     allowedHeaders: [
       "Content-Type",
@@ -198,19 +198,23 @@ function createCSPHeader(config: SecurityHeadersConfig): string {
   const directives: string[] = [];
 
   // Add each CSP directive
-  directives.push(`default-src ${config.csp.defaultSrc.join(" ")}`);
-  directives.push(`script-src ${config.csp.scriptSrc.join(" ")}`);
-  directives.push(`style-src ${config.csp.styleSrc.join(" ")}`);
-  directives.push(`img-src ${config.csp.imgSrc.join(" ")}`);
-  directives.push(`font-src ${config.csp.fontSrc.join(" ")}`);
-  directives.push(`connect-src ${config.csp.connectSrc.join(" ")}`);
+  directives.push(`default-src ${config?.csp?.defaultSrc.join(" ")}`);
+  directives.push(`script-src ${config?.csp?.scriptSrc.join(" ")}`);
+  directives.push(`style-src ${config?.csp?.styleSrc.join(" ")}`);
+  directives.push(`img-src ${config?.csp?.imgSrc.join(" ")}`);
+  directives.push(`font-src ${config?.csp?.fontSrc.join(" ")}`);
+  directives.push(`connect-src ${config?.csp?.connectSrc.join(" ")}`);
 
-  if (config.csp.frameSrc) {
-    directives.push(`frame-src ${config.csp.frameSrc.join(" ")}`);
+  if (config?.csp?.frameSrc) {
+    directives.push(`frame-src ${config?.csp?.frameSrc.join(" ")}`);
   }
 
-  if (config.csp.workerSrc) {
-    directives.push(`worker-src ${config.csp.workerSrc.join(" ")}`);
+  if (config?.csp?.workerSrc) {
+    directives.push(`worker-src ${config?.csp?.workerSrc.join(" ")}`);
+  }
+
+  if (config?.csp?.objectSrc) {
+    directives.push(`object-src ${config?.csp?.objectSrc.join(" ")}`);
   }
 
   // Add security enhancements
@@ -220,8 +224,8 @@ function createCSPHeader(config: SecurityHeadersConfig): string {
   directives.push("block-all-mixed-content");
 
   // Add report URI if configured
-  if (config.csp.reportUri) {
-    directives.push(`report-uri ${config.csp.reportUri}`);
+  if (config?.csp?.reportUri) {
+    directives.push(`report-uri ${config?.csp?.reportUri}`);
   }
 
   return directives.join("; ");
@@ -257,12 +261,12 @@ export function createSecurityHeadersMiddleware(
     }
 
     // Strict-Transport-Security (HSTS)
-    if (config.hsts.maxAge > 0) {
-      let hstsValue = `max-age=${config.hsts.maxAge}`;
-      if (config.hsts.includeSubDomains) {
+    if (config?.hsts?.maxAge > 0) {
+      let hstsValue = `max-age=${config?.hsts?.maxAge}`;
+      if (config?.hsts?.includeSubDomains) {
         hstsValue += "; includeSubDomains";
       }
-      if (config.hsts.preload) {
+      if (config?.hsts?.preload) {
         hstsValue += "; preload";
       }
       res.setHeader("Strict-Transport-Security", hstsValue);
@@ -288,7 +292,7 @@ export function createSecurityHeadersMiddleware(
       logger.debug("Security headers applied", "SECURITY", {
         path: req.path,
         method: req.method,
-        origin: req.headers.origin,
+        origin: req?.headers?.origin,
         ip: req.ip,
       });
     }
@@ -302,10 +306,10 @@ export function createSecurityHeadersMiddleware(
  */
 export function createOriginValidationMiddleware(allowedOrigins: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const origin = req.headers.origin;
+    const origin = req?.headers?.origin;
 
     // Skip validation for same-origin requests or requests without origin
-    if (!origin || req.headers.host === new URL(origin).host) {
+    if (!origin || req?.headers?.host === new URL(origin).host) {
       return next();
     }
 
@@ -361,11 +365,11 @@ export function applySecurityHeaders(
 
   // Optional: Apply origin validation for extra security
   if (process.env.STRICT_ORIGIN_CHECK === "true") {
-    app.use(createOriginValidationMiddleware(config.cors.origins));
+    app.use(createOriginValidationMiddleware(config?.cors?.origins));
   }
 
   logger.info("Security headers middleware initialized", "SECURITY", {
-    corsOrigins: config.cors.origins.length,
+    corsOrigins: config?.cors?.origins?.length || 0,
     environment: process.env.NODE_ENV,
     strictOriginCheck: process.env.STRICT_ORIGIN_CHECK === "true",
   });
@@ -435,7 +439,7 @@ export function testSecurityHeaders(headers: Record<string, string>): {
   }
 
   return {
-    passed: issues.length === 0,
+    passed: (issues?.length || 0) === 0,
     issues,
   };
 }

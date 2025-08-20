@@ -1,6 +1,42 @@
 import React from "react";
-import { api } from "../../../lib/trpc.js";
+import { api } from "../../lib/api";
 import "./Dashboard.css";
+// Note: Removed non-existent imports for utils/logger and api-error-handler
+
+interface ApiAgent {
+  name?: string;
+  type?: string;
+  status?: 'active' | 'idle' | 'busy';
+  specialty?: string;
+  description?: string;
+}
+
+interface AgentStatsResponse {
+  agents?: ApiAgent[];
+  activeAgents?: number;
+  totalAgents?: number;
+}
+
+interface ConversationStatsResponse {
+  totalMessages?: number;
+  totalConversations?: number;
+}
+
+interface RagStatsResponse {
+  documentCount?: number;
+  totalDocuments?: number;
+  chunksCount?: number;
+  totalChunks?: number;
+}
+
+interface HealthResponse {
+  status?: string;
+  services?: {
+    ollama?: {
+      status?: string;
+    };
+  };
+}
 
 interface StatsCardProps {
   title: string;
@@ -42,10 +78,44 @@ const AgentCard: React.FC<AgentCardProps> = ({ name, status, specialty }) => (
 );
 
 export const Dashboard: React.FC = () => {
-  const { data: health } = (api.health as any).status.useQuery();
-  const { data: agentStats } = (api.agent as any).list.useQuery();
-  const { data: conversationStats } = (api.chat as any).stats.useQuery();
-  const { data: ragStats } = (api.rag as any).stats.useQuery();
+  // Fix: Use correct tRPC endpoint calls with graceful error handling
+  const { data: health, error: healthError } = api?.health?.status?.useQuery?.(undefined, {
+    retry: false,
+    staleTime: 30000
+  }) || { data: null as HealthResponse | null, error: null };
+  
+  // Safely handle optional agent queries
+  const { data: agentStats, error: agentError } = (api as any)?.agent?.list?.useQuery?.(undefined, {
+    retry: false,
+    staleTime: 30000
+  }) || { data: null as AgentStatsResponse | null, error: null };
+  
+  const { data: conversationStats, error: chatError } = api?.chat?.stats?.useQuery?.(undefined, {
+    retry: false,
+    staleTime: 30000
+  }) || { data: null as ConversationStatsResponse | null, error: null };
+  
+  // Safely handle optional rag queries  
+  const { data: ragStats, error: ragError } = (api as any)?.rag?.stats?.useQuery?.(undefined, {
+    retry: false,
+    staleTime: 30000
+  }) || { data: null as RagStatsResponse | null, error: null };
+
+  // Handle API errors with graceful degradation
+  React.useEffect(() => {
+    if (healthError) {
+      console.warn('Health API error:', healthError.message);
+    }
+    if (agentError) {
+      console.warn('Agent API error:', agentError.message);
+    }
+    if (chatError) {
+      console.warn('Chat API error:', chatError.message);
+    }
+    if (ragError) {
+      console.warn('RAG API error:', ragError.message);
+    }
+  }, [healthError, agentError, chatError, ragError]);
 
   const stats = [
     {
@@ -70,7 +140,8 @@ export const Dashboard: React.FC = () => {
       ),
       description: conversationStats?.totalMessages
         ? `${conversationStats.totalMessages} total`
-        : "in conversations",
+        : chatError ? "Service temporarily unavailable" : "in conversations",
+      error: chatError,
     },
     {
       title: "Active Agents",
@@ -94,11 +165,12 @@ export const Dashboard: React.FC = () => {
       ),
       description: agentStats?.totalAgents
         ? `${agentStats.totalAgents} agents total`
-        : "agents available",
+        : agentError ? "Service temporarily unavailable" : "agents available",
+      error: agentError,
     },
     {
       title: "Documents Processed",
-      value: ragStats?.documentCount || 0,
+      value: ragStats?.documentCount || ragStats?.totalDocuments || 0,
       icon: (
         <svg
           width="20"
@@ -144,9 +216,10 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: ragStats?.chunksCount
-        ? `${ragStats.chunksCount} chunks indexed`
-        : "in knowledge base",
+      description: ragStats?.chunksCount || ragStats?.totalChunks
+        ? `${ragStats?.chunksCount || ragStats?.totalChunks} chunks indexed`
+        : ragError ? "Service temporarily unavailable" : "in knowledge base",
+      error: ragError,
     },
     {
       title: "Conversations",
@@ -198,38 +271,54 @@ export const Dashboard: React.FC = () => {
       ),
       description: conversationStats?.totalConversations
         ? `${conversationStats.totalConversations} total`
-        : "total created",
+        : chatError ? "Service temporarily unavailable" : "total created",
+      error: chatError,
     },
   ];
 
   // Get agent list from real data or fallback to known agents
-  const availableAgents = agentStats?.agents || [
-    {
-      name: "Research Agent",
-      status: "active" as const,
-      specialty: "Information Gathering",
-    },
-    {
-      name: "Code Agent",
-      status: "idle" as const,
-      specialty: "Code Generation",
-    },
-    {
-      name: "Data Analysis Agent",
-      status: "busy" as const,
-      specialty: "Data Processing",
-    },
-    {
-      name: "Writer Agent",
-      status: "active" as const,
-      specialty: "Content Creation",
-    },
-  ];
+  const availableAgents = React.useMemo(() => {
+    if (agentStats?.agents && Array.isArray(agentStats.agents)) {
+      return agentStats.agents.map((agent: ApiAgent) => ({
+        name: agent.name || agent.type || 'Unknown Agent',
+        status: (agent.status === 'active' || agent.status === 'idle' || agent.status === 'busy') ? agent.status : 'idle' as const,
+        specialty: agent.specialty || agent.description || "General",
+      }));
+    }
+    
+    // Fallback agents when API is unavailable
+    return [
+      {
+        name: "Research Agent",
+        status: "active" as const,
+        specialty: "Information Gathering",
+      },
+      {
+        name: "Code Agent",
+        status: "idle" as const,
+        specialty: "Code Generation",
+      },
+      {
+        name: "Data Analysis Agent",
+        status: "busy" as const,
+        specialty: "Data Processing",
+      },
+      {
+        name: "Writer Agent",
+        status: "active" as const,
+        specialty: "Content Creation",
+      },
+    ];
+  }, [agentStats]);
 
-  const ollamaStatus =
-    health?.services?.ollama || health?.status || "disconnected";
-  const isOllamaConnected =
-    ollamaStatus === "connected" || ollamaStatus === "healthy";
+  const llamaStatus = React.useMemo(() => {
+    if (healthError) return "disconnected";
+    return health?.services?.ollama?.status || health?.status || "disconnected";
+  }, [health, healthError]);
+  
+  const isLlamaConnected = React.useMemo(() => {
+    return llamaStatus === "healthy";
+  }, [llamaStatus]);
 
   return (
     <div className="dashboard">
@@ -242,20 +331,32 @@ export const Dashboard: React.FC = () => {
 
       <div className="dashboard-content">
         <div className="stats-grid">
-          {stats.map((stat, index) => (
-            <StatsCard key={index} {...stat} />
+          {stats?.map((stat, index) => (
+            <div key={index} className={`stats-card ${stat.error ? 'stats-card--error' : ''}`}>
+              <div className="stats-header">
+                <div className="stats-icon">{stat.icon}</div>
+                <span className="stats-title">{stat.title}</span>
+                {stat.error && (
+                  <span className="stats-error-indicator" title={`API Error: ${stat.error.message}`}>
+                    ⚠️
+                  </span>
+                )}
+              </div>
+              <div className="stats-value">{stat.value}</div>
+              <div className="stats-description">{stat.description}</div>
+            </div>
           ))}
         </div>
 
         <div className="dashboard-sections">
-          <div className="ollama-status-section">
-            <h2>Ollama Status</h2>
+          <div className="llama-status-section">
+            <h2>Llama.cpp Status</h2>
             <div
-              className={`ollama-status ${isOllamaConnected ? "connected" : "offline"}`}
+              className={`llama-status ${isLlamaConnected ? "connected" : "offline"}`}
             >
               <div className="status-indicator"></div>
               <span className="status-text">
-                {isOllamaConnected ? "Connected" : "Offline"}
+                {isLlamaConnected ? "Connected" : "Offline"}
               </span>
             </div>
           </div>
@@ -263,15 +364,15 @@ export const Dashboard: React.FC = () => {
           <div className="agents-section">
             <h2>Available Agents</h2>
             <div className="agent-grid">
-              {availableAgents.map((agent: any, index: number) => (
+              {availableAgents?.map((agent: any, index: number) => (
                 <AgentCard key={index} {...agent} />
               ))}
             </div>
             <p className="agents-count">
               {agentStats?.activeAgents ||
-                availableAgents.filter((a: any) => a.status === "active")
+                availableAgents?.filter((a: any) => a.status === "active")
                   .length}{" "}
-              of {agentStats?.totalAgents || availableAgents.length} agents
+              of {agentStats?.totalAgents || availableAgents?.length || 0} agents
               available
             </p>
           </div>

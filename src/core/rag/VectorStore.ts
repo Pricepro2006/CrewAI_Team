@@ -7,7 +7,8 @@ import type {
   VectorStoreConfig,
   ProcessedDocument,
 } from "./types.js";
-import type { DocumentMetadata } from "../shared/types.js";
+// Note: DocumentMetadata is now defined in local types.ts
+import { logger } from "../../utils/logger.js";
 
 export class VectorStore {
   private client: ChromaClient;
@@ -18,25 +19,26 @@ export class VectorStore {
   constructor(config: VectorStoreConfig) {
     this.config = config;
 
-    // Check if path is a URL or file path and configure accordingly
-    const chromaPath = config.path || "http://localhost:8001";
+    // Always use HTTP for ChromaDB connection in 2025+ versions
+    const chromaUrl = config.baseUrl || config.path || "http://localhost:8000";
     const clientConfig: any = {};
 
-    if (chromaPath.startsWith("http")) {
-      // HTTP URL - use as-is
-      clientConfig.path = chromaPath;
+    // Ensure we're using HTTP URL format
+    if (chromaUrl.startsWith("http")) {
+      clientConfig.path = chromaUrl;
     } else {
-      // File path - this will fail in 2025 versions, fallback to HTTP
-      console.warn(
-        "ChromaDB file path configuration is deprecated. Falling back to HTTP.",
+      // Legacy file path - convert to HTTP
+      logger.warn(
+        "ChromaDB file path configuration is deprecated. Using HTTP URL instead.",
+        "VECTOR_STORE"
       );
-      clientConfig.path = "http://localhost:8001";
+      clientConfig.path = "http://localhost:8000";
     }
 
     this.client = new ChromaClient(clientConfig);
 
     this.embeddingService = new EmbeddingService({
-      model: MODEL_CONFIG.models.embedding,
+      model: MODEL_CONFIG?.models?.embedding,
       baseUrl: config.baseUrl || "http://localhost:11434",
     });
   }
@@ -85,24 +87,24 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    if (documents.length === 0) return;
+    if (!documents || documents.length === 0) return;
 
     // Generate embeddings
     const embeddings = await this.embeddingService.embedBatch(
-      documents.map((d) => d.content),
+      documents?.map((d: any) => d.content),
     );
 
     // Prepare data for ChromaDB
-    const ids = documents.map((d) => d.id);
-    const metadatas = documents.map((d) => ({
+    const ids = documents?.map((d: any) => d.id);
+    const metadatas = documents?.map((d: any) => ({
       ...d.metadata,
-      content_length: d.content.length,
+      content_length: d?.content?.length ?? 0,
       indexed_at: new Date().toISOString(),
     }));
-    const contents = documents.map((d) => d.content);
+    const contents = documents?.map((d: any) => d.content);
 
     // Add to collection
-    await this.collection.add({
+    await this.collection!.add({
       ids,
       embeddings,
       metadatas: metadatas as any[], // ChromaDB type mismatch
@@ -119,7 +121,7 @@ export class VectorStore {
     const queryEmbedding = await this.embeddingService.embed(query);
 
     // Search in collection
-    const results = await this.collection.query({
+    const results = await this.collection!.query({
       queryEmbeddings: [queryEmbedding],
       nResults: limit,
       include: ["metadatas", "documents", "distances"] as any,
@@ -142,7 +144,7 @@ export class VectorStore {
     // Convert filter to ChromaDB where clause
     const whereClause = this.buildWhereClause(filter);
 
-    const results = await this.collection.query({
+    const results = await this.collection!.query({
       queryEmbeddings: [queryEmbedding],
       nResults: limit,
       where: whereClause,
@@ -158,12 +160,12 @@ export class VectorStore {
     }
 
     try {
-      const result = await this.collection.get({
+      const result = await this.collection!.get({
         ids: [documentId],
         include: ["metadatas", "documents"] as any,
       });
 
-      if (result.ids.length === 0) {
+      if (result?.ids?.length === 0) {
         return null;
       }
 
@@ -172,9 +174,9 @@ export class VectorStore {
         id: result.ids[0] || "",
         content: result.documents?.[0] || "",
         metadata: {
-          sourceId: metadata.sourceId || result.ids[0] || "",
+          sourceId: String(metadata.sourceId || result.ids[0] || ""),
           ...metadata,
-        } as DocumentMetadata,
+        },
       };
     } catch (error) {
       console.error("Failed to get document:", error);
@@ -188,13 +190,13 @@ export class VectorStore {
     }
 
     // Find all chunks for this source
-    const results = await this.collection.get({
+    const results = await this.collection!.get({
       where: { sourceId },
       include: ["ids"] as any,
     });
 
-    if (results.ids.length > 0) {
-      await this.collection.delete({
+    if (results?.ids?.length && results.ids.length > 0) {
+      await this.collection!.delete({
         ids: results.ids,
       });
     }
@@ -209,20 +211,21 @@ export class VectorStore {
     }
 
     // Note: ChromaDB doesn't have native pagination, so we get all and slice
-    const results = await this.collection.get({
+    const results = await this.collection!.get({
       include: ["metadatas", "documents"] as any,
     });
 
     const documents: Document[] = [];
-    for (let i = 0; i < results.ids.length; i++) {
+    const idsLength = results?.ids?.length ?? 0;
+    for (let i = 0; i < idsLength; i++) {
       const metadata = results.metadatas?.[i] || {};
       documents.push({
-        id: results.ids[i] || "",
+        id: results.ids![i] || "",
         content: results.documents?.[i] || "",
         metadata: {
-          sourceId: metadata.sourceId || results.ids[i] || "",
+          sourceId: String(metadata.sourceId || results.ids![i] || ""),
           ...metadata,
-        } as DocumentMetadata,
+        },
       });
     }
 
@@ -241,7 +244,7 @@ export class VectorStore {
 
     // Get unique source IDs
     const sourceIds = new Set(
-      results.metadatas?.map((m) => m?.sourceId).filter(Boolean) || [],
+      results.metadatas?.map((m: any) => m?.sourceId).filter(Boolean) || [],
     );
 
     return sourceIds.size;
@@ -256,12 +259,12 @@ export class VectorStore {
       include: [],
     });
 
-    return results.ids.length;
+    return results?.ids?.length ?? 0;
   }
 
   async getCollections(): Promise<string[]> {
     const collections = await this.client.listCollections();
-    return collections.map((c: any) => c.name);
+    return collections?.map((c: any) => c.name) || [];
   }
 
   async clear(): Promise<void> {
@@ -281,7 +284,7 @@ export class VectorStore {
   private formatResults(chromaResults: any): QueryResult[] {
     const results: QueryResult[] = [];
 
-    if (!chromaResults.ids || chromaResults.ids.length === 0) {
+    if (!chromaResults.ids || !chromaResults.ids[0] || chromaResults.ids[0].length === 0) {
       return results;
     }
 
@@ -292,8 +295,8 @@ export class VectorStore {
         content: chromaResults.documents?.[0]?.[i] || "",
         metadata: {
           ...metadata,
-          sourceId: metadata.sourceId || "",
-        } as DocumentMetadata,
+          sourceId: String(metadata.sourceId || ""),
+        },
         score: chromaResults.distances?.[0]?.[i]
           ? 1 - chromaResults.distances[0][i] // Convert distance to similarity score
           : 0,

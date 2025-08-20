@@ -1,5 +1,25 @@
-import type { Document, DocumentMetadata } from "../shared/types.js";
-export type { Document, DocumentMetadata };
+// Base document types for RAG system
+export interface Document {
+  id: string;
+  content: string;
+  metadata: DocumentMetadata;
+}
+
+export interface DocumentMetadata {
+  sourceId: string;
+  title?: string;
+  category?: string;
+  fileName?: string;
+  filePath?: string;
+  chunkIndex?: number;
+  totalChunks?: number;
+  chunkSize?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  indexed?: string;
+  contentLength?: number;
+  [key: string]: unknown;
+}
 
 export interface ProcessedDocument extends Document {
   embedding?: number[];
@@ -18,7 +38,7 @@ export interface RAGConfig {
 }
 
 export interface VectorStoreConfig {
-  type: "chromadb" | "pinecone" | "weaviate" | "qdrant" | "mcp-vectorize";
+  type: "chromadb" | "pinecone" | "weaviate" | "qdrant" | "mcp-vectorize" | "adaptive" | "resilient";
   path?: string;
   baseUrl?: string;
   apiKey?: string;
@@ -88,6 +108,10 @@ export interface RAGStats {
   totalDocuments: number;
   totalChunks: number;
   averageChunkSize: number;
+  averageChunksPerDocument: number;
+  vectorStoreType: string;
+  embeddingModel: string;
   collections: string[];
   lastUpdated?: string;
+  fallbackMode?: boolean;
 }

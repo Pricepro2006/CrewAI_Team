@@ -259,12 +259,12 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
 
   // Get available transitions for current status
   const availableTransitions = useMemo(() => {
-    return STATUS_TRANSITIONS.filter((transition) => {
+    return STATUS_TRANSITIONS?.filter((transition: any) => {
       const hasValidFrom = transition.from === emailData.currentStatus;
       const hasPermission =
         !transition.permissions ||
-        transition.permissions.some((permission) =>
-          currentUser.permissions.includes(permission),
+        transition?.permissions?.some((permission: any) =>
+          currentUser?.permissions?.includes(permission),
         );
       return hasValidFrom && hasPermission;
     });
@@ -370,7 +370,7 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
             <span
               className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(emailData.priority)}`}
             >
-              {emailData.priority.toUpperCase()}
+              {emailData?.priority?.toUpperCase()}
             </span>
           </div>
 
@@ -415,13 +415,13 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
       </div>
 
       {/* Status Transitions */}
-      {availableTransitions.length > 0 && (
+      {availableTransitions?.length || 0 > 0 && (
         <div className="p-4">
           <h4 className="text-sm font-medium text-gray-900 mb-3">
             Available Actions
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {availableTransitions.map((transition) => (
+            {availableTransitions?.map((transition: any) => (
               <button
                 key={`${transition.from}_to_${transition.to}`}
                 onClick={() => handleTransitionSelect(transition)}
@@ -440,7 +440,7 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
                     {transition.label}
                   </div>
                   <div className="text-xs text-gray-500">
-                    → {STATUS_CONFIG[transition.to].label}
+                    → {STATUS_CONFIG[transition.to as EmailStatus].label}
                     {transition.requiresComment && " (requires comment)"}
                   </div>
                 </div>
@@ -451,7 +451,7 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
       )}
 
       {/* Recent History Preview */}
-      {!showHistory && emailData.statusHistory.length > 0 && (
+      {!showHistory && emailData?.statusHistory?.length > 0 && (
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-medium text-gray-900">
@@ -461,11 +461,11 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
               onClick={() => setShowHistory(true)}
               className="text-sm text-blue-600 hover:text-blue-700"
             >
-              View All ({emailData.statusHistory.length})
+              View All ({emailData?.statusHistory?.length})
             </button>
           </div>
           <div className="space-y-2">
-            {emailData.statusHistory.slice(0, 3).map((entry) => (
+            {emailData?.statusHistory?.slice(0, 3).map((entry: any) => (
               <div
                 key={entry.id}
                 className="flex items-center space-x-3 text-sm"
@@ -480,9 +480,9 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
                   <span className="text-gray-600"> changed status to </span>
                   <span
                     className="font-medium"
-                    style={{ color: STATUS_CONFIG[entry.toStatus].color }}
+                    style={{ color: STATUS_CONFIG[entry.toStatus as EmailStatus].color }}
                   >
-                    {STATUS_CONFIG[entry.toStatus].label}
+                    {STATUS_CONFIG[entry.toStatus as EmailStatus].label}
                   </span>
                   <div className="text-gray-500">
                     {formatTimestamp(entry.timestamp).relative}
@@ -509,8 +509,8 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
             </button>
           </div>
           <div className="space-y-4">
-            {emailData.statusHistory.map((entry, index) => {
-              const isLast = index === emailData.statusHistory.length - 1;
+            {emailData?.statusHistory?.map((entry, index) => {
+              const isLast = index === emailData?.statusHistory?.length - 1;
               return (
                 <div key={entry.id} className="relative">
                   {!isLast && (
@@ -614,7 +614,7 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
                 </label>
                 <textarea
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  onChange={(e: any) => setComment(e?.target?.value)}
                   placeholder="Enter a comment explaining this status change..."
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"

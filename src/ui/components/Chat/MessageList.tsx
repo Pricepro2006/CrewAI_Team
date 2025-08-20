@@ -41,7 +41,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         const parts = line.split("**");
         return (
           <p key={i}>
-            {parts.map((part, j) =>
+            {parts?.map((part, j) =>
               j % 2 === 1 ? <strong key={j}>{part}</strong> : part,
             )}
           </p>
@@ -63,7 +63,7 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   return (
     <div className="message-list">
-      {messages.map((message, index) => (
+      {messages?.map((message, index) => (
         <div key={index} className={`message message-${message.role}`}>
           <div className="message-role">
             {message.role === "user"

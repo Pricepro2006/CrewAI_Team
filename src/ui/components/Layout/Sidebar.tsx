@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <path
             d="M3 13H11V3H3V13ZM3 21H11V15H3V21ZM13 21H21V11H13V21ZM13 3V9H21V3H13Z"
@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <path
             d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <path
             d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
@@ -107,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <path
             d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z"
@@ -135,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <path
             d="M3 3H5L5.4 5M7 13H17L21 5H5.4M7 13L5.4 5M7 13L4.7 15.3C4.3 15.7 4.6 16.5 5.1 16.5H17M17 13V17C17 17.6 17.4 18 18 18C18.6 18 19 17.6 19 17V13M9 19.5C9.8 19.5 10.5 20.2 10.5 21S9.8 22.5 9 22.5 7.5 21.8 7.5 21 8.2 19.5 9 19.5ZM20 19.5C20.8 19.5 21.5 20.2 21.5 21S20.8 22.5 20 22.5 18.5 21.8 18.5 21 19.2 19.5 20 19.5Z"
@@ -156,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <path
             d="M21 12C21 16.97 16.97 21 12 21S3 16.97 3 12S7.03 3 12 3S21 7.03 21 12Z"
@@ -187,7 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <path
             d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M7 3.5A2.5 2.5 0 0 1 9.5 1H12.5A2.5 2.5 0 0 1 15 3.5V19.5A2.5 2.5 0 0 1 12.5 22H9.5A2.5 2.5 0 0 1 7 19.5V3.5Z"
@@ -208,7 +208,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
           <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" />
@@ -226,7 +226,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          xmlns="http://www?.w3?.org/2000/svg"
         >
           <path
             d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
@@ -264,7 +264,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+            xmlns="http://www?.w3?.org/2000/svg"
           >
             <path
               d="M3 12H21M3 6H21M3 18H21"
@@ -278,13 +278,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
       </div>
 
       <nav className="sidebar-nav">
-        {navItems.map((item) => {
-          const hasSubmenu = item.submenu && item.submenu.length > 0;
+        {navItems?.map((item: any) => {
+          const hasSubmenu = item.submenu && item?.submenu?.length > 0;
           const isExpanded = expandedItems.includes(
-            item.label.toLowerCase().replace(/\s+/g, "-"),
+            item?.label?.toLowerCase().replace(/\s+/g, "-"),
           );
           const isActive = hasSubmenu
-            ? item.submenu.some((sub) => location.pathname === sub.path)
+            ? item?.submenu?.some((sub: any) => location.pathname === sub.path)
             : location.pathname === item.path;
 
           // Remove submenu rendering logic since we don't have submenus anymore

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { UnifiedCacheManager } from '../UnifiedCacheManager.js';
+import { UnifiedCacheManager } from '../UnifiedCacheManager';
 
 // Mock the dependencies
-vi.mock('../CentralizedCacheService.js', () => ({
+vi.mock('../CentralizedCacheService', () => ({
   CentralizedCacheService: vi.fn().mockImplementation(() => ({
     set: vi.fn().mockResolvedValue(undefined),
     get: vi.fn().mockResolvedValue({ found: false, value: null, tier: null, latency: 10 }),
@@ -40,7 +40,7 @@ vi.mock('../CentralizedCacheService.js', () => ({
   }
 }));
 
-vi.mock('../CacheIntegrationService.js', () => ({
+vi.mock('../CacheIntegrationService', () => ({
   CacheIntegrationService: vi.fn().mockImplementation(() => ({
     registerPricingService: vi.fn(),
     registerListService: vi.fn(),
@@ -260,7 +260,7 @@ describe('UnifiedCacheManager', () => {
       middleware(req, res, next);
       
       expect(res.setHeader).toHaveBeenCalledWith('X-Cache-System', 'unified-3tier');
-      expect(res.locals.cacheManager).toBe(cacheManager);
+      expect(res?.locals?.cacheManager).toBe(cacheManager);
       expect(next).toHaveBeenCalled();
     });
   });

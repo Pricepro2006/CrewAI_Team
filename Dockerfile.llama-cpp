@@ -1,0 +1,142 @@
+# Multi-stage build for llama.cpp server
+FROM ubuntu:22.04 AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone and build llama.cpp
+WORKDIR /build
+RUN git clone https://github.com/ggerganov/llama.cpp.git
+WORKDIR /build/llama.cpp
+RUN make -j$(nproc) llama-server
+
+# Production stage
+FROM ubuntu:22.04 AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create app user
+RUN groupadd -r llama && useradd -r -g llama -d /app -s /bin/bash llama
+
+# Create necessary directories
+WORKDIR /app
+RUN mkdir -p /app/models /app/logs /app/bin && \
+    chown -R llama:llama /app
+
+# Copy built binary
+COPY --from=builder /build/llama.cpp/llama-server /app/bin/llama-server
+RUN chmod +x /app/bin/llama-server
+
+# Copy startup script
+COPY <<'EOF' /app/start-llama-server.sh
+#!/bin/bash
+set -e
+
+# Configuration from environment variables
+LLAMA_BIN="/app/bin/llama-server"
+MODELS_DIR="/app/models"
+LOG_DIR="/app/logs"
+MODEL_NAME="${LLAMA_MODEL:-llama-3.2-3b-instruct.Q4_K_M.gguf}"
+PORT="${LLAMA_PORT:-8081}"
+HOST="${LLAMA_HOST:-127.0.0.1}"  # SECURITY: Bind to localhost only
+PROFILE="${LLAMA_PROFILE:-balanced}"
+
+# Create log directory
+mkdir -p "$LOG_DIR"
+
+# Performance profiles optimized for container environment
+case "$PROFILE" in
+    "fast")
+        THREADS=4
+        CONTEXT=2048
+        BATCH=256
+        UBATCH=128
+        PARALLEL=2
+        ;;
+    "balanced")
+        THREADS=8
+        CONTEXT=4096
+        BATCH=512
+        UBATCH=256
+        PARALLEL=4
+        ;;
+    "quality")
+        THREADS=10
+        CONTEXT=8192
+        BATCH=1024
+        UBATCH=512
+        PARALLEL=4
+        ;;
+    "memory")
+        THREADS=6
+        CONTEXT=16384
+        BATCH=2048
+        UBATCH=512
+        PARALLEL=2
+        ;;
+    *)
+        THREADS=8
+        CONTEXT=4096
+        BATCH=512
+        UBATCH=256
+        PARALLEL=4
+        ;;
+esac
+
+# Check if model exists
+MODEL_PATH="${MODELS_DIR}/${MODEL_NAME}"
+if [ ! -f "$MODEL_PATH" ]; then
+    echo "Error: Model not found at $MODEL_PATH"
+    echo "Available models in $MODELS_DIR:"
+    ls -la "$MODELS_DIR" 2>/dev/null || echo "Models directory is empty or not mounted"
+    exit 1
+fi
+
+# Start server with container-optimized settings
+echo "Starting llama.cpp server with profile: $PROFILE"
+echo "  Model: $MODEL_NAME"
+echo "  Threads: $THREADS"
+echo "  Context: $CONTEXT"
+echo "  Port: $PORT"
+
+exec "$LLAMA_BIN" \
+    --model "$MODEL_PATH" \
+    --host $HOST \
+    --port $PORT \
+    --ctx-size $CONTEXT \
+    --threads $THREADS \
+    --threads-batch 2 \
+    --threads-http 2 \
+    --batch-size $BATCH \
+    --ubatch-size $UBATCH \
+    --parallel $PARALLEL \
+    --cont-batching \
+    --metrics \
+    --log-disable 2>&1 | tee -a "${LOG_DIR}/llama-server-$(date +%Y%m%d).log"
+EOF
+
+RUN chmod +x /app/start-llama-server.sh
+
+# Switch to non-root user
+USER llama
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:${LLAMA_PORT:-8081}/health || exit 1
+
+# Expose port
+EXPOSE ${LLAMA_PORT:-8081}
+
+# Start server
+CMD ["/app/start-llama-server.sh"]

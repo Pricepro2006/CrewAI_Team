@@ -173,7 +173,7 @@ export class SqlInjectionProtection {
   private containsSqlInjection(input: string): boolean {
     const normalizedInput = input.toLowerCase().trim();
 
-    return SqlInjectionProtection.SQL_INJECTION_PATTERNS.some((pattern) =>
+    return SqlInjectionProtection.SQL_INJECTION_PATTERNS.some((pattern: any) =>
       pattern.test(normalizedInput),
     );
   }
@@ -279,7 +279,7 @@ export class SqlInjectionProtection {
     }
 
     // Check length
-    if (sanitized.length > 64) {
+    if ((sanitized.length) > 64) {
       // Standard SQL column name limit
       throw new SqlInjectionError("Column name too long");
     }
@@ -331,7 +331,7 @@ export class SqlInjectionProtection {
       );
     }
 
-    if (sanitized.length > 64) {
+    if ((sanitized.length) > 64) {
       throw new SqlInjectionError("Table name too long");
     }
 
@@ -499,7 +499,7 @@ export const DatabaseInputSchemas = {
   ]),
 
   // Complex object validation
-  jsonField: z.string().refine((val) => {
+  jsonField: z.string().refine((val: any) => {
     try {
       JSON.parse(val);
       return true;
@@ -514,7 +514,7 @@ export const DatabaseInputSchemas = {
     .min(1)
     .max(500)
     .trim()
-    .refine((val) => {
+    .refine((val: any) => {
       // Block obviously malicious search terms
       const maliciousPatterns = [
         /union\s+select/i,
@@ -524,7 +524,7 @@ export const DatabaseInputSchemas = {
         /exec\s+/i,
         /script\s*>/i,
       ];
-      return !maliciousPatterns.some((pattern) => pattern.test(val));
+      return !maliciousPatterns.some((pattern: any) => pattern.test(val));
     }, "Search query contains invalid patterns"),
 };
 

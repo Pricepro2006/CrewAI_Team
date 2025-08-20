@@ -36,7 +36,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
 }) => {
   // Process data for chart
   const chartData = useMemo(() => {
-    const labels = data.map((point) => {
+    const labels = data ? data.map((point: any) => {
       const date = new Date(point.timestamp);
       switch (timeRange) {
         case "24h":
@@ -59,12 +59,12 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
         default:
           return date.toLocaleDateString("en-US");
       }
-    });
+    }) : [];
 
     const datasets = [
       {
         label: "Total Emails",
-        data: data.map((point) => point.totalEmails),
+        data: data ? data.map((point: any) => point.totalEmails) : [],
         backgroundColor:
           chartType === "area"
             ? `${CHART_COLORS.primary}20`
@@ -81,7 +81,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
       },
       {
         label: "Completed Emails",
-        data: data.map((point) => point.completedEmails),
+        data: data ? data.map((point: any) => point.completedEmails) : [],
         backgroundColor:
           chartType === "area" ? `${CHART_COLORS.green}20` : CHART_COLORS.green,
         borderColor: CHART_COLORS.green,
@@ -96,7 +96,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
       },
       {
         label: "Critical Emails",
-        data: data.map((point) => point.criticalEmails),
+        data: data ? data.map((point: any) => point.criticalEmails) : [],
         backgroundColor:
           chartType === "area" ? `${CHART_COLORS.red}20` : CHART_COLORS.red,
         borderColor: CHART_COLORS.red,
@@ -114,13 +114,13 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
     // Add processing time dataset if enabled
     if (
       showProcessingTime &&
-      data.some((point) => point.averageProcessingTime !== undefined)
+      data.some((point: any) => point.averageProcessingTime !== undefined)
     ) {
       datasets.push({
         label: "Avg Processing Time (min)",
-        data: data.map((point) =>
+        data: data ? data.map((point: any) =>
           point.averageProcessingTime ? point.averageProcessingTime / 60000 : 0,
-        ),
+        ) : [],
         backgroundColor: CHART_COLORS.secondary,
         borderColor: CHART_COLORS.secondary,
         borderWidth: 2,
@@ -171,7 +171,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
           intersect: false,
           callbacks: {
             title: function (tooltipItems: any[]) {
-              if (tooltipItems.length > 0) {
+              if (tooltipItems && tooltipItems.length > 0) {
                 const dataIndex = tooltipItems[0].dataIndex;
                 const originalData = data[dataIndex];
                 if (originalData) {
@@ -181,8 +181,8 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
               return "";
             },
             label: function (context: any) {
-              const label = context.dataset.label || "";
-              const value = context.parsed.y;
+              const label = context?.dataset?.label || "";
+              const value = context?.parsed?.y;
 
               if (label.includes("Processing Time")) {
                 return `${label}: ${value.toFixed(2)} minutes`;
@@ -190,7 +190,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
               return `${label}: ${value} emails`;
             },
             afterBody: function (tooltipItems: any[]) {
-              if (tooltipItems.length > 0) {
+              if (tooltipItems && tooltipItems.length > 0) {
                 const dataIndex = tooltipItems[0].dataIndex;
                 const originalData = data[dataIndex];
 
@@ -268,9 +268,10 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
     // Add secondary y-axis for processing time if needed
     if (
       showProcessingTime &&
-      data.some((point) => point.averageProcessingTime !== undefined)
+      data && data.some((point: any) => point.averageProcessingTime !== undefined)
     ) {
-      baseOptions.scales.y1 = {
+      if (baseOptions.scales) {
+        baseOptions.scales.y1 = {
         type: "linear" as const,
         display: true,
         position: "right" as const,
@@ -287,7 +288,8 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
           drawOnChartArea: false,
         },
         beginAtZero: true,
-      };
+        };
+      }
     }
 
     return baseOptions;
@@ -295,7 +297,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
 
   // Handle chart click events
   const handleChartClick = (event: any, elements: any[]) => {
-    if (onClick && elements.length > 0) {
+    if (onClick && elements && elements.length > 0) {
       const elementIndex = elements[0].index;
       const dataPoint = data[elementIndex];
       if (dataPoint) {
@@ -306,9 +308,9 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
-    if (data.length === 0) return null;
+    if (!data || data.length === 0) return null;
 
-    const totalEmails = data.reduce((sum, point) => sum + point.totalEmails, 0);
+    const totalEmails = data.reduce((sum: any, point: any) => sum + point.totalEmails, 0);
     const totalCompleted = data.reduce(
       (sum, point) => sum + point.completedEmails,
       0,
@@ -319,14 +321,14 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
     );
 
     const avgProcessingTime =
-      showProcessingTime && data.some((point) => point.averageProcessingTime)
+      showProcessingTime && data.some((point: any) => point.averageProcessingTime)
         ? data
-            .filter((point) => point.averageProcessingTime !== undefined)
+            .filter((point: any) => point.averageProcessingTime !== undefined)
             .reduce(
               (sum, point) => sum + (point.averageProcessingTime || 0),
               0,
             ) /
-          data.filter((point) => point.averageProcessingTime !== undefined)
+          data.filter((point: any) => point.averageProcessingTime !== undefined)
             .length
         : null;
 
@@ -353,7 +355,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <div className="text-sm text-gray-500">{data.length} data points</div>
+          <div className="text-sm text-gray-500">{data ? data.length : 0} data points</div>
         </div>
 
         {/* Summary Statistics */}
@@ -412,7 +414,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
 
       {/* Time Range Selector */}
       <div className="flex justify-center mt-4 space-x-2">
-        {(["24h", "7d", "30d", "90d"] as const).map((range) => (
+        {(["24h", "7d", "30d", "90d"] as const).map((range: any) => (
           <button
             key={range}
             onClick={() => {

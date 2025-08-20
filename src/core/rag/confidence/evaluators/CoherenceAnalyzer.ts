@@ -3,7 +3,7 @@
  * Analyzes response structure, consistency, and readability
  */
 
-import type { TokenConfidence } from "../types.js";
+import type { TokenConfidence } from "../types";
 
 export interface CoherenceResult {
   score: number;
@@ -71,12 +71,12 @@ export class CoherenceAnalyzer {
     // Check for proper sentence structure
     const sentences = response
       .split(/[.!?]+/)
-      .filter((s) => s.trim().length > 0);
+      .filter((s: any) => s.trim().length > 0);
 
-    if (sentences.length === 0) return 0;
+    if (sentences?.length || 0 === 0) return 0;
 
     // Check sentence length distribution
-    const avgSentenceLength = response.length / sentences.length;
+    const avgSentenceLength = response?.length || 0 / sentences?.length || 0;
     if (avgSentenceLength > 10 && avgSentenceLength < 100) {
       score += 0.2; // Good sentence length
     }
@@ -84,8 +84,8 @@ export class CoherenceAnalyzer {
     // Check for paragraph structure (simplified)
     const paragraphs = response
       .split(/\n\s*\n/)
-      .filter((p) => p.trim().length > 0);
-    if (paragraphs.length > 1) {
+      .filter((p: any) => p.trim().length > 0);
+    if (paragraphs?.length || 0 > 1) {
       score += 0.1; // Multiple paragraphs indicate structure
     }
 
@@ -107,7 +107,7 @@ export class CoherenceAnalyzer {
       "as a result",
     ];
 
-    const transitionCount = transitionWords.filter((word) =>
+    const transitionCount = transitionWords?.filter((word: any) =>
       response.toLowerCase().includes(word),
     ).length;
 
@@ -126,7 +126,7 @@ export class CoherenceAnalyzer {
 
     const sentences = response
       .split(/[.!?]+/)
-      .filter((s) => s.trim().length > 0);
+      .filter((s: any) => s.trim().length > 0);
 
     // Check for logical progression markers
     const progressionMarkers = [
@@ -145,7 +145,7 @@ export class CoherenceAnalyzer {
       "while",
     ];
 
-    const hasProgression = progressionMarkers.some((marker) =>
+    const hasProgression = progressionMarkers.some((marker: any) =>
       response.toLowerCase().includes(marker),
     );
 
@@ -167,7 +167,7 @@ export class CoherenceAnalyzer {
       "causes",
     ];
 
-    const hasCausal = causalMarkers.some((marker) =>
+    const hasCausal = causalMarkers.some((marker: any) =>
       response.toLowerCase().includes(marker),
     );
 
@@ -183,7 +183,7 @@ export class CoherenceAnalyzer {
       "despite however",
     ];
 
-    const hasContradictions = contradictionMarkers.some((marker) =>
+    const hasContradictions = contradictionMarkers.some((marker: any) =>
       response.toLowerCase().includes(marker),
     );
 
@@ -206,7 +206,7 @@ export class CoherenceAnalyzer {
     // Check for repetitive language
     const words = response.toLowerCase().split(/\s+/);
     const uniqueWords = new Set(words);
-    const repetitionRatio = uniqueWords.size / words.length;
+    const repetitionRatio = uniqueWords.size / words?.length || 0;
 
     if (repetitionRatio > 0.7) {
       score += 0.1; // Good lexical diversity
@@ -223,11 +223,11 @@ export class CoherenceAnalyzer {
       if (index === 0) return; // Skip first sentence
 
       const sentenceLower = sentence.toLowerCase();
-      const hasPronouns = pronouns.some((pronoun) =>
+      const hasPronouns = pronouns.some((pronoun: any) =>
         sentenceLower.includes(pronoun),
       );
 
-      if (hasPronouns && sentence.length < 50) {
+      if (hasPronouns && sentence?.length || 0 < 50) {
         unclearPronouns++;
       }
     });
@@ -237,10 +237,10 @@ export class CoherenceAnalyzer {
     }
 
     // Factor in token confidence if available
-    if (tokenConfidence && tokenConfidence.length > 0) {
+    if (tokenConfidence && (tokenConfidence?.length || 0) > 0) {
       const avgTokenConfidence =
-        tokenConfidence.reduce((sum, token) => sum + token.confidence, 0) /
-        tokenConfidence.length;
+        tokenConfidence.reduce((sum: any, token: any) => sum + token.confidence, 0) /
+        (tokenConfidence?.length || 1);
       score = score * 0.7 + avgTokenConfidence * 0.3;
     }
 
@@ -256,9 +256,9 @@ export class CoherenceAnalyzer {
     // Extract potential topics/themes
     const sentences = response
       .split(/[.!?]+/)
-      .filter((s) => s.trim().length > 0);
+      .filter((s: any) => s.trim().length > 0);
 
-    if (sentences.length < 2) return score;
+    if (sentences?.length || 0 < 2) return score;
 
     // Look for topic shifts (simplified approach)
     const topicWords = this.extractTopicWords(response);
@@ -266,16 +266,16 @@ export class CoherenceAnalyzer {
     // Check if response maintains focus on key topics
     const firstSentenceWords = this.extractTopicWords(sentences[0] || "");
     const lastSentenceWords = this.extractTopicWords(
-      sentences[sentences.length - 1] || "",
+      sentences[sentences?.length || 0 - 1] || "",
     );
 
     // Calculate topic overlap between beginning and end
-    const overlap = firstSentenceWords.filter((word) =>
+    const overlap = firstSentenceWords?.filter((word: any) =>
       lastSentenceWords.includes(word),
     );
     const overlapRatio =
-      overlap.length /
-      Math.max(firstSentenceWords.length, lastSentenceWords.length);
+      overlap?.length || 0 /
+      Math.max(firstSentenceWords?.length || 0, lastSentenceWords?.length || 0);
 
     if (overlapRatio > 0.3) {
       score += 0.1; // Good topic consistency
@@ -285,27 +285,27 @@ export class CoherenceAnalyzer {
 
     // Check for abrupt topic changes
     let topicShifts = 0;
-    for (let i = 1; i < sentences.length; i++) {
+    for (let i = 1; i < sentences?.length || 0; i++) {
       const currentWords = this.extractTopicWords(sentences[i] || "");
       const prevWords = this.extractTopicWords(sentences[i - 1] || "");
 
-      const sentenceOverlap = currentWords.filter((word) =>
+      const sentenceOverlap = currentWords?.filter((word: any) =>
         prevWords.includes(word),
       );
       const sentenceOverlapRatio =
-        sentenceOverlap.length /
-        Math.max(currentWords.length, prevWords.length);
+        sentenceOverlap?.length || 0 /
+        Math.max(currentWords?.length || 0, prevWords?.length || 0);
 
       if (
         sentenceOverlapRatio < 0.1 &&
-        currentWords.length > 3 &&
-        prevWords.length > 3
+        currentWords?.length || 0 > 3 &&
+        prevWords?.length || 0 > 3
       ) {
         topicShifts++;
       }
     }
 
-    if (topicShifts > sentences.length * 0.3) {
+    if (topicShifts > sentences?.length || 0 * 0.3) {
       score -= 0.3; // Too many topic shifts
     }
 
@@ -318,17 +318,17 @@ export class CoherenceAnalyzer {
   private calculateReadabilityScore(response: string): number {
     const sentences = response
       .split(/[.!?]+/)
-      .filter((s) => s.trim().length > 0);
-    const words = response.split(/\s+/).filter((w) => w.trim().length > 0);
+      .filter((s: any) => s.trim().length > 0);
+    const words = response.split(/\s+/).filter((w: any) => w.trim().length > 0);
 
-    if (sentences.length === 0 || words.length === 0) return 0;
+    if (sentences?.length || 0 === 0 || words?.length || 0 === 0) return 0;
 
     // Calculate average sentence length
-    const avgSentenceLength = words.length / sentences.length;
+    const avgSentenceLength = words?.length || 0 / sentences?.length || 0;
 
     // Calculate average word length
     const avgWordLength =
-      words.reduce((sum, word) => sum + word.length, 0) / words.length;
+      words.reduce((sum: any, word: any) => sum + word?.length || 0, 0) / words?.length || 0;
 
     // Simple readability formula (higher is harder to read)
     const complexity = avgSentenceLength * 0.4 + avgWordLength * 0.6;
@@ -417,7 +417,7 @@ export class CoherenceAnalyzer {
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter((word) => word.length > 3 && !stopWords.has(word))
+      .filter((word: any) => word?.length || 0 > 3 && !stopWords.has(word))
       .slice(0, 10); // Limit to top 10 topic words
   }
 
@@ -488,14 +488,14 @@ export class CoherenceAnalyzer {
       issues.push("Incomplete thoughts or trailing off");
     }
 
-    if (response.split(/[.!?]+/).some((s) => s.trim().length > 200)) {
+    if (response.split(/[.!?]+/).some((s: any) => s.trim().length > 200)) {
       issues.push("Some sentences are too long and complex");
     }
 
     const sentences = response
       .split(/[.!?]+/)
-      .filter((s) => s.trim().length > 0);
-    if (sentences.length > 0 && sentences.some((s) => s.trim().length < 5)) {
+      .filter((s: any) => s.trim().length > 0);
+    if (sentences?.length || 0 > 0 && sentences.some((s: any) => s.trim().length < 5)) {
       issues.push("Some sentences are too short or fragmented");
     }
 

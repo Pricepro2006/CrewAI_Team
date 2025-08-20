@@ -173,46 +173,46 @@ export const walmartGroceryRouter = createFeatureRouter(
           });
 
           // Transform CollectedData to WalmartProduct format
-          const searchResults: WalmartProduct[] = collectedData.map(item => ({
-            id: item.data.id || item.id,
-            walmartId: item.data.id || item.id,
-            upc: item.data.upc,
-            name: item.data.name || item.data.title || '',
-            brand: item.data.brand || '',
+          const searchResults: WalmartProduct[] = collectedData?.map(item => ({
+            id: item?.data?.id || item.id,
+            walmartId: item?.data?.id || item.id,
+            upc: item?.data?.upc,
+            name: item?.data?.name || item?.data?.title || '',
+            brand: item?.data?.brand || '',
             category: {
-              id: item.data.categoryId || '1',
-              name: typeof item.data.category === 'string' ? item.data.category : 'Uncategorized',
-              path: typeof item.data.category === 'string' ? [item.data.category] : ['Uncategorized'],
+              id: item?.data?.categoryId || '1',
+              name: typeof item?.data?.category === 'string' ? item?.data?.category : 'Uncategorized',
+              path: typeof item?.data?.category === 'string' ? [item?.data?.category] : ['Uncategorized'],
               level: 1
             },
-            subcategory: item.data.subcategory,
-            description: item.data.description || '',
-            shortDescription: item.data.shortDescription,
+            subcategory: item?.data?.subcategory,
+            description: item?.data?.description || '',
+            shortDescription: item?.data?.shortDescription,
             price: {
               currency: 'USD',
-              regular: parseFloat(item.data.price) || 0,
-              sale: item.data.originalPrice ? parseFloat(item.data.originalPrice) : undefined,
-              unit: item.data.unitPrice ? parseFloat(item.data.unitPrice) : undefined,
-              unitOfMeasure: item.data.unit || 'each',
-              pricePerUnit: item.data.pricePerUnit,
-              wasPrice: item.data.originalPrice ? parseFloat(item.data.originalPrice) : undefined
+              regular: parseFloat(item?.data?.price) || 0,
+              sale: item?.data?.originalPrice ? parseFloat(item?.data?.originalPrice) : undefined,
+              unit: item?.data?.unitPrice ? parseFloat(item?.data?.unitPrice) : undefined,
+              unitOfMeasure: item?.data?.unit || 'each',
+              pricePerUnit: item?.data?.pricePerUnit,
+              wasPrice: item?.data?.originalPrice ? parseFloat(item?.data?.originalPrice) : undefined
             },
             images: [{
               id: '1',
-              url: item.data.imageUrl || item.data.image || '',
+              url: item?.data?.imageUrl || item?.data?.image || '',
               type: 'primary' as const,
-              alt: item.data.name || item.data.title || ''
+              alt: item?.data?.name || item?.data?.title || ''
             }],
             availability: {
-              inStock: item.data.inStock !== false,
-              stockLevel: item.data.stockLevel ? (item.data.inStock ? ('in_stock' as const) : ('out_of_stock' as const)) : undefined,
-              quantity: item.data.quantity,
-              onlineOnly: item.data.onlineOnly,
-              instoreOnly: item.data.instoreOnly
+              inStock: item?.data?.inStock !== false,
+              stockLevel: item?.data?.stockLevel ? (item?.data?.inStock ? ('in_stock' as const) : ('out_of_stock' as const)) : undefined,
+              quantity: item?.data?.quantity,
+              onlineOnly: item?.data?.onlineOnly,
+              instoreOnly: item?.data?.instoreOnly
             },
-            ratings: item.data.rating ? {
-              average: parseFloat(item.data.rating),
-              count: parseInt(item.data.reviewCount) || 0,
+            ratings: item?.data?.rating ? {
+              average: parseFloat(item?.data?.rating),
+              count: parseInt(item?.data?.reviewCount) || 0,
               distribution: {
                 5: 0,
                 4: 0,
@@ -221,9 +221,9 @@ export const walmartGroceryRouter = createFeatureRouter(
                 1: 0
               }
             } : undefined,
-            nutritionFacts: item.data.nutritionalInfo,
-            ingredients: item.data.ingredients,
-            allergens: item.data.allergens,
+            nutritionFacts: item?.data?.nutritionalInfo,
+            ingredients: item?.data?.ingredients,
+            allergens: item?.data?.allergens,
             metadata: {
               source: 'scrape' as const,
               lastScraped: new Date().toISOString(),
@@ -235,7 +235,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           }));
 
           // Process with MasterOrchestrator for enhanced analysis
-          const processedResults = await ctx.masterOrchestrator.processQuery({
+          const processedResults = await ctx?.masterOrchestrator?.processQuery({
             text: `Analyze these Walmart grocery search results for "${input.query}" and provide recommendations`,
             metadata: {
               searchResults: searchResults,
@@ -245,7 +245,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           });
 
           // Store in RAG system for future reference
-          await ctx.ragSystem.addDocument(
+          await ctx?.ragSystem?.addDocument(
             JSON.stringify({
               query: input.query,
               results: searchResults,
@@ -262,7 +262,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           // Emit real-time update
           walmartEvents.emit("search_completed", {
             query: input.query,
-            resultCount: searchResults.length,
+            resultCount: searchResults?.length || 0,
             timestamp: new Date(),
           });
 
@@ -271,7 +271,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             products: searchResults,
             analysis: processedResults.summary,
             metadata: {
-              totalResults: searchResults.length,
+              totalResults: searchResults?.length || 0,
               searchId: `search-${Date.now()}`,
               cached: false,
             },
@@ -295,12 +295,12 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           // First check RAG cache
-          const cachedData = await ctx.ragSystem.search(
+          const cachedData = await ctx?.ragSystem?.search(
             `walmart product ${input.productId}`,
             1,
           );
 
-          if (cachedData.length > 0 && cachedData[0].score > 0.8) {
+          if (cachedData?.length || 0 > 0 && cachedData[0].score > 0.8) {
             logger.info("Returning cached product data", "WALMART");
             return {
               source: "cache",
@@ -315,7 +315,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             ctx.mcpTools,
           );
 
-          const productUrl = `https://www.walmart.com/ip/${input.productId}`;
+          const productUrl = `https://www?.walmart.com/ip/${input.productId}`;
           const productData = await brightData.collectEcommerceData({
             platform: "walmart",
             productUrl,
@@ -324,8 +324,8 @@ export const walmartGroceryRouter = createFeatureRouter(
           });
 
           // Store in RAG for future use
-          if (productData && productData.length > 0 && productData[0]) {
-            await ctx.ragSystem.addDocument(JSON.stringify(productData[0].data), {
+          if (productData && (productData?.length || 0) > 0 && productData[0]) {
+            await ctx?.ragSystem?.addDocument(JSON.stringify(productData[0].data), {
               id: `walmart-product-${input.productId}`,
               title: `Walmart Product: ${input.productId}`,
               tags: ["walmart", "product", "grocery"],
@@ -336,7 +336,7 @@ export const walmartGroceryRouter = createFeatureRouter(
 
           return {
             source: "fresh",
-            data: productData && productData.length > 0 && productData[0] ? productData[0].data : null,
+            data: productData && (productData?.length || 0) > 0 && productData[0] ? productData[0].data : null,
             timestamp: new Date(),
           };
         } catch (error) {
@@ -357,11 +357,11 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           // Get user's cart from conversation service
-          let cart = await ctx.conversationService.get(`cart-${input.userId}`);
+          let cart = await ctx?.conversationService?.get(`cart-${input.userId}`);
 
           if (!cart) {
-            cart = await ctx.conversationService.create();
-            await ctx.conversationService.updateTitle(
+            cart = await ctx?.conversationService?.create();
+            await ctx?.conversationService?.updateTitle(
               cart.id,
               `Cart for ${input.userId}`,
             );
@@ -393,13 +393,13 @@ export const walmartGroceryRouter = createFeatureRouter(
           }
 
           // Check for applicable deals
-          const dealAnalysis = await ctx.dealDataService.analyzeDealForProducts(
+          const dealAnalysis = await ctx?.dealDataService?.analyzeDealForProducts(
             [input.productId],
             input.userId,
           );
 
           // Update cart in conversation
-          await ctx.conversationService.addMessage(cart.id, {
+          await ctx?.conversationService?.addMessage(cart.id, {
             role: "system",
             content: JSON.stringify({
               type: "cart_update",
@@ -436,33 +436,33 @@ export const walmartGroceryRouter = createFeatureRouter(
       .input(walmartSchemas.dealAnalysis)
       .query(async ({ input, ctx }) => {
         logger.info("Analyzing deals for products", "WALMART", {
-          productCount: input.productIds.length,
+          productCount: input?.productIds?.length,
           dealId: input.dealId,
         });
 
         try {
           // Get product details for all products
-          const productPromises = input.productIds.map(async (productId) => {
-            const cached = await ctx.ragSystem.search(
+          const productPromises = input.productIds?.map(async (productId: any) => {
+            const cached = await ctx?.ragSystem?.search(
               `walmart product ${productId}`,
               1,
             );
-            return cached.length > 0 ? cached[0].content : null;
+            return cached?.length || 0 > 0 ? cached[0].content : null;
           });
 
           const products = await Promise.all(productPromises);
 
           // Analyze with deal service
-          const dealAnalysis = await ctx.dealDataService.analyzeDealForProducts(
+          const dealAnalysis = await ctx?.dealDataService?.analyzeDealForProducts(
             input.productIds,
             input.customerId || "default",
           );
 
           // Process with MasterOrchestrator for recommendations
-          const analysis = await ctx.masterOrchestrator.processQuery({
+          const analysis = await ctx?.masterOrchestrator?.processQuery({
             text: "Analyze these products for deal opportunities and savings",
             metadata: {
-              products: products.filter(Boolean),
+              products: products?.filter(Boolean),
               dealAnalysis,
               customerId: input.customerId,
             },
@@ -525,7 +525,7 @@ export const walmartGroceryRouter = createFeatureRouter(
 
           // Store scraped data
           for (const data of scrapedData) {
-            await ctx.ragSystem.addDocument(JSON.stringify(data.data), {
+            await ctx?.ragSystem?.addDocument(JSON.stringify(data.data), {
               id: data.id,
               title: `Walmart ${input.extractType}: ${input.url}`,
               tags: ["walmart", "scraped", input.extractType],
@@ -538,14 +538,14 @@ export const walmartGroceryRouter = createFeatureRouter(
           walmartEvents.emit("scraping_completed", {
             url: input.url,
             type: input.extractType,
-            recordsCollected: scrapedData.length,
+            recordsCollected: scrapedData?.length || 0,
           });
 
           return {
             success: true,
-            recordsCollected: scrapedData.length,
+            recordsCollected: scrapedData?.length || 0,
             data: scrapedData,
-            message: `Successfully scraped ${scrapedData.length} records`,
+            message: `Successfully scraped ${scrapedData?.length || 0} records`,
           };
         } catch (error) {
           logger.error("Scraping failed", "WALMART", { error });
@@ -564,20 +564,20 @@ export const walmartGroceryRouter = createFeatureRouter(
         }),
       )
       .subscription(({ input }) => {
-        return observable((observer) => {
+        return observable((observer: any) => {
           const handlers: Record<string, (data: any) => void> = {};
 
           // Subscribe to requested events
-          if (input.events.includes("all") || input.events.includes("search")) {
-            handlers.search_completed = (data) => {
+          if (input?.events?.includes("all") || input?.events?.includes("search")) {
+            handlers.search_completed = (data: any) => {
               observer.next({ type: "search_completed", data });
             };
             walmartEvents.on("search_completed", handlers.search_completed);
           }
 
-          if (input.events.includes("all") || input.events.includes("cart")) {
-            handlers.cart_updated = (data) => {
-              if (!input.userId || data.userId === input.userId) {
+          if (input?.events?.includes("all") || input?.events?.includes("cart")) {
+            handlers.cart_updated = (data: any) => {
+              if (!input.userId || data.userId === input.userId || "") {
                 observer.next({ type: "cart_updated", data });
               }
             };
@@ -585,35 +585,35 @@ export const walmartGroceryRouter = createFeatureRouter(
           }
 
           if (
-            input.events.includes("all") ||
-            input.events.includes("scraping")
+            input?.events?.includes("all") ||
+            input?.events?.includes("scraping")
           ) {
-            handlers.scraping_completed = (data) => {
+            handlers.scraping_completed = (data: any) => {
               observer.next({ type: "scraping_completed", data });
             };
             walmartEvents.on("scraping_completed", handlers.scraping_completed);
           }
 
-          if (input.events.includes("all") || input.events.includes("grocery")) {
-            handlers.grocery_input_processed = (data) => {
-              if (!input.userId || data.userId === input.userId) {
+          if (input?.events?.includes("all") || input?.events?.includes("grocery")) {
+            handlers.grocery_input_processed = (data: any) => {
+              if (!input.userId || data.userId === input.userId || "") {
                 observer.next({ type: "grocery_input_processed", data });
               }
             };
             walmartEvents.on("grocery_input_processed", handlers.grocery_input_processed);
           }
 
-          if (input.events.includes("all") || input.events.includes("recommendations")) {
-            handlers.recommendations_generated = (data) => {
-              if (!input.userId || data.userId === input.userId) {
+          if (input?.events?.includes("all") || input?.events?.includes("recommendations")) {
+            handlers.recommendations_generated = (data: any) => {
+              if (!input.userId || data.userId === input.userId || "") {
                 observer.next({ type: "recommendations_generated", data });
               }
             };
             walmartEvents.on("recommendations_generated", handlers.recommendations_generated);
           }
 
-          if (input.events.includes("all") || input.events.includes("totals")) {
-            handlers.totals_calculated = (data) => {
+          if (input?.events?.includes("all") || input?.events?.includes("totals")) {
+            handlers.totals_calculated = (data: any) => {
               observer.next({ type: "totals_calculated", data });
             };
             walmartEvents.on("totals_calculated", handlers.totals_calculated);
@@ -646,13 +646,13 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           // Get user's shopping history from conversations
-          const userHistory = await ctx.conversationService.search(
+          const userHistory = await ctx?.conversationService?.search(
             `cart-${input.userId}`,
             10,
           );
 
           // Analyze with MasterOrchestrator
-          const recommendations = await ctx.masterOrchestrator.processQuery({
+          const recommendations = await ctx?.masterOrchestrator?.processQuery({
             text: "Generate personalized Walmart grocery shopping recommendations",
             metadata: {
               userId: input.userId,
@@ -701,7 +701,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           const receiptId = `receipt-${Date.now()}`;
 
           // Store in RAG system
-          await ctx.ragSystem.addDocument(buffer.toString("utf-8"), {
+          await ctx?.ragSystem?.addDocument(buffer.toString("utf-8"), {
             id: receiptId,
             title: `Walmart Receipt - ${input.userId}`,
             userId: input.userId,
@@ -711,7 +711,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           });
 
           // Analyze with MasterOrchestrator
-          const analysis = await ctx.masterOrchestrator.processQuery({
+          const analysis = await ctx?.masterOrchestrator?.processQuery({
             text: "Analyze this Walmart receipt for spending patterns and savings opportunities",
             metadata: {
               receiptId,
@@ -741,14 +741,14 @@ export const walmartGroceryRouter = createFeatureRouter(
           userId: input.userId,
         });
 
-        const listsResult = await dbCtx.safeDb.select(
+        const listsResult = await dbCtx?.safeDb?.select(
           'grocery_lists',
           ['id', 'user_id', 'name', 'description', 'estimated_total', 'created_at', 'updated_at'],
           'user_id = ?',
           [input.userId]
         );
 
-        if (listsResult.warnings.length > 0) {
+        if (listsResult?.warnings?.length > 0) {
           logger.warn("Schema warnings in getLists", "WALMART", {
             warnings: listsResult.warnings,
             missingColumns: listsResult.missingColumns
@@ -756,7 +756,7 @@ export const walmartGroceryRouter = createFeatureRouter(
         }
 
         return {
-          lists: listsResult.data.map(list => ({
+          lists: listsResult?.data?.map(list => ({
             id: safeColumnAccess(list, 'id', ''),
             userId: safeColumnAccess(list, 'user_id', input.userId),
             name: safeColumnAccess(list, 'name', 'Unnamed List'),
@@ -787,9 +787,9 @@ export const walmartGroceryRouter = createFeatureRouter(
           updated_at: new Date().toISOString()
         };
 
-        const result = await dbCtx.safeDb.insert('grocery_lists', listData);
+        const result = await dbCtx?.safeDb?.insert('grocery_lists', listData);
 
-        if (result.warnings.length > 0) {
+        if (result?.warnings?.length > 0) {
           logger.warn("Schema warnings in createList", "WALMART", {
             warnings: result.warnings,
             skippedColumns: result.skippedColumns
@@ -797,7 +797,7 @@ export const walmartGroceryRouter = createFeatureRouter(
         }
 
         // Get the created list to return full data
-        const createdLists = await dbCtx.safeDb.select(
+        const createdLists = await dbCtx?.safeDb?.select(
           'grocery_lists',
           ['id', 'user_id', 'name', 'description', 'created_at', 'updated_at'],
           'user_id = ? AND name = ?',
@@ -842,14 +842,14 @@ export const walmartGroceryRouter = createFeatureRouter(
           updateData.description = input.description;
         }
 
-        const result = await dbCtx.safeDb.update(
+        const result = await dbCtx?.safeDb?.update(
           'grocery_lists',
           updateData,
           'id = ?',
           [input.listId]
         );
 
-        if (result.warnings.length > 0) {
+        if (result?.warnings?.length > 0) {
           logger.warn("Schema warnings in updateList", "WALMART", {
             warnings: result.warnings,
             skippedColumns: result.skippedColumns
@@ -875,7 +875,7 @@ export const walmartGroceryRouter = createFeatureRouter(
         const dbCtx = ctx as DatabaseContext;
         logger.info("Deleting grocery list", "WALMART", input);
 
-        const result = await dbCtx.safeDb.delete(
+        const result = await dbCtx?.safeDb?.delete(
           'grocery_lists',
           'id = ?',
           [input.listId]
@@ -898,13 +898,13 @@ export const walmartGroceryRouter = createFeatureRouter(
       .mutation(async ({ input, ctx }) => {
         logger.info("Adding items to list", "WALMART", {
           listId: input.listId,
-          itemCount: input.items.length,
+          itemCount: input?.items?.length,
         });
 
         try {
           const walmartService = WalmartGroceryService.getInstance();
           // Transform input items to match CartItem interface
-          const cartItems = input.items.map(item => ({
+          const cartItems = input?.items?.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
             listId: input.listId,
@@ -934,7 +934,7 @@ export const walmartGroceryRouter = createFeatureRouter(
         const dbCtx = ctx as DatabaseContext;
         logger.info("Removing item from list", "WALMART", input);
 
-        const result = await dbCtx.safeDb.delete(
+        const result = await dbCtx?.safeDb?.delete(
           'grocery_items',
           'id = ? AND list_id = ?',
           [input.itemId, input.listId]
@@ -985,7 +985,7 @@ export const walmartGroceryRouter = createFeatureRouter(
 
           return {
             orders: mockOrders,
-            totalCount: mockOrders.length,
+            totalCount: mockOrders?.length || 0,
           };
         } catch (error) {
           logger.error("Failed to fetch orders", "WALMART", { error });
@@ -1038,7 +1038,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           const orderNumber = `WM${Date.now()}`;
 
           // Calculate totals
-          const subtotal = input.items.reduce(
+          const subtotal = input?.items?.reduce(
             (sum, item) => sum + item.price * item.quantity,
             0,
           );
@@ -1274,9 +1274,9 @@ export const walmartGroceryRouter = createFeatureRouter(
           return {
             productId: input.productId,
             history: history.reverse(),
-            lowestPrice: Math.min(...history.map(h => h.price)),
-            highestPrice: Math.max(...history.map(h => h.price)),
-            averagePrice: history.reduce((sum, h) => sum + h.price, 0) / history.length,
+            lowestPrice: Math.min(...history?.map(h => h.price)),
+            highestPrice: Math.max(...history?.map(h => h.price)),
+            averagePrice: history.reduce((sum: any, h: any) => sum + h.price, 0) / history?.length || 0,
           };
         } catch (error) {
           logger.error("Failed to fetch price history", "WALMART", { error });
@@ -1300,7 +1300,7 @@ export const walmartGroceryRouter = createFeatureRouter(
         logger.info("Processing grocery input", "WALMART", {
           conversationId: input.conversationId,
           userId: input.userId,
-          inputLength: input.input.length,
+          inputLength: input?.input?.length,
         });
 
         try {
@@ -1312,9 +1312,9 @@ export const walmartGroceryRouter = createFeatureRouter(
             input.userId,
             input.input,
             input.location ? {
-              zipCode: input.location.zipCode,
-              city: input.location.city,
-              state: input.location.state
+              zipCode: input?.location?.zipCode,
+              city: input?.location?.city,
+              state: input?.location?.state
             } : undefined
           );
 
@@ -1323,7 +1323,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             conversationId: input.conversationId,
             userId: input.userId,
             listTotal: result.list?.estimatedTotal || 0,
-            itemCount: result.list?.items.length || 0,
+            itemCount: result.list?.items?.length || 0 || 0,
             timestamp: new Date(),
           });
 
@@ -1331,13 +1331,13 @@ export const walmartGroceryRouter = createFeatureRouter(
             success: true,
             response: result.response,
             groceryList: result.list ? {
-              items: result.list.items,
-              subtotal: result.list.runningTotal,
-              estimatedTax: result.list.estimatedTax,
-              total: result.list.estimatedTotal,
-              savings: result.list.savings,
-              itemCount: result.list.items.length,
-              deliveryEligible: result.list.runningTotal >= 35,
+              items: result?.list?.items,
+              subtotal: result?.list?.runningTotal,
+              estimatedTax: result?.list?.estimatedTax,
+              total: result?.list?.estimatedTotal,
+              savings: result?.list?.savings,
+              itemCount: result?.list?.items?.length || 0,
+              deliveryEligible: result?.list?.runningTotal >= 35,
               deliveryThreshold: 35,
             } : null,
             suggestions: result.suggestions || [],
@@ -1372,13 +1372,13 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           // Get user's order history from conversation service and RAG system
-          const orderHistory = await ctx.conversationService.search(
+          const orderHistory = await ctx?.conversationService?.search(
             `orders-${input.userId}`,
             input.limit * 2 // Get more to filter properly
           );
 
           // Search RAG for saved receipts and purchase data
-          const purchaseData = await ctx.ragSystem.search(
+          const purchaseData = await ctx?.ragSystem?.search(
             `walmart receipt purchase user:${input.userId}`,
             input.limit
           );
@@ -1431,40 +1431,42 @@ export const walmartGroceryRouter = createFeatureRouter(
           }).filter(p => p.date >= startDate);
 
           let patterns = null;
-          if (input.includePatterns && purchases.length > 0) {
+          if (input.includePatterns && purchases?.length || 0 > 0) {
             // Calculate purchase patterns
             const categoryFrequency = purchases
               .flatMap(p => p.items)
-              .reduce((acc, item) => {
-                acc[item.category] = (acc[item.category] || 0) + item.quantity;
+              .reduce((acc: any, item: any) => {
+                const category = item.category || 'Unknown';
+                acc[category] = (acc[category] || 0) + item.quantity;
                 return acc;
               }, {} as Record<string, number>);
 
             const productFrequency = purchases
               .flatMap(p => p.items)
-              .reduce((acc, item) => {
-                acc[item.name] = (acc[item.name] || 0) + item.quantity;
+              .reduce((acc: any, item: any) => {
+                const name = item.name || 'Unknown Product';
+                acc[name] = (acc[name] || 0) + item.quantity;
                 return acc;
               }, {} as Record<string, number>);
 
-            const avgOrderValue = purchases.reduce((sum, p) => sum + p.total, 0) / purchases.length;
-            const totalSpent = purchases.reduce((sum, p) => sum + p.total, 0);
-            const totalSavings = purchases.reduce((sum, p) => sum + p.savings, 0);
+            const avgOrderValue = purchases.reduce((sum: any, p: any) => sum + p.total, 0) / purchases?.length || 0;
+            const totalSpent = purchases.reduce((sum: any, p: any) => sum + p.total, 0);
+            const totalSavings = purchases.reduce((sum: any, p: any) => sum + p.savings, 0);
 
             patterns = {
               topCategories: Object.entries(categoryFrequency)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([,a], [,b]) => (b as number) - (a as number))
                 .slice(0, 5)
                 .map(([category, count]) => ({ category, count })),
               topProducts: Object.entries(productFrequency)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([,a], [,b]) => (b as number) - (a as number))
                 .slice(0, 10)
                 .map(([product, count]) => ({ product, count })),
               avgOrderValue: Number(avgOrderValue.toFixed(2)),
               totalSpent: Number(totalSpent.toFixed(2)),
               totalSavings: Number(totalSavings.toFixed(2)),
-              orderFrequency: purchases.length / 4, // Orders per week approximation
-              preferredFulfillment: purchases.reduce((acc, p) => {
+              orderFrequency: purchases?.length || 0 / 4, // Orders per week approximation
+              preferredFulfillment: purchases.reduce((acc: any, p: any) => {
                 acc[p.fulfillmentMethod] = (acc[p.fulfillmentMethod] || 0) + 1;
                 return acc;
               }, {} as Record<string, number>),
@@ -1474,13 +1476,13 @@ export const walmartGroceryRouter = createFeatureRouter(
           return {
             purchases: purchases.slice(input.offset, input.offset + input.limit),
             patterns,
-            totalCount: purchases.length,
+            totalCount: purchases?.length || 0,
             timeframe: input.timeframe,
             summary: {
-              totalPurchases: purchases.length,
-              totalSpent: purchases.reduce((sum, p) => sum + p.total, 0),
-              totalSavings: purchases.reduce((sum, p) => sum + p.savings, 0),
-              avgOrderValue: purchases.length > 0 ? purchases.reduce((sum, p) => sum + p.total, 0) / purchases.length : 0,
+              totalPurchases: purchases?.length || 0,
+              totalSpent: purchases.reduce((sum: any, p: any) => sum + p.total, 0),
+              totalSavings: purchases.reduce((sum: any, p: any) => sum + p.savings, 0),
+              avgOrderValue: purchases?.length || 0 > 0 ? purchases.reduce((sum: any, p: any) => sum + p.total, 0) / purchases?.length || 0 : 0,
             },
           };
         } catch (error) {
@@ -1508,19 +1510,19 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           // Get user's purchase history for context
-          const userHistory = await ctx.conversationService.search(
+          const userHistory = await ctx?.conversationService?.search(
             `purchase-${input.userId}`,
             20
           );
 
           // Get user preferences
-          const userPreferences = await ctx.ragSystem.search(
+          const userPreferences = await ctx?.ragSystem?.search(
             `preferences user:${input.userId}`,
             5
           );
 
           // Get current deals
-          const currentDeals = await ctx.dealDataService.analyzeDealForProducts(
+          const currentDeals = await ctx?.dealDataService?.analyzeDealForProducts(
             [], // Empty array to get general deals
             input.userId
           );
@@ -1542,7 +1544,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             
             Focus on: practical everyday items, value for money, and items likely to be needed soon.`;
 
-          const analysis = await ctx.masterOrchestrator.processQuery({
+          const analysis = await ctx?.masterOrchestrator?.processQuery({
             text: recommendationPrompt,
             metadata: {
               userId: input.userId,
@@ -1587,7 +1589,9 @@ export const walmartGroceryRouter = createFeatureRouter(
           const baseRecommendations = contextData[input.context] || contextData.personalized;
           
           for (let i = 0; i < Math.min(input.limit, 12); i++) {
-            const baseItem = baseRecommendations[i % baseRecommendations.length];
+            const baseItem = baseRecommendations[i % baseRecommendations?.length || 0];
+            if (!baseItem) continue;
+            
             mockRecommendations.push({
               id: `rec-${Date.now()}-${i}`,
               productId: `walmart-${Math.random().toString(36).substr(2, 9)}`,
@@ -1599,9 +1603,9 @@ export const walmartGroceryRouter = createFeatureRouter(
               reason: baseItem.reason,
               confidence: 0.8 + Math.random() * 0.2,
               inStock: true,
-              imageUrl: `https://i5.walmartimages.com/asr/placeholder-${i}.jpg`,
+              imageUrl: `https://i5?.walmartimages?.com/asr/placeholder-${i}.jpg`,
               matchScore: Math.random() * 0.3 + 0.7, // 0.7-1.0 range
-              tags: [input.context, baseItem.category.toLowerCase().replace(/\s+/g, '_')],
+              tags: [input.context, baseItem?.category?.toLowerCase().replace(/\s+/g, '_')],
             });
           }
 
@@ -1609,7 +1613,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           walmartEvents.emit("recommendations_generated", {
             userId: input.userId,
             context: input.context,
-            count: mockRecommendations.length,
+            count: mockRecommendations?.length || 0,
             timestamp: new Date(),
           });
 
@@ -1622,14 +1626,14 @@ export const walmartGroceryRouter = createFeatureRouter(
               generatedAt: new Date(),
               algorithm: "hybrid_collaborative_content",
               confidence: 0.85,
-              personalizedScore: userHistory.length > 0 ? 0.9 : 0.6,
-              dealOpportunities: mockRecommendations.filter(r => r.savings > 0).length,
+              personalizedScore: userHistory?.length || 0 > 0 ? 0.9 : 0.6,
+              dealOpportunities: mockRecommendations?.filter(r => r.savings > 0).length,
             },
             budgetAnalysis: input.budget ? {
               budget: input.budget,
-              estimatedSpend: mockRecommendations.reduce((sum, r) => sum + r.price, 0),
-              savingsOpportunity: mockRecommendations.reduce((sum, r) => sum + r.savings, 0),
-              itemsWithinBudget: mockRecommendations.filter(r => r.price <= (input.budget! * 0.1)).length,
+              estimatedSpend: mockRecommendations.reduce((sum: any, r: any) => sum + r.price, 0),
+              savingsOpportunity: mockRecommendations.reduce((sum: any, r: any) => sum + r.savings, 0),
+              itemsWithinBudget: mockRecommendations?.filter(r => r.price <= (input.budget! * 0.1)).length,
             } : null,
           };
         } catch (error) {
@@ -1656,18 +1660,18 @@ export const walmartGroceryRouter = createFeatureRouter(
       }))
       .mutation(async ({ input, ctx }) => {
         logger.info("Calculating list totals", "WALMART", {
-          itemCount: input.items.length,
-          location: input.location.zipCode,
+          itemCount: input?.items?.length,
+          location: input?.location?.zipCode,
         });
 
         try {
           // Calculate base totals
-          const subtotal = input.items.reduce(
+          const subtotal = input?.items?.reduce(
             (sum, item) => sum + (item.price * item.quantity),
             0
           );
 
-          const originalSubtotal = input.items.reduce(
+          const originalSubtotal = input?.items?.reduce(
             (sum, item) => sum + ((item.originalPrice || item.price) * item.quantity),
             0
           );
@@ -1688,7 +1692,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             'VA': 0.053, 'WA': 0.065, 'WV': 0.06, 'WI': 0.05, 'WY': 0.04,
           };
 
-          const taxRate = taxRates[input.location.state.toUpperCase()] || 0.06;
+          const taxRate = taxRates[input?.location?.state.toUpperCase()] || 0.06;
           const tax = subtotal * taxRate;
 
           // Apply promo code discounts (mock)
@@ -1702,7 +1706,7 @@ export const walmartGroceryRouter = createFeatureRouter(
               'FREESHIP': { discount: 0, type: 'fixed', description: 'Free shipping' },
             };
 
-            const promo = promoCodes[input.promoCode.toUpperCase()];
+            const promo = promoCodes[input?.promoCode?.toUpperCase()];
             if (promo) {
               promoDescription = promo.description;
               if (promo.type === 'percentage') {
@@ -1732,7 +1736,7 @@ export const walmartGroceryRouter = createFeatureRouter(
 
           // Emit real-time update
           walmartEvents.emit("totals_calculated", {
-            itemCount: input.items.length,
+            itemCount: input?.items?.length,
             subtotal: Number(subtotal.toFixed(2)),
             total: Number(total.toFixed(2)),
             savings: Number(totalSavings.toFixed(2)),
@@ -1759,7 +1763,7 @@ export const walmartGroceryRouter = createFeatureRouter(
               amountForFreeDelivery: adjustedSubtotal < 35 ? Number((35 - adjustedSubtotal).toFixed(2)) : 0,
             },
             breakdown: {
-              itemCount: input.items.length,
+              itemCount: input?.items?.length,
               location: input.location,
               promoCode: input.promoCode,
               loyaltyMember: input.loyaltyMember,
@@ -1788,16 +1792,14 @@ export const walmartGroceryRouter = createFeatureRouter(
         
         try {
           // Get real product count from database
-          const productCount = await dbCtx.safeDb.query(
+          const productCount = await dbCtx?.safeDb?.select(
             'walmart_products',
-            ['COUNT(*) as count'],
-            undefined,
-            []
+            ['COUNT(*) as count']
           );
           
           // Get user's saved amount this month from orders
           const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-          const savedResult = await dbCtx.safeDb.query(
+          const savedResult = await dbCtx?.safeDb?.select(
             'grocery_orders',
             ['COALESCE(SUM(total_savings), 0) as totalSaved'],
             "strftime('%Y-%m', created_at) = ?",
@@ -1805,16 +1807,15 @@ export const walmartGroceryRouter = createFeatureRouter(
           );
           
           // Get active price alerts count
-          const alertsResult = await dbCtx.safeDb.query(
+          const alertsResult = await dbCtx?.safeDb?.select(
             'price_alerts',
             ['COUNT(*) as count'],
-            'is_active = 1',
-            []
+            'is_active = 1'
           );
           
-          const productsTracked = safeColumnAccess(productCount.data[0], 'count', 0);
-          const savedThisMonth = safeColumnAccess(savedResult.data[0], 'totalSaved', 0);
-          const activeAlerts = safeColumnAccess(alertsResult.data[0], 'count', 0);
+          const productsTracked = productCount.data[0] ? safeColumnAccess(productCount.data[0], 'count', 0) : 0;
+          const savedThisMonth = savedResult.data[0] ? safeColumnAccess(savedResult.data[0], 'totalSaved', 0) : 0;
+          const activeAlerts = alertsResult.data[0] ? safeColumnAccess(alertsResult.data[0], 'count', 0) : 0;
           
           return {
             success: true,
@@ -1853,18 +1854,18 @@ export const walmartGroceryRouter = createFeatureRouter(
         
         try {
           // Get products with recent price changes
-          const trendingProducts = await dbCtx.safeDb.query(
-            'walmart_products',
-            ['id', 'name', 'category', 'current_price', 'original_price', 'image_url', 'stock_status'],
-            'current_price IS NOT NULL',
-            [],
-            `ORDER BY (CASE 
+          const trendingQuery = `
+            SELECT id, name, category, current_price, original_price, image_url, stock_status
+            FROM walmart_products
+            WHERE current_price IS NOT NULL
+            ORDER BY (CASE 
               WHEN original_price > 0 THEN (original_price - current_price) / original_price 
               ELSE 0 
-            END) DESC LIMIT ${input.limit}`
-          );
+            END) DESC LIMIT ?
+          `;
+          const trendingProducts = await dbCtx?.safeDb?.query(trendingQuery, [input.limit]);
           
-          const trending = trendingProducts.data.map(product => {
+          const trending = (trendingProducts || []).map((product: any) => {
             const currentPrice = safeColumnAccess(product, 'current_price', 0);
             const originalPrice = safeColumnAccess(product, 'original_price', currentPrice);
             const priceChange = originalPrice > 0 ? ((currentPrice - originalPrice) / originalPrice * 100) : 0;
@@ -1878,7 +1879,7 @@ export const walmartGroceryRouter = createFeatureRouter(
               priceChange: Number(priceChange.toFixed(2)),
               trend: priceChange < 0 ? 'down' : priceChange > 0 ? 'up' : 'stable',
               imageUrl: safeColumnAccess(product, 'image_url', '/api/placeholder/80/80'),
-              inStock: safeColumnAccess(product, 'stock_status', 'unknown') === 'in_stock'
+              inStock: safeColumnAccess(product, 'stock_status', 'unknown' as any) !== 'out_of_stock'
             };
           });
           
@@ -1912,14 +1913,14 @@ export const walmartGroceryRouter = createFeatureRouter(
         
         try {
           // Get user's budget settings
-          const budgetSettings = await dbCtx.safeDb.query(
+          const budgetSettings = await dbCtx?.safeDb?.select(
             'grocery_user_preferences',
             ['monthly_budget', 'budget_categories'],
             'user_id = ?',
             [input.userId]
           );
           
-          const monthlyBudget = budgetSettings.data.length > 0 
+          const monthlyBudget = budgetSettings.data && budgetSettings?.data?.length > 0 
             ? safeColumnAccess(budgetSettings.data[0], 'monthly_budget', 400)
             : 400; // Default budget
           
@@ -1936,7 +1937,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             GROUP BY wp.category
           `;
           
-          const categorySpending = await ctx.db.prepare(spendingQuery).all(input.userId, currentMonth) as any[];
+          const categorySpending = await dbCtx?.safeDb?.query(spendingQuery, [input.userId, currentMonth]);
           
           // Calculate totals
           let totalSpent = 0;

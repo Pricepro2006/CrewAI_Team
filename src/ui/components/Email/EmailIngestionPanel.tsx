@@ -19,24 +19,24 @@ export const EmailIngestionPanel: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const utils = api.useContext();
-  const ingestMutation = api.emails.ingestEmails.useMutation({
-    onSuccess: (result) => {
+  const ingestMutation = api?.emails?.ingestEmails.useMutation({
+    onSuccess: (result: any) => {
       if (result.success && result.data) {
         setProgress(result.data);
         // Invalidate email queries to refresh the dashboard
-        utils.emails.getTableData.invalidate();
-        utils.emails.getDashboardStats.invalidate();
-        utils.emails.getAnalytics.invalidate();
+        utils?.emails?.getTableData.invalidate();
+        utils?.emails?.getDashboardStats.invalidate();
+        utils?.emails?.getAnalytics.invalidate();
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setError(error.message);
       setIsIngesting(false);
     }
   });
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const file = event?.target?.files?.[0];
     if (!file) return;
 
     setIsIngesting(true);

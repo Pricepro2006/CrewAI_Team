@@ -4,11 +4,11 @@
  */
 
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/enhanced-router.ts";
-import { metricsCollectionService } from "../../monitoring/MetricsCollectionService.ts";
-import { groceryAgentMetrics } from "../../monitoring/GroceryAgentMetrics.ts";
-import { monitoringSystem } from "../../monitoring/MonitoringSystem.ts";
-import { logger } from "../../utils/logger.ts";
+import { router, publicProcedure } from "../trpc/enhanced-router.js";
+import { metricsCollectionService } from "../../monitoring/MetricsCollectionService.js";
+import { groceryAgentMetrics } from "../../monitoring/GroceryAgentMetrics.js";
+import { monitoringSystem } from "../../monitoring/MonitoringSystem.js";
+import { logger } from "../../utils/logger.js";
 
 export const metricsRouter = router({
   /**

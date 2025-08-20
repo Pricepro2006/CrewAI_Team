@@ -152,7 +152,10 @@ export const useVoiceRecognition = (config: VoiceRecognitionConfig = {}) => {
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+        if (!result) continue;
+        
         const alternative = result[0];
+        if (!alternative) continue;
         
         if (result.isFinal) {
           finalTranscript += alternative.transcript;
@@ -223,7 +226,7 @@ export const useVoiceRecognition = (config: VoiceRecognitionConfig = {}) => {
 
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.abort();
+        recognitionRef?.current?.abort();
       }
     };
   }, [lang, continuous, interimResults, maxAlternatives, confidenceThreshold]);
@@ -239,9 +242,9 @@ export const useVoiceRecognition = (config: VoiceRecognitionConfig = {}) => {
 
     try {
       // Request microphone permissions
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      if (navigator.mediaDevices && navigator?.mediaDevices?.getUserMedia) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const stream = await navigator?.mediaDevices?.getUserMedia({ audio: true });
           stream.getTracks().forEach(track => track.stop()); // Clean up
         } catch (permissionError) {
           throw new Error('Microphone permission denied');
@@ -271,13 +274,13 @@ export const useVoiceRecognition = (config: VoiceRecognitionConfig = {}) => {
 
   const stop = useCallback(() => {
     if (recognitionRef.current && state.isListening) {
-      recognitionRef.current.stop();
+      recognitionRef?.current?.stop();
     }
   }, [state.isListening]);
 
   const abort = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.abort();
+      recognitionRef?.current?.abort();
     }
     isStartingRef.current = false;
     setState(prev => ({
@@ -314,8 +317,8 @@ export const useVoiceRecognition = (config: VoiceRecognitionConfig = {}) => {
 
   const requestPermissions = useCallback(async () => {
     try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (navigator.mediaDevices && navigator?.mediaDevices?.getUserMedia) {
+        const stream = await navigator?.mediaDevices?.getUserMedia({ audio: true });
         stream.getTracks().forEach(track => track.stop());
         return true;
       }

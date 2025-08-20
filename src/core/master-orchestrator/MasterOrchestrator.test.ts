@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { MasterOrchestrator } from "./MasterOrchestrator.js";
-import type { Plan, Query, PlanStep } from "./types.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { MasterOrchestrator } from './MasterOrchestrator';
+import type { Plan, Query, PlanStep } from './types';
 
 // Mock Ollama provider
 const mockOllamaProvider = {
@@ -161,7 +161,7 @@ describe("MasterOrchestrator", () => {
       conversationId: "test-conv",
     };
 
-    mockOllamaProvider.generate.mockResolvedValueOnce(
+    mockOllamaProvider?.generate?.mockResolvedValueOnce(
       JSON.stringify({
         goal: "Research AI",
         steps: [
@@ -190,9 +190,9 @@ describe("MasterOrchestrator", () => {
     );
 
     const result = await orchestrator.processQuery(query);
-    expect(result.plan?.steps[0]?.agentType).toBe("ResearchAgent");
-    expect(result.plan?.steps[0]?.task).toBe("ResearchAgent");
-    expect(result.plan?.steps[1]?.agentType).toBe("WriterAgent");
+    expect(result.plan?.steps[0]?.length).toBe("ResearchAgent");
+    expect(result.plan?.steps[0]?.length).toBe("ResearchAgent");
+    expect(result.plan?.steps[1]?.length).toBe("WriterAgent");
   });
 
   it("should generate comprehensive summaries", async () => {
@@ -227,7 +227,7 @@ describe("MasterOrchestrator", () => {
       ],
     };
 
-    mockOllamaProvider.generate.mockResolvedValueOnce(
+    mockOllamaProvider?.generate?.mockResolvedValueOnce(
       "This is a comprehensive summary of the research and writing tasks.",
     );
 
@@ -245,7 +245,7 @@ describe("MasterOrchestrator", () => {
       conversationId: "test-conv",
     };
 
-    mockOllamaProvider.generate.mockRejectedValueOnce(
+    mockOllamaProvider?.generate?.mockRejectedValueOnce(
       new Error("Network error"),
     );
 

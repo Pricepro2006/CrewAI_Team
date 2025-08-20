@@ -196,7 +196,7 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
       <div className="email-stats__workflows">
         <h3>Top Workflow Categories</h3>
         <div className="email-stats__workflow-list">
-          {topWorkflows.map(({ workflow, count, percentage }) => {
+          {topWorkflows?.map(({ workflow, count, percentage }) => {
             const getWorkflowIcon = (workflowName: string) => {
               switch (workflowName) {
                 case "Order Management":

@@ -56,8 +56,8 @@ export const WebScraping: React.FC = () => {
             className="url-input"
             placeholder="Enter website URL (e.g., https://example.com)"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleScrape()}
+            onChange={(e: any) => setUrl(e?.target?.value)}
+            onKeyPress={(e: any) => e.key === "Enter" && handleScrape()}
           />
           <button
             className="scrape-button"
@@ -76,7 +76,7 @@ export const WebScraping: React.FC = () => {
                   height="20"
                   viewBox="0 0 24 24"
                   fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+                  xmlns="http://www?.w3?.org/2000/svg"
                 >
                   <path
                     d="M21 12C21 16.97 16.97 21 12 21S3 16.97 3 12S7.03 3 12 3S21 7.03 21 12Z"
@@ -107,7 +107,7 @@ export const WebScraping: React.FC = () => {
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              xmlns="http://www?.w3?.org/2000/svg"
             >
               <circle
                 cx="12"
@@ -139,19 +139,19 @@ export const WebScraping: React.FC = () => {
                 <div className="metadata-item">
                   <span className="label">Title:</span>
                   <span className="value">
-                    {result.metadata.title || "N/A"}
+                    {result?.metadata?.title || "N/A"}
                   </span>
                 </div>
                 <div className="metadata-item">
                   <span className="label">Description:</span>
                   <span className="value">
-                    {result.metadata.description || "N/A"}
+                    {result?.metadata?.description || "N/A"}
                   </span>
                 </div>
                 <div className="metadata-item">
                   <span className="label">Keywords:</span>
                   <span className="value">
-                    {result.metadata.keywords?.join(", ") || "N/A"}
+                    {result?.metadata?.keywords?.join(", ") || "N/A"}
                   </span>
                 </div>
               </div>
@@ -162,16 +162,16 @@ export const WebScraping: React.FC = () => {
             <div className="result-section">
               <h3>Content Preview</h3>
               <div className="content-preview">
-                {result.content.substring(0, 500)}...
+                {result?.content?.substring(0, 500)}...
               </div>
             </div>
           )}
 
-          {result.links && result.links.length > 0 && (
+          {result.links && result?.links?.length > 0 && (
             <div className="result-section">
-              <h3>Links Found ({result.links.length})</h3>
+              <h3>Links Found ({result?.links?.length})</h3>
               <div className="links-list">
-                {result.links.slice(0, 10).map((link: any, index: number) => (
+                {result?.links?.slice(0, 10).map((link: any, index: number) => (
                   <div key={index} className="link-item">
                     <a
                       href={link.url}
@@ -182,27 +182,27 @@ export const WebScraping: React.FC = () => {
                     </a>
                   </div>
                 ))}
-                {result.links.length > 10 && (
+                {result?.links?.length > 10 && (
                   <div className="more-items">
-                    ... and {result.links.length - 10} more links
+                    ... and {result?.links?.length - 10} more links
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {result.images && result.images.length > 0 && (
+          {result.images && result?.images?.length > 0 && (
             <div className="result-section">
-              <h3>Images Found ({result.images.length})</h3>
+              <h3>Images Found ({result?.images?.length})</h3>
               <div className="images-grid">
-                {result.images.slice(0, 6).map((image: any, index: number) => (
+                {result?.images?.slice(0, 6).map((image: any, index: number) => (
                   <div key={index} className="image-item">
                     <img src={image.src} alt={image.alt || "Image"} />
                   </div>
                 ))}
-                {result.images.length > 6 && (
+                {result?.images?.length > 6 && (
                   <div className="more-items">
-                    ... and {result.images.length - 6} more images
+                    ... and {result?.images?.length - 6} more images
                   </div>
                 )}
               </div>
@@ -221,7 +221,7 @@ export const WebScraping: React.FC = () => {
                 height="32"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <path
                   d="M12 2L2 7V12C2 16.5 4.23 20.68 7.62 21.94C9.17 22.55 10.5 22 12 22C13.5 22 14.83 22.55 16.38 21.94C19.77 20.68 22 16.5 22 12V7L12 2Z"
@@ -243,7 +243,7 @@ export const WebScraping: React.FC = () => {
                 height="32"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <rect
                   x="2"
@@ -274,7 +274,7 @@ export const WebScraping: React.FC = () => {
                 height="32"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <circle
                   cx="12"
@@ -303,7 +303,7 @@ export const WebScraping: React.FC = () => {
                 height="32"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <path
                   d="M13 2L3 14H12L11 22L21 10H12L13 2Z"

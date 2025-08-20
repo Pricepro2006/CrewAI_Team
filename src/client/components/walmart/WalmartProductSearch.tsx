@@ -113,8 +113,8 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
 
   // Handle search results
   useEffect(() => {
-    if (results.length > 0 && onSearchResults) {
-      onSearchResults(results);
+    if ((results?.length || 0) > 0 && onSearchResults) {
+      onSearchResults?.(results);
     }
   }, [results, onSearchResults]);
 
@@ -130,7 +130,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
     setFilters((prev: ExtendedSearchOptions) => ({
       ...prev,
       dietary: prev.dietary?.includes(dietaryFilter)
-        ? prev.dietary.filter((d: DietaryFilter) => d !== dietaryFilter)
+        ? prev?.dietary?.filter((d: DietaryFilter) => d !== dietaryFilter)
         : [...(prev.dietary || []), dietaryFilter],
     }));
   };
@@ -165,7 +165,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
             type="text"
             placeholder="Search Walmart groceries..."
             value={query}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e?.target?.value)}
             className="pl-10 pr-10"
             autoFocus={autoFocus}
           />
@@ -206,7 +206,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                 type="text"
                 placeholder="Search for groceries..."
                 value={query}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e?.target?.value)}
                 className="pl-10 pr-10 h-12 text-lg"
                 autoFocus={autoFocus}
               />
@@ -243,7 +243,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map(cat => (
+                  {CATEGORIES?.map(cat => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
                     </SelectItem>
@@ -267,10 +267,10 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                 </label>
               </div>
 
-              {filters.dietary && filters.dietary.length > 0 && (
+              {filters.dietary && filters?.dietary?.length > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Dietary:</span>
-                  {filters.dietary.map((diet: DietaryFilter) => (
+                  {filters?.dietary?.map((diet: DietaryFilter) => (
                     <Badge key={diet} variant="secondary">
                       {diet}
                       <button
@@ -317,7 +317,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map(cat => (
+                      {CATEGORIES?.map(cat => (
                         <SelectItem key={cat.value} value={cat.value}>
                           {cat.label}
                         </SelectItem>
@@ -345,7 +345,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Dietary Preferences</label>
                   <div className="grid grid-cols-2 gap-2">
-                    {DIETARY_PREFERENCES.map(diet => (
+                    {DIETARY_PREFERENCES?.map(diet => (
                       <div key={diet.value} className="flex items-center space-x-2">
                         <Checkbox
                           id={diet.value}

@@ -57,7 +57,7 @@ export class ChromaDBMonitor extends EventEmitter {
   private responseTimes: number[] = [];
   private metricsHistory: MetricEvent[] = [];
   private maxHistorySize: number = 1000;
-  private metricsInterval?: NodeJS.Timer;
+  private metricsInterval?: NodeJS.Timeout;
 
   private constructor() {
     super();
@@ -99,6 +99,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record a connection attempt
    */
   recordConnectionAttempt(success: boolean, duration: number, error?: string): void {
+    if (!this.metrics) return;
+    
     this.metrics.connectionAttempts++;
     
     if (success) {
@@ -129,6 +131,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record a request to ChromaDB
    */
   recordRequest(success: boolean, duration: number, operation?: string): void {
+    if (!this.metrics) return;
+    
     this.metrics.totalRequests++;
     
     if (!success) {
@@ -158,6 +162,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record fallback activation
    */
   recordFallbackActivation(reason: string): void {
+    if (!this.metrics) return;
+    
     this.metrics.fallbackActivations++;
     this.metrics.currentMode = "in-memory";
     
@@ -178,6 +184,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record mode change
    */
   recordModeChange(mode: "chromadb" | "in-memory" | "hybrid"): void {
+    if (!this.metrics) return;
+    
     this.metrics.currentMode = mode;
     
     logger.info(`ChromaDB mode changed to: ${mode}`, "CHROMADB_MONITOR");
@@ -187,6 +195,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record document sync
    */
   recordDocumentSync(count: number, success: boolean, duration: number): void {
+    if (!this.metrics) return;
+    
     if (success) {
       this.metrics.documentsSynced += count;
       this.metrics.pendingSyncCount = Math.max(0, this.metrics.pendingSyncCount - count);
@@ -208,6 +218,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record circuit breaker event
    */
   recordCircuitBreakerEvent(state: "closed" | "open" | "half-open"): void {
+    if (!this.metrics) return;
+    
     this.metrics.circuitBreakerState = state;
     
     if (state === "open") {
@@ -232,6 +244,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Update in-memory document count
    */
   updateInMemoryCount(count: number): void {
+    if (!this.metrics) return;
+    
     this.metrics.documentsInMemory = count;
   }
 
@@ -239,6 +253,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Update pending sync count
    */
   updatePendingSyncCount(count: number): void {
+    if (!this.metrics) return;
+    
     this.metrics.pendingSyncCount = count;
   }
 
@@ -246,6 +262,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Update connection state
    */
   updateConnectionState(state: ConnectionState): void {
+    if (!this.metrics) return;
+    
     this.metrics.currentState = state;
   }
 
@@ -401,6 +419,8 @@ export class ChromaDBMonitor extends EventEmitter {
    * Reset metrics
    */
   resetMetrics(): void {
+    if (!this.metrics) return;
+    
     this.metrics.connectionAttempts = 0;
     this.metrics.successfulConnections = 0;
     this.metrics.failedConnections = 0;
@@ -421,23 +441,25 @@ export class ChromaDBMonitor extends EventEmitter {
   private startMetricsCollection(): void {
     // Collect memory metrics every 30 seconds
     this.metricsInterval = setInterval(() => {
-      const memUsage = process.memoryUsage();
+      if (!this.metrics) return;
+      
+      const memUsage = process.memoryUsage ? process.memoryUsage() : { heapUsed: 0 };
       this.metrics.memoryUsage = memUsage.heapUsed;
     }, 30000);
   }
 
   private updateUptimePercentage(): void {
-    if (this.metrics.connectionAttempts > 0) {
-      this.metrics.uptimePercentage = 
-        (this.metrics.successfulConnections / this.metrics.connectionAttempts) * 100;
-    }
+    if (!this.metrics || this.metrics.connectionAttempts === 0) return;
+    
+    this.metrics.uptimePercentage = 
+      (this.metrics.successfulConnections / this.metrics.connectionAttempts) * 100;
   }
 
   private updateResponseTimeMetrics(): void {
-    if (this.responseTimes.length === 0) return;
+    if (!this.metrics || this.responseTimes.length === 0) return;
     
     const sorted = [...this.responseTimes].sort((a, b) => a - b);
-    const sum = sorted.reduce((a, b) => a + b, 0);
+    const sum = sorted.reduce((a: number, b: number) => a + b, 0);
     
     this.metrics.averageResponseTime = sum / sorted.length;
     this.metrics.p95ResponseTime = sorted[Math.floor(sorted.length * 0.95)] || 0;

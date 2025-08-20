@@ -3,7 +3,7 @@
  * Comprehensive type definitions for real-time features
  */
 
-import type { Timestamp } from "./index.js";
+import type { Timestamp } from "./core.js";
 import type {
   Task,
   Message,
@@ -77,14 +77,14 @@ export type WebSocketEventType =
   | "system.error"
   | "system.reconnect"
   // Chat events
-  | "chat.message.new"
-  | "chat.message.update"
-  | "chat.message.delete"
-  | "chat.typing.start"
-  | "chat.typing.stop"
-  | "chat.conversation.create"
-  | "chat.conversation.update"
-  | "chat.conversation.archive"
+  | "chat?.message?.new"
+  | "chat?.message?.update"
+  | "chat?.message?.delete"
+  | "chat?.typing?.start"
+  | "chat?.typing?.stop"
+  | "chat?.conversation?.create"
+  | "chat?.conversation?.update"
+  | "chat?.conversation?.archive"
   // Task events
   | "task.create"
   | "task.update"
@@ -96,8 +96,8 @@ export type WebSocketEventType =
   // Agent events
   | "agent.start"
   | "agent.step"
-  | "agent.tool.call"
-  | "agent.tool.response"
+  | "agent?.tool?.call"
+  | "agent?.tool?.response"
   | "agent.complete"
   | "agent.error"
   // Email events
@@ -105,8 +105,8 @@ export type WebSocketEventType =
   | "email.update"
   | "email.delete"
   | "email.assign"
-  | "email.status.change"
-  | "email.batch.process"
+  | "email?.status?.change"
+  | "email?.batch?.process"
   // Document events
   | "document.create"
   | "document.update"
@@ -280,11 +280,11 @@ export interface MonitoringAlertEvent {
 export interface MonitoringHealthEvent {
   service: string;
   status: "healthy" | "degraded" | "unhealthy";
-  checks: HealthCheck[];
+  checks: WebSocketHealthCheck[];
   timestamp: Timestamp;
 }
 
-export interface HealthCheck {
+export interface WebSocketHealthCheck {
   name: string;
   status: "healthy" | "degraded" | "unhealthy";
   responseTime?: number;

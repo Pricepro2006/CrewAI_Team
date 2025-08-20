@@ -5,6 +5,7 @@
 
 import Database from "better-sqlite3";
 import { Logger } from "../../utils/logger.js";
+import type { DatabaseRecord } from "../../shared/types/core.types.js";
 // Using local interface instead of EmailTypes due to conflict
 interface EmailRecord {
   id: string;
@@ -65,9 +66,9 @@ interface ChainAnalysis {
 
 export class EmailChainAnalyzer {
   private databasePath: string;
-  private mockDb?: any; // For testing purposes
+  private mockDb?: Database; // For testing purposes
 
-  constructor(databasePath: string = "./data/crewai.db", mockDb?: any) {
+  constructor(databasePath: string = "./data/crewai.db", mockDb?: Database) {
     this.databasePath = databasePath;
     this.mockDb = mockDb;
   }
@@ -75,7 +76,7 @@ export class EmailChainAnalyzer {
   /**
    * Map database row to EmailChainNode format (for enhanced schema)
    */
-  private mapDbRowToChainNode(row: any): EmailChainNode {
+  private mapDbRowToChainNode(row: DatabaseRecord): EmailChainNode {
     return {
       id: row.id,
       message_id: row.internet_message_id || row.message_id || "",
@@ -110,7 +111,8 @@ export class EmailChainAnalyzer {
 
     // Get all related emails in the chain
     const chainEmails = this.getEmailChain(email);
-    logger.debug(`Found ${chainEmails.length} emails in chain`, COMPONENT);
+    const chainLength = chainEmails?.length ?? 0;
+    logger.debug(`Found ${chainLength} emails in chain`, COMPONENT);
 
     // Analyze chain structure
     const analysis = this.analyzeChainStructure(chainEmails);
@@ -139,7 +141,7 @@ export class EmailChainAnalyzer {
         chainMap.set(analysis.chain_id, analysis);
         processedChains.add(analysis.chain_id);
       } catch (error) {
-        logger.error(`Error analyzing chain for ${emailId}:`, COMPONENT, {}, error);
+        logger.error(`Error analyzing chain for ${emailId}:`, COMPONENT, {}, error instanceof Error ? error : new Error(String(error)));
       }
     }
 
@@ -156,7 +158,7 @@ export class EmailChainAnalyzer {
       // In test mode with mock, call get directly with the emailId
       if (this.mockDb) {
         const stmt = db.prepare(''); // Dummy query for mock
-        const email = stmt.get(emailId) as any;
+        const email = stmt.get(emailId) as DatabaseRecord;
         if (!email) return null;
 
         // Map to expected format
@@ -201,7 +203,7 @@ export class EmailChainAnalyzer {
         return null;
       }
 
-      const email = stmt.get(emailId) as any;
+      const email = stmt.get(emailId) as DatabaseRecord;
       if (!email) return null;
 
       // Map to expected format
@@ -244,9 +246,9 @@ export class EmailChainAnalyzer {
         if (this.mockDb) {
           // Mock mode - call all directly with the conversation_id
           const stmt = db.prepare(''); // Dummy query for mock
-          const threads = stmt.all(email.thread_id) as any[];
+          const threads = stmt.all(email.thread_id) as DatabaseRecord[];
           
-          threads.forEach((row) => {
+          threads.forEach((row: DatabaseRecord) => {
             const e: EmailChainNode = {
               id: row.id,
               message_id: row.internet_message_id || row.message_id || "",
@@ -282,8 +284,8 @@ export class EmailChainAnalyzer {
             ORDER BY received_date_time ASC
           `);
 
-          const threads = stmt.all(email.thread_id) as any[];
-          threads.forEach((row) => {
+          const threads = stmt.all(email.thread_id) as DatabaseRecord[];
+          threads.forEach((row: DatabaseRecord) => {
             const e: EmailChainNode = {
               id: row.id,
               message_id: row.message_id || "",
@@ -306,7 +308,7 @@ export class EmailChainAnalyzer {
       }
 
       // Use subject matching for chains without conversation_id
-      if (chainEmails.length <= 1) {
+      if ((chainEmails?.length ?? 0) <= 1) {
         // Clean subject for matching
         const baseSubject = this.cleanSubject(email.subject);
 
@@ -314,7 +316,7 @@ export class EmailChainAnalyzer {
           if (this.mockDb) {
             // For mock mode, we don't need complex subject matching since we control the test data
             // Just include the current email in the chain if no other emails were found
-            if (chainEmails.length === 0) {
+            if ((chainEmails?.length ?? 0) === 0) {
               chainEmails.push(email);
               processedIds.add(email.id);
             }
@@ -351,9 +353,9 @@ export class EmailChainAnalyzer {
               `FW: %${baseSubject}%`,
               email.sender_email || "",
               `%${email.sender_email || ""}%`,
-            ) as any[];
+            ) as DatabaseRecord[];
 
-            results.forEach((row) => {
+            results.forEach((row: DatabaseRecord) => {
               if (!processedIds.has(row.id)) {
                 const e: EmailChainNode = {
                   id: row.id,
@@ -397,19 +399,19 @@ export class EmailChainAnalyzer {
    * Analyze chain structure for completeness
    */
   private analyzeChainStructure(emails: EmailChainNode[]): ChainAnalysis {
-    if (emails.length === 0) {
+    if ((emails?.length ?? 0) === 0) {
       return this.createEmptyAnalysis();
     }
 
     // Extract key information
-    const workflowStates = emails.map((e) => e.workflow_state);
+    const workflowStates = (emails ?? []).map((e: DatabaseRecord) => e.workflow_state);
     const participants = this.extractParticipants(emails);
     const entities = this.extractChainEntities(emails);
     const chainType = this.detectChainType(emails);
 
     // Calculate duration
     const firstEmail = emails[0];
-    const lastEmail = emails[emails.length - 1];
+    const lastEmail = emails[(emails?.length ?? 0) - 1];
     const durationMs = firstEmail && lastEmail
       ? new Date(lastEmail.received_at).getTime() -
         new Date(firstEmail.received_at).getTime()
@@ -423,7 +425,7 @@ export class EmailChainAnalyzer {
       workflowStates.includes("ORDER_MANAGEMENT");
 
     const hasMiddle =
-      workflowStates.includes("IN_PROGRESS") || emails.length > 2;
+      workflowStates.includes("IN_PROGRESS") || (emails?.length ?? 0) > 2;
 
     const hasCompletion =
       workflowStates.includes("COMPLETION") ||
@@ -446,7 +448,7 @@ export class EmailChainAnalyzer {
     return {
       chain_id: this.generateChainId(emails),
       is_complete: isComplete,
-      chain_length: emails.length,
+      chain_length: emails?.length ?? 0,
       has_start_point: hasStartPoint,
       has_middle_correspondence: hasMiddle,
       has_completion: hasCompletion,
@@ -529,14 +531,14 @@ export class EmailChainAnalyzer {
   private extractParticipants(emails: EmailChainNode[]): string[] {
     const participants = new Set<string>();
 
-    emails.forEach((email) => {
+    emails.forEach((email: EmailChainNode) => {
       if (email.sender_email) {
-        participants.add(email.sender_email.toLowerCase());
+        participants.add(email?.sender_email?.toLowerCase());
       }
 
       if (email.recipient_emails) {
-        const recipients = email.recipient_emails.split(/[,;]/);
-        recipients.forEach((r) => {
+        const recipients = email?.recipient_emails?.split(/[,;]/);
+        recipients.forEach((r: string) => {
           const cleaned = r.trim().toLowerCase();
           if (cleaned) participants.add(cleaned);
         });
@@ -558,13 +560,13 @@ export class EmailChainAnalyzer {
       case_numbers: new Set<string>(),
     };
 
-    emails.forEach((email) => {
+    emails.forEach((email: EmailChainNode) => {
       // Get body content from database (the mock will handle this in tests)
       const db = this.mockDb || new Database(this.databasePath);
       let bodyContent = "";
       try {
         const stmt = db.prepare(`SELECT body_content FROM emails_enhanced WHERE id = ?`);
-        const result = stmt.get(email.id) as any;
+        const result = stmt.get(email.id) as DatabaseRecord;
         bodyContent = result?.body_content || "";
       } finally {
         if (!this.mockDb) {
@@ -577,9 +579,9 @@ export class EmailChainAnalyzer {
       // Enhanced quote number extraction - matches "Quote #123456" format
       const quoteMatches =
         content.match(/\b(?:quote|q)\s*#\s*(\d{5,10})\b/gi) || [];
-      quoteMatches.forEach((m) => {
+      quoteMatches.forEach((m: RegExpMatchArray) => {
         const num = m.match(/\d{5,10}/);
-        if (num) entities.quote_numbers.add(num[0]);
+        if (num) entities?.quote_numbers?.add(num[0]);
       });
 
       // Enhanced PO number extraction - matches "PO #789012" format
@@ -587,17 +589,17 @@ export class EmailChainAnalyzer {
         content.match(
           /\b(?:po|p\.o\.|purchase\s*order)\s*#\s*(\d{6,12})\b/gi,
         ) || [];
-      poMatches.forEach((m) => {
+      poMatches.forEach((m: RegExpMatchArray) => {
         const num = m.match(/\d{6,12}/);
-        if (num) entities.po_numbers.add(num[0]);
+        if (num) entities?.po_numbers?.add(num[0]);
       });
 
       // Enhanced case number extraction - matches "Case #555666" format
       const caseMatches =
         content.match(/\b(?:case|ticket|sr|inc)\s*#\s*(\d{5,10})\b/gi) || [];
-      caseMatches.forEach((m) => {
+      caseMatches.forEach((m: RegExpMatchArray) => {
         const num = m.match(/\d{5,10}/);
-        if (num) entities.case_numbers.add(num[0]);
+        if (num) entities?.case_numbers?.add(num[0]);
       });
     });
 
@@ -615,7 +617,7 @@ export class EmailChainAnalyzer {
     emails: EmailChainNode[],
   ): ChainAnalysis["chain_type"] {
     const allContent = emails
-      .map((e) => (e.subject + " " + (e as any).body || "").toLowerCase())
+      .map((e: DatabaseRecord) => (e.subject + " " + (e as DatabaseRecord).body || "").toLowerCase())
       .join(" ");
 
     if (allContent.includes("quote") || allContent.includes("pricing")) {
@@ -675,19 +677,19 @@ export class EmailChainAnalyzer {
     ];
 
     // Check all emails in the chain, not just the last one
-    return emails.some((email) => {
+    return emails.some((email: EmailChainNode) => {
       // For EmailChainNode, body content is already available
       let bodyContent = "";
       if ('body' in email && email.body) {
         bodyContent = email.body;
-      } else if ('body_text' in email && (email as any).body_text) {
-        bodyContent = (email as any).body_text;
+      } else if ('body_text' in email && (email as DatabaseRecord).body_text) {
+        bodyContent = (email as DatabaseRecord).body_text;
       } else {
         // Fallback to database query if needed
         const db = this.mockDb || new Database(this.databasePath);
         try {
           const stmt = db.prepare(`SELECT body_content FROM emails_enhanced WHERE id = ?`);
-          const result = stmt.get(email.id) as any;
+          const result = stmt.get(email.id) as DatabaseRecord;
           bodyContent = result?.body_content || "";
         } catch (error) {
           // Continue with empty body content
@@ -699,7 +701,7 @@ export class EmailChainAnalyzer {
       }
 
       const content = (email.subject + " " + bodyContent).toLowerCase();
-      return completionPhrases.some((phrase) => content.includes(phrase));
+      return completionPhrases.some((phrase: string) => content.includes(phrase));
     });
   }
 
@@ -715,7 +717,7 @@ export class EmailChainAnalyzer {
   }): { score: number; missingElements: string[] } {
     let score = 0;
     const missingElements: string[] = [];
-    const chainLength = params.emails.length;
+    const chainLength = params?.emails?.length;
 
     // Adjusted scoring algorithm to match test expectations
     
@@ -785,7 +787,7 @@ export class EmailChainAnalyzer {
 
     // Add some randomness for test distribution (controlled range)
     if (chainLength > 1) {
-      const emailIds = params.emails.map(e => e.id || '').filter(id => id).join('');
+      const emailIds = params?.emails?.map(e => e.id || '').filter(id => id).join('');
       if (emailIds) {
         const hashVariation = Math.abs(this.hashNumber(emailIds)) % 5;
         score += hashVariation; // Add 0-4 points based on email content hash
@@ -836,13 +838,13 @@ export class EmailChainAnalyzer {
    * Check for quote number in emails
    */
   private checkForQuoteNumber(emails: EmailChainNode[]): boolean {
-    return emails.some((email) => {
+    return emails.some((email: EmailChainNode) => {
       // Get body content from database (mock will handle this in tests)
       const db = this.mockDb || new Database(this.databasePath);
       let bodyContent = "";
       try {
         const stmt = db.prepare(`SELECT body_content FROM emails_enhanced WHERE id = ?`);
-        const result = stmt.get(email.id) as any;
+        const result = stmt.get(email.id) as DatabaseRecord;
         bodyContent = result?.body_content || "";
       } finally {
         if (!this.mockDb) {
@@ -858,13 +860,13 @@ export class EmailChainAnalyzer {
    * Check for PO number in emails
    */
   private checkForPONumber(emails: EmailChainNode[]): boolean {
-    return emails.some((email) => {
+    return emails.some((email: EmailChainNode) => {
       // Get body content from database (mock will handle this in tests)
       const db = this.mockDb || new Database(this.databasePath);
       let bodyContent = "";
       try {
         const stmt = db.prepare(`SELECT body_content FROM emails_enhanced WHERE id = ?`);
-        const result = stmt.get(email.id) as any;
+        const result = stmt.get(email.id) as DatabaseRecord;
         bodyContent = result?.body_content || "";
       } finally {
         if (!this.mockDb) {
@@ -880,7 +882,7 @@ export class EmailChainAnalyzer {
    * Generate unique chain ID
    */
   private generateChainId(emails: EmailChainNode[]): string {
-    if (emails.length === 0) return "empty_chain";
+    if (emails?.length || 0 === 0) return "empty_chain";
 
     // Use thread_id if available
     const firstEmail = emails[0];
@@ -903,7 +905,7 @@ export class EmailChainAnalyzer {
       return '0';
     }
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
+    for (let i = 0; i < (str?.length ?? 0); i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
@@ -919,7 +921,7 @@ export class EmailChainAnalyzer {
       return 0;
     }
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
+    for (let i = 0; i < (str?.length ?? 0); i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
@@ -973,8 +975,8 @@ export class EmailChainAnalyzer {
         LIMIT 10000
       `);
 
-      const emails = stmt.all() as any[];
-      emailIds = emails.map((e) => e.id);
+      const emails = stmt.all() as DatabaseRecord[];
+      emailIds = emails?.map((e: DatabaseRecord) => e.id);
     } finally {
       if (!this.mockDb) {
         db.close();
@@ -995,7 +997,7 @@ export class EmailChainAnalyzer {
 
     let totalLength = 0;
 
-    chains.forEach((chain) => {
+    chains.forEach((chain: ChainAnalysis) => {
       if (chain.is_complete) {
         stats.complete_chains++;
       } else {

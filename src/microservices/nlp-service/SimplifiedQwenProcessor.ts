@@ -22,7 +22,7 @@ export class SimplifiedQwenProcessor {
 
   private constructor() {
     this.ollamaClient = axios.create({
-      baseURL: `${walmartConfig.nlp.host}:${walmartConfig.nlp.port}`,
+      baseURL: `${walmartConfig?.nlp?.host || 'http://localhost'}:${walmartConfig?.nlp?.port || 11434}`,
       timeout: 30000, // Increased timeout for Qwen3:0.6b
     });
   }
@@ -156,7 +156,7 @@ List the grocery items mentioned:`;
 
     try {
       const response = await this.ollamaClient.post("/api/generate", {
-        model: walmartConfig.nlp.model,
+        model: walmartConfig?.nlp?.model || 'qwen3:0.6b',
         prompt: prompt,
         stream: false,
         options: {
@@ -166,7 +166,7 @@ List the grocery items mentioned:`;
         }
       });
 
-      const modelOutput = response.data.response;
+      const modelOutput = response?.data?.response || '';
       
       // Clean the output (remove thinking tags if present)
       const cleanOutput = modelOutput
@@ -175,10 +175,10 @@ List the grocery items mentioned:`;
         .trim();
 
       // Extract items from the cleaned output
-      const lines = cleanOutput.split('\n').filter(line => line.trim());
+      const lines = cleanOutput.split('\n').filter((line: string) => line.trim());
       const extractedItems: string[] = [];
 
-      lines.forEach(line => {
+      lines.forEach((line: string) => {
         // Remove bullets, numbers, dashes
         const cleanLine = line.replace(/^[-•*\d.)\s]+/, "").trim().toLowerCase();
         if (cleanLine && cleanLine.length > 1 && cleanLine.length < 50) {
@@ -196,7 +196,7 @@ List the grocery items mentioned:`;
       };
 
     } catch (error) {
-      logger.error(`Qwen processing error: ${error}`, "QWEN_PROCESSOR");
+      logger.error(`Qwen processing error: ${error instanceof Error ? error.message : String(error)}`, "QWEN_PROCESSOR");
       throw error;
     }
   }

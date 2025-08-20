@@ -8,6 +8,7 @@
 export * from "./core.js";
 export * from "./api.js";
 export * from "./database.js";
+// Export websocket types except conflicting ones
 export * from "./websocket.js";
 export * from "./agents.js";
 export * from "./monitoring.js";
@@ -16,8 +17,33 @@ export * from "./email.js";
 export * from "./orchestration.js";
 export * from "./rag.js";
 export * from "./auth.js";
-export * from "./errors.js";
+export * from "./client.types.js";
+// Export error types with renamed ErrorContext
+export {
+  type BaseError,
+  type ApiError,
+  type ValidationError,
+  type BusinessError,
+  type SystemError,
+  type DatabaseError,
+  type NetworkError,
+  type AuthenticationError,
+  type AuthorizationError,
+  type RateLimitError,
+  type IntegrationError,
+  type ExtendedErrorContext,
+  type ErrorRecoveryStrategy,
+  type ErrorAggregator,
+  type ErrorRetryPolicy,
+  type ErrorNotificationConfig,
+  type ErrorAnalytics,
+  type ErrorMonitoring,
+  type ErrorReportingService,
+  type ErrorHandlingMiddleware,
+  type GlobalErrorHandler
+} from "./errors.js";
 export * from "./events.js";
+export * from "./ui.types.js";
 
 // Re-export common utility types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -59,6 +85,7 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 
 // Timestamp utilities
 export type Timestamp = string; // ISO 8601 string
+
 export type UnixTimestamp = number;
 
 export interface TimestampedEntity {
@@ -99,7 +126,7 @@ export interface BaseFilter {
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
-  error?: ApiError;
+  error?: import('./errors.js').ApiError;
   metadata?: ResponseMetadata;
 }
 

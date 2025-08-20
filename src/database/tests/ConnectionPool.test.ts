@@ -3,13 +3,14 @@
  * Tests for the production-ready database connection pool system
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   DatabaseConnectionPool,
   getDatabaseConnection,
   executeQuery,
   executeTransaction,
   shutdownConnectionPool,
-} from "../ConnectionPool.js";
+} from '../ConnectionPool';
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -25,7 +26,7 @@ describe("DatabaseConnectionPool", () => {
     }
   });
 
-  test("should create singleton instance", () => {
+  it("should create singleton instance", () => {
     const pool1 = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -36,7 +37,7 @@ describe("DatabaseConnectionPool", () => {
     expect(pool1).toBe(pool2);
   });
 
-  test("should provide thread-safe connections", async () => {
+  it("should provide thread-safe connections", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -49,13 +50,13 @@ describe("DatabaseConnectionPool", () => {
     expect(result).toEqual({ test: 1 });
   });
 
-  test("should track connection metrics", async () => {
+  it("should track connection metrics", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
 
     // Get connection and perform some queries
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       db.prepare("SELECT 1 as test").get();
       return true;
     });
@@ -65,13 +66,13 @@ describe("DatabaseConnectionPool", () => {
     expect(stats.totalQueries).toBeGreaterThan(0);
   });
 
-  test("should handle transactions correctly", async () => {
+  it("should handle transactions correctly", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
 
     // Create test table
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       db.exec(
         "CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, value TEXT)",
       );
@@ -79,7 +80,7 @@ describe("DatabaseConnectionPool", () => {
     });
 
     // Test transaction
-    const result = await executeTransaction((db) => {
+    const result = await executeTransaction((db: any) => {
       const insert = db.prepare("INSERT INTO test_table (value) VALUES (?)");
       insert.run("test1");
       insert.run("test2");
@@ -93,7 +94,7 @@ describe("DatabaseConnectionPool", () => {
     expect(result).toBeGreaterThanOrEqual(2);
   });
 
-  test("should provide health check functionality", async () => {
+  it("should provide health check functionality", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
@@ -105,7 +106,7 @@ describe("DatabaseConnectionPool", () => {
     expect(health).toHaveProperty("errors");
   });
 
-  test("should handle connection cleanup", async () => {
+  it("should handle connection cleanup", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
       idleTimeout: 100, // Very short timeout for testing
@@ -115,37 +116,37 @@ describe("DatabaseConnectionPool", () => {
     const initialStats = pool.getStats();
 
     // Wait for cleanup
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve: any) => setTimeout(resolve, 200));
 
     // Connection should still exist since it's the main thread connection
     const finalStats = pool.getStats();
     expect(finalStats.totalConnections).toBeGreaterThanOrEqual(0);
   });
 
-  test("should handle errors gracefully", async () => {
+  it("should handle errors gracefully", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
 
     try {
-      await executeQuery((db) => {
+      await executeQuery((db: any) => {
         // This should throw an error
         db.prepare("SELECT * FROM non_existent_table").get();
         return true;
       });
-      fail("Expected error was not thrown");
+      throw new Error("Expected error was not thrown");
     } catch (error) {
       expect(error).toBeDefined();
     }
   });
 
-  test("should handle concurrent operations", async () => {
+  it("should handle concurrent operations", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
 
     // Create test table
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       db.exec(
         "CREATE TABLE IF NOT EXISTS concurrent_test (id INTEGER PRIMARY KEY, thread_id INTEGER)",
       );
@@ -154,7 +155,7 @@ describe("DatabaseConnectionPool", () => {
 
     // Run multiple concurrent operations
     const operations = Array.from({ length: 5 }, (_, i) =>
-      executeQuery((db) => {
+      executeQuery((db: any) => {
         const stmt = db.prepare(
           "INSERT INTO concurrent_test (thread_id) VALUES (?)",
         );
@@ -168,14 +169,14 @@ describe("DatabaseConnectionPool", () => {
     expect(results).toEqual([0, 1, 2, 3, 4]);
   });
 
-  test("should provide detailed connection metrics", async () => {
+  it("should provide detailed connection metrics", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
 
     // Perform some operations to generate metrics
-    await executeQuery((db) => db.prepare("SELECT 1").get());
-    await executeQuery((db) => db.prepare("SELECT 2").get());
+    await executeQuery((db: any) => db.prepare("SELECT 1").get());
+    await executeQuery((db: any) => db.prepare("SELECT 2").get());
 
     const metrics = pool.getConnectionMetrics();
     expect(metrics).toBeInstanceOf(Array);
@@ -191,13 +192,13 @@ describe("DatabaseConnectionPool", () => {
     }
   });
 
-  test("should handle graceful shutdown", async () => {
+  it("should handle graceful shutdown", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
 
     // Perform some operations
-    await executeQuery((db) => db.prepare("SELECT 1").get());
+    await executeQuery((db: any) => db.prepare("SELECT 1").get());
 
     // Should shutdown without errors
     await expect(pool.shutdown()).resolves.not.toThrow();
@@ -216,7 +217,7 @@ describe("ConnectionPool Integration", () => {
     }
   });
 
-  test("should work with DatabaseManager", async () => {
+  it("should work with DatabaseManager", async () => {
     const { getDatabaseManager } = await import("../DatabaseManager.js");
 
     const dbManager = getDatabaseManager({
@@ -232,7 +233,7 @@ describe("ConnectionPool Integration", () => {
     await dbManager.close();
   });
 
-  test("should work with EmailThreePhaseAnalysisService", async () => {
+  it("should work with EmailThreePhaseAnalysisService", async () => {
     const { EmailThreePhaseAnalysisService } = await import(
       "../../core/services/EmailThreePhaseAnalysisService.js"
     );
@@ -245,7 +246,7 @@ describe("ConnectionPool Integration", () => {
     await service.shutdown();
   });
 
-  test("should work with EmailChainAnalyzer", async () => {
+  it("should work with EmailChainAnalyzer", async () => {
     const { EmailChainAnalyzer } = await import(
       "../../core/services/EmailChainAnalyzer.js"
     );
@@ -271,13 +272,13 @@ describe("ConnectionPool Performance", () => {
     }
   });
 
-  test("should handle high query volume efficiently", async () => {
+  it("should handle high query volume efficiently", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
 
     // Create test table
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       db.exec(
         "CREATE TABLE IF NOT EXISTS perf_test (id INTEGER PRIMARY KEY, value TEXT)",
       );
@@ -289,7 +290,7 @@ describe("ConnectionPool Performance", () => {
 
     // Run many queries
     const promises = Array.from({ length: numQueries }, (_, i) =>
-      executeQuery((db) => {
+      executeQuery((db: any) => {
         const stmt = db.prepare("INSERT INTO perf_test (value) VALUES (?)");
         stmt.run(`value_${i}`);
         return i;
@@ -308,14 +309,14 @@ describe("ConnectionPool Performance", () => {
     expect(queriesPerSecond).toBeGreaterThan(100); // At least 100 QPS
   });
 
-  test("should maintain reasonable memory usage", async () => {
+  it("should maintain reasonable memory usage", async () => {
     const pool = DatabaseConnectionPool.getInstance({
       databasePath: testDbPath,
     });
 
     // Perform many operations
     for (let i = 0; i < 100; i++) {
-      await executeQuery((db) => {
+      await executeQuery((db: any) => {
         db.prepare("SELECT ? as iteration").get(i);
         return i;
       });

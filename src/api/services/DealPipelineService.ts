@@ -3,11 +3,12 @@
  * Orchestrates continuous price monitoring, deal detection, and notification delivery
  */
 
-import { logger } from "../../utils/logger.js";
+import { Logger } from "../../utils/logger.js";
+const logger = Logger.getInstance();
 import { WalmartPriceFetcher } from "./WalmartPriceFetcher.js";
 import { PriceHistoryService } from "./PriceHistoryService.js";
 import { DealDetectionEngine } from "./DealDetectionEngine.js";
-import { WebSocketService } from "./WebSocketService.js";
+import { DealWebSocketService } from "./DealWebSocketService.js";
 import { EventEmitter } from "events";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
 import type { DetectedDeal } from "./DealDetectionEngine.js";
@@ -85,7 +86,7 @@ export class DealPipelineService extends EventEmitter {
   private priceFetcher: WalmartPriceFetcher;
   private priceHistory: PriceHistoryService;
   private dealDetection: DealDetectionEngine;
-  private webSocket: WebSocketService;
+  private webSocket: DealWebSocketService;
   
   // Pipeline state
   private isRunning = false;
@@ -162,7 +163,7 @@ export class DealPipelineService extends EventEmitter {
     this.priceFetcher = WalmartPriceFetcher.getInstance();
     this.priceHistory = PriceHistoryService.getInstance();
     this.dealDetection = DealDetectionEngine.getInstance();
-    this.webSocket = WebSocketService.getInstance();
+    this.webSocket = DealWebSocketService.getInstance();
     
     this.setupEventHandlers();
   }
@@ -249,32 +250,35 @@ export class DealPipelineService extends EventEmitter {
     priority: 'high' | 'normal' | 'low' = 'normal'
   ): void {
     // Avoid duplicates
-    const existingIndex = this.processingQueue.findIndex(item => item.productId === productId);
+    const existingIndex = this?.processingQueue?.findIndex(item => item.productId === productId);
     if (existingIndex >= 0) {
       // Update priority if higher
-      if (this.getPriorityValue(priority) > this.getPriorityValue(this.processingQueue[existingIndex].priority)) {
-        this.processingQueue[existingIndex].priority = priority;
+      const existingItem = this.processingQueue[existingIndex];
+      if (existingItem && this.getPriorityValue(priority) > this.getPriorityValue(existingItem.priority)) {
+        existingItem.priority = priority;
       }
       return;
     }
 
-    this.processingQueue.push({
+    this?.processingQueue?.push({
       productId,
       priority,
       addedAt: Date.now()
     });
 
     // Sort by priority
-    this.processingQueue.sort((a, b) => 
+    this?.processingQueue?.sort((a, b) => 
       this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority)
     );
 
-    this.metrics.queueSize = this.processingQueue.length;
+    if (this.metrics) {
+      this.metrics.queueSize = this.processingQueue?.length || 0;
+    }
     
     logger.debug("Product added to monitoring queue", "DEAL_PIPELINE", { 
       productId, 
       priority, 
-      queueSize: this.processingQueue.length 
+      queueSize: this?.processingQueue?.length 
     });
   }
 
@@ -290,9 +294,9 @@ export class DealPipelineService extends EventEmitter {
     }
     
     logger.info("Batch added to monitoring queue", "DEAL_PIPELINE", { 
-      count: productIds.length, 
+      count: productIds?.length || 0, 
       priority,
-      queueSize: this.processingQueue.length 
+      queueSize: this?.processingQueue?.length 
     });
   }
 
@@ -326,7 +330,7 @@ export class DealPipelineService extends EventEmitter {
       logger.info("Running immediate product check", "DEAL_PIPELINE", { productId });
       
       // Get current live price
-      const livePrice = await this.priceFetcher.fetchProductPrice(productId);
+      const livePrice = await this?.priceFetcher?.fetchProductPrice(productId);
       if (!livePrice) {
         throw new Error("Could not fetch live price");
       }
@@ -342,32 +346,45 @@ export class DealPipelineService extends EventEmitter {
         price: livePrice.price,
         images: [],
         inStock: livePrice.inStock,
-        rating: 0,
-        reviewCount: 0,
+        ratings: undefined,
         size: '',
         unit: '',
         searchKeywords: [],
         featured: false,
-        dateAdded: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-        livePrice
+        availability: {
+          inStock: livePrice.inStock,
+          onlineOnly: true
+        },
+        metadata: {
+          source: 'api',
+          dealEligible: true
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        livePrice: {
+          price: livePrice.price,
+          salePrice: livePrice.salePrice,
+          wasPrice: livePrice.wasPrice,
+          inStock: livePrice.inStock,
+          lastUpdated: livePrice?.lastUpdated?.toISOString()
+        }
       };
 
       // Record price
-      await this.priceHistory.recordPrice(product, {
+      await this?.priceHistory?.recordPrice(product, {
         currentPrice: livePrice.price,
         salePrice: livePrice.salePrice,
         wasPrice: livePrice.wasPrice,
-        source: livePrice.source,
+        source: livePrice.source as any,
         confidenceScore: 1.0,
-        storeLocation: livePrice.storeLocation
+        storeLocation: livePrice.storeLocation || undefined
       });
 
       // Detect deals
-      const deals = await this.dealDetection.detectDeals(productId, product, {
-        checkSeasonality: this.config.enableSeasonalDetection,
-        checkBulkOpportunities: this.config.enableBulkDetection,
-        minSavingsPercentage: this.config.minSavingsPercentage
+      const deals = await this?.dealDetection?.detectDeals(productId, product, {
+        checkSeasonality: this?.config?.enableSeasonalDetection,
+        checkBulkOpportunities: this?.config?.enableBulkDetection,
+        minSavingsPercentage: this?.config?.minSavingsPercentage
       });
 
       // Send notifications for any deals found
@@ -377,7 +394,7 @@ export class DealPipelineService extends EventEmitter {
 
       logger.info("Immediate product check completed", "DEAL_PIPELINE", { 
         productId, 
-        dealsFound: deals.length 
+        dealsFound: deals?.length || 0 
       });
 
       return deals;
@@ -392,12 +409,12 @@ export class DealPipelineService extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Handle pipeline events
-    this.on('price_updated', this.handlePriceUpdated.bind(this));
-    this.on('deal_detected', this.handleDealDetected.bind(this));
-    this.on('error', this.handleError.bind(this));
+    this.on('price_updated', this?.handlePriceUpdated?.bind(this));
+    this.on('deal_detected', this?.handleDealDetected?.bind(this));
+    this.on('error', this?.handleError?.bind(this));
     
     // Handle WebSocket events
-    this.webSocket.on('user_connected', (userId: string) => {
+    this?.webSocket?.on('user_connected', (userId: string) => {
       logger.debug("User connected to deal notifications", "DEAL_PIPELINE", { userId });
     });
   }
@@ -405,15 +422,15 @@ export class DealPipelineService extends EventEmitter {
   private async populateInitialQueue(): Promise<void> {
     try {
       // Get products that haven't been updated recently
-      const staleProducts = await this.priceHistory.getStaleProducts(
-        this.config.priceUpdateIntervalMs / (60 * 60 * 1000), // Convert to hours
+      const staleProducts = await this?.priceHistory?.getStaleProducts(
+        this?.config?.priceUpdateIntervalMs / (60 * 60 * 1000), // Convert to hours
         100 // Limit initial batch
       );
 
-      if (staleProducts.length > 0) {
+      if (staleProducts?.length || 0 > 0) {
         this.addProductsBatch(staleProducts, 'normal');
         logger.info("Populated initial queue with stale products", "DEAL_PIPELINE", { 
-          count: staleProducts.length 
+          count: staleProducts?.length || 0 
         });
       }
     } catch (error) {
@@ -424,7 +441,7 @@ export class DealPipelineService extends EventEmitter {
   private startPriceUpdateTimer(): void {
     this.priceUpdateTimer = setInterval(
       () => this.processPriceUpdates(),
-      this.config.priceUpdateIntervalMs
+      this?.config?.priceUpdateIntervalMs
     );
     logger.debug("Price update timer started", "DEAL_PIPELINE");
   }
@@ -432,7 +449,7 @@ export class DealPipelineService extends EventEmitter {
   private startDealDetectionTimer(): void {
     this.dealDetectionTimer = setInterval(
       () => this.processDealDetection(),
-      this.config.dealDetectionIntervalMs
+      this?.config?.dealDetectionIntervalMs
     );
     logger.debug("Deal detection timer started", "DEAL_PIPELINE");
   }
@@ -440,7 +457,7 @@ export class DealPipelineService extends EventEmitter {
   private startAlertCheckTimer(): void {
     this.alertCheckTimer = setInterval(
       () => this.processAlertChecks(),
-      this.config.alertCheckIntervalMs
+      this?.config?.alertCheckIntervalMs
     );
     logger.debug("Alert check timer started", "DEAL_PIPELINE");
   }
@@ -448,7 +465,7 @@ export class DealPipelineService extends EventEmitter {
   private startCleanupTimer(): void {
     this.cleanupTimer = setInterval(
       () => this.performCleanup(),
-      this.config.cleanupIntervalHours * 60 * 60 * 1000
+      this?.config?.cleanupIntervalHours * 60 * 60 * 1000
     );
     logger.debug("Cleanup timer started", "DEAL_PIPELINE");
   }
@@ -479,12 +496,12 @@ export class DealPipelineService extends EventEmitter {
     const startTime = Date.now();
     try {
       logger.debug("Starting price update batch", "DEAL_PIPELINE", { 
-        queueSize: this.processingQueue.length 
+        queueSize: this?.processingQueue?.length 
       });
 
       // Get batch of products to process
-      const batch = this.processingQueue.splice(0, this.config.maxProductsPerBatch);
-      if (batch.length === 0) {
+      const batch = this?.processingQueue?.splice(0, this?.config?.maxProductsPerBatch);
+      if (batch?.length || 0 === 0) {
         logger.debug("No products in queue for price updates", "DEAL_PIPELINE");
         return;
       }
@@ -493,12 +510,12 @@ export class DealPipelineService extends EventEmitter {
       let errorCount = 0;
 
       // Process batch with concurrency control
-      for (let i = 0; i < batch.length; i += this.config.maxConcurrentRequests) {
-        const concurrentBatch = batch.slice(i, i + this.config.maxConcurrentRequests);
+      for (let i = 0; i < batch?.length || 0; i += this?.config?.maxConcurrentRequests) {
+        const concurrentBatch = batch.slice(i, i + this?.config?.maxConcurrentRequests);
         
-        const promises = concurrentBatch.map(async (item) => {
+        const promises = concurrentBatch?.map(async (item: any) => {
           try {
-            const livePrice = await this.priceFetcher.fetchProductPrice(item.productId);
+            const livePrice = await this?.priceFetcher?.fetchProductPrice(item.productId);
             if (livePrice) {
               // Create minimal product object for recording
               const product: WalmartProduct = {
@@ -511,24 +528,38 @@ export class DealPipelineService extends EventEmitter {
                 price: livePrice.price,
                 images: [],
                 inStock: livePrice.inStock,
-                rating: 0,
+                ratings: undefined,
                 reviewCount: 0,
                 size: '',
                 unit: '',
                 searchKeywords: [],
                 featured: false,
-                dateAdded: new Date().toISOString(),
-                lastUpdated: new Date().toISOString(),
-                livePrice
+                availability: {
+                  inStock: livePrice.inStock,
+                  onlineOnly: true
+                },
+                metadata: {
+                  source: 'api',
+                  dealEligible: true
+                },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                livePrice: {
+                  price: livePrice.price,
+                  salePrice: livePrice.salePrice,
+                  wasPrice: livePrice.wasPrice,
+                  inStock: livePrice.inStock,
+                  lastUpdated: livePrice?.lastUpdated?.toISOString()
+                }
               };
 
-              await this.priceHistory.recordPrice(product, {
+              await this?.priceHistory?.recordPrice(product, {
                 currentPrice: livePrice.price,
                 salePrice: livePrice.salePrice,
                 wasPrice: livePrice.wasPrice,
-                source: livePrice.source,
+                source: livePrice.source as any,
                 confidenceScore: 1.0,
-                storeLocation: livePrice.storeLocation
+                storeLocation: livePrice.storeLocation || undefined
               });
 
               this.emit('price_updated', { productId: item.productId, price: livePrice.price });
@@ -546,27 +577,37 @@ export class DealPipelineService extends EventEmitter {
         await Promise.all(promises);
         
         // Add delay between concurrent batches
-        if (i + this.config.maxConcurrentRequests < batch.length) {
-          await new Promise(resolve => setTimeout(resolve, this.config.delayBetweenRequestsMs));
+        if (i + this?.config?.maxConcurrentRequests < batch?.length || 0) {
+          await new Promise(resolve => setTimeout(resolve, this?.config?.delayBetweenRequestsMs));
         }
       }
 
       const duration = Date.now() - startTime;
-      this.recentTimings.priceUpdates.push(duration);
-      this.recentTimings.priceUpdates = this.recentTimings.priceUpdates.slice(-10); // Keep last 10
+      this?.recentTimings?.priceUpdates.push(duration);
+      if (this.recentTimings?.priceUpdates) {
+        this.recentTimings.priceUpdates = this.recentTimings.priceUpdates.slice(-10); // Keep last 10
+      }
 
-      this.metrics.pricesUpdatedLastHour += successCount;
-      this.metrics.lastPriceUpdateAt = new Date().toISOString();
-      this.metrics.queueSize = this.processingQueue.length;
-      this.recentTimings.successes += successCount;
-      this.recentTimings.errors += errorCount;
+      if (this?.metrics) {
+        this.metrics.pricesUpdatedLastHour += successCount;
+      }
+      if (this.metrics) {
+        this.metrics.lastPriceUpdateAt = new Date().toISOString();
+      }
+      if (this.metrics) {
+        this.metrics.queueSize = this.processingQueue?.length || 0;
+      }
+      if (this?.recentTimings) {
+        this.recentTimings.successes += successCount;
+        this.recentTimings.errors += errorCount;
+      }
 
       logger.info("Price update batch completed", "DEAL_PIPELINE", {
-        processed: batch.length,
+        processed: batch?.length || 0,
         successes: successCount,
         errors: errorCount,
         durationMs: duration,
-        queueRemaining: this.processingQueue.length
+        queueRemaining: this?.processingQueue?.length
       });
 
     } catch (error) {
@@ -583,13 +624,13 @@ export class DealPipelineService extends EventEmitter {
       logger.debug("Starting deal detection run", "DEAL_PIPELINE");
 
       // Get deal candidates from recent price changes
-      const dealCandidates = await this.priceHistory.findDealCandidates(
+      const dealCandidates = await this?.priceHistory?.findDealCandidates(
         undefined, // All categories
-        this.config.minSavingsPercentage,
-        this.config.maxDealsPerRun
+        this?.config?.minSavingsPercentage,
+        this?.config?.maxDealsPerRun
       );
 
-      if (dealCandidates.length === 0) {
+      if (dealCandidates?.length || 0 === 0) {
         logger.debug("No deal candidates found", "DEAL_PIPELINE");
         return;
       }
@@ -613,33 +654,40 @@ export class DealPipelineService extends EventEmitter {
             price: candidate.currentPrice,
             images: [],
             inStock: true,
-            rating: 0,
+            ratings: undefined,
             reviewCount: 0,
             size: '',
             unit: '',
             searchKeywords: [],
             featured: false,
-            dateAdded: new Date().toISOString(),
-            lastUpdated: new Date().toISOString(),
+            availability: {
+              inStock: true,
+              onlineOnly: true
+            },
+            metadata: {
+              source: 'api',
+              dealEligible: true
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             livePrice: {
-              productId: candidate.productId,
               price: candidate.currentPrice,
               salePrice: candidate.salePrice,
               wasPrice: candidate.wasPrice,
               inStock: true,
               storeLocation: candidate.storeLocation,
-              lastUpdated: new Date(candidate.recordedAt),
+              lastUpdated: new Date(candidate.recordedAt).toISOString(),
               source: candidate.source as 'api' | 'scraper' | 'cache'
             }
           };
 
-          const deals = await this.dealDetection.detectDeals(candidate.productId, product, {
-            checkSeasonality: this.config.enableSeasonalDetection,
-            checkBulkOpportunities: this.config.enableBulkDetection,
-            minSavingsPercentage: this.config.minSavingsPercentage
+          const deals = await this?.dealDetection?.detectDeals(candidate.productId, product, {
+            checkSeasonality: this?.config?.enableSeasonalDetection,
+            checkBulkOpportunities: this?.config?.enableBulkDetection,
+            minSavingsPercentage: this?.config?.minSavingsPercentage
           });
 
-          dealsDetected += deals.length;
+          dealsDetected += deals?.length || 0;
           
           for (const deal of deals) {
             this.emit('deal_detected', deal);
@@ -655,14 +703,20 @@ export class DealPipelineService extends EventEmitter {
       }
 
       const duration = Date.now() - startTime;
-      this.recentTimings.dealDetections.push(duration);
-      this.recentTimings.dealDetections = this.recentTimings.dealDetections.slice(-10);
+      this?.recentTimings?.dealDetections.push(duration);
+      if (this.recentTimings?.dealDetections) {
+        this.recentTimings.dealDetections = this.recentTimings.dealDetections.slice(-10);
+      }
 
-      this.metrics.dealsDetectedLastHour += dealsDetected;
-      this.metrics.lastDealDetectionAt = new Date().toISOString();
+      if (this?.metrics) {
+        this.metrics.dealsDetectedLastHour += dealsDetected;
+      }
+      if (this.metrics) {
+        this.metrics.lastDealDetectionAt = new Date().toISOString();
+      }
 
       logger.info("Deal detection run completed", "DEAL_PIPELINE", {
-        candidates: dealCandidates.length,
+        candidates: dealCandidates?.length || 0,
         dealsDetected,
         durationMs: duration
       });
@@ -679,9 +733,11 @@ export class DealPipelineService extends EventEmitter {
     try {
       logger.debug("Checking deal alerts", "DEAL_PIPELINE");
       
-      await this.dealDetection.checkDealAlerts();
+      await this?.dealDetection?.checkDealAlerts();
       
-      this.metrics.lastAlertCheckAt = new Date().toISOString();
+      if (this.metrics) {
+        this.metrics.lastAlertCheckAt = new Date().toISOString();
+      }
       
     } catch (error) {
       logger.error("Alert check failed", "DEAL_PIPELINE", { error });
@@ -694,7 +750,7 @@ export class DealPipelineService extends EventEmitter {
       logger.info("Starting pipeline cleanup", "DEAL_PIPELINE");
 
       // Clean up old price history
-      const deletedPrices = await this.priceHistory.cleanupOldPriceHistory(this.config.priceHistoryDays);
+      const deletedPrices = await this?.priceHistory?.cleanupOldPriceHistory(this?.config?.priceHistoryDays);
       
       logger.info("Pipeline cleanup completed", "DEAL_PIPELINE", {
         deletedPriceRecords: deletedPrices
@@ -710,31 +766,51 @@ export class DealPipelineService extends EventEmitter {
     const hourAgo = now - (60 * 60 * 1000);
 
     // Calculate recent performance metrics
-    this.metrics.avgPriceUpdateTime = this.recentTimings.priceUpdates.length > 0 ?
-      this.recentTimings.priceUpdates.reduce((sum, time) => sum + time, 0) / this.recentTimings.priceUpdates.length : 0;
+    if (this.metrics && this.recentTimings?.priceUpdates) {
+      this.metrics.avgPriceUpdateTime = this.recentTimings.priceUpdates.length > 0 ?
+        this.recentTimings.priceUpdates.reduce((sum: any, time: any) => sum + time, 0) / this.recentTimings.priceUpdates.length : 0;
+    }
 
-    this.metrics.avgDealDetectionTime = this.recentTimings.dealDetections.length > 0 ?
-      this.recentTimings.dealDetections.reduce((sum, time) => sum + time, 0) / this.recentTimings.dealDetections.length : 0;
+    if (this.metrics && this.recentTimings?.dealDetections) {
+      this.metrics.avgDealDetectionTime = this.recentTimings.dealDetections.length > 0 ?
+        this.recentTimings.dealDetections.reduce((sum: any, time: any) => sum + time, 0) / this.recentTimings.dealDetections.length : 0;
+    }
 
-    const totalOperations = this.recentTimings.successes + this.recentTimings.errors;
-    this.metrics.successRate = totalOperations > 0 ? (this.recentTimings.successes / totalOperations) * 100 : 100;
-    this.metrics.errorRate = totalOperations > 0 ? (this.recentTimings.errors / totalOperations) * 100 : 0;
+    const totalOperations = this?.recentTimings?.successes + this?.recentTimings?.errors;
+    if (this.metrics && this.recentTimings) {
+      this.metrics.successRate = totalOperations > 0 ? (this.recentTimings.successes / totalOperations) * 100 : 100;
+    }
+    if (this.metrics && this.recentTimings) {
+      this.metrics.errorRate = totalOperations > 0 ? (this.recentTimings.errors / totalOperations) * 100 : 0;
+    }
 
     // Determine health status
-    const isHealthy = this.metrics.errorRate < 10 && // Less than 10% error rate
-                     this.metrics.queueSize < 1000 && // Queue not too large
+    const isHealthy = this?.metrics?.errorRate < 10 && // Less than 10% error rate
+                     this?.metrics?.queueSize < 1000 && // Queue not too large
                      this.isRunning;
 
-    this.metrics.isHealthy = isHealthy;
+    if (this.metrics) {
+      this.metrics.isHealthy = isHealthy;
+    }
 
     // Reset hourly counters
-    this.metrics.pricesUpdatedLastHour = 0;
-    this.metrics.dealsDetectedLastHour = 0;
-    this.metrics.alertsTriggeredLastHour = 0;
+    if (this.metrics) {
+      this.metrics.pricesUpdatedLastHour = 0;
+    }
+    if (this.metrics) {
+      this.metrics.dealsDetectedLastHour = 0;
+    }
+    if (this.metrics) {
+      this.metrics.alertsTriggeredLastHour = 0;
+    }
 
     // Reset performance counters
-    this.recentTimings.successes = 0;
-    this.recentTimings.errors = 0;
+    if (this.recentTimings) {
+      this.recentTimings.successes = 0;
+    }
+    if (this.recentTimings) {
+      this.recentTimings.errors = 0;
+    }
 
     this.emit('health_check', { metrics: this.metrics });
     
@@ -744,16 +820,15 @@ export class DealPipelineService extends EventEmitter {
   }
 
   private async notifyDealDetected(deal: DetectedDeal): Promise<void> {
-    if (!this.config.enableRealTimeNotifications) return;
+    if (!this?.config?.enableRealTimeNotifications) return;
 
     try {
       // Send WebSocket notification to all connected users
-      this.webSocket.broadcast('deal_detected', {
-        deal,
-        timestamp: new Date().toISOString()
-      });
+      this?.webSocket?.broadcastDealNotification(deal);
 
-      this.metrics.alertsTriggeredLastHour++;
+      if (this?.metrics) {
+        this.metrics.alertsTriggeredLastHour++;
+      }
 
       logger.debug("Deal notification sent", "DEAL_PIPELINE", {
         dealId: deal.id,
@@ -774,14 +849,16 @@ export class DealPipelineService extends EventEmitter {
     logger.info("Deal detected event", "DEAL_PIPELINE", {
       dealId: deal.id,
       productName: deal.productName,
-      savings: `${deal.savingsPercentage.toFixed(1)}%`,
-      score: deal.dealScore.toFixed(2)
+      savings: `${deal?.savingsPercentage?.toFixed(1)}%`,
+      score: deal?.dealScore?.toFixed(2)
     });
   }
 
   private handleError(data: { type: string; error: any }): void {
     logger.error("Pipeline error event", "DEAL_PIPELINE", data);
-    this.recentTimings.errors++;
+    if (this?.recentTimings) {
+      this.recentTimings.errors++;
+    }
   }
 
   private getPriorityValue(priority: 'high' | 'normal' | 'low'): number {

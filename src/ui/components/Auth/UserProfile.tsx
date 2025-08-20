@@ -32,19 +32,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfileData((prev) => ({ ...prev, [name]: value }));
+    setProfileData((prev: any) => ({ ...prev, [name]: value }));
 
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev: any) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setPasswordData((prev) => ({ ...prev, [name]: value }));
+    setPasswordData((prev: any) => ({ ...prev, [name]: value }));
 
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev: any) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -76,7 +76,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
     if (!passwordData.newPassword) {
       newErrors.newPassword = "New password is required";
-    } else if (passwordData.newPassword.length < 8) {
+    } else if (passwordData?.newPassword?.length < 8) {
       newErrors.newPassword = "Password must be at least 8 characters";
     }
 
@@ -127,7 +127,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const getInitials = (firstName?: string, lastName?: string) => {
     const first = firstName?.charAt(0).toUpperCase() || "";
     const last = lastName?.charAt(0).toUpperCase() || "";
-    return first + last || user.username.charAt(0).toUpperCase();
+    return first + last || user?.username?.charAt(0).toUpperCase();
   };
 
   const getRoleColor = (role: string) => {
@@ -167,7 +167,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             className="profile-role"
             style={{ color: getRoleColor(user.role) }}
           >
-            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+            {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
           </span>
         </div>
 

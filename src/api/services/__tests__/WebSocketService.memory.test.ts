@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { WebSocketService } from "../WebSocketService.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { WebSocketService } from '../WebSocketService';
 import { EventEmitter } from "events";
-import type { AuthenticatedWebSocket } from "../../middleware/websocketAuth.js";
+import type { AuthenticatedWebSocket } from '../../middleware/websocketAuth';
 import type { Event, CloseEvent, ErrorEvent, MessageEvent } from "ws";
+import { MockWebSocket, TestCallback } from '../../../shared/types/test.types';
+import { JSONObject } from '../../../shared/types/utility.types';
 
 // Mock logger
 vi.mock("../../../utils/logger", () => ({
@@ -29,7 +31,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
   });
 
   // Mock WebSocket implementation
-  class MockWebSocket extends EventEmitter implements AuthenticatedWebSocket {
+  class MockWebSocketImpl extends EventEmitter implements AuthenticatedWebSocket {
     readyState: 0 | 1 | 2 | 3 = 1; // OPEN
     readonly OPEN = 1 as const;
     readonly CONNECTING = 0 as const;
@@ -61,23 +63,23 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       this.setMaxListeners(0);
     }
 
-    close(code?: number, reason?: string | Buffer) {
+    close(code?: number, reason?: string | Buffer): void {
       this.readyState = this.CLOSED;
       this.emit("close", code, reason);
     }
 
-    ping(data?: any, mask?: boolean, cb?: (err: Error) => void) {
+    ping(data?: Buffer, mask?: boolean, cb?: (err: Error | null) => void): void {
       this.emit("pong");
-      if (cb) cb(null as any);
+      if (cb) cb(null);
     }
 
-    pong(data?: any, mask?: boolean, cb?: (err: Error) => void) {
-      if (cb) cb(null as any);
+    pong(data?: Buffer, mask?: boolean, cb?: (err: Error | null) => void): void {
+      if (cb) cb(null);
     }
 
-    send(data: any, cb?: (err?: Error) => void): void;
+    send(data: string | Buffer, cb?: (err?: Error) => void): void;
     send(
-      data: any,
+      data: string | Buffer,
       options: {
         mask?: boolean;
         binary?: boolean;
@@ -86,7 +88,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       },
       cb?: (err?: Error) => void,
     ): void;
-    send(data: any, optionsOrCb?: any, cb?: (err?: Error) => void) {
+    send(data: string | Buffer, optionsOrCb?: unknown, cb?: (err?: Error) => void): void {
       // Mock send
       if (typeof optionsOrCb === "function") {
         optionsOrCb();
@@ -110,15 +112,15 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
     addEventListener(
       method: string,
-      listener: (...args: any[]) => void,
-      options?: any,
+      listener: (...args: unknown[]) => void,
+      options?: Record<string, unknown>,
     ): void {
       this.addListener(method, listener);
     }
 
     removeEventListener(
       method: string,
-      listener: (...args: any[]) => void,
+      listener: (...args: unknown[]) => void,
     ): void {
       this.removeListener(method, listener);
     }
@@ -127,7 +129,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
   describe("Connection Management", () => {
     it("should clean up all resources when a client disconnects", () => {
       const clientId = "test-client-1";
-      const ws = new MockWebSocket() as AuthenticatedWebSocket;
+      const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
       ws.clientId = clientId;
       ws.isAuthenticated = true;
       ws.permissions = ["read", "write"];
@@ -157,7 +159,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
       // Register maximum number of clients
       for (let i = 0; i < MAX_CLIENTS; i++) {
-        const ws = new MockWebSocket() as AuthenticatedWebSocket;
+        const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
         ws.clientId = `client-${i}`;
         wsService.registerClient(`client-${i}`, ws);
       }
@@ -166,7 +168,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
       // Try to register more clients - should be rejected
       for (let i = 0; i < extraClients; i++) {
-        const ws = new MockWebSocket() as AuthenticatedWebSocket;
+        const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
         ws.clientId = `extra-client-${i}`;
         const closeSpy = vi.spyOn(ws, "close");
 
@@ -182,7 +184,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
     it("should limit subscriptions per client", () => {
       const clientId = "test-client";
-      const ws = new MockWebSocket() as AuthenticatedWebSocket;
+      const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
       ws.clientId = clientId;
 
       wsService.registerClient(clientId, ws);
@@ -203,7 +205,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
   describe("Event Listener Cleanup", () => {
     it("should remove all event listeners on disconnect", () => {
       const clientId = "test-client";
-      const ws = new MockWebSocket() as AuthenticatedWebSocket;
+      const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
       ws.clientId = clientId;
 
       // Count initial listeners
@@ -226,9 +228,9 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       expect(afterCloseCount).toBe(0);
     });
 
-    it("should clean up health check timers", (done) => {
+    it("should clean up health check timers", (done: TestCallback) => {
       const clientId = "test-client";
-      const ws = new MockWebSocket() as AuthenticatedWebSocket;
+      const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
       ws.clientId = clientId;
 
       // Register with health monitoring
@@ -253,12 +255,12 @@ describe("WebSocketService - Memory Leak Prevention", () => {
   describe("Memory Cleanup Routines", () => {
     it("should clean up orphaned data structures", () => {
       // Create clients with various states
-      const activeClient = new MockWebSocket() as AuthenticatedWebSocket;
+      const activeClient = new MockWebSocketImpl() as AuthenticatedWebSocket;
       activeClient.clientId = "active";
       activeClient.isAuthenticated = true;
       activeClient.permissions = ["read"];
 
-      const disconnectedClient = new MockWebSocket() as AuthenticatedWebSocket;
+      const disconnectedClient = new MockWebSocketImpl() as AuthenticatedWebSocket;
       disconnectedClient.clientId = "disconnected";
       disconnectedClient.isAuthenticated = true;
       disconnectedClient.permissions = ["read"];
@@ -270,57 +272,57 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       wsService.subscribe("disconnected", ["test"]);
 
       // Verify both clients are registered initially
-      expect((wsService as any).authenticatedClients.has("disconnected")).toBe(
+      expect((wsService as unknown as { authenticatedClients: Map<string, boolean> }).authenticatedClients.has("disconnected")).toBe(
         true,
       );
-      expect((wsService as any).subscriptions.has("disconnected")).toBe(true);
+      expect((wsService as unknown as { subscriptions: Map<string, string[]> }).subscriptions.has("disconnected")).toBe(true);
 
       // Manually remove disconnected client from clients map to simulate orphaned data
-      (wsService as any).clients.delete("disconnected");
+      (wsService as unknown as { clients: Map<string, AuthenticatedWebSocket> }).clients.delete("disconnected");
 
       // Run cleanup
-      (wsService as any).cleanupOrphanedData();
+      (wsService as unknown as { cleanupOrphanedData(): void }).cleanupOrphanedData();
 
       // Verify orphaned data is cleaned up
-      expect((wsService as any).authenticatedClients.has("disconnected")).toBe(
+      expect((wsService as unknown as { authenticatedClients: Map<string, boolean> }).authenticatedClients.has("disconnected")).toBe(
         false,
       );
-      expect((wsService as any).subscriptions.has("disconnected")).toBe(false);
-      expect((wsService as any).clientPermissions.has("disconnected")).toBe(
+      expect((wsService as unknown as { subscriptions: Map<string, string[]> }).subscriptions.has("disconnected")).toBe(false);
+      expect((wsService as unknown as { clientPermissions: Map<string, string[]> }).clientPermissions.has("disconnected")).toBe(
         false,
       );
 
       // Active client data should remain
-      expect((wsService as any).authenticatedClients.has("active")).toBe(true);
-      expect((wsService as any).subscriptions.has("active")).toBe(true);
+      expect((wsService as unknown as { authenticatedClients: Map<string, boolean> }).authenticatedClients.has("active")).toBe(true);
+      expect((wsService as unknown as { subscriptions: Map<string, string[]> }).subscriptions.has("active")).toBe(true);
     });
 
     it("should limit message queue size", () => {
       const clientId = "test-client";
-      const ws = new MockWebSocket() as AuthenticatedWebSocket;
+      const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
       ws.clientId = clientId;
 
       wsService.registerClient(clientId, ws);
 
       // Add more messages than the limit
-      const messageQueue = (wsService as any).messageQueue;
-      const messages = [];
+      const messageQueue = (wsService as unknown as { messageQueue: Map<string, JSONObject[]> }).messageQueue;
+      const messages: JSONObject[] = [];
       for (let i = 0; i < 60; i++) {
         messages.push({
           type: "test.message",
           data: `Message ${i}`,
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
         });
       }
       messageQueue.set(clientId, messages);
 
       // Run memory cleanup
-      (wsService as any).startMemoryCleanup();
+      (wsService as unknown as { startMemoryCleanup(): void }).startMemoryCleanup();
 
       // Wait for cleanup to run
       setTimeout(() => {
         const queue = messageQueue.get(clientId);
-        expect(queue.length).toBeLessThanOrEqual(50); // MAX_MESSAGE_HISTORY
+        expect(queue?.length ?? 0).toBeLessThanOrEqual(50); // MAX_MESSAGE_HISTORY
       }, 31000); // Just after cleanup interval
     });
   });
@@ -329,7 +331,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
     it("should clean up all resources on shutdown", () => {
       // Create multiple clients
       for (let i = 0; i < 5; i++) {
-        const ws = new MockWebSocket() as AuthenticatedWebSocket;
+        const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
         ws.clientId = `client-${i}`;
         wsService.registerClient(`client-${i}`, ws);
         wsService.subscribe(`client-${i}`, ["test"]);
@@ -343,11 +345,11 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
       // Verify all resources are cleaned up
       expect(wsService.getClientCount()).toBe(0);
-      expect((wsService as any).clients.size).toBe(0);
-      expect((wsService as any).subscriptions.size).toBe(0);
-      expect((wsService as any).messageQueue.size).toBe(0);
-      expect((wsService as any).throttleTimers.size).toBe(0);
-      expect((wsService as any).connectionHealthChecks.size).toBe(0);
+      expect((wsService as unknown as { clients: Map<string, AuthenticatedWebSocket> }).clients.size).toBe(0);
+      expect((wsService as unknown as { subscriptions: Map<string, string[]> }).subscriptions.size).toBe(0);
+      expect((wsService as unknown as { messageQueue: Map<string, JSONObject[]> }).messageQueue.size).toBe(0);
+      expect((wsService as unknown as { throttleTimers: Map<string, NodeJS.Timeout> }).throttleTimers.size).toBe(0);
+      expect((wsService as unknown as { connectionHealthChecks: Map<string, NodeJS.Timeout> }).connectionHealthChecks.size).toBe(0);
     });
 
     it("should stop all intervals on shutdown", () => {
@@ -355,25 +357,29 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       wsService.startHealthMonitoring(1000);
 
       // Get interval references
-      const healthInterval = (wsService as any).healthInterval;
-      const memoryCleanupInterval = (wsService as any).memoryCleanupInterval;
-      const performanceMonitorInterval = (wsService as any)
-        .performanceMonitorInterval;
+      const wsServiceWithIntervals = wsService as unknown as {
+        healthInterval: NodeJS.Timeout | null;
+        memoryCleanupInterval: NodeJS.Timeout | null;
+        performanceMonitorInterval: NodeJS.Timeout | null;
+      };
+      const healthInterval = wsServiceWithIntervals.healthInterval;
+      const memoryCleanupInterval = wsServiceWithIntervals.memoryCleanupInterval;
+      const performanceMonitorInterval = wsServiceWithIntervals.performanceMonitorInterval;
 
       // Shutdown
       wsService.shutdown();
 
       // Verify intervals are cleared
-      expect((wsService as any).healthInterval).toBeNull();
-      expect((wsService as any).memoryCleanupInterval).toBeNull();
-      expect((wsService as any).performanceMonitorInterval).toBeNull();
+      expect(wsServiceWithIntervals.healthInterval).toBeNull();
+      expect(wsServiceWithIntervals.memoryCleanupInterval).toBeNull();
+      expect(wsServiceWithIntervals.performanceMonitorInterval).toBeNull();
     });
   });
 
   describe("Performance Metrics", () => {
     it("should track connection errors without memory leaks", () => {
       const clientId = "error-client";
-      const ws = new MockWebSocket() as AuthenticatedWebSocket;
+      const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
       ws.clientId = clientId;
 
       wsService.registerClient(clientId, ws);
@@ -398,7 +404,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
       // Simulate multiple connection attempts
       for (let i = 0; i < 5; i++) {
-        const ws = new MockWebSocket() as AuthenticatedWebSocket;
+        const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
         ws.clientId = clientId;
 
         wsService.registerClient(clientId, ws);
@@ -409,7 +415,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
       // Should only track the final state
       expect(wsService.getClientCount()).toBe(0);
-      expect((wsService as any).retryAttempts.size).toBe(0);
+      expect((wsService as unknown as { retryAttempts: Map<string, number> }).retryAttempts.size).toBe(0);
     });
   });
 });
@@ -427,9 +433,9 @@ describe.skip("WebSocketService - Memory Usage Over Time", () => {
 
     for (let iteration = 0; iteration < iterations; iteration++) {
       // Create connections
-      const clients: MockWebSocket[] = [];
+      const clients: MockWebSocketImpl[] = [];
       for (let i = 0; i < connectionCount; i++) {
-        const ws = new MockWebSocket() as AuthenticatedWebSocket;
+        const ws = new MockWebSocketImpl() as AuthenticatedWebSocket;
         ws.clientId = `client-${iteration}-${i}`;
         ws.isAuthenticated = true;
 
@@ -443,19 +449,19 @@ describe.skip("WebSocketService - Memory Usage Over Time", () => {
         wsService.broadcast({
           type: "test.message",
           data: `Iteration ${iteration} Message ${i}`,
-          timestamp: new Date(),
-        } as any);
+          timestamp: new Date().toISOString(),
+        } as JSONObject);
       }
 
       // Disconnect all clients
       clients.forEach((ws) => ws.close());
 
       // Wait for cleanup
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise<void>((resolve) => setTimeout(resolve, 100));
 
       // Force garbage collection if available
-      if (global.gc) {
-        global.gc();
+      if ('gc' in global && typeof (global as unknown as { gc?: () => void }).gc === 'function') {
+        (global as unknown as { gc: () => void }).gc();
       }
     }
 

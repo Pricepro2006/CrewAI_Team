@@ -78,7 +78,7 @@ export class SecurityMonitoringService extends EventEmitter {
       "SECURITY_MONITOR",
       {
         ...event,
-        timestamp: fullEvent.timestamp.toISOString(),
+        timestamp: fullEvent?.timestamp?.toISOString(),
       }
     );
 
@@ -92,7 +92,15 @@ export class SecurityMonitoringService extends EventEmitter {
   /**
    * Get security statistics
    */
-  getStats(timeWindowMs: number = 3600000): Record<string, any> {
+  getStats(timeWindowMs: number = 3600000): {
+    timeWindow: string;
+    totalEvents: number;
+    eventCounts: Record<string, number>;
+    guestUserStats: any;
+    suspiciousIps: string[];
+    topDeniedResources: Array<{resource: string; count: number}>;
+    alertsTriggered: string[];
+  } {
     const now = Date.now();
     const windowStart = new Date(now - timeWindowMs);
 
@@ -100,7 +108,7 @@ export class SecurityMonitoringService extends EventEmitter {
       event => event.timestamp >= windowStart
     );
 
-    const eventCounts = recentEvents.reduce((acc, event) => {
+    const eventCounts = recentEvents.reduce((acc: Record<string, number>, event: SecurityEvent) => {
       acc[event.type] = (acc[event.type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -114,7 +122,7 @@ export class SecurityMonitoringService extends EventEmitter {
 
     return {
       timeWindow: `${timeWindowMs / 60000} minutes`,
-      totalEvents: recentEvents.length,
+      totalEvents: recentEvents?.length || 0,
       eventCounts,
       guestUserStats: guestStats,
       suspiciousIps,
@@ -135,13 +143,13 @@ export class SecurityMonitoringService extends EventEmitter {
     );
 
     // Check for suspicious patterns
-    const deniedCount = userEvents.filter(
+    const deniedCount = userEvents?.filter(
       event => 
         event.type === SecurityEventType.GUEST_ACCESS_DENIED ||
         event.type === SecurityEventType.PERMISSION_DENIED
     ).length;
 
-    const rateLimitCount = userEvents.filter(
+    const rateLimitCount = userEvents?.filter(
       event => event.type === SecurityEventType.GUEST_RATE_LIMITED
     ).length;
 
@@ -155,21 +163,21 @@ export class SecurityMonitoringService extends EventEmitter {
     const alerts: string[] = [];
     const stats = this.getEventCountsByType(timeWindowMs);
 
-    if (stats.GUEST_USER_CREATED > this.ALERT_THRESHOLDS.guestCreationPerHour) {
-      alerts.push(`High guest user creation rate: ${stats.GUEST_USER_CREATED}/hour`);
+    if ((stats.GUEST_USER_CREATED || 0) > this.ALERT_THRESHOLDS.guestCreationPerHour) {
+      alerts.push(`High guest user creation rate: ${stats.GUEST_USER_CREATED || 0}/hour`);
     }
 
-    if (stats.AUTH_FAILURE > this.ALERT_THRESHOLDS.failedAuthPerHour) {
-      alerts.push(`High authentication failure rate: ${stats.AUTH_FAILURE}/hour`);
+    if ((stats.AUTH_FAILURE || 0) > this.ALERT_THRESHOLDS.failedAuthPerHour) {
+      alerts.push(`High authentication failure rate: ${stats.AUTH_FAILURE || 0}/hour`);
     }
 
-    if (stats.GUEST_ACCESS_DENIED + stats.PERMISSION_DENIED > 
+    if ((stats.GUEST_ACCESS_DENIED || 0) + (stats.PERMISSION_DENIED || 0) > 
         this.ALERT_THRESHOLDS.deniedAccessPerHour) {
-      alerts.push(`High access denial rate: ${stats.GUEST_ACCESS_DENIED + stats.PERMISSION_DENIED}/hour`);
+      alerts.push(`High access denial rate: ${(stats.GUEST_ACCESS_DENIED || 0) + (stats.PERMISSION_DENIED || 0)}/hour`);
     }
 
-    if (stats.SUSPICIOUS_ACTIVITY > this.ALERT_THRESHOLDS.suspiciousActivityPerHour) {
-      alerts.push(`Suspicious activity detected: ${stats.SUSPICIOUS_ACTIVITY} events/hour`);
+    if ((stats.SUSPICIOUS_ACTIVITY || 0) > this.ALERT_THRESHOLDS.suspiciousActivityPerHour) {
+      alerts.push(`Suspicious activity detected: ${stats.SUSPICIOUS_ACTIVITY || 0} events/hour`);
     }
 
     return alerts;
@@ -184,7 +192,7 @@ export class SecurityMonitoringService extends EventEmitter {
 
     return this.events
       .filter(event => event.timestamp >= windowStart)
-      .reduce((acc, event) => {
+      .reduce((acc: Record<string, number>, event: SecurityEvent) => {
         acc[event.type] = (acc[event.type] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
@@ -194,7 +202,7 @@ export class SecurityMonitoringService extends EventEmitter {
    * Identify suspicious IPs
    */
   private identifySuspiciousIps(events: SecurityEvent[]): string[] {
-    const ipCounts = events.reduce((acc, event) => {
+    const ipCounts = events.reduce((acc: Record<string, number>, event: SecurityEvent) => {
       if (event.ip) {
         acc[event.ip] = (acc[event.ip] || 0) + 1;
       }
@@ -211,13 +219,13 @@ export class SecurityMonitoringService extends EventEmitter {
    * Get most denied resources
    */
   private getMostDeniedResources(events: SecurityEvent[]): Array<{resource: string; count: number}> {
-    const deniedEvents = events.filter(
+    const deniedEvents = events?.filter(
       event => 
         event.type === SecurityEventType.GUEST_ACCESS_DENIED ||
         event.type === SecurityEventType.PERMISSION_DENIED
     );
 
-    const resourceCounts = deniedEvents.reduce((acc, event) => {
+    const resourceCounts = deniedEvents.reduce((acc: Record<string, number>, event: SecurityEvent) => {
       if (event.resource) {
         acc[event.resource] = (acc[event.resource] || 0) + 1;
       }
@@ -242,10 +250,10 @@ export class SecurityMonitoringService extends EventEmitter {
           e.timestamp > new Date(Date.now() - 300000) // 5 minutes
       );
 
-      if (recentGuestCreations.length > 5) {
+      if ((recentGuestCreations?.length || 0) > 5) {
         this.emit("security-alert", {
           type: "RAPID_GUEST_CREATION",
-          message: `IP ${event.ip} created ${recentGuestCreations.length} guest users in 5 minutes`,
+          message: `IP ${event.ip} created ${recentGuestCreations?.length || 0} guest users in 5 minutes`,
           severity: "HIGH",
         });
       }
@@ -260,10 +268,10 @@ export class SecurityMonitoringService extends EventEmitter {
           e.timestamp > new Date(Date.now() - 600000) // 10 minutes
       );
 
-      if (recentFailures.length > 10) {
+      if ((recentFailures?.length || 0) > 10) {
         this.emit("security-alert", {
           type: "POTENTIAL_BRUTE_FORCE",
-          message: `IP ${event.ip} had ${recentFailures.length} auth failures in 10 minutes`,
+          message: `IP ${event.ip} had ${recentFailures?.length || 0} auth failures in 10 minutes`,
           severity: "CRITICAL",
         });
       }
@@ -298,9 +306,9 @@ export class SecurityMonitoringService extends EventEmitter {
     // Run analysis every 5 minutes
     setInterval(() => {
       const stats = this.getStats();
-      const alerts = stats.alertsTriggered;
+      const alerts = stats?.alertsTriggered;
 
-      if (alerts.length > 0) {
+      if ((alerts?.length || 0) > 0) {
         logger.warn("Security alerts detected in periodic analysis", "SECURITY_MONITOR", {
           alerts,
           stats,
@@ -333,12 +341,12 @@ ${Object.entries(stats.eventCounts)
   .join('\n')}
 
 Guest User Statistics:
-  - Active Sessions: ${stats.guestUserStats.activeSessions}
-  - Rate Limited IPs: ${stats.guestUserStats.rateLimitedIps}
-  - Max Sessions Per IP: ${stats.guestUserStats.maxSessionsPerIp}
-  - Session TTL: ${stats.guestUserStats.sessionTtlMinutes} minutes
+  - Active Sessions: ${stats?.guestUserStats?.activeSessions}
+  - Rate Limited IPs: ${stats?.guestUserStats?.rateLimitedIps}
+  - Max Sessions Per IP: ${stats?.guestUserStats?.maxSessionsPerIp}
+  - Session TTL: ${stats?.guestUserStats?.sessionTtlMinutes} minutes
 
-Suspicious IPs: ${stats.suspiciousIps.length > 0 ? stats.suspiciousIps.join(', ') : 'None'}
+Suspicious IPs: ${stats?.suspiciousIps?.length > 0 ? stats?.suspiciousIps?.join(', ') : 'None'}
 
 Top Denied Resources:
 ${stats.topDeniedResources
@@ -346,7 +354,7 @@ ${stats.topDeniedResources
   .join('\n') || '  None'}
 
 Active Alerts:
-${stats.alertsTriggered.map(alert => `  ⚠️  ${alert}`).join('\n') || '  None'}
+${stats?.alertsTriggered?.map(alert => `  ⚠️  ${alert}`).join('\n') || '  None'}
 `;
   }
 }

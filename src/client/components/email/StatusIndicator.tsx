@@ -69,7 +69,7 @@ export function StatusIndicator({
 }: StatusIndicatorProps) {
   const config = statusConfig[status];
   const sizeStyles = sizeConfig[size];
-  const displayText = statusText || config.label;
+  const displayText = statusText || config?.label;
 
   const indicator = (
     <div className={cn("flex items-center", sizeStyles.gap, className)}>
@@ -83,7 +83,7 @@ export function StatusIndicator({
           <span
             className={cn(
               "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-              config.color,
+              config?.color,
             )}
           />
         )}
@@ -91,7 +91,7 @@ export function StatusIndicator({
           className={cn(
             "relative inline-flex rounded-full",
             sizeStyles.dot,
-            config.color,
+            config?.color,
           )}
         />
       </div>
@@ -139,7 +139,7 @@ export function StatusBadge({
     <div
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5",
-        config.bgColor,
+        config?.bgColor,
         className,
       )}
     >
@@ -160,7 +160,7 @@ export function StatusBadge({
               : "text-green-800",
         )}
       >
-        {children || statusText || config.label}
+        {children || statusText || config?.label}
       </span>
     </div>
   );

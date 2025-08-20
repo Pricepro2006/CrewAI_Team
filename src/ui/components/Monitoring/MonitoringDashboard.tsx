@@ -1,25 +1,73 @@
 import React, { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../components/ui/card.js";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../../components/ui/tabs.js";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "../../../components/ui/alert.js";
-import { Badge } from "../../../components/ui/badge.js";
-import { Progress } from "../../../components/ui/progress.js";
-import { Button } from "../../../components/ui/button.js";
-import { trpc } from "../../utils/trpc.js";
+// UI Components - using simple implementations
+interface CardProps { children: React.ReactNode; className?: string }
+const Card: React.FC<CardProps> = ({ children, className }) => (
+  <div className={`border rounded-lg shadow-sm bg-white p-4 ${className || ''}`}>{children}</div>
+);
+const CardHeader: React.FC<CardProps> = ({ children, className }) => (
+  <div className={`mb-2 ${className || ''}`}>{children}</div>
+);
+const CardTitle: React.FC<CardProps> = ({ children, className }) => (
+  <h3 className={`font-semibold text-lg ${className || ''}`}>{children}</h3>
+);
+const CardContent: React.FC<CardProps> = ({ children, className }) => (
+  <div className={className}>{children}</div>
+);
+
+interface TabsProps { children: React.ReactNode; defaultValue: string; className?: string }
+const Tabs: React.FC<TabsProps> = ({ children, className }) => <div className={className}>{children}</div>;
+const TabsList: React.FC<CardProps> = ({ children, className }) => (
+  <div className={`flex space-x-1 border-b mb-4 ${className || ''}`}>{children}</div>
+);
+interface TabsTriggerProps { children: React.ReactNode; value: string; className?: string }
+const TabsTrigger: React.FC<TabsTriggerProps> = ({ children, className }) => (
+  <button className={`px-4 py-2 border-b-2 border-transparent hover:border-blue-500 ${className || ''}`}>
+    {children}
+  </button>
+);
+interface TabsContentProps { children: React.ReactNode; value: string; className?: string }
+const TabsContent: React.FC<TabsContentProps> = ({ children, className }) => <div className={className}>{children}</div>;
+
+const Alert: React.FC<CardProps> = ({ children, className }) => (
+  <div className={`border rounded-lg p-4 bg-blue-50 border-blue-200 ${className || ''}`}>{children}</div>
+);
+const AlertTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <h4 className="font-semibold mb-1">{children}</h4>
+);
+const AlertDescription: React.FC<CardProps> = ({ children, className }) => <div className={className}>{children}</div>;
+
+interface BadgeProps { children: React.ReactNode; variant?: string; className?: string }
+const Badge: React.FC<BadgeProps> = ({ children, className }) => (
+  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 ${className || ''}`}>
+    {children}
+  </span>
+);
+
+interface ProgressProps { value: number; className?: string }
+const Progress: React.FC<ProgressProps> = ({ value, className }) => (
+  <div className={`w-full bg-gray-200 rounded-full h-2 ${className || ''}`}>
+    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+  </div>
+);
+
+interface ButtonProps { 
+  children: React.ReactNode; 
+  size?: string; 
+  variant?: string; 
+  onClick?: () => void; 
+  disabled?: boolean; 
+  className?: string 
+}
+const Button: React.FC<ButtonProps> = ({ children, onClick, disabled, className }) => (
+  <button 
+    onClick={onClick}
+    disabled={disabled}
+    className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 ${className || ''}`}
+  >
+    {children}
+  </button>
+);
+import { api } from "../../../lib/trpc";
 import {
   AlertCircle,
   Activity,
@@ -47,6 +95,16 @@ import {
   Cell,
 } from "recharts";
 
+// Extended interfaces with proper service details
+interface ServiceDetails {
+  database?: string;
+  ollama?: string;
+  llama?: string;
+  chromadb?: string;
+  rateLimit?: string;
+  redis?: string;
+}
+
 interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
   timestamp: string;
@@ -54,20 +112,24 @@ interface HealthStatus {
     healthy: number;
     degraded: number;
     unhealthy: number;
-  };
+  } & ServiceDetails;
   criticalServicesDown: string[];
 }
 
 interface ServiceHealth {
   service: string;
   status: "healthy" | "degraded" | "unhealthy";
-  lastCheck: string;
+  lastCheck: string | Date;
   latency?: number;
   error?: string;
+  consecutiveFailures?: number;
+  metadata?: Record<string, any>;
 }
 
 interface ErrorStats {
   total: number;
+  handled?: number;
+  unhandled?: number;
   bySeverity: {
     low: number;
     medium: number;
@@ -110,6 +172,18 @@ interface SystemMetrics {
   };
 }
 
+interface PerformanceMetric {
+  name: string;
+  startTime: string | number;
+  duration: number;
+}
+
+interface PerformanceDataItem {
+  avg: number;
+  p95: number;
+  p99: number;
+}
+
 const severityColors = {
   low: "#22c55e",
   medium: "#f59e0b",
@@ -123,62 +197,72 @@ const statusColors = {
   unhealthy: "#ef4444",
 };
 
-export const MonitoringDashboard: React.FC = () => {
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
+export const MonitoringDashboard: React.FC = (): React.ReactElement => {
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [refreshInterval, setRefreshInterval] = useState<number>(30000); // 30 seconds
 
-  // Fetch monitoring data
+  // Fetch monitoring data with proper typing
   const {
     data: healthData,
     isLoading: healthLoading,
     refetch: refetchHealth,
-  } = trpc.monitoring.health.useQuery(undefined, {
-    refetchInterval: autoRefresh ? refreshInterval : false,
+    error: healthError,
+  } = api.monitoring.health.useQuery(undefined, {
+    refetchInterval: autoRefresh ? refreshInterval : undefined,
+    retry: false,
   });
 
-  const { data: detailedHealth, refetch: refetchDetailedHealth } =
-    trpc.monitoring.healthDetailed.useQuery(undefined, {
-      refetchInterval: autoRefresh ? refreshInterval : false,
+  const { data: detailedHealth, refetch: refetchDetailedHealth, error: detailedError } =
+    api.monitoring.healthDetailed.useQuery(undefined, {
+      refetchInterval: autoRefresh ? refreshInterval : undefined,
+      retry: false,
     });
 
-  const { data: metrics, refetch: refetchMetrics } =
-    trpc.monitoring.metrics.useQuery(undefined, {
-      refetchInterval: autoRefresh ? refreshInterval : false,
+  const { data: metrics, refetch: refetchMetrics, error: metricsError } =
+    api.monitoring.metrics.useQuery(undefined, {
+      refetchInterval: autoRefresh ? refreshInterval : undefined,
+      retry: false,
     });
 
-  const { data: errorStats, refetch: refetchErrors } =
-    trpc.monitoring.errorStats.useQuery(
+  const { data: errorStats, refetch: refetchErrors, error: errorStatsError } =
+    api.monitoring.errorStats.useQuery(
       { window: 3600000 },
       {
-        refetchInterval: autoRefresh ? refreshInterval : false,
+        refetchInterval: autoRefresh ? refreshInterval : undefined,
+        retry: false,
       },
     );
 
-  const { data: performanceStats, refetch: refetchPerformance } =
-    trpc.monitoring.performance.useQuery(
+  const { data: performanceStats, refetch: refetchPerformance, error: performanceError } =
+    api.monitoring.performance.useQuery(
       { window: 300000 },
       {
-        refetchInterval: autoRefresh ? refreshInterval : false,
+        refetchInterval: autoRefresh ? refreshInterval : undefined,
+        retry: false,
       },
     );
 
-  const { data: slowOps, refetch: refetchSlowOps } =
-    trpc.monitoring.slowOperations.useQuery(
+  const { data: slowOps, refetch: refetchSlowOps, error: slowOpsError } =
+    api.monitoring.slowOperations.useQuery(
       { limit: 10 },
       {
-        refetchInterval: autoRefresh ? refreshInterval : false,
+        refetchInterval: autoRefresh ? refreshInterval : undefined,
+        retry: false,
       },
     );
 
-  const forceHealthCheck = trpc.monitoring.forceHealthCheck.useMutation({
+  const forceHealthCheck = api.monitoring.forceHealthCheck.useMutation({
     onSuccess: () => {
       refetchHealth();
       refetchDetailedHealth();
     },
+    onError: (error) => {
+      console.error('Force health check failed:', error.message);
+    }
   });
 
   // Manual refresh
-  const handleManualRefresh = () => {
+  const handleManualRefresh = (): void => {
     refetchHealth();
     refetchDetailedHealth();
     refetchMetrics();
@@ -188,30 +272,33 @@ export const MonitoringDashboard: React.FC = () => {
   };
 
   // Format uptime
-  const formatUptime = (seconds: number) => {
+  const formatUptime = (seconds: number): string => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${days}d ${hours}h ${minutes}m`;
   };
 
-  // Prepare chart data
-  const errorSeverityData = errorStats
+  // Prepare chart data with proper typing
+  const errorSeverityData = errorStats?.stats?.bySeverity
     ? Object.entries(errorStats.stats.bySeverity).map(([severity, count]) => ({
         name: severity.charAt(0).toUpperCase() + severity.slice(1),
-        value: count,
+        value: count as number,
         fill: severityColors[severity as keyof typeof severityColors],
       }))
     : [];
 
-  const performanceData = performanceStats
+  const performanceData = performanceStats?.stats
     ? Object.entries(performanceStats.stats).map(
-        ([operation, data]: [string, any]) => ({
-          operation,
-          avg: Math.round(data.avg),
-          p95: Math.round(data.p95),
-          p99: Math.round(data.p99),
-        }),
+        ([operation, data]) => {
+          const typedData = data as PerformanceDataItem;
+          return {
+            operation,
+            avg: Math.round(typedData.avg),
+            p95: Math.round(typedData.p95),
+            p99: Math.round(typedData.p99),
+          };
+        }
       )
     : [];
 
@@ -221,6 +308,34 @@ export const MonitoringDashboard: React.FC = () => {
         <div className="text-center">
           <Activity className="w-8 h-8 animate-spin mx-auto mb-2" />
           <p>Loading monitoring data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if primary health check fails
+  if (healthError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">System Monitoring</h2>
+          <button 
+            onClick={(): void => { refetchHealth(); }}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+        <div className="border border-red-500 rounded-lg p-4 bg-red-50 dark:bg-red-900/20">
+          <div className="flex items-center mb-2">
+            <AlertCircle className="h-4 w-4 text-red-500 mr-2" />
+            <h3 className="font-semibold text-red-700 dark:text-red-400">Monitoring Service Unavailable</h3>
+          </div>
+          <p className="text-red-600 dark:text-red-300">
+            Unable to connect to the monitoring service: {healthError.message}
+            <br />
+            This may indicate the monitoring system is not fully configured or the user lacks permissions.
+          </p>
         </div>
       </div>
     );
@@ -241,7 +356,7 @@ export const MonitoringDashboard: React.FC = () => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setAutoRefresh(!autoRefresh)}
+            onClick={(): void => setAutoRefresh(!autoRefresh)}
           >
             {autoRefresh ? "Disable" : "Enable"} Auto-refresh
           </Button>
@@ -272,27 +387,27 @@ export const MonitoringDashboard: React.FC = () => {
             }`}
           />
           <AlertTitle>
-            System Status: {healthData.status.toUpperCase()}
+            System Status: {healthData?.status?.toUpperCase()}
           </AlertTitle>
           <AlertDescription className="mt-2">
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <span className="font-medium">Healthy Services:</span>{" "}
-                {healthData.services.healthy}
+                {healthData?.services?.healthy || 0}
               </div>
               <div>
                 <span className="font-medium">Degraded Services:</span>{" "}
-                {healthData.services.degraded}
+                {healthData?.services?.degraded || 0}
               </div>
               <div>
                 <span className="font-medium">Unhealthy Services:</span>{" "}
-                {healthData.services.unhealthy}
+                {healthData?.services?.unhealthy || 0}
               </div>
             </div>
-            {healthData.criticalServicesDown.length > 0 && (
+            {healthData?.criticalServicesDown?.length > 0 && (
               <div className="mt-2 text-red-600">
                 <span className="font-medium">Critical services down:</span>{" "}
-                {healthData.criticalServicesDown.join(", ")}
+                {healthData?.criticalServicesDown?.join(", ")}
               </div>
             )}
           </AlertDescription>
@@ -310,65 +425,92 @@ export const MonitoringDashboard: React.FC = () => {
 
         {/* Health Tab */}
         <TabsContent value="health" className="space-y-4">
+          {detailedError && (
+            <Alert className="border-orange-500">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertTitle>Detailed Health Data Unavailable</AlertTitle>
+              <AlertDescription>
+                {detailedError.message}
+                <br />
+                <span className="text-sm text-muted-foreground">
+                  This may be due to insufficient permissions. Basic health status is shown above.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {detailedHealth &&
+            {detailedHealth?.services &&
               Object.entries(detailedHealth.services).map(
-                ([service, health]: [string, ServiceHealth]) => (
-                  <Card key={service}>
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-lg">{service}</CardTitle>
-                        <Badge
-                          variant={
-                            health.status === "healthy"
-                              ? "default"
-                              : health.status === "degraded"
-                                ? "secondary"
-                                : "destructive"
-                          }
-                        >
-                          {health.status}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Last Check:
-                          </span>
-                          <span>
-                            {formatDistanceToNow(new Date(health.lastCheck), {
-                              addSuffix: true,
-                            })}
-                          </span>
+                ([service, health]) => {
+                  const typedHealth = health as unknown as ServiceHealth;
+                  return (
+                    <Card key={service}>
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-lg">{service}</CardTitle>
+                          <Badge
+                            variant={
+                              typedHealth.status === "healthy"
+                                ? "default"
+                                : typedHealth.status === "degraded"
+                                  ? "secondary"
+                                  : "destructive"
+                            }
+                          >
+                            {typedHealth.status}
+                          </Badge>
                         </div>
-                        {health.latency && (
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
-                              Latency:
+                              Last Check:
                             </span>
-                            <span>{health.latency}ms</span>
+                            <span>
+                              {formatDistanceToNow(
+                                typeof typedHealth.lastCheck === 'string' 
+                                  ? new Date(typedHealth.lastCheck)
+                                  : typedHealth.lastCheck,
+                                { addSuffix: true }
+                              )}
+                            </span>
                           </div>
-                        )}
-                        {health.error && (
-                          <div className="text-red-600 text-xs mt-2">
-                            Error: {health.error}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ),
+                          {typedHealth.latency && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">
+                                Latency:
+                              </span>
+                              <span>{typedHealth.latency}ms</span>
+                            </div>
+                          )}
+                          {typedHealth.error && (
+                            <div className="text-red-600 text-xs mt-2">
+                              Error: {typedHealth.error}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                }
               )}
+              
+            {!detailedHealth?.services && !detailedError && (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">
+                <p>No detailed service health data available</p>
+                <p className="text-sm">Try running a health check below</p>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-center">
             <Button
-              onClick={() => forceHealthCheck.mutate()}
-              disabled={forceHealthCheck.isLoading}
+              onClick={(): void => { forceHealthCheck.mutate(); }}
+              disabled={forceHealthCheck.isPending}
             >
-              {forceHealthCheck.isLoading
+              {forceHealthCheck.isPending
                 ? "Running..."
                 : "Run Health Check Now"}
             </Button>
@@ -403,14 +545,14 @@ export const MonitoringDashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {slowOps && slowOps.operations.length > 0 && (
+          {slowOps && slowOps?.operations?.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Slowest Operations</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {slowOps.operations.map((op: any, index: number) => (
+                  {slowOps?.operations?.map((op: PerformanceMetric, index: number) => (
                     <div
                       key={index}
                       className="flex justify-between items-center p-2 bg-muted rounded"
@@ -434,6 +576,20 @@ export const MonitoringDashboard: React.FC = () => {
 
         {/* Errors Tab */}
         <TabsContent value="errors" className="space-y-4">
+          {errorStatsError && (
+            <Alert className="border-orange-500">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertTitle>Error Statistics Unavailable</AlertTitle>
+              <AlertDescription>
+                {errorStatsError.message}
+                <br />
+                <span className="text-sm text-muted-foreground">
+                  This may be due to insufficient permissions or the monitoring service not being fully configured.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {errorStats && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -443,10 +599,10 @@ export const MonitoringDashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {errorStats.stats.total}
+                      {errorStats?.stats?.total || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {errorStats.stats.errorRate.toFixed(2)} errors/min
+                      {(errorStats?.stats?.errorRate || 0).toFixed(2)} errors/min
                     </div>
                   </CardContent>
                 </Card>
@@ -459,13 +615,14 @@ export const MonitoringDashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="flex justify-between text-sm">
-                      <span>Handled: {errorStats.stats.handled}</span>
-                      <span>Unhandled: {errorStats.stats.unhandled}</span>
+                      <span>Handled: {errorStats?.stats?.handled || 0}</span>
+                      <span>Unhandled: {errorStats?.stats?.unhandled || 0}</span>
                     </div>
                     <Progress
                       value={
-                        (errorStats.stats.handled / errorStats.stats.total) *
-                        100
+                        errorStats?.stats?.total ? 
+                        ((errorStats?.stats?.handled || 0) / errorStats?.stats?.total) * 100
+                        : 0
                       }
                       className="mt-2"
                     />
@@ -489,7 +646,7 @@ export const MonitoringDashboard: React.FC = () => {
                             paddingAngle={2}
                             dataKey="value"
                           >
-                            {errorSeverityData.map((entry, index) => (
+                            {errorSeverityData?.map((entry: any, index: number) => (
                               <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                           </Pie>
@@ -501,14 +658,14 @@ export const MonitoringDashboard: React.FC = () => {
                 </Card>
               </div>
 
-              {errorStats.stats.topErrors.length > 0 && (
+              {(errorStats?.stats?.topErrors?.length || 0) > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Top Errors</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {errorStats.stats.topErrors.map((error, index) => (
+                      {errorStats?.stats?.topErrors?.map((error: any, index: number) => (
                         <div
                           key={index}
                           className="flex justify-between items-center p-2 bg-muted rounded"
@@ -537,6 +694,20 @@ export const MonitoringDashboard: React.FC = () => {
 
         {/* System Tab */}
         <TabsContent value="system" className="space-y-4">
+          {metricsError && (
+            <Alert className="border-orange-500">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertTitle>System Metrics Unavailable</AlertTitle>
+              <AlertDescription>
+                {metricsError.message}
+                <br />
+                <span className="text-sm text-muted-foreground">
+                  This may be due to insufficient permissions or the monitoring service not being fully configured.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {metrics && metrics.system && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
@@ -549,23 +720,23 @@ export const MonitoringDashboard: React.FC = () => {
                       <div className="flex justify-between mb-1">
                         <span className="text-sm">Usage</span>
                         <span className="text-sm font-medium">
-                          {metrics.system.cpu.usage}%
+                          {metrics?.system?.cpu.usage || 0}%
                         </span>
                       </div>
-                      <Progress value={parseFloat(metrics.system.cpu.usage)} />
+                      <Progress value={parseFloat(metrics?.system?.cpu.usage || "0")} />
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
                         <span className="text-muted-foreground">1m:</span>{" "}
-                        {metrics.system.cpu.loadAverage["1m"]}
+                        {metrics?.system?.cpu.loadAverage?.["1m"] || "N/A"}
                       </div>
                       <div>
                         <span className="text-muted-foreground">5m:</span>{" "}
-                        {metrics.system.cpu.loadAverage["5m"]}
+                        {metrics?.system?.cpu.loadAverage?.["5m"] || "N/A"}
                       </div>
                       <div>
                         <span className="text-muted-foreground">15m:</span>{" "}
-                        {metrics.system.cpu.loadAverage["15m"]}
+                        {metrics?.system?.cpu.loadAverage?.["15m"] || "N/A"}
                       </div>
                     </div>
                   </div>
@@ -582,15 +753,15 @@ export const MonitoringDashboard: React.FC = () => {
                       <div className="flex justify-between mb-1">
                         <span className="text-sm">System Memory</span>
                         <span className="text-sm font-medium">
-                          {metrics.system.memory.usage}%
+                          {metrics?.system?.memory?.usage || 0}%
                         </span>
                       </div>
                       <Progress
-                        value={parseFloat(metrics.system.memory.usage)}
+                        value={parseFloat(metrics?.system?.memory?.usage || "0")}
                       />
                       <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>{metrics.system.memory.used} MB used</span>
-                        <span>{metrics.system.memory.total} MB total</span>
+                        <span>{metrics?.system?.memory?.used || 0} MB used</span>
+                        <span>{metrics?.system?.memory?.total || 0} MB total</span>
                       </div>
                     </div>
                     <div className="pt-2 border-t">
@@ -600,12 +771,12 @@ export const MonitoringDashboard: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
                           <span className="text-muted-foreground">Heap:</span>{" "}
-                          {metrics.system.process.memory.heapUsed}/
-                          {metrics.system.process.memory.heapTotal} MB
+                          {metrics?.system?.process?.memory?.heapUsed || 0}/
+                          {metrics?.system?.process?.memory?.heapTotal || 0} MB
                         </div>
                         <div>
                           <span className="text-muted-foreground">RSS:</span>{" "}
-                          {metrics.system.process.memory.rss} MB
+                          {metrics?.system?.process?.memory?.rss || 0} MB
                         </div>
                       </div>
                     </div>
@@ -622,12 +793,12 @@ export const MonitoringDashboard: React.FC = () => {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">PID:</span>
                       <span className="font-mono">
-                        {metrics.system.process.pid}
+                        {metrics?.system?.process?.pid || "N/A"}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Uptime:</span>
-                      <span>{formatUptime(metrics.system.process.uptime)}</span>
+                      <span>{formatUptime(metrics?.system?.process?.uptime || 0)}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -638,6 +809,20 @@ export const MonitoringDashboard: React.FC = () => {
 
         {/* Services Tab */}
         <TabsContent value="services" className="space-y-4">
+          {!healthData && (
+            <Alert className="border-orange-500">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertTitle>Service Status Unavailable</AlertTitle>
+              <AlertDescription>
+                Unable to retrieve service status information.
+                <br />
+                <span className="text-sm text-muted-foreground">
+                  This may be due to the monitoring service not being fully configured.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-3">
@@ -649,12 +834,13 @@ export const MonitoringDashboard: React.FC = () => {
               <CardContent>
                 <Badge
                   variant={
-                    healthData?.services.database === "connected"
+                    (healthData?.services as ServiceDetails)?.database === "connected" ||
+                    (healthData?.services as ServiceDetails)?.database === "healthy"
                       ? "default"
                       : "destructive"
                   }
                 >
-                  {healthData?.services.database || "Unknown"}
+                  {(healthData?.services as ServiceDetails)?.database || "Unknown"}
                 </Badge>
               </CardContent>
             </Card>
@@ -663,18 +849,23 @@ export const MonitoringDashboard: React.FC = () => {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4" />
-                  <CardTitle className="text-base">Ollama</CardTitle>
+                  <CardTitle className="text-base">Ollama/LLM</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <Badge
                   variant={
-                    healthData?.services.ollama === "connected"
+                    (healthData?.services as ServiceDetails)?.ollama === "connected" ||
+                    (healthData?.services as ServiceDetails)?.ollama === "healthy" ||
+                    (healthData?.services as ServiceDetails)?.llama === "connected" ||
+                    (healthData?.services as ServiceDetails)?.llama === "healthy"
                       ? "default"
                       : "destructive"
                   }
                 >
-                  {healthData?.services.ollama || "Unknown"}
+                  {(healthData?.services as ServiceDetails)?.ollama || 
+                   (healthData?.services as ServiceDetails)?.llama || 
+                   "Unknown"}
                 </Badge>
               </CardContent>
             </Card>
@@ -689,14 +880,15 @@ export const MonitoringDashboard: React.FC = () => {
               <CardContent>
                 <Badge
                   variant={
-                    healthData?.services.chromadb === "connected"
+                    (healthData?.services as ServiceDetails)?.chromadb === "connected" ||
+                    (healthData?.services as ServiceDetails)?.chromadb === "healthy"
                       ? "default"
-                      : healthData?.services.chromadb === "not_configured"
+                      : (healthData?.services as ServiceDetails)?.chromadb === "not_configured"
                         ? "secondary"
                         : "destructive"
                   }
                 >
-                  {healthData?.services.chromadb || "Unknown"}
+                  {(healthData?.services as ServiceDetails)?.chromadb || "Unknown"}
                 </Badge>
               </CardContent>
             </Card>
@@ -710,10 +902,10 @@ export const MonitoringDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <Badge variant="default">
-                  {healthData?.services.rateLimit || "Unknown"}
+                  {(healthData?.services as ServiceDetails)?.rateLimit || "Unknown"}
                 </Badge>
                 <div className="text-xs text-muted-foreground mt-1">
-                  Backend: {healthData?.services.redis || "Unknown"}
+                  Backend: {(healthData?.services as ServiceDetails)?.redis || "Unknown"}
                 </div>
               </CardContent>
             </Card>

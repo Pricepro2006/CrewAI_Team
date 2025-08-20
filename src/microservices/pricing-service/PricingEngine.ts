@@ -55,7 +55,7 @@ export class PricingEngine {
 
   private loadPromotions() {
     // Mock promotions for testing
-    this.promotions.set("MILK_PROMO", {
+    this?.promotions?.set("MILK_PROMO", {
       id: "MILK_PROMO",
       name: "Milk Sale - 10% Off",
       type: "percentage",
@@ -65,7 +65,7 @@ export class PricingEngine {
       endDate: "2025-08-31"
     });
 
-    this.promotions.set("BULK_DISCOUNT", {
+    this?.promotions?.set("BULK_DISCOUNT", {
       id: "BULK_DISCOUNT",
       name: "Buy 3+ Get 5% Off",
       type: "percentage",
@@ -75,7 +75,7 @@ export class PricingEngine {
       endDate: "2025-12-31"
     });
 
-    logger.info(`Loaded ${this.promotions.size} promotions`, "PRICING_ENGINE");
+    logger.info(`Loaded ${this?.promotions?.size} promotions`, "PRICING_ENGINE");
   }
 
   /**
@@ -98,14 +98,14 @@ export class PricingEngine {
     let finalPrice = totalPrice;
 
     // Apply milk promotion if applicable
-    const milkPromo = this.promotions.get("MILK_PROMO");
-    if (milkPromo && milkPromo.productIds.includes(productId)) {
+    const milkPromo = this?.promotions?.get("MILK_PROMO");
+    if (milkPromo && milkPromo?.productIds?.includes(productId)) {
       discount = totalPrice * (milkPromo.value / 100);
     }
 
     // Apply bulk discount if quantity >= 3
     if (quantity >= 3) {
-      const bulkPromo = this.promotions.get("BULK_DISCOUNT");
+      const bulkPromo = this?.promotions?.get("BULK_DISCOUNT");
       if (bulkPromo) {
         const bulkDiscount = totalPrice * (bulkPromo.value / 100);
         discount = Math.max(discount, bulkDiscount); // Use better discount
@@ -162,7 +162,7 @@ export class PricingEngine {
     const active: Promotion[] = [];
 
     for (const [_, promo] of this.promotions) {
-      if (promo.startDate <= now && promo.endDate >= now) {
+      if (now && promo.startDate <= now && promo.endDate >= now) {
         active.push(promo);
       }
     }
@@ -179,7 +179,7 @@ export class PricingEngine {
     }
 
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT id, name, current_price, unit, in_stock
         FROM walmart_products
         WHERE id = ?
@@ -222,7 +222,7 @@ export class PricingEngine {
     }
 
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT date, price
         FROM price_history
         WHERE product_id = ?

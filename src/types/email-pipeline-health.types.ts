@@ -8,6 +8,7 @@ export type ServiceName =
   | "database"
   | "redis"
   | "ollama"
+  | "llama"
   | "pipeline"
   | "processingQueue";
 export type TimeWindow = "1h" | "24h" | "7d" | "30d";
@@ -28,6 +29,7 @@ export interface ServiceHealthMap {
   database: ServiceHealth;
   redis: ServiceHealth;
   ollama: ServiceHealth;
+  llama: ServiceHealth;
   pipeline: ServiceHealth;
   processingQueue: ServiceHealth;
 }
@@ -131,6 +133,7 @@ export interface HealthCheckApiResponse extends BaseApiResponse {
     critical: {
       database: HealthStatus;
       ollama: HealthStatus;
+      llama: HealthStatus;
       pipeline: HealthStatus;
     };
     optional: {
@@ -161,6 +164,7 @@ export interface MetricsApiResponse extends BaseApiResponse {
     criticalServices: {
       database: HealthStatus;
       ollama: HealthStatus;
+      llama: HealthStatus;
       pipeline: HealthStatus;
     };
   };
@@ -213,6 +217,7 @@ export interface HealthCheckConfig {
     database: number;
     redis: number;
     ollama: number;
+    llama: number;
     pipeline: number;
     queue: number;
   };
@@ -346,6 +351,7 @@ export function isServiceName(value: string): value is ServiceName {
     "database",
     "redis",
     "ollama",
+    "llama",
     "pipeline",
     "processingQueue",
   ].includes(value);
@@ -364,6 +370,7 @@ export const DEFAULT_HEALTH_CHECK_CONFIG: HealthCheckConfig = {
     database: 1000,
     redis: 2000,
     ollama: 5000,
+    llama: 5000,
     pipeline: 3000,
     queue: 2000,
   },

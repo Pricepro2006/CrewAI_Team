@@ -17,15 +17,16 @@ const qwenProcessor = getSimplifiedQwenProcessor();
  * Process natural language input
  * POST /api/nlp/process
  */
-router.post("/process", async (req: Request, res: Response) => {
+router.post("/process", async (req: Request, res: Response): Promise<void> => {
   try {
     const { text, userId, sessionId } = req.body;
 
     if (!text) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Text input is required"
       });
+      return;
     }
 
     logger.info(`Processing NLP request: "${text}"`, "NLP_ROUTER");
@@ -62,16 +63,16 @@ router.post("/process", async (req: Request, res: Response) => {
 
     // If intent is to add items, search for products
     let products = [];
-    if (result.intent === "add_items" && result.items.length > 0) {
+    if (result.intent === "add_items" && result?.items?.length > 0) {
       try {
         const db = getWalmartDatabaseManager();
-        for (const item of result.items.slice(0, 5)) { // Limit to 5 items
-          const searchResults = await db.walmartProducts.searchProducts(item, 3);
+        for (const item of result?.items?.slice(0, 5)) { // Limit to 5 items
+          const searchResults = await db?.walmartProducts?.searchProducts(item, 3);
           products.push(...searchResults);
         }
         
         // Notify WebSocket about product matches
-        if (sessionId && products.length > 0) {
+        if (sessionId && products?.length || 0 > 0) {
           walmartWSServer.notifyProductMatches(sessionId, products);
         }
       } catch (searchError) {
@@ -87,7 +88,7 @@ router.post("/process", async (req: Request, res: Response) => {
       items: result.items,
       quantities: result.quantities,
       action: result.action,
-      products: products.map(p => ({
+      products: products?.map(p => ({
         id: p.product_id,
         name: p.name,
         brand: p.brand,
@@ -131,7 +132,7 @@ router.get("/history", async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      history: history.map((h: any) => ({
+      history: history?.map((h: any) => ({
         query: h.user_query,
         intent: h.detected_intent,
         confidence: h.confidence_score,
@@ -153,15 +154,16 @@ router.get("/history", async (req: Request, res: Response) => {
  * Train model with feedback
  * POST /api/nlp/feedback
  */
-router.post("/feedback", async (req: Request, res: Response) => {
+router.post("/feedback", async (req: Request, res: Response): Promise<void> => {
   try {
     const { intentId, correctIntent, rating } = req.body;
 
     if (!intentId || !rating) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Intent ID and rating are required"
       });
+      return;
     }
 
     const db = getWalmartDatabaseManager();

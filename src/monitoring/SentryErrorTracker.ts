@@ -61,11 +61,11 @@ export class SentryErrorTracker {
         new Sentry.Integrations.Http({ tracing: true }),
         new Sentry.Integrations.Express({ app: undefined }),
         new Sentry.Integrations.Postgres(),
-        new Sentry.Integrations.Winston({ winston: logger }),
+        // new Sentry.Integrations.Winston({ winston: logger }), // Disabled - Winston integration not available in current Sentry version
       ],
 
       // Enhanced error filtering
-      beforeSend(event, hint) {
+      beforeSend: (event, hint) => {
         // Filter out noise
         if (this.shouldIgnoreError(hint.originalException)) {
           return null;
@@ -314,7 +314,7 @@ export class SentryErrorTracker {
     // Track slow queries
     if (duration > 1000) {
       this.recordCustomMetric('slow_query_count', 1, {
-        query_type: query.split(' ')[0].toLowerCase(),
+        query_type: query.split(' ')[0]?.toLowerCase() || 'unknown',
         component: 'database',
       });
     }

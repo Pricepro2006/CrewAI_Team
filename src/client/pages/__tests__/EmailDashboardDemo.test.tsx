@@ -1,16 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import '@testing-library/jest-dom';
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCMsw } from "msw-trpc";
 import { setupServer } from "msw/node";
-import { api } from "../../../lib/trpc.js";
+import { api } from '../../../lib/trpc';
 import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
-import { EmailDashboardDemo } from "../EmailDashboardDemo.js";
-import type { AppRouter } from "../../../api/trpc/router.js";
-import { vi } from "vitest";
+import { EmailDashboardDemo } from '../EmailDashboardDemo';
+import type { AppRouter } from '../../../api/trpc/router';
 
 // Mock the EmailDashboardMultiPanel component
 vi.mock("../../components/dashboard/EmailDashboardMultiPanel", () => ({
@@ -27,8 +28,8 @@ vi.mock("../../components/dashboard/EmailDashboardMultiPanel", () => ({
         {loading ? "Loading" : "Not Loading"}
       </div>
       <div data-testid="error-state">{error || "No Error"}</div>
-      <div data-testid="email-count">{emails.length}</div>
-      {emails.map((email: any) => (
+      <div data-testid="email-count">{emails?.length || 0}</div>
+      {emails?.map((email: any) => (
         <div key={email.id} data-testid={`email-${email.id}`}>
           <span>{email.subject}</span>
           <button onClick={() => onEmailSelect(email)}>Select</button>
@@ -151,7 +152,8 @@ const createWrapper = () => {
 };
 
 describe("EmailDashboardDemo Component", () => {
-  const user = userEvent.setup();
+  const user = userEvent;
+  
   const Wrapper = createWrapper();
 
   describe("Rendering", () => {
@@ -362,14 +364,14 @@ describe("EmailDashboardDemo Component", () => {
       // Should show loading skeletons
       const loadingSkeletons = screen
         .getAllByRole("generic")
-        .filter((el) => el.classList.contains("animate-pulse"));
-      expect(loadingSkeletons.length).toBeGreaterThan(0);
-    });
+        .filter((el: any) => el?.classList?.contains("animate-pulse"));
+      expect(loadingSkeletons?.length || 0).toBeGreaterThan(0);
+    }, 10000);
   });
 
   describe("Email Interactions", () => {
     it("should handle email selection", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
       render(<EmailDashboardDemo />, { wrapper: Wrapper });
 

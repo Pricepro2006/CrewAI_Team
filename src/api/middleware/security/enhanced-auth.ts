@@ -224,7 +224,7 @@ function createSession(
     .filter(([_, session]) => session.userId === userId)
     .sort((a, b) => b[1].lastActivity - a[1].lastActivity);
   
-  if (userSessions.length > 5) {
+  if (userSessions?.length || 0 > 5) {
     userSessions.slice(5).forEach(([id]) => {
       activeSessions.delete(id);
     });
@@ -293,9 +293,9 @@ export function enhancedAuthenticateJWT(
   next: NextFunction
 ): Response | void {
   try {
-    const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
+    const token = jwtManager.extractTokenFromHeader(req?.headers?.authorization);
     const sessionId = req.headers["x-session-id"] as string;
-    const ipAddress = req.ip || req.socket.remoteAddress || "unknown";
+    const ipAddress = req.ip || req?.socket?.remoteAddress || "unknown";
     const userAgent = req.headers["user-agent"] || "unknown";
     
     if (!token) {
@@ -464,9 +464,9 @@ export function requirePermission(...permissions: string[]) {
     
     if (!hasRequiredPermission) {
       logger.warn("Permission denied", "SECURITY", {
-        userId: req.user.id,
+        userId: req?.user?.id,
         required: permissions,
-        actual: req.user.permissions,
+        actual: req?.user?.permissions,
         path: req.path,
       });
       
@@ -513,7 +513,7 @@ export function requireOwnership(
     
     if (!owns) {
       logger.warn("Ownership check failed", "SECURITY", {
-        userId: req.user.id,
+        userId: req?.user?.id,
         resourceType,
         resourceId,
         path: req.path,
@@ -643,7 +643,7 @@ export function createEnhancedAuthMiddleware() {
     }
     
     // Check if account is locked
-    if (isAccountLocked(ctx.user.email)) {
+    if (isAccountLocked(ctx?.user?.email)) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account temporarily locked",
@@ -672,12 +672,12 @@ export function createPermissionMiddleware(...permissions: string[]) {
     }
     
     const hasRequiredPermission = permissions.some(permission =>
-      ctx.permissions.includes(permission)
+      ctx?.permissions?.includes(permission)
     );
     
     if (!hasRequiredPermission) {
       logger.warn("Permission denied in TRPC", "SECURITY", {
-        userId: ctx.user.id,
+        userId: ctx?.user?.id,
         required: permissions,
         actual: ctx.permissions,
         requestId: ctx.requestId,

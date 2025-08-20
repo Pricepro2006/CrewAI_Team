@@ -5,7 +5,7 @@
  * Integration Coordinator: Robust error management system
  */
 
-import React from "react";
+import * as React from "react";
 import { logger } from "../../utils/logger.js";
 import type {
   WalmartError,
@@ -171,10 +171,10 @@ export class WalmartErrorHandler {
     this.logError(walmartError, context);
 
     // Update metrics
-    this.errorMetrics.recordError(walmartError);
+    this?.errorMetrics?.recordError(walmartError);
 
     // Execute specific handler
-    const handler = this.errorHandlers.get(walmartError.code);
+    const handler = this?.errorHandlers?.get(walmartError.code);
     let result: ErrorHandlingResult = {
       handled: false,
       retry: walmartError.retryable,
@@ -186,13 +186,13 @@ export class WalmartErrorHandler {
     }
 
     // Execute global handlers
-    for (const globalHandler of this.globalHandlers) {
+    for (const globalHandler of Array.from(this.globalHandlers)) {
       await globalHandler(walmartError, context, result);
     }
 
     // Apply recovery strategy if needed
-    if (result.retry && this.recoveryStrategies.has(walmartError.code)) {
-      const strategy = this.recoveryStrategies.get(walmartError.code)!;
+    if (result.retry && this?.recoveryStrategies?.has(walmartError.code)) {
+      const strategy = this?.recoveryStrategies?.get(walmartError.code)!;
       result.recoveryAction = await strategy.recover(walmartError, context);
     }
 
@@ -200,18 +200,18 @@ export class WalmartErrorHandler {
   }
 
   registerHandler(code: WalmartErrorCode, handler: ErrorHandler): void {
-    this.errorHandlers.set(code, handler);
+    this?.errorHandlers?.set(code, handler);
   }
 
   registerGlobalHandler(handler: GlobalErrorHandler): void {
-    this.globalHandlers.add(handler);
+    this?.globalHandlers?.add(handler);
   }
 
   registerRecoveryStrategy(
     code: WalmartErrorCode,
     strategy: RecoveryStrategy,
   ): void {
-    this.recoveryStrategies.set(code, strategy);
+    this?.recoveryStrategies?.set(code, strategy);
   }
 
   // =====================================================
@@ -403,11 +403,11 @@ export class WalmartErrorHandler {
   // =====================================================
 
   getMetrics(): ErrorMetricsData {
-    return this.errorMetrics.getData();
+    return this?.errorMetrics?.getData();
   }
 
   resetMetrics(): void {
-    this.errorMetrics.reset();
+    this?.errorMetrics?.reset();
   }
 }
 
@@ -469,7 +469,7 @@ class ErrorMetrics {
   }
 
   recordError(error: WalmartBaseError): void {
-    const metric = this.metrics.get(error.code) || {
+    const metric = this?.metrics?.get(error.code) || {
       code: error.code,
       count: 0,
       firstOccurrence: new Date().toISOString(),
@@ -481,11 +481,11 @@ class ErrorMetrics {
     metric.count++;
     metric.lastOccurrence = new Date().toISOString();
 
-    this.metrics.set(error.code, metric);
+    this?.metrics?.set(error.code, metric);
   }
 
   recordRetry(code: WalmartErrorCode, success: boolean): void {
-    const metric = this.metrics.get(code);
+    const metric = this?.metrics?.get(code);
     if (metric) {
       if (success) {
         metric.retrySuccesses++;
@@ -496,8 +496,8 @@ class ErrorMetrics {
   }
 
   getData(): ErrorMetricsData {
-    const errors = Array.from(this.metrics.values());
-    const totalErrors = errors.reduce((sum, e) => sum + e.count, 0);
+    const errors = Array.from(this?.metrics?.values());
+    const totalErrors = errors.reduce((sum: any, e: any) => sum + e.count, 0);
     const errorRate = totalErrors / ((Date.now() - this.startTime) / 1000 / 60); // errors per minute
 
     return {
@@ -510,7 +510,7 @@ class ErrorMetrics {
   }
 
   reset(): void {
-    this.metrics.clear();
+    this?.metrics?.clear();
     this.startTime = Date.now();
   }
 }
@@ -546,9 +546,9 @@ export class WalmartErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
+  public override state: ErrorBoundaryState = { hasError: false };
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -564,7 +564,7 @@ export class WalmartErrorBoundary extends React.Component<
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     const handler = WalmartErrorHandler.getInstance();
     handler.handleError(error, {
       operation: "react_render",
@@ -572,10 +572,10 @@ export class WalmartErrorBoundary extends React.Component<
     });
   }
 
-  render(): React.ReactNode {
-    if (this.state.hasError) {
-      if (this.props.fallback) {
-        const FallbackComponent = this.props.fallback;
+  override render(): React.ReactNode {
+    if (this?.state?.hasError) {
+      if (this?.props?.fallback) {
+        const FallbackComponent = this?.props?.fallback;
         return React.createElement(FallbackComponent, this.state);
       }
 
@@ -583,7 +583,7 @@ export class WalmartErrorBoundary extends React.Component<
         "div",
         { className: "error-boundary" },
         React.createElement("h2", null, "Something went wrong"),
-        React.createElement("p", null, this.state.error?.message),
+        React.createElement("p", null, this?.state?.error?.message),
         React.createElement(
           "button",
           { onClick: () => this.setState({ hasError: false }) },
@@ -592,7 +592,7 @@ export class WalmartErrorBoundary extends React.Component<
       );
     }
 
-    return this.props.children;
+    return this?.props?.children;
   }
 }
 
@@ -605,19 +605,20 @@ export function isWalmartError(error: unknown): error is WalmartBaseError {
 }
 
 export function createErrorFromResponse(response: Record<string, unknown>): WalmartBaseError {
-  if (response.error) {
+  if (response.error && typeof response.error === 'object' && response.error !== null) {
+    const errorObj = response.error as Record<string, unknown>;
     return new WalmartBaseError(
-      response.error.code || "SERVER_ERROR",
-      response.error.message || "Unknown error",
+      (errorObj.code as WalmartErrorCode) || "SERVER_ERROR",
+      (errorObj.message as string) || "Unknown error",
       {
-        details: response.error.details,
-        retryable: response.error.retryable,
-        retryAfter: response.error.retryAfter,
+        details: errorObj.details as Record<string, unknown>,
+        retryable: errorObj.retryable as boolean,
+        retryAfter: errorObj.retryAfter as number,
       },
     );
   }
 
-  return new WalmartBaseError("SERVER_ERROR", "Invalid response from server");
+  return new WalmartBaseError("SERVER_ERROR" as WalmartErrorCode, "Invalid response from server");
 }
 
 // =====================================================
@@ -632,7 +633,7 @@ export function mapWebSocketError(wsError: WebSocketError): WalmartBaseError {
     TIMEOUT: "SERVER_ERROR",
   };
 
-  const code = mapping[wsError.code] || "SERVER_ERROR";
+  const code = (mapping[wsError.code] as WalmartErrorCode) || ("SERVER_ERROR" as WalmartErrorCode);
 
   return new WalmartBaseError(code, wsError.message, {
     details: wsError.details,

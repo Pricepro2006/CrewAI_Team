@@ -3,12 +3,12 @@
  * Comprehensive test suite to verify SQL injection protection mechanisms
  */
 
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   SqlInjectionProtection,
   SqlInjectionError,
   DatabaseInputSchemas,
-} from "../SqlInjectionProtection.js";
+} from '../SqlInjectionProtection';
 
 describe("SqlInjectionProtection", () => {
   let sqlSecurity: SqlInjectionProtection;
@@ -48,7 +48,7 @@ describe("SqlInjectionProtection", () => {
         "'; UPDATE users SET role='admin' WHERE email='hacker@evil.com'; --",
       ];
 
-      maliciousParams.forEach((param) => {
+      maliciousParams.forEach((param: any) => {
         expect(() => {
           sqlSecurity.validateQueryParameters([param]);
         }).toThrow(SqlInjectionError);
@@ -81,7 +81,7 @@ describe("SqlInjectionProtection", () => {
         "product_SKU_123",
       ];
 
-      validColumns.forEach((column) => {
+      validColumns.forEach((column: any) => {
         const result = sqlSecurity.sanitizeColumnName(column);
         expect(result).toBe(column);
       });
@@ -99,7 +99,7 @@ describe("SqlInjectionProtection", () => {
         "DROP",
       ];
 
-      invalidColumns.forEach((column) => {
+      invalidColumns.forEach((column: any) => {
         expect(() => {
           sqlSecurity.sanitizeColumnName(column);
         }).toThrow(SqlInjectionError);
@@ -124,7 +124,7 @@ describe("SqlInjectionProtection", () => {
         "orders_2024",
       ];
 
-      validTables.forEach((table) => {
+      validTables.forEach((table: any) => {
         const result = sqlSecurity.sanitizeTableName(table);
         expect(result).toBe(table);
       });
@@ -137,7 +137,7 @@ describe("SqlInjectionProtection", () => {
         "products/**/WHERE/**/1=1",
       ];
 
-      maliciousTables.forEach((table) => {
+      maliciousTables.forEach((table: any) => {
         expect(() => {
           sqlSecurity.sanitizeTableName(table);
         }).toThrow(SqlInjectionError);
@@ -240,7 +240,7 @@ describe("SqlInjectionProtection", () => {
         "DELETE FROM sessions WHERE expired_at < ?",
       ];
 
-      safeQueries.forEach((query) => {
+      safeQueries.forEach((query: any) => {
         expect(() => {
           sqlSecurity.validateQuery(query);
         }).not.toThrow();
@@ -254,7 +254,7 @@ describe("SqlInjectionProtection", () => {
         "UPDATE users SET role = 'admin' WHERE email = '" + "email" + "'",
       ];
 
-      dangerousQueries.forEach((query) => {
+      dangerousQueries.forEach((query: any) => {
         expect(() => {
           sqlSecurity.validateQuery(query);
         }).toThrow(SqlInjectionError);
@@ -274,19 +274,19 @@ describe("SqlInjectionProtection", () => {
     test("should validate email format", () => {
       const validEmails = ["user@example.com", "john.doe+tag@company.org"];
 
-      validEmails.forEach((email) => {
-        const result = DatabaseInputSchemas.email.parse(email);
+      validEmails.forEach((email: any) => {
+        const result = DatabaseInputSchemas?.email?.parse(email);
         expect(result).toBe(email.toLowerCase());
       });
 
       expect(() => {
-        DatabaseInputSchemas.email.parse("not-an-email");
+        DatabaseInputSchemas?.email?.parse("not-an-email");
       }).toThrow();
     });
 
     test("should validate search queries", () => {
       const validSearch = "normal search term";
-      const result = DatabaseInputSchemas.searchQuery.parse(validSearch);
+      const result = DatabaseInputSchemas?.searchQuery?.parse(validSearch);
       expect(result).toBe(validSearch);
 
       const maliciousSearches = [
@@ -295,19 +295,19 @@ describe("SqlInjectionProtection", () => {
         '<script>alert("XSS")</script>',
       ];
 
-      maliciousSearches.forEach((search) => {
+      maliciousSearches.forEach((search: any) => {
         expect(() => {
-          DatabaseInputSchemas.searchQuery.parse(search);
+          DatabaseInputSchemas?.searchQuery?.parse(search);
         }).toThrow(/invalid patterns/);
       });
     });
 
     test("should validate enum values", () => {
-      expect(DatabaseInputSchemas.userRole.parse("admin")).toBe("admin");
-      expect(DatabaseInputSchemas.emailPriority.parse("high")).toBe("high");
+      expect(DatabaseInputSchemas?.userRole?.parse("admin")).toBe("admin");
+      expect(DatabaseInputSchemas?.emailPriority?.parse("high")).toBe("high");
 
       expect(() => {
-        DatabaseInputSchemas.userRole.parse("superadmin");
+        DatabaseInputSchemas?.userRole?.parse("superadmin");
       }).toThrow();
     });
   });

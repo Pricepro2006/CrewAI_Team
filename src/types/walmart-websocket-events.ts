@@ -5,7 +5,8 @@
  * Integration Coordinator: Event-driven architecture for real-time updates
  */
 
-import type { WebSocketMessage, Timestamp } from "../shared/types/websocket.js";
+import type { WebSocketMessage } from "../shared/types/websocket.js";
+import type { Timestamp } from "../shared/types/core.js";
 
 import type {
   WalmartProduct,
@@ -26,61 +27,61 @@ import type {
 
 export type WalmartWebSocketEventType =
   // Product events
-  | "walmart.product.price_change"
-  | "walmart.product.availability_change"
-  | "walmart.product.new_review"
-  | "walmart.product.deal_started"
-  | "walmart.product.deal_ended"
+  | "walmart.product?.price_change"
+  | "walmart.product?.availability_change"
+  | "walmart.product?.new_review"
+  | "walmart.product?.deal_started"
+  | "walmart.product?.deal_ended"
   // Cart events
-  | "walmart.cart.item_added"
-  | "walmart.cart.item_updated"
-  | "walmart.cart.item_removed"
-  | "walmart.cart.price_updated"
-  | "walmart.cart.abandoned_reminder"
-  | "walmart.cart.merged"
-  | "walmart.cart.cleared"
+  | "walmart.cart?.item_added"
+  | "walmart.cart?.item_updated"
+  | "walmart.cart?.item_removed"
+  | "walmart.cart?.price_updated"
+  | "walmart.cart?.abandoned_reminder"
+  | "walmart.cart?.merged"
+  | "walmart.cart?.cleared"
   // Order events
-  | "walmart.order.placed"
-  | "walmart.order.confirmed"
-  | "walmart.order.preparing"
-  | "walmart.order.ready"
-  | "walmart.order.picked_up"
-  | "walmart.order.out_for_delivery"
-  | "walmart.order.delivered"
-  | "walmart.order.cancelled"
-  | "walmart.order.refunded"
-  | "walmart.order.substitution"
+  | "walmart.order?.placed"
+  | "walmart.order?.confirmed"
+  | "walmart.order?.preparing"
+  | "walmart.order?.ready"
+  | "walmart.order?.picked_up"
+  | "walmart.order?.out_for_delivery"
+  | "walmart.order?.delivered"
+  | "walmart.order?.cancelled"
+  | "walmart.order?.refunded"
+  | "walmart.order?.substitution"
   // Store events
-  | "walmart.store.inventory_update"
-  | "walmart.store.hours_change"
-  | "walmart.store.service_update"
-  | "walmart.store.closure"
+  | "walmart.store?.inventory_update"
+  | "walmart.store?.hours_change"
+  | "walmart.store?.service_update"
+  | "walmart.store?.closure"
   // Delivery events
-  | "walmart.delivery.slot_available"
-  | "walmart.delivery.slot_unavailable"
-  | "walmart.delivery.driver_assigned"
-  | "walmart.delivery.eta_update"
+  | "walmart.delivery?.slot_available"
+  | "walmart.delivery?.slot_unavailable"
+  | "walmart.delivery?.driver_assigned"
+  | "walmart.delivery?.eta_update"
   // Search events
-  | "walmart.search.trending"
-  | "walmart.search.suggestion"
-  | "walmart.search.completed"
+  | "walmart.search?.trending"
+  | "walmart.search?.suggestion"
+  | "walmart.search?.completed"
   // Recommendation events
-  | "walmart.recommendation.generated"
-  | "walmart.recommendation.updated"
+  | "walmart.recommendation?.generated"
+  | "walmart.recommendation?.updated"
   // Deal events
-  | "walmart.deal.new"
-  | "walmart.deal.expiring"
-  | "walmart.deal.activated"
-  | "walmart.deal.expired"
+  | "walmart.deal?.new"
+  | "walmart.deal?.expiring"
+  | "walmart.deal?.activated"
+  | "walmart.deal?.expired"
   // Scraping events
-  | "walmart.scraping.started"
-  | "walmart.scraping.progress"
-  | "walmart.scraping.completed"
-  | "walmart.scraping.failed"
+  | "walmart.scraping?.started"
+  | "walmart.scraping?.progress"
+  | "walmart.scraping?.completed"
+  | "walmart.scraping?.failed"
   // System events
-  | "walmart.sync.started"
-  | "walmart.sync.completed"
-  | "walmart.sync.failed";
+  | "walmart.sync?.started"
+  | "walmart.sync?.completed"
+  | "walmart.sync?.failed";
 
 // =====================================================
 // Product Event Data
@@ -409,7 +410,7 @@ export interface WalmartSyncEvent {
 // Event Message Types
 // =====================================================
 
-export type WalmartWebSocketMessage<T = unknown> = WebSocketMessage<T> & {
+export type WalmartWebSocketMessage<T = unknown> = Omit<WebSocketMessage<T>, 'type'> & {
   type: WalmartWebSocketEventType;
   storeId?: string;
   region?: string;
@@ -421,8 +422,8 @@ export type WalmartWebSocketMessage<T = unknown> = WebSocketMessage<T> & {
 
 export const WALMART_CHANNELS = {
   // Public channels
-  PUBLIC_DEALS: "walmart.public.deals",
-  PUBLIC_TRENDING: "walmart.public.trending",
+  PUBLIC_DEALS: "walmart.public?.deals",
+  PUBLIC_TRENDING: "walmart.public?.trending",
 
   // Store-specific channels
   STORE_UPDATES: (storeId: string) => `walmart.store.${storeId}`,
@@ -442,9 +443,9 @@ export const WALMART_CHANNELS = {
   CATEGORY_UPDATES: (category: string) => `walmart.category.${category}`,
 
   // System channels
-  SYSTEM_HEALTH: "walmart.system.health",
-  SYSTEM_SYNC: "walmart.system.sync",
-  SYSTEM_SCRAPING: "walmart.system.scraping",
+  SYSTEM_HEALTH: "walmart.system?.health",
+  SYSTEM_SYNC: "walmart.system?.sync",
+  SYSTEM_SCRAPING: "walmart.system?.scraping",
 } as const;
 
 // =====================================================

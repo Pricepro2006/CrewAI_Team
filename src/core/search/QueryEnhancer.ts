@@ -34,19 +34,19 @@ export class QueryEnhancer {
     // Return empty result if security issues detected
     if (
       optimization.confidence === 0 &&
-      optimization.securityFlags.length > 0
+      optimization?.securityFlags?.length > 0
     ) {
       return this.createEmptyEnhancement();
     }
 
     // Enhance location
     const enhancedLocation = this.enhanceLocation(
-      optimization.components.location,
+      optimization?.components?.location,
     );
 
     // Enhance service terms
     const enhancedService = this.enhanceService(
-      optimization.components.serviceType,
+      optimization?.components?.serviceType,
       enhancedLocation.region,
     );
 
@@ -62,11 +62,11 @@ export class QueryEnhancer {
       alternatives: enhancedQueries.slice(1),
       metadata: {
         hasLocation: !!enhancedLocation.corrected,
-        hasTimeConstraint: optimization.components.timeConstraints.length > 0,
-        serviceCategory: optimization.components.serviceType,
-        urgencyLevel: optimization.components.urgency,
-        searchOperators: optimization.components.searchOperators.map(
-          (op) => op.type,
+        hasTimeConstraint: (optimization?.components?.timeConstraints?.length ?? 0) > 0,
+        serviceCategory: optimization?.components?.serviceType,
+        urgencyLevel: optimization?.components?.urgency,
+        searchOperators: optimization?.components?.searchOperators?.map(
+          (op: any) => op.type,
         ),
       },
     };
@@ -81,7 +81,7 @@ export class QueryEnhancer {
     }
 
     // Handle "near me" specially
-    if (location.rawLocation.toLowerCase() === "near me") {
+    if (location?.rawLocation?.toLowerCase() === "near me") {
       return {
         ...location,
         corrected: "near me",
@@ -96,7 +96,7 @@ export class QueryEnhancer {
     );
 
     // Get state info
-    const state = location.state;
+    const state = location?.state;
     let stateAbbr = location.stateAbbr;
 
     if (!stateAbbr && state) {
@@ -181,7 +181,7 @@ export class QueryEnhancer {
     const primaryParts: string[] = [];
 
     // Add service (use first enhanced term)
-    if (enhancedService.length > 0 && enhancedService[0]) {
+    if ((enhancedService?.length ?? 0) > 0 && enhancedService[0]) {
       primaryParts.push(enhancedService[0]);
     }
 
@@ -199,7 +199,7 @@ export class QueryEnhancer {
     for (const constraint of components.timeConstraints) {
       if (constraint.type === "availability" && constraint.parsed?.isNow) {
         primaryParts.push("open now");
-      } else if (constraint.value.includes("24/7")) {
+      } else if (constraint?.value?.includes("24/7")) {
         primaryParts.push("24/7 available");
       }
     }
@@ -212,13 +212,13 @@ export class QueryEnhancer {
     // Alternative queries
     // Version with expanded location
     if (enhancedLocation.cityMetadata?.state && enhancedService[0]) {
-      const altQuery = `${enhancedService[0]} ${enhancedLocation.corrected}, ${enhancedLocation.cityMetadata.state} ${components.businessIndicators.join(" ")}`;
+      const altQuery = `${enhancedService[0]} ${enhancedLocation.corrected}, ${enhancedLocation?.cityMetadata?.state} ${components?.businessIndicators?.join(" ")}`;
       queries.push(altQuery.trim());
     }
 
     // Version with different service terms
-    for (let i = 1; i < Math.min(enhancedService.length, 3); i++) {
-      const altQuery = `${enhancedService[i]} ${enhancedLocation.corrected} ${components.businessIndicators.join(" ")}`;
+    for (let i = 1; i < Math.min(enhancedService?.length || 0, 3); i++) {
+      const altQuery = `${enhancedService[i]} ${enhancedLocation.corrected} ${components?.businessIndicators?.join(" ")}`;
       queries.push(altQuery.trim());
     }
 
@@ -241,7 +241,7 @@ export class QueryEnhancer {
     }
 
     // Remove duplicates and empty strings
-    return [...new Set(queries.filter((q) => q.trim().length > 0))];
+    return [...new Set(queries?.filter((q: any) => q.trim().length > 0))];
   }
 
   /**
@@ -311,12 +311,12 @@ export class QueryEnhancer {
     return {
       what: components.serviceType,
       where: {
-        city: components.location.city,
-        state: components.location.state,
-        zipCode: components.location.zipCode,
-        coordinates: components.location.coordinates,
+        city: components?.location?.city,
+        state: components?.location?.state,
+        zipCode: components?.location?.zipCode,
+        coordinates: components?.location?.coordinates,
       },
-      when: components.timeConstraints.map((tc) => ({
+      when: components?.timeConstraints?.map((tc: any) => ({
         type: tc.type,
         value: tc.value,
         parsed: tc.parsed,

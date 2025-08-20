@@ -163,8 +163,8 @@ export class CSRFErrorBoundary extends React.Component<
   static getDerivedStateFromError(error: Error): CSRFErrorBoundaryState {
     // Check if it's a CSRF-related error
     const isCSRFError =
-      error.message.toLowerCase().includes("csrf") ||
-      error.message.toLowerCase().includes("forbidden");
+      error?.message?.toLowerCase().includes("csrf") ||
+      error?.message?.toLowerCase().includes("forbidden");
 
     return {
       hasError: isCSRFError,
@@ -172,23 +172,23 @@ export class CSRFErrorBoundary extends React.Component<
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    if (this.state.hasError) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    if (this?.state?.hasError) {
       console.error("CSRF Error caught by boundary:", error, errorInfo);
     }
   }
 
   retry = () => {
     // Refresh the page to reinitialize CSRF protection
-    window.location.reload();
+    window?.location?.reload();
   };
 
-  render() {
-    if (this.state.hasError && this.state.error) {
-      if (this.props.fallback) {
-        const FallbackComponent = this.props.fallback;
+  override render() {
+    if (this?.state?.hasError && this?.state?.error) {
+      if (this?.props?.fallback) {
+        const FallbackComponent = this?.props?.fallback;
         return (
-          <FallbackComponent error={this.state.error} retry={this.retry} />
+          <FallbackComponent error={this?.state?.error} retry={this.retry} />
         );
       }
 
@@ -216,6 +216,6 @@ export class CSRFErrorBoundary extends React.Component<
       );
     }
 
-    return this.props.children;
+    return this?.props?.children;
   }
 }

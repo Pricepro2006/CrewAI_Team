@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 
 /**
  * Migration: Add due_date column to grocery_lists table
@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
  * Description: Adds due_date column to grocery_lists table with proper indexing and constraints
  */
 
-export function up(db: Database.Database) {
+export function up(db: DatabaseInstance) {
   console.log("Adding due_date column to grocery_lists table...");
 
   // Check if column already exists (safety check)
@@ -84,10 +84,10 @@ export function up(db: Database.Database) {
     'idx_grocery_lists_active_due_date'
   ];
 
-  const createdIndexes = indexes.map(idx => idx.name);
-  const missingIndexes = expectedIndexes.filter(idx => !createdIndexes.includes(idx));
+  const createdIndexes = indexes?.map(idx => idx.name);
+  const missingIndexes = expectedIndexes?.filter(idx => !createdIndexes.includes(idx));
 
-  if (missingIndexes.length > 0) {
+  if (missingIndexes?.length || 0 > 0) {
     console.warn(`⚠️  Some indexes may not have been created: ${missingIndexes.join(', ')}`);
   }
 
@@ -100,7 +100,7 @@ export function up(db: Database.Database) {
   console.log("   - SELECT * FROM grocery_lists WHERE is_active = 1 AND due_date BETWEEN datetime('now') AND datetime('now', '+7 days');");
 }
 
-export function down(db: Database.Database) {
+export function down(db: DatabaseInstance) {
   console.log("Rolling back: Removing due_date column from grocery_lists table...");
 
   try {

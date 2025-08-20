@@ -22,23 +22,23 @@ async function basicValidationExample() {
   console.log("Validation Result:");
   console.log("- Valid:", result.isValid);
   console.log("- Has Actionable Info:", result.hasActionableInfo);
-  console.log("- Confidence:", result.confidence.toFixed(2));
+  console.log("- Confidence:", result?.confidence?.toFixed(2));
   console.log("\nExtracted Information:");
   console.log(
     "- Business Names:",
-    result.contactInfo.businessNames.map((b) => b.value),
+    result?.contactInfo?.businessNames?.map((b: any) => b.value),
   );
   console.log(
     "- Phones:",
-    result.contactInfo.phones.map((p) => p.value),
+    result?.contactInfo?.phones?.map((p: any) => p.value),
   );
-  console.log("- Address:", result.contactInfo.addresses[0]?.value);
+  console.log("- Address:", result?.contactInfo?.addresses[0]?.value);
   console.log(
     "- Hours:",
-    result.contactInfo.hours.map((h) => h.value),
+    result?.contactInfo?.hours?.map((h: any) => h.value),
   );
-  console.log("- Email:", result.contactInfo.emails[0]?.value);
-  console.log("- Website:", result.contactInfo.websites[0]?.value);
+  console.log("- Email:", result?.contactInfo?.emails[0]?.value);
+  console.log("- Website:", result?.contactInfo?.websites[0]?.value);
 }
 
 // Example 2: Validation with privacy mode
@@ -51,7 +51,7 @@ async function privacyModeExample() {
   const result = validator.validateResponse(response);
 
   console.log("Original phone would be: 555-123-4567");
-  console.log("Masked phone:", result.contactInfo.phones[0]?.value);
+  console.log("Masked phone:", result?.contactInfo?.phones[0]?.value);
 }
 
 // Example 3: Integrated validation with fallback
@@ -110,35 +110,37 @@ async function patternMatchingExample() {
     {
       name: "US Phone Variations",
       text: "(555) 123-4567, 555.123.4567, 555-123-4567, +1 555 123 4567",
-      pattern: ContactPatterns.phone.usStandard,
+      pattern: ContactPatterns?.phone?.usStandard,
     },
     {
       name: "International Phones",
       text: "+44 20 7123 4567, +49 30 12345678, +61 2 9876 5432",
-      pattern: ContactPatterns.phone.international,
+      pattern: ContactPatterns?.phone?.international,
     },
     {
       name: "Business Hours",
       text: "Open Mon-Fri 9am-5pm, Sat 10:00-15:00, Sun Closed",
-      pattern: ContactPatterns.hours.fullHours,
+      pattern: ContactPatterns?.hours?.fullHours,
     },
     {
       name: "Addresses",
       text: "123 Main St, Suite 100, Boston, MA 02101",
-      pattern: ContactPatterns.address.fullAddress,
+      pattern: ContactPatterns?.address?.fullAddress,
     },
   ];
 
-  testCases.forEach((testCase) => {
+  testCases.forEach((testCase: any) => {
     console.log(`\n${testCase.name}:`);
     console.log(`Input: "${testCase.text}"`);
 
     const matches = [];
     let match;
-    testCase.pattern.lastIndex = 0;
-
-    while ((match = testCase.pattern.exec(testCase.text)) !== null) {
-      matches.push(match[0]);
+    const pattern = testCase?.pattern;
+    if (pattern) {
+      pattern.lastIndex = 0;
+      while ((match = pattern.exec(testCase.text)) !== null) {
+        matches.push(match[0]);
+      }
     }
 
     console.log("Matches:", matches);
@@ -174,11 +176,11 @@ async function edgeCaseExample() {
     },
   ];
 
-  edgeCases.forEach((testCase) => {
+  edgeCases.forEach((testCase: any) => {
     console.log(`\n${testCase.name}:`);
     const result = validator.validateResponse(testCase.text);
     console.log("- Valid:", result.isValid);
-    console.log("- Confidence:", result.confidence.toFixed(2));
+    console.log("- Confidence:", result?.confidence?.toFixed(2));
     console.log("- Has actionable info:", result.hasActionableInfo);
 
     if (!result.hasActionableInfo) {
@@ -203,15 +205,15 @@ async function performanceTest() {
     )
     .join("\n");
 
-  console.log("Text size:", largeText.length, "characters");
+  console.log("Text size:", largeText?.length || 0, "characters");
 
   const startTime = Date.now();
   const result = validator.validateResponse(largeText);
   const endTime = Date.now();
 
   console.log("Processing time:", endTime - startTime, "ms");
-  console.log("Unique phones found:", result.contactInfo.phones.length);
-  console.log("Unique addresses found:", result.contactInfo.addresses.length);
+  console.log("Unique phones found:", result?.contactInfo?.phones?.length || 0);
+  console.log("Unique addresses found:", result?.contactInfo?.addresses?.length || 0);
 }
 
 // Run all examples
@@ -236,6 +238,6 @@ export {
 };
 
 // Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (typeof require !== 'undefined' && require.main === module) {
   runAllExamples().catch(console.error);
 }

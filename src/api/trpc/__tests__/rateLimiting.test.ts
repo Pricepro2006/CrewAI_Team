@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TRPCError } from "@trpc/server";
 
 // Mock dependencies
@@ -95,10 +95,10 @@ vi.mock("../enhanced-router", () => {
           }
 
           // Get existing rate limit data
-          const existing = ctx.rateLimits.get(rateLimitKey);
+          const existing = ctx?.rateLimits?.get(rateLimitKey);
 
           if (!existing || existing.resetTime < now) {
-            ctx.rateLimits.set(rateLimitKey, {
+            ctx?.rateLimits?.set(rateLimitKey, {
               count: 1,
               resetTime: now + windowMs,
             });
@@ -332,7 +332,7 @@ describe("TRPC Rate Limiting", () => {
       ).rejects.toThrow("Rate limit exceeded");
 
       // Wait for window to expire
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve: any) => setTimeout(resolve, 150));
 
       // Should work again after window expires
       await rateLimitMiddleware({ ctx: mockContext, next });
@@ -549,13 +549,13 @@ describe("TRPC Rate Limiting", () => {
       }
 
       // Wait for entries to expire
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve: any) => setTimeout(resolve, 150));
 
       // Clean up expired entries manually (simulating what would happen in the real implementation)
       const now = Date.now();
-      for (const [key, value] of mockContext.rateLimits.entries()) {
+      for (const [key, value] of mockContext?.rateLimits?.entries()) {
         if (value.resetTime < now) {
-          mockContext.rateLimits.delete(key);
+          mockContext?.rateLimits?.delete(key);
         }
       }
 
@@ -563,7 +563,7 @@ describe("TRPC Rate Limiting", () => {
       await rateLimitMiddleware({ ctx: mockContext, next });
 
       // Rate limits map should be much smaller now after cleanup
-      expect(mockContext.rateLimits.size).toBeLessThan(50);
+      expect(mockContext?.rateLimits?.length).toBeLessThan(50);
     });
   });
 });

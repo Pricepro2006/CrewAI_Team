@@ -25,15 +25,15 @@ class ToastManager {
   private maxToasts = 5;
 
   subscribe(listener: (toasts: Toast[]) => void) {
-    this.listeners.add(listener);
+    this?.listeners?.add(listener);
     listener(this.toasts);
     return () => {
-      this.listeners.delete(listener);
+      this?.listeners?.delete(listener);
     };
   }
 
   private notify() {
-    this.listeners.forEach((listener) => listener(this.toasts));
+    this?.listeners?.forEach((listener: (toasts: Toast[]) => void) => listener(this.toasts));
   }
 
   add(
@@ -68,7 +68,7 @@ class ToastManager {
   }
 
   remove(id: string) {
-    this.toasts = this.toasts.filter((t) => t.id !== id);
+    this.toasts = this?.toasts?.filter((t: Toast) => t.id !== id);
     this.notify();
   }
 
@@ -78,7 +78,7 @@ class ToastManager {
   }
 
   update(id: string, updates: Partial<Toast>) {
-    this.toasts = this.toasts.map((t) =>
+    this.toasts = this?.toasts?.map((t: Toast) =>
       t.id === id ? { ...t, ...updates } : t
     );
     this.notify();

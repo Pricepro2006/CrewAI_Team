@@ -84,7 +84,7 @@ export class FallbackSearchManager {
     ];
 
     // Sort by priority
-    this.dataSources.sort((a, b) => a.priority - b.priority);
+    this?.dataSources?.sort((a, b) => a.priority - b.priority);
   }
 
   /**
@@ -96,8 +96,8 @@ export class FallbackSearchManager {
     const cacheKey = this.generateCacheKey(options);
 
     // Check cache first
-    if (this.searchHistory.has(cacheKey)) {
-      return this.searchHistory.get(cacheKey)!;
+    if (this?.searchHistory?.has(cacheKey)) {
+      return this?.searchHistory?.get(cacheKey)!;
     }
 
     const searchQueries = this.generateSearchQueries(options);
@@ -141,7 +141,7 @@ export class FallbackSearchManager {
       };
 
       // Cache the result
-      this.searchHistory.set(cacheKey, result);
+      this?.searchHistory?.set(cacheKey, result);
 
       return result;
     } catch (error) {
@@ -159,28 +159,28 @@ export class FallbackSearchManager {
    */
   private generateSearchQueries(options: FallbackSearchOptions): string[] {
     const queries: string[] = [];
-    const baseQuery = options.query;
+    const baseQuery = options?.query;
 
     // Always include the base query
     queries.push(baseQuery);
 
     // Add specific queries for missing information
-    if (options.missingInfo.includes("phone")) {
+    if (options?.missingInfo?.includes("phone")) {
       queries.push(`${baseQuery} phone number contact`);
       queries.push(`${baseQuery} call telephone`);
     }
 
-    if (options.missingInfo.includes("address")) {
+    if (options?.missingInfo?.includes("address")) {
       queries.push(`${baseQuery} address location directions`);
       queries.push(`${baseQuery} ${options.location || ""} location`);
     }
 
-    if (options.missingInfo.includes("hours")) {
+    if (options?.missingInfo?.includes("hours")) {
       queries.push(`${baseQuery} hours open closed schedule`);
       queries.push(`${baseQuery} business hours operation`);
     }
 
-    if (options.missingInfo.includes("business name")) {
+    if (options?.missingInfo?.includes("business name")) {
       queries.push(`${baseQuery} company business name`);
     }
 
@@ -190,7 +190,7 @@ export class FallbackSearchManager {
     }
 
     // Remove duplicates and limit number of queries
-    return [...new Set(queries)].slice(0, 5);
+    return Array.from(new Set(queries)).slice(0, 5);
   }
 
   /**
@@ -237,7 +237,7 @@ export class FallbackSearchManager {
    * Generate cache key for search
    */
   private generateCacheKey(options: FallbackSearchOptions): string {
-    return `${options.query}_${options.missingInfo.join(",")}_${options.location || "no-location"}`;
+    return `${options.query}_${options?.missingInfo?.join(",")}_${options.location || "no-location"}`;
   }
 
   /**
@@ -248,11 +248,11 @@ export class FallbackSearchManager {
     helpful: boolean,
     reason?: string,
   ): void {
-    if (!this.userFeedback.has(query)) {
-      this.userFeedback.set(query, []);
+    if (!this?.userFeedback?.has(query)) {
+      this?.userFeedback?.set(query, []);
     }
 
-    this.userFeedback.get(query)!.push({ helpful, reason });
+    this?.userFeedback?.get(query)!.push({ helpful, reason });
   }
 
   /**
@@ -263,12 +263,12 @@ export class FallbackSearchManager {
     helpfulPercentage: number;
     commonIssues: string[];
   } {
-    const feedback = this.userFeedback.get(query) || [];
-    const helpful = feedback.filter((f) => f.helpful).length;
+    const feedback = this?.userFeedback?.get(query) || [];
+    const helpful = feedback?.filter((f: any) => f.helpful).length;
 
     const issues = feedback
-      .filter((f) => !f.helpful && f.reason)
-      .map((f) => f.reason!)
+      .filter((f: any) => !f.helpful && f.reason)
+      .map((f: any) => f.reason!)
       .reduce(
         (acc, reason) => {
           acc[reason] = (acc[reason] || 0) + 1;
@@ -278,14 +278,15 @@ export class FallbackSearchManager {
       );
 
     const commonIssues = Object.entries(issues)
-      .sort(([, a], [, b]) => b - a)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 3)
       .map(([issue]) => issue);
 
+    const feedbackLength = feedback?.length || 0;
     return {
-      totalFeedback: feedback.length,
+      totalFeedback: feedbackLength,
       helpfulPercentage:
-        feedback.length > 0 ? (helpful / feedback.length) * 100 : 0,
+        feedbackLength > 0 ? (helpful / feedbackLength) * 100 : 0,
       commonIssues,
     };
   }
@@ -294,15 +295,15 @@ export class FallbackSearchManager {
    * Add a new data source dynamically
    */
   public addDataSource(source: DataSource): void {
-    this.dataSources.push(source);
-    this.dataSources.sort((a, b) => a.priority - b.priority);
+    this?.dataSources?.push(source);
+    this?.dataSources?.sort((a, b) => a.priority - b.priority);
   }
 
   /**
    * Remove a data source
    */
   public removeDataSource(name: string): void {
-    this.dataSources = this.dataSources.filter((s) => s.name !== name);
+    this.dataSources = this?.dataSources?.filter((s: any) => s.name !== name);
   }
 
   /**
@@ -324,7 +325,7 @@ export class FallbackSearchManager {
    * Clear search cache
    */
   public clearCache(): void {
-    this.searchHistory.clear();
+    this?.searchHistory?.clear();
   }
 
   /**
@@ -337,7 +338,7 @@ export class FallbackSearchManager {
   } {
     // In a real implementation, we would track hits and misses
     return {
-      size: this.searchHistory.size,
+      size: this?.searchHistory?.size,
       hits: 0, // Placeholder
       misses: 0, // Placeholder
     };

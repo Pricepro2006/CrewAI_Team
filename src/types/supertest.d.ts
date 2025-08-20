@@ -1,4 +1,6 @@
 // Minimal supertest type declaration for test compilation
+// CONFLICT: supertest module is also declared in modules.d.ts with different definitions
+// This file provides more complete type definitions
 declare module "supertest" {
   import { Server } from "http";
   import { Express } from "express";
@@ -56,3 +58,6 @@ declare module "supertest" {
 
   export default supertest;
 }
+
+// Note: This file has more detailed supertest types than modules.d.ts
+// Consider consolidating both definitions

@@ -139,8 +139,8 @@ export const OptimizedChart: React.FC<ChartProps> = React.memo(({
               outerRadius={80}
               animationDuration={chartConfig.animationDuration}
             >
-              {data.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+              {data?.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={colors[index % colors?.length || 0]} />
               ))}
             </Pie>
           </PieChart>
@@ -159,7 +159,7 @@ export const OptimizedChart: React.FC<ChartProps> = React.memo(({
         </h3>
       )}
       <ResponsiveContainer width="100%" height={height}>
-        {renderChart()}
+        {renderChart() || <div />}
       </ResponsiveContainer>
     </div>
   );

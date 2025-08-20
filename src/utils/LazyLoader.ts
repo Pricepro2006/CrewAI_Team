@@ -33,25 +33,25 @@ export class LazyLoader<T> {
     const chunkKey = this.getChunkKey(startIndex);
 
     // Check cache first
-    const cached = this.cache.get(chunkKey);
+    const cached = this?.cache?.get(chunkKey);
     if (cached && !this.isCacheExpired(cached)) {
       logger.debug("Lazy load cache hit", "LAZY_LOADER", {
         startIndex,
         chunkKey,
-        cacheSize: this.cache.size,
+        cacheSize: this?.cache?.size,
       });
 
       return {
         data: cached.data,
         startIndex,
-        endIndex: startIndex + cached.data.length - 1,
+        endIndex: startIndex + cached?.data?.length - 1,
         isFromCache: true,
         totalItems: cached.totalItems,
       };
     }
 
     // Check if already loading this chunk (deduplication)
-    const existingLoad = this.loadingStates.get(chunkKey);
+    const existingLoad = this?.loadingStates?.get(chunkKey);
     if (existingLoad) {
       logger.debug("Deduplicating concurrent load", "LAZY_LOADER", {
         chunkKey,
@@ -60,7 +60,7 @@ export class LazyLoader<T> {
       return {
         data,
         startIndex,
-        endIndex: startIndex + data.length - 1,
+        endIndex: startIndex + data?.length || 0 - 1,
         isFromCache: false,
         totalItems,
       };
@@ -68,7 +68,7 @@ export class LazyLoader<T> {
 
     // Load new chunk
     const loadPromise = this.performLoad(startIndex, loadFn);
-    this.loadingStates.set(chunkKey, loadPromise);
+    this?.loadingStates?.set(chunkKey, loadPromise);
 
     try {
       const data = await loadPromise;
@@ -77,18 +77,18 @@ export class LazyLoader<T> {
       this.cacheChunk(chunkKey, data, totalItems);
 
       // Clean up loading state
-      this.loadingStates.delete(chunkKey);
+      this?.loadingStates?.delete(chunkKey);
 
       return {
         data,
         startIndex,
-        endIndex: startIndex + data.length - 1,
+        endIndex: startIndex + data?.length || 0 - 1,
         isFromCache: false,
         totalItems,
       };
     } catch (error) {
       // Clean up loading state on error
-      this.loadingStates.delete(chunkKey);
+      this?.loadingStates?.delete(chunkKey);
       throw error;
     }
   }
@@ -108,11 +108,11 @@ export class LazyLoader<T> {
     if (!totalItems || nextStartIndex < totalItems) {
       const nextChunkKey = this.getChunkKey(nextStartIndex);
       if (
-        !this.cache.has(nextChunkKey) &&
-        !this.loadingStates.has(nextChunkKey)
+        !this?.cache?.has(nextChunkKey) &&
+        !this?.loadingStates?.has(nextChunkKey)
       ) {
         preloadPromises.push(
-          this.loadChunk(nextStartIndex, loadFn, totalItems).catch((error) => {
+          this.loadChunk(nextStartIndex, loadFn, totalItems).catch((error: any) => {
             logger.warn("Failed to preload next chunk", "LAZY_LOADER", {
               error,
               nextStartIndex,
@@ -127,11 +127,11 @@ export class LazyLoader<T> {
     if (prevStartIndex >= 0) {
       const prevChunkKey = this.getChunkKey(prevStartIndex);
       if (
-        !this.cache.has(prevChunkKey) &&
-        !this.loadingStates.has(prevChunkKey)
+        !this?.cache?.has(prevChunkKey) &&
+        !this?.loadingStates?.has(prevChunkKey)
       ) {
         preloadPromises.push(
-          this.loadChunk(prevStartIndex, loadFn, totalItems).catch((error) => {
+          this.loadChunk(prevStartIndex, loadFn, totalItems).catch((error: any) => {
             logger.warn("Failed to preload previous chunk", "LAZY_LOADER", {
               error,
               prevStartIndex,
@@ -142,11 +142,11 @@ export class LazyLoader<T> {
     }
 
     // Execute preloads without blocking
-    if (preloadPromises.length > 0) {
+    if (preloadPromises?.length || 0 > 0) {
       Promise.allSettled(preloadPromises).then(() => {
         logger.debug("Preload completed", "LAZY_LOADER", {
           currentIndex,
-          preloadedChunks: preloadPromises.length,
+          preloadedChunks: preloadPromises?.length || 0,
         });
       });
     }
@@ -197,15 +197,15 @@ export class LazyLoader<T> {
    * Get performance statistics
    */
   getStats(): LazyLoadStats {
-    const totalCached = this.cache.size;
+    const totalCached = this?.cache?.size;
     const cacheHitRate =
       totalCached > 0
-        ? (totalCached / (totalCached + this.loadingStates.size)) * 100
+        ? (totalCached / (totalCached + this?.loadingStates?.size)) * 100
         : 0;
 
     return {
       totalChunksCached: totalCached,
-      activeLoads: this.loadingStates.size,
+      activeLoads: this?.loadingStates?.size,
       cacheHitRate,
       memoryUsage: this.estimateMemoryUsage(),
     };
@@ -215,8 +215,8 @@ export class LazyLoader<T> {
    * Clear cache and reset state
    */
   clearCache(): void {
-    this.cache.clear();
-    this.loadingStates.clear();
+    this?.cache?.clear();
+    this?.loadingStates?.clear();
     logger.info("Lazy loader cache cleared", "LAZY_LOADER");
   }
 
@@ -228,8 +228,8 @@ export class LazyLoader<T> {
       // Invalidate specific range
       for (let i = startIndex; i <= endIndex; i += this.chunkSize) {
         const chunkKey = this.getChunkKey(i);
-        this.cache.delete(chunkKey);
-        this.loadingStates.delete(chunkKey);
+        this?.cache?.delete(chunkKey);
+        this?.loadingStates?.delete(chunkKey);
       }
     } else {
       // Invalidate all
@@ -253,7 +253,7 @@ export class LazyLoader<T> {
 
       logger.debug("Chunk loaded", "LAZY_LOADER", {
         startIndex,
-        itemCount: data.length,
+        itemCount: data?.length || 0,
         duration,
       });
 
@@ -269,14 +269,14 @@ export class LazyLoader<T> {
 
   private cacheChunk(chunkKey: string, data: T[], totalItems?: number): void {
     // Implement LRU eviction
-    if (this.cache.size >= this.cacheSize) {
-      const oldestKey = this.cache.keys().next().value;
+    if (this?.cache?.size >= this.cacheSize) {
+      const oldestKey = this?.cache?.keys().next().value;
       if (oldestKey !== undefined) {
-        this.cache.delete(oldestKey);
+        this?.cache?.delete(oldestKey);
       }
     }
 
-    this.cache.set(chunkKey, {
+    this?.cache?.set(chunkKey, {
       data,
       timestamp: Date.now(),
       totalItems,
@@ -309,9 +309,9 @@ export class LazyLoader<T> {
 
   private estimateMemoryUsage(): number {
     let totalSize = 0;
-    this.cache.forEach((chunk) => {
+    this?.cache?.forEach((chunk: any) => {
       // Rough estimation - 1KB per item on average
-      totalSize += chunk.data.length * 1024;
+      totalSize += chunk?.data?.length * 1024;
     });
     return totalSize;
   }

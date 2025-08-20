@@ -21,20 +21,20 @@ class PerformanceOptimizer {
   private tasks: OptimizationTask[] = [];
 
   private async executeCommand(command: string, description: string): Promise<boolean> {
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       const childProcess: ChildProcess = spawn('sh', ['-c', command], { stdio: 'pipe' });
       
       let output = '';
       let error = '';
       
       if (childProcess.stdout) {
-        childProcess.stdout.on('data', (data: Buffer) => {
+        childProcess?.stdout?.on('data', (data: Buffer) => {
           output += data.toString();
         });
       }
       
       if (childProcess.stderr) {
-        childProcess.stderr.on('data', (data: Buffer) => {
+        childProcess?.stderr?.on('data', (data: Buffer) => {
           error += data.toString();
         });
       }
@@ -52,7 +52,7 @@ class PerformanceOptimizer {
   }
 
   private async addTask(name: string, description: string, priority: 'Critical' | 'High' | 'Medium' | 'Low'): Promise<void> {
-    this.tasks.push({
+    this?.tasks?.push({
       name,
       description,
       priority,
@@ -63,10 +63,10 @@ class PerformanceOptimizer {
   public async optimizeViteConfig(): Promise<boolean> {
     console.log('🔧 Optimizing Vite configuration for production...');
     
-    const viteConfigPath = 'vite.config.ts';
+    const viteConfigPath = 'vite?.config?.ts';
     
     if (!existsSync(viteConfigPath)) {
-      console.log('   ⚠️ vite.config.ts not found, skipping optimization');
+      console.log('   ⚠️ vite?.config?.ts not found, skipping optimization');
       return false;
     }
     
@@ -420,7 +420,7 @@ dashboard.startMonitoring();
     ];
     
     // Update task status
-    this.tasks.forEach((task: OptimizationTask) => {
+    this?.tasks?.forEach((task: OptimizationTask) => {
       const result = results.find((r: { task: string; success: boolean }) => r.task === task.name);
       if (result) {
         task.implemented = result.success;
@@ -432,12 +432,12 @@ dashboard.startMonitoring();
     console.log('OPTIMIZATION IMPLEMENTATION RESULTS');
     console.log('='.repeat(60));
     
-    const completed: number = this.tasks.filter((t: OptimizationTask) => t.implemented).length;
-    const total: number = this.tasks.length;
+    const completed: number = this?.tasks?.filter((t: OptimizationTask) => t.implemented).length;
+    const total: number = this?.tasks?.length;
     
     console.log(`\\n📊 Overall Progress: ${completed}/${total} tasks completed (${((completed/total)*100).toFixed(1)}%)`);
     
-    this.tasks.forEach((task, index) => {
+    this?.tasks?.forEach((task, index) => {
       const status = task.implemented ? '✅' : '❌';
       console.log(`${index + 1}. ${status} [${task.priority}] ${task.description}`);
     });

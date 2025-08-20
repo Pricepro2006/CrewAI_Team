@@ -203,12 +203,12 @@ class ProductMatchingBenchmark {
     
     // Calculate statistics
     const totalTime = endTime - startTime;
-    const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+    const avgTime = times.reduce((a: any, b: any) => a + b, 0) / times?.length || 0;
     const minTime = Math.min(...times);
     const maxTime = Math.max(...times);
     const memoryUsed = (endMemory - startMemory) / 1024 / 1024; // MB
-    const accuracyScore = (correctMatches / this.testCases.length) * 0.5 + 
-                         (totalScore / this.testCases.length) * 0.5;
+    const accuracyScore = (correctMatches / this?.testCases?.length) * 0.5 + 
+                         (totalScore / this?.testCases?.length) * 0.5;
     
     // Get cache hit rate if available (for optimized algorithm)
     let cacheHitRate: number | undefined;
@@ -235,13 +235,13 @@ class ProductMatchingBenchmark {
   private async benchmarkBatchProcessing(): Promise<void> {
     console.log('\n=== Batch Processing Benchmark ===\n');
     
-    const queries = this.testCases.map(tc => tc.query);
-    const allProducts = [...new Set(this.testCases.flatMap(tc => tc.products))];
+    const queries = this?.testCases?.map(tc => tc.query);
+    const allProducts = [...new Set(this?.testCases?.flatMap(tc => tc.products))];
     
     const startTime = performance.now();
     const startMemory = process.memoryUsage().heapUsed;
     
-    const batchResult = await this.optimizedAlgorithm.processBatch({
+    const batchResult = await this?.optimizedAlgorithm?.processBatch({
       queries,
       products: allProducts
     });
@@ -251,12 +251,12 @@ class ProductMatchingBenchmark {
     
     console.log('Batch Processing Results:');
     console.log(`  Total Time: ${(endTime - startTime).toFixed(2)}ms`);
-    console.log(`  Queries Processed: ${queries.length}`);
-    console.log(`  Products Compared: ${allProducts.length}`);
-    console.log(`  Total Comparisons: ${queries.length * allProducts.length}`);
+    console.log(`  Queries Processed: ${queries?.length || 0}`);
+    console.log(`  Products Compared: ${allProducts?.length || 0}`);
+    console.log(`  Total Comparisons: ${queries?.length || 0 * allProducts?.length || 0}`);
     console.log(`  Cache Hit Rate: ${(batchResult.cacheHitRate * 100).toFixed(2)}%`);
     console.log(`  Memory Used: ${((endMemory - startMemory) / 1024 / 1024).toFixed(2)}MB`);
-    console.log(`  Avg Time per Comparison: ${(batchResult.executionTime / (queries.length * allProducts.length)).toFixed(2)}ms`);
+    console.log(`  Avg Time per Comparison: ${(batchResult.executionTime / (queries?.length || 0 * allProducts?.length || 0)).toFixed(2)}ms`);
   }
   
   /**
@@ -266,27 +266,27 @@ class ProductMatchingBenchmark {
     console.log('\n=== Cache Warming Test ===\n');
     
     // Clear caches first
-    await this.optimizedAlgorithm.clearCaches();
+    await this?.optimizedAlgorithm?.clearCaches();
     
     // First run - cold cache
     const coldStart = performance.now();
-    for (const testCase of this.testCases.slice(0, 3)) {
+    for (const testCase of this?.testCases?.slice(0, 3)) {
       for (const product of testCase.products) {
-        await this.optimizedAlgorithm.calculateSimilarity(testCase.query, product);
+        await this?.optimizedAlgorithm?.calculateSimilarity(testCase.query, product);
       }
     }
     const coldTime = performance.now() - coldStart;
     
     // Second run - warm cache
     const warmStart = performance.now();
-    for (const testCase of this.testCases.slice(0, 3)) {
+    for (const testCase of this?.testCases?.slice(0, 3)) {
       for (const product of testCase.products) {
-        await this.optimizedAlgorithm.calculateSimilarity(testCase.query, product);
+        await this?.optimizedAlgorithm?.calculateSimilarity(testCase.query, product);
       }
     }
     const warmTime = performance.now() - warmStart;
     
-    const stats = this.optimizedAlgorithm.getPerformanceStats();
+    const stats = this?.optimizedAlgorithm?.getPerformanceStats();
     
     console.log('Cache Warming Results:');
     console.log(`  Cold Cache Time: ${coldTime.toFixed(2)}ms`);
@@ -325,7 +325,7 @@ class ProductMatchingBenchmark {
       let bestScore = 0;
       
       for (const product of products) {
-        const score = await this.originalAlgorithm.calculateSimilarity(test.query, product);
+        const score = await this?.originalAlgorithm?.calculateSimilarity(test.query, product);
         if (score > bestScore) {
           bestScore = score;
           bestMatch = product;
@@ -344,7 +344,7 @@ class ProductMatchingBenchmark {
       let bestScore = 0;
       
       for (const product of products) {
-        const score = await this.optimizedAlgorithm.calculateSimilarity(test.query, product);
+        const score = await this?.optimizedAlgorithm?.calculateSimilarity(test.query, product);
         if (score > bestScore) {
           bestScore = score;
           bestMatch = product;
@@ -357,8 +357,8 @@ class ProductMatchingBenchmark {
     }
     
     console.log('\nAccuracy Comparison:');
-    console.log(`  Original: ${originalCorrect}/${misspellingTests.length} (${(originalCorrect/misspellingTests.length * 100).toFixed(0)}%)`);
-    console.log(`  Optimized: ${optimizedCorrect}/${misspellingTests.length} (${(optimizedCorrect/misspellingTests.length * 100).toFixed(0)}%)`);
+    console.log(`  Original: ${originalCorrect}/${misspellingTests?.length || 0} (${(originalCorrect/misspellingTests?.length || 0 * 100).toFixed(0)}%)`);
+    console.log(`  Optimized: ${optimizedCorrect}/${misspellingTests?.length || 0} (${(optimizedCorrect/misspellingTests?.length || 0 * 100).toFixed(0)}%)`);
   }
   
   /**
@@ -372,8 +372,8 @@ class ProductMatchingBenchmark {
     // Warm up both algorithms
     console.log('Warming up algorithms...\n');
     for (let i = 0; i < 5; i++) {
-      await this.originalAlgorithm.calculateSimilarity('test', 'test product');
-      await this.optimizedAlgorithm.calculateSimilarity('test', 'test product');
+      await this?.originalAlgorithm?.calculateSimilarity('test', 'test product');
+      await this?.optimizedAlgorithm?.calculateSimilarity('test', 'test product');
     }
     
     // Run main benchmarks
@@ -406,17 +406,17 @@ class ProductMatchingBenchmark {
    */
   private displayResults(original: BenchmarkResult, optimized: BenchmarkResult): void {
     console.log('Original Algorithm:');
-    console.log(`  Total Time: ${original.totalTime.toFixed(2)}ms`);
-    console.log(`  Avg Time per Match: ${original.avgTimePerMatch.toFixed(2)}ms`);
-    console.log(`  Min/Max Time: ${original.minTime.toFixed(2)}ms / ${original.maxTime.toFixed(2)}ms`);
-    console.log(`  Memory Used: ${original.memoryUsed.toFixed(2)}MB`);
+    console.log(`  Total Time: ${original?.totalTime?.toFixed(2)}ms`);
+    console.log(`  Avg Time per Match: ${original?.avgTimePerMatch?.toFixed(2)}ms`);
+    console.log(`  Min/Max Time: ${original?.minTime?.toFixed(2)}ms / ${original?.maxTime?.toFixed(2)}ms`);
+    console.log(`  Memory Used: ${original?.memoryUsed?.toFixed(2)}MB`);
     console.log(`  Accuracy Score: ${(original.accuracyScore * 100).toFixed(2)}%`);
     
     console.log('\nOptimized Algorithm:');
-    console.log(`  Total Time: ${optimized.totalTime.toFixed(2)}ms`);
-    console.log(`  Avg Time per Match: ${optimized.avgTimePerMatch.toFixed(2)}ms`);
-    console.log(`  Min/Max Time: ${optimized.minTime.toFixed(2)}ms / ${optimized.maxTime.toFixed(2)}ms`);
-    console.log(`  Memory Used: ${optimized.memoryUsed.toFixed(2)}MB`);
+    console.log(`  Total Time: ${optimized?.totalTime?.toFixed(2)}ms`);
+    console.log(`  Avg Time per Match: ${optimized?.avgTimePerMatch?.toFixed(2)}ms`);
+    console.log(`  Min/Max Time: ${optimized?.minTime?.toFixed(2)}ms / ${optimized?.maxTime?.toFixed(2)}ms`);
+    console.log(`  Memory Used: ${optimized?.memoryUsed?.toFixed(2)}MB`);
     console.log(`  Accuracy Score: ${(optimized.accuracyScore * 100).toFixed(2)}%`);
     if (optimized.cacheHitRate !== undefined) {
       console.log(`  Cache Hit Rate: ${(optimized.cacheHitRate * 100).toFixed(2)}%`);
@@ -441,13 +441,13 @@ class ProductMatchingBenchmark {
     console.log('========================================\n');
     
     const speedup = original.avgTimePerMatch / optimized.avgTimePerMatch;
-    const stats = this.optimizedAlgorithm.getPerformanceStats();
+    const stats = this?.optimizedAlgorithm?.getPerformanceStats();
     
     console.log('Key Performance Indicators:');
     console.log(`  ✓ Speed: ${speedup.toFixed(2)}x faster`);
     console.log(`  ✓ Cache Efficiency: ${(stats.cacheHitRate * 100).toFixed(2)}% hit rate`);
     console.log(`  ✓ Accuracy: ${(optimized.accuracyScore * 100).toFixed(2)}%`);
-    console.log(`  ✓ Avg Response Time: ${optimized.avgTimePerMatch.toFixed(2)}ms`);
+    console.log(`  ✓ Avg Response Time: ${optimized?.avgTimePerMatch?.toFixed(2)}ms`);
     
     console.log('\nOptimization Benefits:');
     console.log('  ✓ Multi-layer caching (Redis + LRU)');

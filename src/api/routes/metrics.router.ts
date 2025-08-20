@@ -98,14 +98,15 @@ router.get('/metrics/alerts', async (req: Request, res: Response) => {
  * POST /metrics/trace
  * Record a distributed trace
  */
-router.post('/metrics/trace', async (req: Request, res: Response) => {
+router.post('/metrics/trace', async (req: Request, res: Response): Promise<void> => {
   try {
     const { correlationId, serviceName, endpoint, latency } = req.body;
     
     if (!correlationId || !serviceName || !endpoint || latency === undefined) {
-      return res.status(400).json({ 
+      res.status(400).json({ 
         error: 'Missing required fields: correlationId, serviceName, endpoint, latency' 
       });
+      return;
     }
     
     metricsCollectionService.recordTrace(correlationId, serviceName, endpoint, latency);
@@ -122,14 +123,15 @@ router.post('/metrics/trace', async (req: Request, res: Response) => {
  * POST /metrics/api
  * Record API metrics
  */
-router.post('/metrics/api', async (req: Request, res: Response) => {
+router.post('/metrics/api', async (req: Request, res: Response): Promise<void> => {
   try {
     const { method, endpoint, status, duration } = req.body;
     
     if (!method || !endpoint || status === undefined || duration === undefined) {
-      return res.status(400).json({ 
+      res.status(400).json({ 
         error: 'Missing required fields: method, endpoint, status, duration' 
       });
+      return;
     }
     
     metricsCollectionService.recordAPIMetric(method, endpoint, status, duration);
@@ -146,12 +148,12 @@ router.post('/metrics/api', async (req: Request, res: Response) => {
  * POST /metrics/database
  * Record database metrics
  */
-router.post('/metrics/database', async (req: Request, res: Response) => {
+router.post('/metrics/database', async (req: Request, res: Response): Promise<void> => {
   try {
     const { queryType, table, duration, success } = req.body;
     
     if (!queryType || !table || duration === undefined || success === undefined) {
-      return res.status(400).json({ 
+      res.status(400).json({ 
         error: 'Missing required fields: queryType, table, duration, success' 
       });
     }
@@ -170,12 +172,12 @@ router.post('/metrics/database', async (req: Request, res: Response) => {
  * POST /metrics/websocket
  * Record WebSocket metrics
  */
-router.post('/metrics/websocket', async (req: Request, res: Response) => {
+router.post('/metrics/websocket', async (req: Request, res: Response): Promise<void> => {
   try {
     const { type, metadata } = req.body;
     
     if (!type || !['connect', 'disconnect', 'message', 'error'].includes(type)) {
-      return res.status(400).json({ 
+      res.status(400).json({ 
         error: 'Invalid type. Must be: connect, disconnect, message, or error' 
       });
     }

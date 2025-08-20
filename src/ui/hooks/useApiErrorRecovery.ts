@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { useRetryMechanism, useCircuitBreaker } from "./useRetryMechanism";
-import { useErrorReporter } from "../contexts/ErrorContext";
-import { toast } from "../components/Toast/useToast";
-import { translateError, isRecoverableError } from "../utils/errorTranslator";
+import { useRetryMechanism, useCircuitBreaker } from "./useRetryMechanism.js";
+import { useErrorReporter } from "../contexts/ErrorContext.js";
+import { toast } from "../components/Toast/useToast.js";
+import { translateError, isRecoverableError } from "../utils/errorTranslator.js";
 
 export interface ApiErrorRecoveryOptions {
   enableCircuitBreaker?: boolean;
@@ -10,20 +10,20 @@ export interface ApiErrorRecoveryOptions {
   maxRetries?: number;
   onError?: (error: Error) => void;
   onRecovery?: () => void;
-  fallbackData?: any;
+  fallbackData?: unknown;
   cacheKey?: string;
   cacheDuration?: number;
 }
 
 interface CacheEntry {
-  data: any;
+  data: unknown;
   timestamp: number;
 }
 
 // Simple in-memory cache for fallback data
 const fallbackCache = new Map<string, CacheEntry>();
 
-export function useApiErrorRecovery<T = any>(options: ApiErrorRecoveryOptions = {}) {
+export function useApiErrorRecovery<T = unknown>(options: ApiErrorRecoveryOptions = {}) {
   const {
     enableCircuitBreaker = true,
     enableRetry = true,
@@ -97,7 +97,7 @@ export function useApiErrorRecovery<T = any>(options: ApiErrorRecoveryOptions = 
         }
         
         // Cache the result
-        setCachedData(result as any);
+        setCachedData(result as unknown);
         
         // Call recovery callback if we were recovering
         if (recoveryAttempts.current > 0) {
@@ -215,7 +215,7 @@ export function useApiErrorRecovery<T = any>(options: ApiErrorRecoveryOptions = 
 export function useTRPCErrorRecovery() {
   const reportError = useErrorReporter();
 
-  const handleTRPCError = useCallback((error: any) => {
+  const handleTRPCError = useCallback((error: unknown) => {
     // Extract meaningful error from TRPC error structure
     const message = error?.message || error?.data?.message || "Unknown error";
     const code = error?.data?.code || error?.code;
@@ -223,8 +223,8 @@ export function useTRPCErrorRecovery() {
 
     // Create a more meaningful error
     const enhancedError = new Error(message);
-    (enhancedError as any).code = code;
-    (enhancedError as any).httpStatus = httpStatus;
+    (enhancedError as unknown).code = code;
+    (enhancedError as unknown).httpStatus = httpStatus;
 
     // Determine severity and recoverability
     const isAuthError = code === "UNAUTHORIZED" || httpStatus === 401;
@@ -242,7 +242,9 @@ export function useTRPCErrorRecovery() {
     if (isAuthError) {
       // Redirect to login after a delay
       setTimeout(() => {
-        window.location.href = "/login";
+        if (typeof window !== 'undefined' && window.location) {
+          window.location.href = "/login";
+        }
       }, 2000);
     }
 

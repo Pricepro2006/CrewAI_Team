@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { EmailAnalysisAgent } from "./EmailAnalysisAgent.js";
-import { OllamaProvider } from "../../llm/OllamaProvider.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmailAnalysisAgent } from './EmailAnalysisAgent';
+import { OllamaProvider } from '../../llm/OllamaProvider';
 
 // Mock the OllamaProvider
 vi.mock("../../llm/OllamaProvider", () => ({
@@ -37,7 +37,7 @@ describe("EmailAnalysisAgent", () => {
       };
 
       // Mock the generate response for categorization
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         JSON.stringify({
           categories: {
             workflow: ["Order Management"],
@@ -51,15 +51,15 @@ describe("EmailAnalysisAgent", () => {
       );
 
       // Mock the summary generation
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "Order confirmation for two purchase orders",
       );
 
       const analysis = await agent.analyzeEmail(email);
 
-      expect(analysis.entities.poNumbers).toContain("12345678");
-      expect(analysis.entities.poNumbers).toContain("87654321");
-      expect(analysis.entities.poNumbers).toHaveLength(2);
+      expect(analysis?.entities?.poNumbers).toContain("12345678");
+      expect(analysis?.entities?.poNumbers).toContain("87654321");
+      expect(analysis?.entities?.poNumbers).toHaveLength(2);
     });
 
     it("should extract quote numbers correctly", async () => {
@@ -79,7 +79,7 @@ describe("EmailAnalysisAgent", () => {
         categories: [],
       };
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         JSON.stringify({
           categories: {
             workflow: ["Quote Processing"],
@@ -92,16 +92,16 @@ describe("EmailAnalysisAgent", () => {
         }),
       );
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "Multiple quotes ready for review",
       );
 
       const analysis = await agent.analyzeEmail(email);
 
-      expect(analysis.entities.quoteNumbers).toContain("123456");
-      expect(analysis.entities.quoteNumbers).toContain("789012");
-      expect(analysis.entities.quoteNumbers).toContain("345678");
-      expect(analysis.entities.quoteNumbers).toHaveLength(3);
+      expect(analysis?.entities?.quoteNumbers).toContain("123456");
+      expect(analysis?.entities?.quoteNumbers).toContain("789012");
+      expect(analysis?.entities?.quoteNumbers).toContain("345678");
+      expect(analysis?.entities?.quoteNumbers).toHaveLength(3);
     });
 
     it("should extract tracking numbers correctly", async () => {
@@ -121,7 +121,7 @@ describe("EmailAnalysisAgent", () => {
         categories: [],
       };
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         JSON.stringify({
           categories: {
             workflow: ["Shipping/Logistics"],
@@ -134,15 +134,15 @@ describe("EmailAnalysisAgent", () => {
         }),
       );
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "Shipment notification with tracking numbers",
       );
 
       const analysis = await agent.analyzeEmail(email);
 
-      expect(analysis.entities.trackingNumbers).toContain("1Z999AA10123456784");
-      expect(analysis.entities.trackingNumbers).toContain("FEDEX1234567890123");
-      expect(analysis.entities.trackingNumbers).toHaveLength(2);
+      expect(analysis?.entities?.trackingNumbers).toContain("1Z999AA10123456784");
+      expect(analysis?.entities?.trackingNumbers).toContain("FEDEX1234567890123");
+      expect(analysis?.entities?.trackingNumbers).toHaveLength(2);
     });
 
     it("should extract amounts correctly", async () => {
@@ -162,7 +162,7 @@ describe("EmailAnalysisAgent", () => {
         categories: [],
       };
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         JSON.stringify({
           categories: {
             workflow: ["Order Management"],
@@ -175,18 +175,18 @@ describe("EmailAnalysisAgent", () => {
         }),
       );
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "Invoice with payment due",
       );
 
       const analysis = await agent.analyzeEmail(email);
 
-      expect(analysis.entities.amounts).toHaveLength(2);
-      expect(analysis.entities.amounts[0]).toEqual({
+      expect(analysis?.entities?.amounts).toHaveLength(2);
+      expect(analysis?.entities?.amounts[0]).toEqual({
         value: 1234.56,
         currency: "USD",
       });
-      expect(analysis.entities.amounts[1]).toEqual({
+      expect(analysis?.entities?.amounts[1]).toEqual({
         value: 500,
         currency: "EUR",
       });
@@ -211,7 +211,7 @@ describe("EmailAnalysisAgent", () => {
         categories: [],
       };
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         JSON.stringify({
           categories: {
             workflow: ["Order Management"],
@@ -224,7 +224,7 @@ describe("EmailAnalysisAgent", () => {
         }),
       );
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "New order request from customer",
       );
 
@@ -250,7 +250,7 @@ describe("EmailAnalysisAgent", () => {
         categories: [],
       };
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         JSON.stringify({
           categories: {
             workflow: ["Shipping/Logistics"],
@@ -263,7 +263,7 @@ describe("EmailAnalysisAgent", () => {
         }),
       );
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "Shipment tracking information",
       );
 
@@ -291,7 +291,7 @@ describe("EmailAnalysisAgent", () => {
         categories: [],
       };
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         JSON.stringify({
           categories: {
             workflow: ["Order Management"],
@@ -304,13 +304,13 @@ describe("EmailAnalysisAgent", () => {
         }),
       );
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "Order confirmation notification",
       );
 
       const analysis = await agent.analyzeEmail(email);
 
-      expect(analysis.categories.workflow).toContain("Order Management");
+      expect(analysis?.categories?.workflow).toContain("Order Management");
       expect(analysis.priority).toBe("Medium");
       expect(analysis.confidence).toBeGreaterThan(0.8);
     });
@@ -332,7 +332,7 @@ describe("EmailAnalysisAgent", () => {
         categories: [],
       };
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         JSON.stringify({
           categories: {
             workflow: ["Customer Support"],
@@ -345,15 +345,15 @@ describe("EmailAnalysisAgent", () => {
         }),
       );
 
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "Critical system failure requiring immediate action",
       );
 
       const analysis = await agent.analyzeEmail(email);
 
       expect(analysis.priority).toBe("Critical");
-      expect(analysis.categories.urgency).toBe("Immediate");
-      expect(analysis.categories.intent).toBe("Action Required");
+      expect(analysis?.categories?.urgency).toBe("Immediate");
+      expect(analysis?.categories?.intent).toBe("Action Required");
     });
   });
 
@@ -376,17 +376,17 @@ describe("EmailAnalysisAgent", () => {
       };
 
       // Mock LLM failure
-      mockOllamaProvider.generate.mockRejectedValueOnce(
+      mockOllamaProvider?.generate?.mockRejectedValueOnce(
         new Error("LLM unavailable"),
       );
-      mockOllamaProvider.generate.mockResolvedValueOnce(
+      mockOllamaProvider?.generate?.mockResolvedValueOnce(
         "Order processing update",
       );
 
       const analysis = await agent.analyzeEmail(email);
 
       // Should still provide analysis using fallback
-      expect(analysis.categories.workflow).toContain("Order Management");
+      expect(analysis?.categories?.workflow).toContain("Order Management");
       expect(analysis.confidence).toBeLessThan(0.8); // Lower confidence for fallback
       expect(analysis.priority).toBeDefined();
     });

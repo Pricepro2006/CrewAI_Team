@@ -3,15 +3,15 @@ import { Loader2 } from 'lucide-react';
 
 // Lazy-loaded components with proper error boundaries
 const WalmartLivePricing = React.lazy(() => 
-  import('./WalmartLivePricing.js').then(module => ({ default: module.WalmartLivePricing }))
+  import('./WalmartLivePricing').then(module => ({ default: module.WalmartLivePricing || module.default }))
 );
 
 const GroceryListAndTracker = React.lazy(() => 
-  import('./GroceryListAndTracker.js').then(module => ({ default: module.GroceryListAndTracker }))
+  import('./GroceryListEnhanced').then(module => ({ default: module.GroceryListEnhanced }))
 );
 
 const WalmartHybridSearch = React.lazy(() => 
-  import('../Walmart/WalmartHybridSearch.js').then(module => ({ default: module.WalmartHybridSearch }))
+  import('./WalmartLivePricing').then(module => ({ default: module.WalmartLivePricing }))
 );
 
 // Performance-optimized loading component
@@ -45,12 +45,12 @@ class LazyErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Lazy component failed to load:', error, errorInfo);
   }
 
-  render() {
-    if (this.state.hasError) {
+  override render() {
+    if (this.state?.hasError) {
       return (
         <div className="flex items-center justify-center p-8 min-h-[200px]">
           <div className="text-center">
@@ -66,7 +66,7 @@ class LazyErrorBoundary extends React.Component<
       );
     }
 
-    return this.props.children;
+    return this.props?.children;
   }
 }
 

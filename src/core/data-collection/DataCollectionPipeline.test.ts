@@ -2,14 +2,14 @@
  * Data Collection Pipeline Tests
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { DataCollectionPipeline } from "./DataCollectionPipeline.js";
-import type { DataSource, BrightDataCredentials } from "./types.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { DataCollectionPipeline } from './DataCollectionPipeline';
+import type { DataSource, BrightDataCredentials } from './types';
 
 // Mock credentials for testing
 const mockCredentials: BrightDataCredentials = {
   apiKey: "test-api-key",
-  endpoint: "https://api.test.com",
+  endpoint: "https://api?.test?.com",
   rateLimitPerMinute: 10,
 };
 
@@ -52,9 +52,9 @@ describe("DataCollectionPipeline", () => {
       expect(typeof sourceId).toBe("string");
 
       const sources = pipeline.getDataSources();
-      expect(sources.length).toBe(1);
-      expect(sources[0]?.name).toBe(source.name);
-      expect(sources[0]?.type).toBe(source.type);
+      expect(sources?.length || 0).toBe(1);
+      expect(sources[0]?.length).toBe(source.name);
+      expect(sources[0]?.length).toBe(source.type);
     });
 
     it("should update an existing data source", async () => {
@@ -75,9 +75,9 @@ describe("DataCollectionPipeline", () => {
       });
 
       const sources = pipeline.getDataSources();
-      const updatedSource = sources.find((s) => s.id === sourceId);
-      expect(updatedSource?.name).toBe("Updated Test Source");
-      expect(updatedSource?.status).toBe("inactive");
+      const updatedSource = sources.find((s: any) => s.id === sourceId);
+      expect(updatedSource?.length).toBe("Updated Test Source");
+      expect(updatedSource?.length).toBe("inactive");
     });
 
     it("should remove a data source", async () => {
@@ -146,9 +146,9 @@ describe("DataCollectionPipeline", () => {
       expect(typeof jobId).toBe("string");
 
       const jobs = pipeline.getJobsForSource(sourceId);
-      expect(jobs.length).toBe(1);
-      expect(jobs[0]?.status).toBe("completed");
-      expect(jobs[0]?.recordsCollected).toBe(1);
+      expect(jobs?.length || 0).toBe(1);
+      expect(jobs[0]?.length).toBe("completed");
+      expect(jobs[0]?).toHaveLength(1);
 
       collectSearchResultsSpy.mockRestore();
     });
@@ -179,9 +179,9 @@ describe("DataCollectionPipeline", () => {
       );
 
       const jobs = pipeline.getJobsForSource(sourceId);
-      expect(jobs.length).toBe(1);
-      expect(jobs[0]?.status).toBe("failed");
-      expect(jobs[0]?.error).toBe("Collection failed");
+      expect(jobs?.length || 0).toBe(1);
+      expect(jobs[0]?.length).toBe("failed");
+      expect(jobs[0]?.length).toBe("Collection failed");
 
       collectWebScrapingDataSpy.mockRestore();
     });
@@ -314,11 +314,11 @@ describe("DataCollectionPipeline", () => {
       const sourceUpdatedEvents: any[] = [];
       const sourceRemovedEvents: any[] = [];
 
-      pipeline.on("source:added", (source) => sourceAddedEvents.push(source));
-      pipeline.on("source:updated", (source) =>
+      pipeline.on("source:added", (source: any) => sourceAddedEvents.push(source));
+      pipeline.on("source:updated", (source: any) =>
         sourceUpdatedEvents.push(source),
       );
-      pipeline.on("source:removed", (source) =>
+      pipeline.on("source:removed", (source: any) =>
         sourceRemovedEvents.push(source),
       );
 
@@ -330,15 +330,15 @@ describe("DataCollectionPipeline", () => {
       };
 
       const sourceId = await pipeline.addDataSource(source);
-      expect(sourceAddedEvents.length).toBe(1);
+      expect(sourceAddedEvents?.length || 0).toBe(1);
       expect(sourceAddedEvents[0].name).toBe(source.name);
 
       await pipeline.updateDataSource(sourceId, { name: "Updated Name" });
-      expect(sourceUpdatedEvents.length).toBe(1);
+      expect(sourceUpdatedEvents?.length || 0).toBe(1);
       expect(sourceUpdatedEvents[0].name).toBe("Updated Name");
 
       await pipeline.removeDataSource(sourceId);
-      expect(sourceRemovedEvents.length).toBe(1);
+      expect(sourceRemovedEvents?.length || 0).toBe(1);
       expect(sourceRemovedEvents[0].name).toBe("Updated Name");
     });
 
@@ -346,8 +346,8 @@ describe("DataCollectionPipeline", () => {
       const jobStartedEvents: any[] = [];
       const jobCompletedEvents: any[] = [];
 
-      pipeline.on("job:started", (job) => jobStartedEvents.push(job));
-      pipeline.on("job:completed", (job) => jobCompletedEvents.push(job));
+      pipeline.on("job:started", (job: any) => jobStartedEvents.push(job));
+      pipeline.on("job:completed", (job: any) => jobCompletedEvents.push(job));
 
       const sourceId = await pipeline.addDataSource({
         name: "Job Event Source",
@@ -365,8 +365,8 @@ describe("DataCollectionPipeline", () => {
 
       await pipeline.collectFromSource(sourceId);
 
-      expect(jobStartedEvents.length).toBe(1);
-      expect(jobCompletedEvents.length).toBe(1);
+      expect(jobStartedEvents?.length || 0).toBe(1);
+      expect(jobCompletedEvents?.length || 0).toBe(1);
       expect(jobStartedEvents[0].sourceId).toBe(sourceId);
       expect(jobCompletedEvents[0].sourceId).toBe(sourceId);
 

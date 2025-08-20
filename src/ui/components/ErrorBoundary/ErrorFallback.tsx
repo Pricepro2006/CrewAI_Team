@@ -36,7 +36,7 @@ export function ErrorFallback({
   const handleReset = async () => {
     setIsResetting(true);
     // Add a small delay for better UX
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve: any) => setTimeout(resolve, 500));
     onReset();
     setIsResetting(false);
   };
@@ -67,20 +67,20 @@ export function ErrorFallback({
 
   const getErrorType = (error: Error) => {
     if (
-      error.message.toLowerCase().includes("network") ||
-      error.message.toLowerCase().includes("fetch")
+      error?.message?.toLowerCase().includes("network") ||
+      error?.message?.toLowerCase().includes("fetch")
     ) {
       return "network";
     }
     if (
-      error.message.toLowerCase().includes("permission") ||
-      error.message.toLowerCase().includes("unauthorized")
+      error?.message?.toLowerCase().includes("permission") ||
+      error?.message?.toLowerCase().includes("unauthorized")
     ) {
       return "permission";
     }
     if (
-      error.message.toLowerCase().includes("not found") ||
-      error.message.toLowerCase().includes("404")
+      error?.message?.toLowerCase().includes("not found") ||
+      error?.message?.toLowerCase().includes("404")
     ) {
       return "notFound";
     }
@@ -155,7 +155,7 @@ export function ErrorFallback({
 
             {!isIsolated && (
               <Button
-                onClick={() => (window.location.href = "/")}
+                onClick={() => window.location.href = "/"}
                 variant="outline"
                 className="error-action-button"
               >
@@ -166,7 +166,7 @@ export function ErrorFallback({
 
             <Button
               onClick={() =>
-                (window.location.href = "mailto:support@example.com")
+                window.location.href = "mailto:support@example.com"
               }
               variant="ghost"
               className="error-action-button"

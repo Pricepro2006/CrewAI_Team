@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -16,7 +16,7 @@ import { logger } from "../../utils/logger.js";
  * - SLA status monitoring
  * - Workflow state transitions
  */
-export async function up(db: Database.Database): Promise<void> {
+export async function up(db: DatabaseInstance): Promise<void> {
   logger.info(
     "Starting migration: Adding composite indexes for email analytics",
     "MIGRATION",
@@ -521,7 +521,7 @@ export async function up(db: Database.Database): Promise<void> {
 /**
  * Rollback migration: Remove composite indexes
  */
-export async function down(db: Database.Database): Promise<void> {
+export async function down(db: DatabaseInstance): Promise<void> {
   logger.info("Rolling back: Removing composite indexes", "MIGRATION");
 
   try {

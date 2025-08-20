@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   BusinessSearchCache,
   type CacheEntry,
-} from "../BusinessSearchCache.js";
-import type { ValidationResult } from "../../validators/BusinessResponseValidator.js";
+} from '../BusinessSearchCache';
+import type { ValidationResult } from '../../validators/BusinessResponseValidator';
 
 // Mock Redis with shared data store
 const mockRedisData = new Map<string, string>();
@@ -24,13 +24,13 @@ vi.mock("ioredis", () => {
       return Promise.resolve("OK");
     }),
     del: vi.fn().mockImplementation((...keys: string[]) => {
-      keys.forEach((key) => mockRedisData.delete(key));
-      return Promise.resolve(keys.length);
+      keys.forEach((key: any) => mockRedisData.delete(key));
+      return Promise.resolve(keys?.length || 0);
     }),
     keys: vi.fn().mockImplementation((pattern: string) => {
       const keys = Array.from(mockRedisData.keys());
       const regex = new RegExp(pattern.replace("*", ".*"));
-      return Promise.resolve(keys.filter((key) => regex.test(key)));
+      return Promise.resolve(keys?.filter((key: any) => regex.test(key)));
     }),
     expire: vi.fn().mockResolvedValue(1),
     quit: vi.fn().mockResolvedValue(undefined),
@@ -165,7 +165,7 @@ describe("BusinessSearchCache", () => {
       expect(entry).not.toBeNull();
 
       // Wait for max age + stale window
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve: any) => setTimeout(resolve, 200));
 
       // Should be too stale now
       entry = await shortLivedCache.get(testQuery, testLocation);
@@ -182,7 +182,7 @@ describe("BusinessSearchCache", () => {
       await shortLivedCache.set(testQuery, testLocation, testResponse);
 
       // Wait past max age but within stale window
-      await new Promise((resolve) => setTimeout(resolve, 75));
+      await new Promise((resolve: any) => setTimeout(resolve, 75));
 
       // Should still return stale content
       const entry = await shortLivedCache.get(testQuery, testLocation);
@@ -256,9 +256,9 @@ describe("BusinessSearchCache", () => {
       const analysis = cache.analyzePerformance();
 
       expect(analysis.hotQueries[0]?.query).toBe("popular query");
-      expect(analysis.hotQueries[0]?.hitCount).toBe(10);
+      expect(analysis.hotQueries[0]?.hits).toBe(10);
       expect(analysis.hotQueries[1]?.query).toBe("medium query");
-      expect(analysis.hotQueries[1]?.hitCount).toBe(3);
+      expect(analysis.hotQueries[1]?.hits).toBe(3);
     });
 
     it("should calculate memory pressure", async () => {
@@ -290,8 +290,8 @@ describe("BusinessSearchCache", () => {
       const plumberResults = await cache.search(/plumbers/i);
       expect(plumberResults).toHaveLength(2);
       expect(
-        plumberResults.every((r) =>
-          r.entry.metadata.query.includes("plumbers"),
+        plumberResults.every((r: any) =>
+          r?.entry?.metadata.query.includes("plumbers"),
         ),
       ).toBe(true);
 
@@ -345,13 +345,13 @@ describe("BusinessSearchCache", () => {
           return Promise.resolve("OK");
         }),
         del: vi.fn().mockImplementation((...keys: string[]) => {
-          keys.forEach((key) => mockRedisData.delete(key));
-          return Promise.resolve(keys.length);
+          keys.forEach((key: any) => mockRedisData.delete(key));
+          return Promise.resolve(keys?.length || 0);
         }),
         keys: vi.fn().mockImplementation((pattern: string) => {
           const keys = Array.from(mockRedisData.keys());
           const regex = new RegExp(pattern.replace("*", ".*"));
-          return Promise.resolve(keys.filter((key) => regex.test(key)));
+          return Promise.resolve(keys?.filter((key: any) => regex.test(key)));
         }),
         expire: vi.fn().mockResolvedValue(1),
         quit: vi.fn().mockResolvedValue(undefined),

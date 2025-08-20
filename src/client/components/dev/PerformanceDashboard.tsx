@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Button } from "../../../components/ui/button";
-import { Badge } from "../../../components/ui/badge";
-import { performanceTracker } from "../../hooks/usePerformanceMonitor";
-import { cacheUtils, queryMetrics } from "../../lib/queryClient";
-import { useTRPCPerformanceMonitor } from "../../hooks/useOptimizedTRPC";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card.js";
+import { Button } from "../../../components/ui/button.js";
+import { Badge } from "../../../components/ui/badge.js";
+import { performanceTracker } from "../../hooks/usePerformanceMonitor.js";
+import { cacheUtils, queryMetrics } from "../../lib/queryClient.js";
+import { useTRPCPerformanceMonitor } from "../../hooks/useOptimizedTRPC.js";
 
 // Only render in development mode
 const IS_DEV = process.env.NODE_ENV === "development";
@@ -41,7 +41,15 @@ export const PerformanceDashboard: React.FC = () => {
   }
 
   const refreshStats = () => {
-    const cacheStats = getCacheStats();
+    const rawCacheStats = getCacheStats();
+    // Transform cache stats to match expected interface
+    const cacheStats = {
+      totalQueries: rawCacheStats.queries + rawCacheStats.mutations,
+      activeQueries: rawCacheStats.activeQueries,
+      staleQueries: rawCacheStats.staleQueries,
+      errorQueries: rawCacheStats.errorQueries,
+      cacheSize: 0, // Not available from tRPC utils, provide default
+    };
     const renderStats = {
       averageRenderTime: performanceTracker.getAverageRenderTime(),
       slowComponents: performanceTracker.getSlowComponents(),
@@ -135,13 +143,13 @@ export const PerformanceDashboard: React.FC = () => {
               <div>
                 <h4 className="font-semibold text-sm mb-2">Query Cache</h4>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>Total: <Badge variant="secondary">{stats.cacheStats.totalQueries}</Badge></div>
-                  <div>Active: <Badge variant="secondary">{stats.cacheStats.activeQueries}</Badge></div>
-                  <div>Stale: <Badge variant="outline">{stats.cacheStats.staleQueries}</Badge></div>
-                  <div>Errors: <Badge variant="destructive">{stats.cacheStats.errorQueries}</Badge></div>
+                  <div>Total: <Badge variant="secondary">{stats?.cacheStats?.totalQueries}</Badge></div>
+                  <div>Active: <Badge variant="secondary">{stats?.cacheStats?.activeQueries}</Badge></div>
+                  <div>Stale: <Badge variant="outline">{stats?.cacheStats?.staleQueries}</Badge></div>
+                  <div>Errors: <Badge variant="destructive">{stats?.cacheStats?.errorQueries}</Badge></div>
                 </div>
                 <div className="mt-1 text-xs">
-                  Cache Size: <Badge variant="secondary">{formatBytes(stats.cacheStats.cacheSize)}</Badge>
+                  Cache Size: <Badge variant="secondary">{formatBytes(stats?.cacheStats?.cacheSize)}</Badge>
                 </div>
               </div>
 
@@ -149,12 +157,12 @@ export const PerformanceDashboard: React.FC = () => {
               <div>
                 <h4 className="font-semibold text-sm mb-2">Render Performance</h4>
                 <div className="text-xs space-y-1">
-                  <div>Avg Render: <Badge variant="secondary">{stats.renderStats.averageRenderTime.toFixed(2)}ms</Badge></div>
-                  <div>Total Metrics: <Badge variant="secondary">{stats.renderStats.totalMetrics}</Badge></div>
-                  {stats.renderStats.slowComponents.length > 0 && (
+                  <div>Avg Render: <Badge variant="secondary">{stats?.renderStats?.averageRenderTime.toFixed(2)}ms</Badge></div>
+                  <div>Total Metrics: <Badge variant="secondary">{stats?.renderStats?.totalMetrics}</Badge></div>
+                  {stats?.renderStats?.slowComponents?.length || 0 > 0 && (
                     <div>
                       <div className="text-red-600 font-medium">Slow Components:</div>
-                      {stats.renderStats.slowComponents.slice(0, 3).map(component => (
+                      {stats?.renderStats?.slowComponents.slice(0, 3).map(component => (
                         <Badge key={component} variant="destructive" className="text-xs mr-1">
                           {component}
                         </Badge>
@@ -168,10 +176,10 @@ export const PerformanceDashboard: React.FC = () => {
               <div>
                 <h4 className="font-semibold text-sm mb-2">Query Performance</h4>
                 <div className="text-xs space-y-1">
-                  {stats.queryStats.slowQueries.length > 0 && (
+                  {stats?.queryStats?.slowQueries?.length || 0 > 0 && (
                     <div>
                       <div className="text-orange-600 font-medium">Slow Queries:</div>
-                      {stats.queryStats.slowQueries.slice(0, 2).map(([key, duration]) => (
+                      {stats?.queryStats?.slowQueries.slice(0, 2).map(([key, duration]) => (
                         <div key={key} className="truncate">
                           <Badge variant="outline" className="text-xs">
                             {duration.toFixed(0)}ms
@@ -180,10 +188,10 @@ export const PerformanceDashboard: React.FC = () => {
                       ))}
                     </div>
                   )}
-                  {stats.queryStats.failedQueries.length > 0 && (
+                  {stats?.queryStats?.failedQueries?.length || 0 > 0 && (
                     <div>
                       <div className="text-red-600 font-medium">Failed Queries:</div>
-                      {stats.queryStats.failedQueries.slice(0, 2).map(([key, count]) => (
+                      {stats?.queryStats?.failedQueries.slice(0, 2).map(([key, count]) => (
                         <div key={key} className="truncate">
                           <Badge variant="destructive" className="text-xs">
                             {count}x

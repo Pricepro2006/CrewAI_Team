@@ -501,7 +501,7 @@ export class SessionUserCache {
 
         logger.debug('User permissions cached', 'SESSION_USER_CACHE', {
           userId,
-          permissionCount: permissions.length,
+          permissionCount: permissions?.length || 0,
         });
       }
 
@@ -529,7 +529,7 @@ export class SessionUserCache {
 
         logger.debug('User permissions cache hit', 'SESSION_USER_CACHE', {
           userId,
-          permissionCount: cached.permissions.length,
+          permissionCount: cached?.permissions?.length,
         });
 
         return cached.permissions;
@@ -591,7 +591,7 @@ export class SessionUserCache {
         logger.debug('User activity tracked', 'SESSION_USER_CACHE', {
           userId,
           action,
-          activityCount: recentActivities.length,
+          activityCount: recentActivities?.length || 0,
         });
       }
 
@@ -619,7 +619,7 @@ export class SessionUserCache {
 
         logger.debug('User activity retrieved', 'SESSION_USER_CACHE', {
           userId,
-          activityCount: activities.length,
+          activityCount: activities?.length || 0,
         });
 
         return activities;
@@ -649,7 +649,7 @@ export class SessionUserCache {
 
       logger.debug('User sessions retrieved', 'SESSION_USER_CACHE', {
         userId,
-        sessionCount: sessions.length,
+        sessionCount: sessions?.length || 0,
       });
 
       return sessions;

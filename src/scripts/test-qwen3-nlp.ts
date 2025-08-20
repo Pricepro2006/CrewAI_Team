@@ -5,8 +5,8 @@
  */
 
 import axios from "axios";
-import { logger } from "../utils/logger.js";
-import { walmartConfig } from "../config/walmart.config.js";
+import { logger } from "../utils/logger";
+import { walmartConfig } from "../config/walmart.config";
 
 interface TestQuery {
   input: string;
@@ -50,13 +50,13 @@ const testQueries: TestQuery[] = [
 async function testQwen3Model() {
   logger.info("Starting Qwen3:0.6b NLP model tests...", "TEST_NLP");
   
-  const ollamaUrl = `${walmartConfig.nlp.host}:${walmartConfig.nlp.port}`;
-  const modelName = walmartConfig.nlp.model;
+  const ollamaUrl = `${walmartConfig?.nlp?.host}:${walmartConfig?.nlp?.port}`;
+  const modelName = walmartConfig?.nlp?.model;
   
   // First, verify the model is available
   try {
     const response = await axios.get(`${ollamaUrl}/api/tags`);
-    const models = response.data.models || [];
+    const models = response?.data?.models || [];
     const modelExists = models.some((m: any) => m.name === modelName);
     
     if (!modelExists) {
@@ -111,7 +111,7 @@ Response:`;
       });
       
       const elapsed = Date.now() - startTime;
-      const modelResponse = response.data.response;
+      const modelResponse = response?.data?.response;
       
       // Try to parse JSON from response
       let parsedResponse;
@@ -160,15 +160,15 @@ Response:`;
   console.log("\n" + "=".repeat(60));
   console.log("TEST SUMMARY");
   console.log("=".repeat(60));
-  console.log(`Total Tests: ${testQueries.length}`);
+  console.log(`Total Tests: ${testQueries?.length || 0}`);
   console.log(`Successful: ${successCount}`);
-  console.log(`Failed: ${testQueries.length - successCount}`);
-  console.log(`Success Rate: ${((successCount / testQueries.length) * 100).toFixed(1)}%`);
+  console.log(`Failed: ${testQueries?.length || 0 - successCount}`);
+  console.log(`Success Rate: ${((successCount / testQueries?.length || 0) * 100).toFixed(1)}%`);
   
   // Performance metrics
   const avgResponseTime = results
     .filter(r => r.responseTime)
-    .reduce((sum, r) => sum + r.responseTime, 0) / results.filter(r => r.responseTime).length;
+    .reduce((sum: any, r: any) => sum + r.responseTime, 0) / results?.filter(r => r.responseTime).length;
   
   console.log(`Average Response Time: ${avgResponseTime.toFixed(0)}ms`);
   console.log("=".repeat(60));

@@ -5,19 +5,19 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
-import { EmailIngestionServiceImpl } from '../EmailIngestionServiceImpl.js';
-import { EmailIngestionServiceFactory, EmailIngestionConfigPresets } from '../EmailIngestionServiceFactory.js';
+import { EmailIngestionServiceImpl } from '../EmailIngestionServiceImpl';
+import { EmailIngestionServiceFactory, EmailIngestionConfigPresets } from '../EmailIngestionServiceFactory';
 import {
   IngestionMode,
   IngestionSource,
   EmailIngestionConfig,
   RawEmailData
-} from '../EmailIngestionService.js';
-import { EmailRepository } from '../../../database/repositories/EmailRepository.js';
-import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService.js';
+} from '../EmailIngestionService';
+import { EmailRepository } from '../../../database/repositories/EmailRepository';
+import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService';
 
 // Mock crypto for uuid
-vi.mock('crypto', async (importOriginal) => {
+vi.mock('crypto', async (importOriginal: any) => {
   const actual = await importOriginal<typeof import('crypto')>();
   return {
     ...actual,
@@ -26,14 +26,14 @@ vi.mock('crypto', async (importOriginal) => {
 });
 
 // Mock fs for database connection
-vi.mock('fs', async (importOriginal) => {
+vi.mock('fs', async (importOriginal: any) => {
   const actual = await importOriginal<typeof import('fs')>();
   return {
     ...actual,
     default: actual,
     existsSync: vi.fn().mockReturnValue(true),
     mkdirSync: vi.fn(),
-    readFileSync: vi.fn().mockImplementation((path) => {
+    readFileSync: vi.fn().mockImplementation((path: any) => {
       if (path.includes('emails.json')) {
         return JSON.stringify([
           { messageId: 'email-1', subject: 'Test 1' },
@@ -47,7 +47,7 @@ vi.mock('fs', async (importOriginal) => {
 
 // Mock fs/promises for async file operations
 vi.mock('fs/promises', () => ({
-  readFile: vi.fn().mockImplementation(async (path) => {
+  readFile: vi.fn().mockImplementation(async (path: any) => {
     if (path.includes('emails.json')) {
       return JSON.stringify([
         {
@@ -77,7 +77,7 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock dependencies
-vi.mock('../../../database/repositories/EmailRepository.js', () => ({
+vi.mock('../../../database/repositories/EmailRepository', () => ({
   EmailRepository: vi.fn().mockImplementation(() => ({
     getStatistics: vi.fn(),
     findOne: vi.fn(),
@@ -87,18 +87,18 @@ vi.mock('../../../database/repositories/EmailRepository.js', () => ({
   }))
 }));
 
-vi.mock('../../../api/services/UnifiedEmailService.js', () => ({
+vi.mock('../../../api/services/UnifiedEmailService', () => ({
   UnifiedEmailService: vi.fn().mockImplementation(() => ({
     processIncomingEmail: vi.fn()
   }))
 }));
 
-vi.mock('../../../utils/logger.js');
-vi.mock('../../../api/monitoring/metrics.js');
-vi.mock('../../../api/websocket/index.js');
+vi.mock('../../../utils/logger');
+vi.mock('../../../api/monitoring/metrics');
+vi.mock('../../../api/websocket/index');
 
 // Mock database connection
-vi.mock('../../../database/connection.js', () => ({
+vi.mock('../../../database/connection', () => ({
   getDatabaseConnection: vi.fn().mockReturnValue({
     prepare: vi.fn().mockReturnValue({
       run: vi.fn(),
@@ -230,7 +230,7 @@ describe('EmailIngestionService', () => {
     mockUnifiedEmailService = new UnifiedEmailService();
 
     // Mock repository methods
-    mockEmailRepository.getStatistics.mockResolvedValue({
+    mockEmailRepository?.getStatistics?.mockResolvedValue({
       total: 0,
       pending: 0,
       analyzed: 0,
@@ -244,7 +244,7 @@ describe('EmailIngestionService', () => {
     });
 
     // Mock unified email service
-    mockUnifiedEmailService.processIncomingEmail.mockResolvedValue({
+    mockUnifiedEmailService?.processIncomingEmail?.mockResolvedValue({
       id: 'processed-email-id',
       subject: 'Test Email',
       from: 'sender@example.com'
@@ -270,7 +270,7 @@ describe('EmailIngestionService', () => {
 
   describe('Initialization', () => {
     it('should initialize successfully with valid configuration', async () => {
-      await expect(service.initialize()).resolves.not.toThrow();
+      await expect(service.initialize()).resolves?.not?.toThrow();
     });
 
     it('should validate required configuration', () => {
@@ -295,8 +295,8 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?.messageId).toBe(testEmail.messageId);
-      expect(result.data?.status).toBe('processed');
+      expect(result.data?.length).toBe(testEmail.messageId);
+      expect(result.data?.length).toBe('processed');
     });
 
     it('should detect duplicate emails', async () => {
@@ -304,12 +304,12 @@ describe('EmailIngestionService', () => {
       
       // Mock Redis to return duplicate
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.exists.mockResolvedValueOnce(1);
+      mockRedis?.exists?.mockResolvedValueOnce(1);
 
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?.status).toBe('duplicate');
+      expect(result.data?.length).toBe('duplicate');
     });
 
     it('should handle processing errors gracefully', async () => {
@@ -317,7 +317,7 @@ describe('EmailIngestionService', () => {
       
       // Mock the queue to throw an error
       const mockQueue = (service as any).ingestionQueue;
-      mockQueue.add.mockRejectedValueOnce(new Error('Processing failed'));
+      mockQueue?.add?.mockRejectedValueOnce(new Error('Processing failed'));
 
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
@@ -357,10 +357,10 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?.totalEmails).toBe(3);
-      expect(result.data?.processed).toBe(3);
-      expect(result.data?.duplicates).toBe(0);
-      expect(result.data?.failed).toBe(0);
+      expect(result.data?).toHaveLength(3);
+      expect(result.data?).toHaveLength(3);
+      expect(result.data?).toHaveLength(0);
+      expect(result.data?).toHaveLength(0);
     });
 
     it('should handle mixed success/failure in batch', async () => {
@@ -374,7 +374,7 @@ describe('EmailIngestionService', () => {
       const mockQueue = (service as any).ingestionQueue;
       let callCount = 0;
       
-      mockQueue.add.mockImplementation(async (name, data) => {
+      mockQueue?.add?.mockImplementation(async (name, data) => {
         callCount++;
         if (callCount === 2) {
           throw new Error('Processing failed');
@@ -398,9 +398,9 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?.totalEmails).toBe(3);
-      expect(result.data?.processed).toBe(2);
-      expect(result.data?.failed).toBe(1);
+      expect(result.data?).toHaveLength(3);
+      expect(result.data?).toHaveLength(2);
+      expect(result.data?).toHaveLength(1);
     });
 
     it('should calculate throughput correctly', async () => {
@@ -412,8 +412,8 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?.throughput).toBeGreaterThan(0);
-      expect(typeof result.data?.throughput).toBe('number');
+      expect(result.data?.length).toBeGreaterThan(0);
+      expect(typeof result.data?.length).toBe('number');
     });
   });
 
@@ -436,7 +436,7 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestFromJsonFile('/path/to/emails.json');
 
       expect(result.success).toBe(true);
-      expect(result.data?.totalEmails).toBe(2);
+      expect(result.data?).toHaveLength(2);
     });
 
     it('should handle invalid JSON file', async () => {
@@ -459,8 +459,8 @@ describe('EmailIngestionService', () => {
     });
 
     it('should pause and resume ingestion', async () => {
-      await expect(service.pauseIngestion()).resolves.not.toThrow();
-      await expect(service.resumeIngestion()).resolves.not.toThrow();
+      await expect(service.pauseIngestion()).resolves?.not?.toThrow();
+      await expect(service.resumeIngestion()).resolves?.not?.toThrow();
     });
 
     it('should get queue status', async () => {
@@ -495,7 +495,7 @@ describe('EmailIngestionService', () => {
 
       // Mock Redis to return exists = 1 for subsequent checks
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.exists.mockResolvedValue(1);
+      mockRedis?.exists?.mockResolvedValue(1);
 
       // Second check should return true (duplicate)
       const secondCheck = await service.checkDuplicate(messageId);
@@ -503,7 +503,7 @@ describe('EmailIngestionService', () => {
     });
 
     it('should clear deduplication cache', async () => {
-      await expect(service.clearDeduplicationCache()).resolves.not.toThrow();
+      await expect(service.clearDeduplicationCache()).resolves?.not?.toThrow();
     });
   });
 
@@ -556,7 +556,7 @@ describe('EmailIngestionService', () => {
         maxEmailsPerPull: 100
       };
       
-      await expect(manualService.startAutoPull()).resolves.not.toThrow();
+      await expect(manualService.startAutoPull()).resolves?.not?.toThrow();
       expect(manualService.isAutoPullActive()).toBe(true);
       
       await manualService.shutdown();
@@ -567,7 +567,7 @@ describe('EmailIngestionService', () => {
       // Auto-pull should already be started
       expect(autoPullService.isAutoPullActive()).toBe(true);
       
-      await expect(autoPullService.stopAutoPull()).resolves.not.toThrow();
+      await expect(autoPullService.stopAutoPull()).resolves?.not?.toThrow();
       expect(autoPullService.isAutoPullActive()).toBe(false);
     });
   });
@@ -619,10 +619,10 @@ describe('EmailIngestionService', () => {
     it('should handle Redis connection failures gracefully', async () => {
       // Mock Redis to throw connection error
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.ping.mockRejectedValueOnce(new Error('Redis connection failed'));
+      mockRedis?.ping?.mockRejectedValueOnce(new Error('Redis connection failed'));
 
       const health = await service.healthCheck();
-      expect(health.components.redis.healthy).toBe(false);
+      expect(health?.components?.redis.healthy).toBe(false);
     });
 
     it('should handle database connection failures gracefully', async () => {
@@ -632,16 +632,16 @@ describe('EmailIngestionService', () => {
       );
 
       const health = await service.healthCheck();
-      expect(health.components.database.healthy).toBe(false);
+      expect(health?.components?.database.healthy).toBe(false);
     });
 
     it('should handle queue overflow scenarios', async () => {
       const mockQueue = (service as any).ingestionQueue;
-      mockQueue.getWaitingCount.mockResolvedValue(50000); // High queue count
-      mockQueue.getFailedCount.mockResolvedValue(5000); // High failure count
+      mockQueue?.getWaitingCount?.mockResolvedValue(50000); // High queue count
+      mockQueue?.getFailedCount?.mockResolvedValue(5000); // High failure count
 
       const health = await service.healthCheck();
-      expect(health.components.queue.healthy).toBe(false);
+      expect(health?.components?.queue.healthy).toBe(false);
       expect(health.status).toBe('degraded');
     });
 
@@ -650,7 +650,7 @@ describe('EmailIngestionService', () => {
       
       // Mock network timeout
       const mockQueue = (service as any).ingestionQueue;
-      mockQueue.add.mockRejectedValueOnce(new Error('ETIMEDOUT'));
+      mockQueue?.add?.mockRejectedValueOnce(new Error('ETIMEDOUT'));
 
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result.success).toBe(false);
@@ -674,7 +674,7 @@ describe('EmailIngestionService', () => {
 
     it('should handle Redis memory pressure', async () => {
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.setex.mockRejectedValueOnce(new Error('OOM command not allowed when used memory > maxmemory'));
+      mockRedis?.setex?.mockRejectedValueOnce(new Error('OOM command not allowed when used memory > maxmemory'));
 
       const testEmail = createTestEmail();
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
@@ -686,10 +686,10 @@ describe('EmailIngestionService', () => {
 
     it('should handle worker crash scenarios', async () => {
       const mockWorker = (service as any).worker;
-      mockWorker.close.mockRejectedValueOnce(new Error('Worker crashed unexpectedly'));
+      mockWorker?.close?.mockRejectedValueOnce(new Error('Worker crashed unexpectedly'));
 
       // Should handle shutdown gracefully even with worker errors
-      await expect(service.shutdown()).resolves.not.toThrow();
+      await expect(service.shutdown()).resolves?.not?.toThrow();
     });
 
     it('should handle concurrent duplicate detection race conditions', async () => {
@@ -697,8 +697,8 @@ describe('EmailIngestionService', () => {
       const mockRedis = vi.mocked(service as any).redis;
       
       // Simulate race condition where exists check passes but setex fails
-      mockRedis.exists.mockResolvedValueOnce(0);
-      mockRedis.setex.mockRejectedValueOnce(new Error('Connection lost'));
+      mockRedis?.exists?.mockResolvedValueOnce(0);
+      mockRedis?.setex?.mockRejectedValueOnce(new Error('Connection lost'));
 
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result.success).toBe(false);
@@ -739,7 +739,7 @@ describe('EmailIngestionService', () => {
 
       expect(result.success).toBe(true);
       expect(actualThroughput).toBeGreaterThan(60); // Must exceed 60 emails/minute
-      expect(result.data?.throughput).toBeGreaterThan(60);
+      expect(result.data?.length).toBeGreaterThan(60);
     }, 30000); // 30 second timeout for performance test
 
     it('should handle concurrent batch processing', async () => {
@@ -753,7 +753,7 @@ describe('EmailIngestionService', () => {
       );
 
       const startTime = performance.now();
-      const promises = batches.map(batch => 
+      const promises = batches?.map(batch => 
         service.ingestBatch(batch, IngestionSource.JSON_FILE)
       );
       
@@ -782,7 +782,7 @@ describe('EmailIngestionService', () => {
       const averageTimePerEmail = processingTime / largeBatchSize;
 
       expect(result.success).toBe(true);
-      expect(result.data?.processed).toBe(largeBatchSize);
+      expect(result.data?.length).toBe(largeBatchSize);
       expect(averageTimePerEmail).toBeLessThan(100); // Less than 100ms per email
     }, 60000);
 
@@ -816,7 +816,7 @@ describe('EmailIngestionService', () => {
       }
 
       // Performance should remain consistent (within 50% variance)
-      const avgTime = results.reduce((a, b) => a + b, 0) / results.length;
+      const avgTime = results.reduce((a: any, b: any) => a + b, 0) / results?.length || 0;
       const maxVariance = avgTime * 0.5;
       
       expect(results.every(time => Math.abs(time - avgTime) < maxVariance)).toBe(true);
@@ -853,8 +853,8 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch([], IngestionSource.JSON_FILE);
       
       expect(result.success).toBe(true);
-      expect(result.data?.totalEmails).toBe(0);
-      expect(result.data?.processed).toBe(0);
+      expect(result.data?).toHaveLength(0);
+      expect(result.data?).toHaveLength(0);
     });
 
     it('should handle batch with all duplicates', async () => {
@@ -867,7 +867,7 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
       
       expect(result.success).toBe(true);
-      expect(result.data?.duplicates).toBeGreaterThan(0);
+      expect(result.data?.length).toBeGreaterThan(0);
     });
 
     it('should handle emails with maximum field lengths', async () => {
@@ -924,12 +924,12 @@ describe('EmailIngestionService', () => {
       // First ingestion
       const result1 = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result1.success).toBe(true);
-      expect(result1.data?.status).not.toBe('duplicate');
+      expect(result1.data?.length).not.toBe('duplicate');
 
       // Immediate duplicate
       const result2 = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result2.success).toBe(true);
-      expect(result2.data?.status).toBe('duplicate');
+      expect(result2.data?.length).toBe('duplicate');
     });
 
     it('should handle configuration validation edge cases', async () => {
@@ -969,7 +969,7 @@ describe('EmailIngestionService', () => {
 
     it('should handle connection cleanup on errors', async () => {
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.quit.mockRejectedValueOnce(new Error('Connection already closed'));
+      mockRedis?.quit?.mockRejectedValueOnce(new Error('Connection already closed'));
 
       // Should not throw even if cleanup fails
       await expect(service.shutdown()).rejects.toThrow();
@@ -1008,13 +1008,13 @@ describe('EmailIngestionService', () => {
   describe('Shutdown', () => {
     it('should shutdown gracefully', async () => {
       await service.initialize();
-      await expect(service.shutdown()).resolves.not.toThrow();
+      await expect(service.shutdown()).resolves?.not?.toThrow();
     });
 
     it('should handle multiple shutdown calls', async () => {
       await service.initialize();
       await service.shutdown();
-      await expect(service.shutdown()).resolves.not.toThrow();
+      await expect(service.shutdown()).resolves?.not?.toThrow();
     });
   });
 });
@@ -1059,20 +1059,20 @@ describe('EmailIngestionServiceFactory', () => {
 describe('EmailIngestionConfigPresets', () => {
   it('should provide high throughput configuration', () => {
     const config = EmailIngestionConfigPresets.getHighThroughputConfig();
-    expect(config.processing?.batchSize).toBeGreaterThan(50);
-    expect(config.processing?.concurrency).toBeGreaterThan(10);
+    expect(config.processing?.length).toBeGreaterThan(50);
+    expect(config.processing?.length).toBeGreaterThan(10);
   });
 
   it('should provide development configuration', () => {
     const config = EmailIngestionConfigPresets.getDevelopmentConfig();
-    expect(config.processing?.batchSize).toBeLessThan(20);
-    expect(config.processing?.concurrency).toBeLessThan(10);
+    expect(config.processing?.length).toBeLessThan(20);
+    expect(config.processing?.length).toBeLessThan(10);
   });
 
   it('should provide test configuration', () => {
     const config = EmailIngestionConfigPresets.getTestConfig();
-    expect(config.processing?.batchSize).toBeLessThan(10);
-    expect(config.processing?.concurrency).toBeLessThan(5);
+    expect(config.processing?.length).toBeLessThan(10);
+    expect(config.processing?.length).toBeLessThan(5);
   });
 
   it('should provide auto-pull configuration', () => {

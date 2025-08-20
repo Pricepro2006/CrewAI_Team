@@ -37,8 +37,8 @@ export class CircuitBreaker extends EventEmitter {
   private failuresInWindow: number = 0;
 
   constructor(
-    private name: string,
-    private options: CircuitBreakerOptions,
+    private readonly name: string,
+    private readonly options: CircuitBreakerOptions,
   ) {
     super();
     this.resetMonitoringWindow();
@@ -106,7 +106,8 @@ export class CircuitBreaker extends EventEmitter {
 
       // Check if we've had enough successful attempts
       this.halfOpenAttempts++;
-      if (this.halfOpenAttempts >= (this.options.halfOpenMaxAttempts || 3)) {
+      const maxAttempts = this.options.halfOpenMaxAttempts ?? 3;
+      if (this.halfOpenAttempts >= maxAttempts) {
         this.transitionTo(CircuitState.CLOSED);
         logger.info("Circuit breaker recovered and closed", "CIRCUIT_BREAKER", {
           name: this.name,
@@ -335,17 +336,21 @@ export class CircuitBreakerFactory {
     options?: Partial<CircuitBreakerOptions>,
   ): CircuitBreaker {
     if (!this.instances.has(name)) {
-      const finalOptions = { ...this.defaultOptions, ...options };
+      const finalOptions: CircuitBreakerOptions = { ...this.defaultOptions, ...options };
       this.instances.set(name, new CircuitBreaker(name, finalOptions));
     }
 
-    return this.instances.get(name)!;
+    const instance = this.instances.get(name);
+    if (!instance) {
+      throw new Error(`Failed to create or retrieve circuit breaker for ${name}`);
+    }
+    return instance;
   }
 
   /**
    * Get all circuit breakers
    */
-  static getAllInstances(): Map<string, CircuitBreaker> {
+  static getAllInstances(): ReadonlyMap<string, CircuitBreaker> {
     return new Map(this.instances);
   }
 

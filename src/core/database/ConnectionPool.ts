@@ -116,7 +116,7 @@ export class ConnectionPool extends EventEmitter {
     const db = new Database(this.config.filename, {
       readonly: this.config.readonly,
       verbose: this.config.verbose
-        ? (message) => {
+        ? (message: any) => {
             logger.debug(`SQLite: ${message}`, "CONNECTION_POOL");
           }
         : undefined,
@@ -180,7 +180,7 @@ export class ConnectionPool extends EventEmitter {
     }
 
     // Wait for a connection to become available
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       const checkAvailable = () => {
         for (const [id, conn] of this.connections) {
           if (!conn.inUse) {
@@ -224,17 +224,17 @@ export class ConnectionPool extends EventEmitter {
     connection.inUse = false;
     connection.lastUsed = Date.now();
 
-    if (!this.availableConnections.includes(connection.id)) {
-      this.availableConnections.push(connection.id);
+    if (!this?.availableConnections?.includes(connection.id)) {
+      this?.availableConnections?.push(connection.id);
     }
 
-    if (this.stats.activeConnections > 0) {
-      this.stats.activeConnections--;
+    if (this?.stats?.activeConnections > 0) {
+      if (this.stats.activeConnections) { this.stats.activeConnections-- };
     }
 
     this.emit("release", {
       connectionId: connection.id,
-      poolSize: this.connections.size,
+      poolSize: this?.connections?.size,
     });
   }
 
@@ -253,10 +253,10 @@ export class ConnectionPool extends EventEmitter {
 
       try {
         const result = fn(db);
-        this.stats.totalQueries++;
+        if (this.stats.totalQueries) { this.stats.totalQueries++ };
 
         // Update connection query count
-        for (const conn of this.connections.values()) {
+        for (const conn of this?.connections?.values()) {
           if (conn.db === db) {
             conn.queryCount++;
             break;
@@ -269,7 +269,7 @@ export class ConnectionPool extends EventEmitter {
 
         // Check if error is due to database lock
         if (
-          lastError.message.includes("database is locked") &&
+          lastError?.message?.includes("database is locked") &&
           attempt < maxRetries - 1
         ) {
           logger.debug(
@@ -278,7 +278,7 @@ export class ConnectionPool extends EventEmitter {
           );
 
           // Exponential backoff
-          await new Promise((resolve) =>
+          await new Promise((resolve: any) =>
             setTimeout(resolve, Math.pow(2, attempt) * 100),
           );
           continue;
@@ -308,7 +308,7 @@ export class ConnectionPool extends EventEmitter {
             .get() as any;
           const walSize = walInfo[1] * 4096; // Pages to bytes
 
-          if (walSize > this.config.walSizeLimit) {
+          if (walSize > this?.config?.walSizeLimit) {
             logger.info(
               `WAL file size (${walSize} bytes) exceeds limit, performing checkpoint`,
               "CONNECTION_POOL",
@@ -316,7 +316,7 @@ export class ConnectionPool extends EventEmitter {
 
             // Perform full checkpoint
             db.prepare("PRAGMA wal_checkpoint(RESTART)").run();
-            this.stats.checkpoints++;
+            if (this.stats.checkpoints) { this.stats.checkpoints++ };
 
             this.emit("checkpoint", { walSize, timestamp: Date.now() });
           }
@@ -341,21 +341,21 @@ export class ConnectionPool extends EventEmitter {
       const toRecycle: string[] = [];
 
       for (const [id, conn] of this.connections) {
-        if (!conn.inUse && now - conn.lastUsed > this.config.maxIdleTime) {
+        if (!conn.inUse && now - conn.lastUsed > this?.config?.maxIdleTime) {
           toRecycle.push(id);
         }
       }
 
       // Recycle idle connections
       for (const id of toRecycle) {
-        const conn = this.connections.get(id);
-        if (conn && !conn.inUse && this.connections.size > 1) {
-          conn.db.close();
-          this.connections.delete(id);
-          this.availableConnections = this.availableConnections.filter(
-            (availId) => availId !== id,
+        const conn = this?.connections?.get(id);
+        if (conn && !conn.inUse && this?.connections?.size > 1) {
+          conn?.db?.close();
+          this?.connections?.delete(id);
+          this.availableConnections = this?.availableConnections?.filter(
+            (availId: any) => availId !== id,
           );
-          this.stats.recycledConnections++;
+          if (this.stats.recycledConnections) { this.stats.recycledConnections++ };
 
           logger.debug(`Recycled idle connection: ${id}`, "CONNECTION_POOL");
 

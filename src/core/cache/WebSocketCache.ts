@@ -44,6 +44,16 @@ const RoomDataSchema = z.object({
 
 export type RoomData = z.infer<typeof RoomDataSchema>;
 
+// Schema for user presence data
+const PresenceDataSchema = z.object({
+  userId: z.string(),
+  connections: z.array(z.string()),
+  isOnline: z.boolean(),
+  lastSeen: z.date(),
+});
+
+export type PresenceData = z.infer<typeof PresenceDataSchema>;
+
 // Schema for real-time data
 const RealtimeDataSchema = z.object({
   key: z.string(),
@@ -128,7 +138,7 @@ export class WebSocketCache {
             'connections',
             ...(connectionData.userId ? [`user:${connectionData.userId}`] : []),
             ...(connectionData.sessionId ? [`session:${connectionData.sessionId}`] : []),
-            ...connectionData.rooms.map(room => `room:${room}`),
+            ...connectionData?.rooms?.map(room => `room:${room}`),
           ],
         }
       );
@@ -285,7 +295,7 @@ export class WebSocketCache {
           tags: [
             'rooms',
             `room:${roomData.roomId}`,
-            ...roomData.connectionIds.map(id => `connection:${id}`),
+            ...roomData?.connectionIds?.map(id => `connection:${id}`),
           ],
         }
       );
@@ -296,7 +306,7 @@ export class WebSocketCache {
 
         logger.debug('WebSocket room cached', 'WEBSOCKET_CACHE', {
           roomId: roomData.roomId,
-          connectionCount: roomData.connectionIds.length,
+          connectionCount: roomData?.connectionIds?.length,
         });
       }
 
@@ -327,7 +337,7 @@ export class WebSocketCache {
 
         logger.debug('WebSocket room cache hit', 'WEBSOCKET_CACHE', {
           roomId,
-          connectionCount: room.connectionIds.length,
+          connectionCount: room?.connectionIds?.length,
         });
 
         return room;
@@ -362,8 +372,8 @@ export class WebSocketCache {
         };
       }
 
-      if (!room.connectionIds.includes(connectionId)) {
-        room.connectionIds.push(connectionId);
+      if (!room?.connectionIds?.includes(connectionId)) {
+        room?.connectionIds?.push(connectionId);
         room.updatedAt = new Date();
 
         const success = await this.cacheRoom(room);
@@ -371,8 +381,8 @@ export class WebSocketCache {
         if (success) {
           // Update connection's room list
           const connection = await this.getConnection(connectionId);
-          if (connection && !connection.rooms.includes(roomId)) {
-            connection.rooms.push(roomId);
+          if (connection && !connection?.rooms?.includes(roomId)) {
+            connection?.rooms?.push(roomId);
             await this.cacheConnection(connection);
           }
 
@@ -381,7 +391,7 @@ export class WebSocketCache {
           logger.debug('Connection added to room', 'WEBSOCKET_CACHE', {
             roomId,
             connectionId,
-            roomSize: room.connectionIds.length,
+            roomSize: room?.connectionIds?.length,
           });
         }
 
@@ -409,9 +419,9 @@ export class WebSocketCache {
         return false;
       }
 
-      const index = room.connectionIds.indexOf(connectionId);
+      const index = room?.connectionIds?.indexOf(connectionId);
       if (index > -1) {
-        room.connectionIds.splice(index, 1);
+        room?.connectionIds?.splice(index, 1);
         room.updatedAt = new Date();
 
         const success = await this.cacheRoom(room);
@@ -420,9 +430,9 @@ export class WebSocketCache {
           // Update connection's room list
           const connection = await this.getConnection(connectionId);
           if (connection) {
-            const roomIndex = connection.rooms.indexOf(roomId);
+            const roomIndex = connection?.rooms?.indexOf(roomId);
             if (roomIndex > -1) {
-              connection.rooms.splice(roomIndex, 1);
+              connection?.rooms?.splice(roomIndex, 1);
               await this.cacheConnection(connection);
             }
           }
@@ -432,7 +442,7 @@ export class WebSocketCache {
           logger.debug('Connection removed from room', 'WEBSOCKET_CACHE', {
             roomId,
             connectionId,
-            roomSize: room.connectionIds.length,
+            roomSize: room?.connectionIds?.length,
           });
         }
 
@@ -528,7 +538,7 @@ export class WebSocketCache {
 
         logger.debug('Realtime data cache hit', 'WEBSOCKET_CACHE', {
           key,
-          age: Date.now() - data.timestamp.getTime(),
+          age: Date.now() - data?.timestamp?.getTime(),
         });
 
         return data;
@@ -557,12 +567,16 @@ export class WebSocketCache {
     try {
       const presenceKey = this.generatePresenceKey(userId);
       
-      let presence = await cacheManager.get(presenceKey, this.cacheNamespace) || {
-        userId,
-        connections: [],
-        isOnline: false,
-        lastSeen: new Date(),
-      };
+      let presence = await cacheManager.get(presenceKey, this.cacheNamespace) as PresenceData | null;
+      
+      if (!presence) {
+        presence = {
+          userId,
+          connections: [],
+          isOnline: false,
+          lastSeen: new Date(),
+        };
+      }
 
       if (isOnline) {
         if (!presence.connections.includes(connectionId)) {
@@ -615,10 +629,10 @@ export class WebSocketCache {
   /**
    * Get user presence
    */
-  async getUserPresence(userId: string): Promise<any> {
+  async getUserPresence(userId: string): Promise<PresenceData | null> {
     try {
       const presenceKey = this.generatePresenceKey(userId);
-      const presence = await cacheManager.get(presenceKey, this.cacheNamespace);
+      const presence = await cacheManager.get(presenceKey, this.cacheNamespace) as PresenceData | null;
 
       if (presence) {
         metrics.increment('websocket_cache.presence_hit');
@@ -626,7 +640,7 @@ export class WebSocketCache {
         logger.debug('User presence retrieved', 'WEBSOCKET_CACHE', {
           userId,
           isOnline: presence.isOnline,
-          connectionCount: presence.connections?.length || 0,
+          connectionCount: presence.connections.length,
         });
       } else {
         metrics.increment('websocket_cache.presence_miss');

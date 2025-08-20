@@ -75,14 +75,14 @@ export class ChromaDBManager {
   async initialize(): Promise<void> {
     try {
       // Test connection by getting version
-      const version = await this.client.version();
+      const version = await this?.client?.version();
       logger.info(
         `ChromaDB connected successfully. Version: ${version}`,
         "CHROMA_DB",
       );
 
       // Test heartbeat
-      const heartbeat = await this.client.heartbeat();
+      const heartbeat = await this?.client?.heartbeat();
       logger.info(`ChromaDB heartbeat: ${heartbeat}`, "CHROMA_DB");
 
       this.isConnected = true;
@@ -107,7 +107,7 @@ export class ChromaDBManager {
 
       // Try to get existing collection first
       try {
-        collection = await this.client.getCollection({
+        collection = await this?.client?.getCollection({
           name: config.name,
         } as any);
         logger.info(
@@ -116,7 +116,7 @@ export class ChromaDBManager {
         );
       } catch (getError) {
         // Collection doesn't exist, create it
-        collection = await this.client.createCollection({
+        collection = await this?.client?.createCollection({
           name: config.name,
           metadata: {
             description: config.description,
@@ -135,7 +135,7 @@ export class ChromaDBManager {
       }
 
       // Cache the collection
-      this.collections.set(config.name, collection);
+      this?.collections?.set(config.name, collection);
       return collection;
     } catch (error) {
       logger.error(
@@ -150,15 +150,15 @@ export class ChromaDBManager {
    * Get a collection by name
    */
   async getCollection(name: string): Promise<Collection | null> {
-    if (this.collections.has(name)) {
-      return this.collections.get(name)!;
+    if (this?.collections?.has(name)) {
+      return this?.collections?.get(name)!;
     }
 
     try {
-      const collection = await this.client.getCollection({
+      const collection = await this?.client?.getCollection({
         name,
       } as any);
-      this.collections.set(name, collection);
+      this?.collections?.set(name, collection);
       return collection;
     } catch (error) {
       logger.warn(`Collection ${name} not found: ${error}`, "CHROMA_DB");
@@ -179,7 +179,7 @@ export class ChromaDBManager {
       throw new Error(`Collection ${collectionName} not found`);
     }
 
-    if (documents.length === 0) {
+    if (documents?.length || 0 === 0) {
       return;
     }
 
@@ -188,12 +188,12 @@ export class ChromaDBManager {
       this.validateDocuments(documents);
 
       // Prepare data for ChromaDB
-      const ids = documents.map((doc) => doc.id);
-      const contents = documents.map((doc) => doc.content);
-      const metadatas = documents.map((doc) => ({
+      const ids = documents?.map((doc: any) => doc.id);
+      const contents = documents?.map((doc: any) => doc.content);
+      const metadatas = documents?.map((doc: any) => ({
         ...doc.metadata,
         indexed_at: new Date().toISOString(),
-        content_length: doc.content.length,
+        content_length: doc?.content?.length,
         content_hash: this.hashContent(doc.content),
       }));
 
@@ -206,7 +206,7 @@ export class ChromaDBManager {
       });
 
       logger.info(
-        `Added ${documents.length} documents to collection ${collectionName}`,
+        `Added ${documents?.length || 0} documents to collection ${collectionName}`,
         "CHROMA_DB",
       );
     } catch (error) {
@@ -235,12 +235,12 @@ export class ChromaDBManager {
       // Validate documents
       this.validateDocuments(documents);
 
-      const ids = documents.map((doc) => doc.id);
-      const contents = documents.map((doc) => doc.content);
-      const metadatas = documents.map((doc) => ({
+      const ids = documents?.map((doc: any) => doc.id);
+      const contents = documents?.map((doc: any) => doc.content);
+      const metadatas = documents?.map((doc: any) => ({
         ...doc.metadata,
         updated_at: new Date().toISOString(),
-        content_length: doc.content.length,
+        content_length: doc?.content?.length,
         content_hash: this.hashContent(doc.content),
       }));
 
@@ -252,7 +252,7 @@ export class ChromaDBManager {
       });
 
       logger.info(
-        `Updated ${documents.length} documents in collection ${collectionName}`,
+        `Updated ${documents?.length || 0} documents in collection ${collectionName}`,
         "CHROMA_DB",
       );
     } catch (error) {
@@ -321,7 +321,7 @@ export class ChromaDBManager {
       });
 
       const documents: ChromaDocument[] = [];
-      for (let i = 0; i < results.ids.length; i++) {
+      for (let i = 0; i < results?.ids?.length; i++) {
         documents.push({
           id: results.ids[i] || `unknown-${i}`,
           content: results.documents?.[i] || "",
@@ -351,7 +351,7 @@ export class ChromaDBManager {
     try {
       await collection.delete({ ids });
       logger.info(
-        `Deleted ${ids.length} documents from collection ${collectionName}`,
+        `Deleted ${ids?.length || 0} documents from collection ${collectionName}`,
         "CHROMA_DB",
       );
     } catch (error) {
@@ -423,8 +423,8 @@ export class ChromaDBManager {
     Array<{ name: string; metadata: Record<string, any> }>
   > {
     try {
-      const collections = await this.client.listCollections();
-      return collections.map((colName) => ({
+      const collections = await this?.client?.listCollections();
+      return collections?.map((colName: any) => ({
         name: typeof colName === "string" ? colName : (colName as any).name,
         metadata:
           (typeof colName === "string" ? {} : (colName as any).metadata) || {},
@@ -440,8 +440,8 @@ export class ChromaDBManager {
    */
   async deleteCollection(name: string): Promise<void> {
     try {
-      await this.client.deleteCollection({ name });
-      this.collections.delete(name);
+      await this?.client?.deleteCollection({ name });
+      this?.collections?.delete(name);
       logger.info(`Deleted collection: ${name}`, "CHROMA_DB");
     } catch (error) {
       logger.error(
@@ -698,15 +698,15 @@ export class ChromaDBManager {
     error?: string;
   }> {
     try {
-      const version = await this.client.version();
-      const heartbeat = await this.client.heartbeat();
-      const collections = await this.client.listCollections();
+      const version = await this?.client?.version();
+      const heartbeat = await this?.client?.heartbeat();
+      const collections = await this?.client?.listCollections();
 
       return {
         connected: true,
         version,
         heartbeat,
-        collections: collections.length,
+        collections: collections?.length || 0,
       };
     } catch (error) {
       return {
@@ -737,7 +737,7 @@ export class ChromaDBManager {
   private hashContent(content: string): string {
     // Simple hash function for content fingerprinting
     let hash = 0;
-    for (let i = 0; i < content.length; i++) {
+    for (let i = 0; i < content?.length || 0; i++) {
       const char = content.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
@@ -748,7 +748,7 @@ export class ChromaDBManager {
   private formatQueryResults(chromaResults: any): ChromaQueryResult[] {
     const results: ChromaQueryResult[] = [];
 
-    if (!chromaResults.ids || chromaResults.ids.length === 0) {
+    if (!chromaResults.ids || chromaResults?.ids?.length === 0) {
       return results;
     }
 
@@ -772,7 +772,7 @@ export class ChromaDBManager {
    * Close ChromaDB connections
    */
   async close(): Promise<void> {
-    this.collections.clear();
+    this?.collections?.clear();
     this.isConnected = false;
     logger.info("ChromaDB connections closed", "CHROMA_DB");
   }

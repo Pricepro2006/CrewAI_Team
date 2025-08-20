@@ -139,7 +139,7 @@ export function validateDatabaseEmailRecord(data: unknown): DatabaseEmailRecordS
     return DatabaseEmailRecordSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`Invalid email record: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      throw new Error(`Invalid email record: ${error?.errors?.map(e => `${e?.path?.join('.')}: ${e.message}`).join(', ')}`);
     }
     throw error;
   }
@@ -153,7 +153,7 @@ export function validateAPIEmailResponse(data: unknown): APIEmailResponseSchema 
     return APIEmailResponseSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`Invalid API response: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      throw new Error(`Invalid API response: ${error?.errors?.map(e => `${e?.path?.join('.')}: ${e.message}`).join(', ')}`);
     }
     throw error;
   }
@@ -167,7 +167,7 @@ export function validateStatusUpdateRequest(data: unknown): StatusUpdateRequestS
     return StatusUpdateRequestSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`Invalid status update request: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      throw new Error(`Invalid status update request: ${error?.errors?.map(e => `${e?.path?.join('.')}: ${e.message}`).join(', ')}`);
     }
     throw error;
   }

@@ -13,7 +13,7 @@
 import { cacheManager } from './RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
-import crypto from 'crypto';
+import { createHash } from 'crypto';
 import { z } from 'zod';
 
 // Schema for LLM response data
@@ -100,8 +100,7 @@ export class LLMResponseCache {
    */
   private generatePromptCacheKey(prompt: string, model: string): string {
     const normalizedPrompt = this.normalizePrompt(prompt);
-    const hash = crypto
-      .createHash('sha256')
+    const hash = createHash('sha256')
       .update(`${model}:${normalizedPrompt}`)
       .digest('hex');
     return `prompt:${hash}`;
@@ -152,9 +151,9 @@ export class LLMResponseCache {
 
     try {
       // Skip caching for very large prompts
-      if (prompt.length > this.maxPromptLength * 2) {
+      if (prompt?.length || 0 > this.maxPromptLength * 2) {
         logger.debug('Skipping cache for oversized prompt', 'LLM_CACHE', {
-          promptLength: prompt.length,
+          promptLength: prompt?.length || 0,
           maxLength: this.maxPromptLength * 2,
         });
         return false;
@@ -169,17 +168,17 @@ export class LLMResponseCache {
         model,
         timestamp: new Date(),
         processingTime,
-        tokenCount: response.length / 4, // Rough token estimate
+        tokenCount: response?.length || 0 / 4, // Rough token estimate
         confidence: config.semanticSimilarityThreshold || 1.0,
         metadata: {
           cacheConfig: config,
-          promptLength: prompt.length,
-          responseLength: response.length,
+          promptLength: prompt?.length || 0,
+          responseLength: response?.length || 0,
         },
       };
 
       const ttl = config.ttl || this.defaultTTL;
-      const compress = config.compressLargeResponses && response.length > 2048;
+      const compress = config.compressLargeResponses && (response?.length || 0) > 2048;
 
       const success = await cacheManager.set(
         cacheKey,
@@ -198,8 +197,8 @@ export class LLMResponseCache {
       logger.debug('LLM response cached', 'LLM_CACHE', {
         cacheKey,
         model,
-        promptLength: prompt.length,
-        responseLength: response.length,
+        promptLength: prompt?.length || 0,
+        responseLength: response?.length || 0,
         ttl,
         compressed: compress,
       });
@@ -209,7 +208,7 @@ export class LLMResponseCache {
       logger.error('Failed to cache LLM response', 'LLM_CACHE', {
         error: error instanceof Error ? error.message : String(error),
         model,
-        promptLength: prompt.length,
+        promptLength: prompt?.length || 0,
       });
       metrics.increment('llm_cache.cache_error');
       return false;
@@ -239,7 +238,7 @@ export class LLMResponseCache {
         logger.debug('LLM cache exact hit', 'LLM_CACHE', {
           cacheKey,
           model,
-          age: Date.now() - cached.timestamp.getTime(),
+          age: Date.now() - cached?.timestamp?.getTime(),
         });
 
         return cached;
@@ -365,7 +364,7 @@ export class LLMResponseCache {
           emailId,
           phase,
           model,
-          age: Date.now() - cached.timestamp.getTime(),
+          age: Date.now() - cached?.timestamp?.getTime(),
         });
 
         return cached;
@@ -423,7 +422,7 @@ export class LLMResponseCache {
             `workflow_type:${workflowType}`,
             `state:${state}`,
             'workflow_analysis',
-            ...emailIds.map(id => `email:${id}`),
+            ...emailIds?.map(id => `email:${id}`),
           ],
         }
       );
@@ -435,7 +434,7 @@ export class LLMResponseCache {
         workflowId,
         workflowType,
         state,
-        emailCount: emailIds.length,
+        emailCount: emailIds?.length || 0,
         ttl,
       });
 
@@ -473,7 +472,7 @@ export class LLMResponseCache {
           workflowId,
           workflowType,
           state: cached.state,
-          age: Date.now() - cached.timestamp.getTime(),
+          age: Date.now() - cached?.timestamp?.getTime(),
         });
 
         return cached;
@@ -621,7 +620,7 @@ export class LLMResponseCache {
 
     try {
       logger.info('Starting LLM cache warming', 'LLM_CACHE', {
-        promptCount: commonPrompts.length,
+        promptCount: commonPrompts?.length || 0,
       });
 
       for (const { prompt, model } of commonPrompts) {
@@ -633,7 +632,7 @@ export class LLMResponseCache {
             // For warming, we'll skip actual LLM calls
             logger.debug('Skipping cache warming for uncached prompt', 'LLM_CACHE', {
               model,
-              promptLength: prompt.length,
+              promptLength: prompt?.length || 0,
             });
           } else {
             warmedCount++;
@@ -648,7 +647,7 @@ export class LLMResponseCache {
 
       logger.info('LLM cache warming completed', 'LLM_CACHE', {
         warmedCount,
-        totalPrompts: commonPrompts.length,
+        totalPrompts: commonPrompts?.length || 0,
       });
 
       return warmedCount;

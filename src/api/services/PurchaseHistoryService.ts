@@ -216,6 +216,27 @@ export class PurchaseHistoryService {
    */
   async trackPurchase(purchase: Omit<PurchaseRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<PurchaseRecord> {
     try {
+      // Validate input data
+      if (purchase.quantity <= 0) {
+        throw new Error("Quantity must be greater than 0");
+      }
+      if (purchase.unitPrice < 0) {
+        throw new Error("Unit price cannot be negative");
+      }
+      if (purchase.totalPrice < 0) {
+        throw new Error("Total price cannot be negative");
+      }
+      
+      // Validate total price calculation
+      const expectedTotal = purchase.quantity * purchase.unitPrice;
+      if (Math.abs(purchase.totalPrice - expectedTotal) > 0.01) {
+        logger.warn("Total price mismatch", "PURCHASE_HISTORY_SERVICE", {
+          provided: purchase.totalPrice,
+          expected: expectedTotal,
+          difference: Math.abs(purchase.totalPrice - expectedTotal)
+        });
+      }
+      
       const now = new Date().toISOString();
       const purchaseRecord: PurchaseRecord = {
         ...purchase,
@@ -351,11 +372,11 @@ export class PurchaseHistoryService {
 
       const rows = stmt.all(userId, userId, userId);
       
-      const patterns: PurchasePattern[] = rows.map((row: any) => {
+      const patterns: PurchasePattern[] = rows?.map((row: any) => {
         // Parse seasonal trends from JSON string
         let seasonalTrends: SeasonalTrend[] = [];
         if (row.seasonal_trends_json) {
-          const trendsArray = row.seasonal_trends_json.split(',')
+          const trendsArray = row?.seasonal_trends_json?.split(',')
             .filter((s: string) => s && s !== 'null')
             .map((s: string) => {
               try {
@@ -387,7 +408,7 @@ export class PurchaseHistoryService {
 
       logger.info("Purchase patterns analyzed (optimized)", "PURCHASE_HISTORY_SERVICE", {
         userId,
-        patternsCount: patterns.length
+        patternsCount: patterns?.length || 0
       });
 
       return patterns;
@@ -501,7 +522,7 @@ export class PurchaseHistoryService {
       
       const rows = dataStmt.all(...params, limit, offset);
 
-      const purchases: PurchaseRecord[] = rows.map((row: any) => ({
+      const purchases: PurchaseRecord[] = rows?.map((row: any) => ({
         ...row,
         metadata: row.metadata ? JSON.parse(row.metadata) : undefined
       }));
@@ -516,7 +537,7 @@ export class PurchaseHistoryService {
       logger.info("User purchase history retrieved", "PURCHASE_HISTORY_SERVICE", {
         userId,
         total: result.total,
-        returned: purchases.length
+        returned: purchases?.length || 0
       });
 
       return result;
@@ -585,7 +606,7 @@ export class PurchaseHistoryService {
       const params = productId ? [userId, productId, userId, productId] : [userId, userId];
       const rows = stmt.all(...params);
 
-      const frequencies: ProductFrequency[] = rows.map((row: any) => ({
+      const frequencies: ProductFrequency[] = rows?.map((row: any) => ({
         productId: row.product_id,
         productName: row.product_name,
         brand: row.brand,
@@ -605,7 +626,7 @@ export class PurchaseHistoryService {
       logger.info("Product frequency calculated", "PURCHASE_HISTORY_SERVICE", {
         userId,
         productId,
-        frequenciesCount: frequencies.length
+        frequenciesCount: frequencies?.length || 0
       });
 
       return frequencies;
@@ -720,7 +741,7 @@ export class PurchaseHistoryService {
 
       logger.info("Reorder suggestions generated", "PURCHASE_HISTORY_SERVICE", {
         userId,
-        suggestionsCount: suggestions.length,
+        suggestionsCount: suggestions?.length || 0,
         daysAhead
       });
 
@@ -809,13 +830,13 @@ export class PurchaseHistoryService {
         totalItems: basicStats.total_items || 0,
         averageBasketSize: Math.round((basicStats.avg_basket_size || 0) * 100) / 100,
         averageItemPrice: Math.round((basicStats.avg_item_price || 0) * 100) / 100,
-        mostFrequentCategory: categoryStats[0]?.category || "Unknown",
-        mostExpensiveCategory: categoryStats.reduce((max, cat) => 
+        mostFrequentCategory: (categoryStats[0] as any)?.category || "Unknown",
+        mostExpensiveCategory: (categoryStats as any[]).reduce((max: any, cat: any) => 
           cat.category_spent > (max?.category_spent || 0) ? cat : max
         )?.category || "Unknown",
-        preferredBrands: brandStats.slice(0, 5).map(b => b.brand),
+        preferredBrands: (brandStats as any[]).slice(0, 5).map((b: any) => b.brand),
         shoppingFrequency: Math.round((basicStats.avg_days_between_shopping || 0) * 100) / 100,
-        seasonalSpending: seasonalStats.map(s => ({
+        seasonalSpending: (seasonalStats as any[])?.map((s: any) => ({
           month: s.month,
           averageQuantity: s.avg_quantity,
           averagePurchases: s.avg_purchases
@@ -907,9 +928,9 @@ export class PurchaseHistoryService {
   }
 
   private calculateLoyaltyScore(brandStats: any[]): number {
-    if (brandStats.length === 0) return 0;
+    if (brandStats?.length || 0 === 0) return 0;
     
-    const totalPurchases = brandStats.reduce((sum, brand) => sum + brand.brand_purchases, 0);
+    const totalPurchases = brandStats.reduce((sum: any, brand: any) => sum + brand.brand_purchases, 0);
     const topBrandPurchases = brandStats[0]?.brand_purchases || 0;
     
     return Math.round((topBrandPurchases / totalPurchases) * 100) / 100;

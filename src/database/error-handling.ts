@@ -1,4 +1,5 @@
-import Database from "better-sqlite3";
+const Database = require("better-sqlite3");
+type DatabaseInstance = any;
 import { logger } from "../utils/logger.js";
 import {
   AppError,
@@ -68,7 +69,7 @@ function mapDatabaseError(error: unknown): AppError {
     });
   }
 
-  const message = error.message.toLowerCase();
+  const message = error?.message?.toLowerCase();
 
   // Connection errors
   if (message.includes("enoent") || message.includes("no such file")) {
@@ -143,23 +144,67 @@ function mapDatabaseError(error: unknown): AppError {
 }
 
 /**
- * Wraps a database operation with error handling and retry logic
+ * Wraps a synchronous database operation with error handling and retry logic
  */
-export function withDatabaseErrorHandling<
-  T extends (...args: unknown[]) => unknown,
->(
-  operation: T,
+export function withDatabaseErrorHandling<T>(
+  operation: (...args: any[]) => T,
   options: {
     retries?: number;
     retryDelay?: number;
     context?: string;
   } = {},
-): T {
+): (...args: any[]) => T {
+  const { retries = 3, retryDelay = 500, context = operation.name || 'db-operation' } = options;
+  
+  return (...args: any[]): T => {
+    let lastError: unknown;
+    
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return operation(...args);
+      } catch (error) {
+        lastError = error;
+        
+        if (attempt === retries) {
+          logger.error(`Database operation failed after ${retries + 1} attempts`, context, {
+            error: getErrorMessage(error),
+            attempts: attempt + 1
+          });
+          throw mapDatabaseError(error);
+        }
+        
+        // Wait before retry (except for last attempt)
+        if (attempt < retries) {
+          const delay = retryDelay * Math.pow(2, attempt);
+          // Synchronous delay for database operations
+          const start = Date.now();
+          while (Date.now() - start < delay) {
+            // Busy wait for short delays in database operations
+          }
+        }
+      }
+    }
+    
+    throw mapDatabaseError(lastError);
+  };
+}
+
+/**
+ * Async version for database operations that return promises
+ */
+export function withAsyncDatabaseErrorHandling<T>(
+  operation: (...args: any[]) => Promise<T>,
+  options: {
+    retries?: number;
+    retryDelay?: number;
+    context?: string;
+  } = {},
+): (...args: any[]) => Promise<T> {
   return withAsyncErrorHandler(operation, {
     retries: options.retries ?? 3,
     retryDelay: options.retryDelay ?? 500,
-    context: options.context ?? operation.name,
-    onError: (error) => {
+    context: options.context ?? (operation.name || 'async-db-operation'),
+    onError: (error: any) => {
       // Convert to database-specific error
       throw mapDatabaseError(error);
     },
@@ -170,8 +215,8 @@ export function withDatabaseErrorHandling<
  * Transaction wrapper with automatic rollback on error
  */
 export function withTransaction<T>(
-  db: Database.Database,
-  operation: (trx: Database.Transaction) => T,
+  db: DatabaseInstance,
+  operation: (trx: DatabaseInstance) => T,
   options: {
     immediate?: boolean;
     exclusive?: boolean;
@@ -202,7 +247,7 @@ export function withTransaction<T>(
  * Safe query execution with timeout and error handling
  */
 export function safeQuery<T = unknown>(
-  db: Database.Database,
+  db: DatabaseInstance,
   query: string,
   params: unknown[] = [],
   options: {
@@ -238,7 +283,7 @@ export class DatabaseHealthChecker {
   private circuitBreaker: CircuitBreaker;
 
   constructor(
-    private db: Database.Database,
+    private db: DatabaseInstance,
     circuitBreakerOptions?: {
       threshold?: number;
       timeout?: number;
@@ -251,11 +296,15 @@ export class DatabaseHealthChecker {
   }
 
   async check(): Promise<boolean> {
+    if (!this.circuitBreaker || !this.db) {
+      return false;
+    }
+    
     return this.circuitBreaker.execute(
       async () => {
         try {
           // Simple health check query
-          const result = this.db.prepare("SELECT 1 as health").get() as Record<string, unknown>;
+          const result = this.db?.prepare("SELECT 1 as health").get() as Record<string, unknown> | undefined;
           return result?.health === 1;
         } catch (error) {
           throw mapDatabaseError(error);
@@ -267,11 +316,11 @@ export class DatabaseHealthChecker {
   }
 
   getCircuitState(): string {
-    return this.circuitBreaker.getState();
+    return this.circuitBreaker?.getState() || 'unknown';
   }
 
   reset(): void {
-    this.circuitBreaker.reset();
+    this.circuitBreaker?.reset();
   }
 }
 
@@ -279,22 +328,22 @@ export class DatabaseHealthChecker {
  * Database connection manager with automatic reconnection
  */
 export class DatabaseConnectionManager {
-  private db: Database.Database | null = null;
+  private db: DatabaseInstance | null = null;
   private connectionAttempts = 0;
   private maxConnectionAttempts = 5;
   private reconnectDelay = 1000;
 
   constructor(
     private databasePath: string,
-    private options?: Database.Options,
+    private options?: any,
   ) {}
 
-  async connect(): Promise<Database.Database> {
+  async connect(): Promise<DatabaseInstance> {
     try {
       if (this.db) {
         // Check if connection is still valid
         try {
-          this.db.prepare("SELECT 1").get();
+          this?.db?.prepare("SELECT 1").get();
           return this.db;
         } catch {
           // Connection is dead, close it
@@ -306,10 +355,12 @@ export class DatabaseConnectionManager {
       this.db = new Database(this.databasePath, this.options);
 
       // Configure for better concurrency
-      this.db.pragma("journal_mode = WAL");
-      this.db.pragma("synchronous = NORMAL");
-      this.db.pragma("foreign_keys = ON");
-      this.db.pragma("busy_timeout = 5000");
+      if (this.db) {
+        this.db.pragma("journal_mode = WAL");
+        this.db.pragma("synchronous = NORMAL");
+        this.db.pragma("foreign_keys = ON");
+        this.db.pragma("busy_timeout = 5000");
+      }
 
       this.connectionAttempts = 0;
       logger.info("Database connected successfully", "DB_CONNECTION");
@@ -336,14 +387,14 @@ export class DatabaseConnectionManager {
       );
 
       // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, this.reconnectDelay));
+      await new Promise<void>((resolve) => setTimeout(resolve, this.reconnectDelay));
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000); // Cap at 30 seconds
 
       return this.connect();
     }
   }
 
-  getConnection(): Database.Database {
+  getConnection(): DatabaseInstance {
     if (!this.db) {
       throw new AppError(
         ErrorCode.DATABASE_ERROR,
@@ -387,20 +438,24 @@ export class DatabaseConnectionManager {
  * Prepared statement cache with error handling
  */
 export class PreparedStatementCache {
-  private cache = new Map<string, Database.Statement>();
+  private cache = new Map<string, any>();
 
-  constructor(private db: Database.Database) {}
+  constructor(private db: DatabaseInstance) {}
 
-  get<T extends Record<string, unknown> | unknown[] = Record<string, unknown>>(query: string): Database.Statement<T> {
+  get<T extends Record<string, unknown> | unknown[] = Record<string, unknown>>(query: string): any {
     try {
       let stmt = this.cache.get(query);
 
-      if (!stmt) {
+      if (!stmt && this.db) {
         stmt = this.db.prepare(query);
         this.cache.set(query, stmt);
       }
 
-      return stmt as Database.Statement<T>;
+      if (!stmt) {
+        throw new Error('Failed to prepare statement: database not available');
+      }
+
+      return stmt as any;
     } catch (error) {
       logger.error("Failed to prepare statement", "DB_STATEMENT", {
         query,

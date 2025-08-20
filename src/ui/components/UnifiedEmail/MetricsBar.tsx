@@ -9,7 +9,18 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
-import type { DashboardMetrics } from "../../../types/unified-email.types.js";
+// Define DashboardMetrics locally to avoid import issues
+interface DashboardMetrics {
+  totalEmails: number;
+  todaysEmails: number;
+  workflowCompletion: number;
+  avgResponseTime: number;
+  urgentCount: number;
+  pendingAssignment: number;
+  agentUtilization: number;
+  criticalAlerts: any[];
+  processedToday?: number;
+}
 
 interface MetricsBarProps {
   metrics: DashboardMetrics;
@@ -93,7 +104,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
         {/* Total Emails */}
         <MetricCard
           label="Total Emails"
-          value={metrics.totalEmails.toLocaleString()}
+          value={metrics?.totalEmails?.toLocaleString()}
           icon={<EnvelopeIcon />}
           tooltip="Total emails in the system"
         />
@@ -101,7 +112,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
         {/* Today's Emails */}
         <MetricCard
           label="Today's Emails"
-          value={metrics.todaysEmails.toLocaleString()}
+          value={metrics?.todaysEmails?.toLocaleString()}
           icon={<EnvelopeIcon />}
           trend={metrics.todaysEmails > 100 ? "up" : "down"}
           tooltip="Emails received today"
@@ -110,7 +121,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
         {/* Workflow Completion - Critical Metric */}
         <MetricCard
           label="Workflow Completion"
-          value={`${metrics.workflowCompletion.toFixed(1)}%`}
+          value={`${metrics?.workflowCompletion?.toFixed(1)}%`}
           icon={<ChartBarIcon />}
           status={getWorkflowStatus(metrics.workflowCompletion)}
           tooltip="Percentage of emails with complete workflow chains (Start → In Progress → Completion)"
@@ -121,7 +132,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
         {/* Average Response Time */}
         <MetricCard
           label="Avg Response Time"
-          value={`${metrics.avgResponseTime.toFixed(1)}h`}
+          value={`${metrics?.avgResponseTime?.toFixed(1)}h`}
           icon={<ClockIcon />}
           status={getResponseTimeStatus(metrics.avgResponseTime)}
           tooltip="Average time to first response"
@@ -178,9 +189,9 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
       </div>
 
       {/* Critical Alerts Section */}
-      {metrics.criticalAlerts && metrics.criticalAlerts.length > 0 && (
+      {metrics.criticalAlerts && metrics?.criticalAlerts?.length > 0 && (
         <div className="metrics-bar__alerts">
-          {metrics.criticalAlerts.map((alert, index) => (
+          {metrics?.criticalAlerts?.map((alert, index) => (
             <div key={index} className="metrics-bar__alert">
               <ExclamationTriangleIcon className="metrics-bar__alert-icon" />
               <span>{alert.message}</span>

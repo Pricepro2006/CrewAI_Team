@@ -20,8 +20,8 @@ export class GroceryNLPQueueWebSocketManager {
   private static instance: GroceryNLPQueueWebSocketManager;
   private clients = new Map<string, GroceryNLPWebSocketClient>();
   private queue = getGroceryNLPQueue();
-  private heartbeatInterval: NodeJS.Timeout;
-  private metricsInterval: NodeJS.Timeout;
+  private heartbeatInterval!: NodeJS.Timeout;
+  private metricsInterval!: NodeJS.Timeout;
 
   private constructor() {
     this.setupQueueListeners();
@@ -48,16 +48,16 @@ export class GroceryNLPQueueWebSocketManager {
       lastActivity: Date.now(),
       metadata: {
         userAgent: request.headers['user-agent'],
-        ip: request.connection.remoteAddress,
+        ip: request?.connection?.remoteAddress,
         connectedAt: Date.now()
       }
     };
 
-    this.clients.set(clientId, client);
+    this?.clients?.set(clientId, client);
 
     logger.info("Grocery NLP WebSocket client connected", "GROCERY_NLP_WS", {
       clientId,
-      clientCount: this.clients.size,
+      clientCount: this?.clients?.size,
       userAgent: client.metadata?.userAgent
     });
 
@@ -65,14 +65,14 @@ export class GroceryNLPQueueWebSocketManager {
     this.sendToClient(client, {
       type: "queue_update",
       data: {
-        queueSize: this.queue.getStatus().queueSize,
-        activeRequests: this.queue.getStatus().activeRequests,
-        estimatedWaitTime: this.queue.getStatus().estimatedWaitTime
+        queueSize: this?.queue?.getStatus().queueSize,
+        activeRequests: this?.queue?.getStatus().activeRequests,
+        estimatedWaitTime: this?.queue?.getStatus().estimatedWaitTime
       }
     });
 
     // Set up message handlers
-    ws.on("message", (data) => {
+    ws.on("message", (data: any) => {
       try {
         const message = JSON.parse(data.toString());
         this.handleClientMessage(client, message);
@@ -91,7 +91,7 @@ export class GroceryNLPQueueWebSocketManager {
       this.handleDisconnection(clientId, code, reason?.toString());
     });
 
-    ws.on("error", (error) => {
+    ws.on("error", (error: any) => {
       logger.error("WebSocket error", "GROCERY_NLP_WS", {
         clientId,
         error
@@ -113,15 +113,15 @@ export class GroceryNLPQueueWebSocketManager {
    * Handle client disconnection
    */
   private handleDisconnection(clientId: string, code: number, reason?: string): void {
-    const client = this.clients.get(clientId);
+    const client = this?.clients?.get(clientId);
     if (client) {
-      this.clients.delete(clientId);
+      this?.clients?.delete(clientId);
       
       logger.info("Grocery NLP WebSocket client disconnected", "GROCERY_NLP_WS", {
         clientId,
         code,
         reason,
-        clientCount: this.clients.size,
+        clientCount: this?.clients?.size,
         sessionDuration: Date.now() - (client.metadata?.connectedAt || 0)
       });
     }
@@ -150,7 +150,7 @@ export class GroceryNLPQueueWebSocketManager {
         break;
         
       case "get_status":
-        const status = this.queue.getStatus();
+        const status = this?.queue?.getStatus();
         this.sendToClient(client, {
           type: "queue_update",
           data: {
@@ -162,7 +162,7 @@ export class GroceryNLPQueueWebSocketManager {
         break;
         
       case "get_metrics":
-        const metrics = this.queue.getMetrics();
+        const metrics = this?.queue?.getMetrics();
         this.sendToClient(client, {
           type: "metrics_update",
           data: metrics
@@ -184,7 +184,7 @@ export class GroceryNLPQueueWebSocketManager {
 
     for (const subscription of subscriptions) {
       if (validSubscriptions.includes(subscription)) {
-        client.subscriptions.add(subscription);
+        client?.subscriptions?.add(subscription);
         addedSubscriptions.push(subscription);
       }
     }
@@ -211,8 +211,8 @@ export class GroceryNLPQueueWebSocketManager {
     const removedSubscriptions: string[] = [];
 
     for (const subscription of subscriptions) {
-      if (client.subscriptions.has(subscription)) {
-        client.subscriptions.delete(subscription);
+      if (client?.subscriptions?.has(subscription)) {
+        client?.subscriptions?.delete(subscription);
         removedSubscriptions.push(subscription);
       }
     }
@@ -236,15 +236,15 @@ export class GroceryNLPQueueWebSocketManager {
    * Set up queue event listeners
    */
   private setupQueueListeners(): void {
-    this.queue.on("queueUpdate", (event: WebSocketEvent) => {
+    this?.queue?.on("queueUpdate", (event: WebSocketEvent) => {
       this.broadcastToSubscribers("queue_updates", event);
     });
 
-    this.queue.on("requestStatus", (event: WebSocketEvent) => {
+    this?.queue?.on("requestStatus", (event: WebSocketEvent) => {
       this.broadcastToSubscribers("request_status", event);
     });
 
-    this.queue.on("metricsUpdate", (event: WebSocketEvent) => {
+    this?.queue?.on("metricsUpdate", (event: WebSocketEvent) => {
       this.broadcastToSubscribers("metrics_updates", event);
     });
   }
@@ -255,8 +255,8 @@ export class GroceryNLPQueueWebSocketManager {
   private broadcastToSubscribers(subscription: string, event: WebSocketEvent): void {
     let sentCount = 0;
     
-    for (const client of this.clients.values()) {
-      if (client.subscriptions.has(subscription)) {
+    for (const client of this?.clients?.values()) {
+      if (client?.subscriptions?.has(subscription)) {
         this.sendToClient(client, event);
         sentCount++;
       }
@@ -275,9 +275,9 @@ export class GroceryNLPQueueWebSocketManager {
    * Send message to specific client
    */
   private sendToClient(client: GroceryNLPWebSocketClient, message: any): void {
-    if (client.ws.readyState === WebSocket.OPEN) {
+    if (client?.ws?.readyState === WebSocket.OPEN) {
       try {
-        client.ws.send(JSON.stringify({
+        client?.ws?.send(JSON.stringify({
           ...message,
           timestamp: Date.now(),
           clientId: client.id
@@ -289,7 +289,7 @@ export class GroceryNLPQueueWebSocketManager {
         });
         
         // Remove client if sending fails
-        this.clients.delete(client.id);
+        this?.clients?.delete(client.id);
       }
     }
   }
@@ -318,12 +318,12 @@ export class GroceryNLPQueueWebSocketManager {
       const toRemove: string[] = [];
 
       for (const [clientId, client] of this.clients) {
-        if (client.ws.readyState !== WebSocket.OPEN) {
+        if (client?.ws?.readyState !== WebSocket.OPEN) {
           toRemove.push(clientId);
         } else if (now - client.lastActivity > timeout) {
           // Ping inactive clients
           try {
-            client.ws.ping();
+            client?.ws?.ping();
           } catch (error) {
             toRemove.push(clientId);
           }
@@ -332,7 +332,7 @@ export class GroceryNLPQueueWebSocketManager {
 
       // Remove dead connections
       for (const clientId of toRemove) {
-        this.clients.delete(clientId);
+        this?.clients?.delete(clientId);
         logger.debug("Removed inactive WebSocket client", "GROCERY_NLP_WS", {
           clientId
         });
@@ -345,7 +345,7 @@ export class GroceryNLPQueueWebSocketManager {
    */
   private startMetricsUpdates(): void {
     this.metricsInterval = setInterval(() => {
-      const metrics = this.queue.getMetrics();
+      const metrics = this?.queue?.getMetrics();
       
       this.broadcastToSubscribers("metrics_updates", {
         type: "metrics_update",
@@ -365,7 +365,7 @@ export class GroceryNLPQueueWebSocketManager {
    * Get connected client count
    */
   getClientCount(): number {
-    return this.clients.size;
+    return this?.clients?.size;
   }
 
   /**
@@ -377,7 +377,7 @@ export class GroceryNLPQueueWebSocketManager {
     lastActivity: number;
     metadata?: Record<string, any>;
   }> {
-    return Array.from(this.clients.values()).map(client => ({
+    return Array.from(this?.clients?.values()).map(client => ({
       id: client.id,
       subscriptions: Array.from(client.subscriptions),
       lastActivity: client.lastActivity,
@@ -398,13 +398,13 @@ export class GroceryNLPQueueWebSocketManager {
     }
     
     // Close all client connections
-    for (const client of this.clients.values()) {
-      if (client.ws.readyState === WebSocket.OPEN) {
-        client.ws.close(1001, "Server shutting down");
+    for (const client of this?.clients?.values()) {
+      if (client?.ws?.readyState === WebSocket.OPEN) {
+        client?.ws?.close(1001, "Server shutting down");
       }
     }
     
-    this.clients.clear();
+    this?.clients?.clear();
   }
 }
 

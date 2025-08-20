@@ -62,7 +62,7 @@ export class ProductMatchingAlgorithm {
     'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can'
   ]);
 
-  private constructor() {}
+  protected constructor() {}
 
   static getInstance(): ProductMatchingAlgorithm {
     if (!ProductMatchingAlgorithm.instance) {
@@ -188,7 +188,7 @@ export class ProductMatchingAlgorithm {
   private extractFeatures(text: string): ProductFeatures {
     const normalized = text.toLowerCase().trim();
     const words = normalized.split(/\s+/).filter(word => 
-      word.length > 1 && !this.STOP_WORDS.has(word)
+      word?.length || 0 > 1 && !this?.STOP_WORDS?.has(word)
     );
 
     // Extract brand
@@ -219,10 +219,10 @@ export class ProductMatchingAlgorithm {
     }
 
     // Extract keywords (non-brand, non-size words)
-    const keywords = words.filter(word => {
+    const keywords = words?.filter(word => {
       return !brand?.toLowerCase().includes(word) && 
              !sizeMatch?.[0].includes(word) &&
-             word.length > 2;
+             word?.length || 0 > 2;
     });
 
     // Extract numeric features
@@ -230,8 +230,8 @@ export class ProductMatchingAlgorithm {
     if (size) {
       numericFeatures.size = parseFloat(size);
     }
-    numericFeatures.wordCount = words.length;
-    numericFeatures.keywordCount = keywords.length;
+    numericFeatures.wordCount = words?.length || 0;
+    numericFeatures.keywordCount = keywords?.length || 0;
 
     return {
       brand,
@@ -314,7 +314,7 @@ export class ProductMatchingAlgorithm {
       return 0;
     }
 
-    if (features1.brand.toLowerCase() === features2.brand.toLowerCase()) {
+    if (features1?.brand?.toLowerCase() === features2?.brand?.toLowerCase()) {
       return 1.0;
     }
 
@@ -326,8 +326,8 @@ export class ProductMatchingAlgorithm {
     };
 
     for (const [mainBrand, aliases] of Object.entries(brandAliases)) {
-      const brand1 = features1.brand.toLowerCase();
-      const brand2 = features2.brand.toLowerCase();
+      const brand1 = features1?.brand?.toLowerCase();
+      const brand2 = features2?.brand?.toLowerCase();
       
       if ((brand1 === mainBrand.toLowerCase() && aliases.some(alias => brand2.includes(alias.toLowerCase()))) ||
           (brand2 === mainBrand.toLowerCase() && aliases.some(alias => brand1.includes(alias.toLowerCase())))) {
@@ -360,8 +360,8 @@ export class ProductMatchingAlgorithm {
       'condiments': ['pantry']
     };
 
-    const cat1 = features1.category;
-    const cat2 = features2.category;
+    const cat1 = features1?.category;
+    const cat2 = features2?.category;
 
     if (relatedCategories[cat1]?.includes(cat2) || relatedCategories[cat2]?.includes(cat1)) {
       return 0.6;
@@ -373,9 +373,9 @@ export class ProductMatchingAlgorithm {
   /**
    * Calculate size match score
    */
-  private calculateSizeMatch(features1: ProductFeatures, features2: ProductFeatures): number {
-    const size1 = features1.numericFeatures.size;
-    const size2 = features2.numericFeatures.size;
+  protected calculateSizeMatch(features1: ProductFeatures, features2: ProductFeatures): number {
+    const size1 = features1?.numericFeatures?.size;
+    const size2 = features2?.numericFeatures?.size;
 
     if (size1 === undefined || size2 === undefined) {
       return 0;
@@ -444,14 +444,14 @@ export class ProductMatchingAlgorithm {
    * Calculate history boost based on purchase patterns
    */
   private calculateHistoryBoost(match: MatchedProduct, userHistory: ProductFrequency[]): number {
-    if (!match.isPreviouslyPurchased || userHistory.length === 0) {
+    if (!match.isPreviouslyPurchased || userHistory?.length || 0 === 0) {
       return 0;
     }
 
     // Find the matching history item
     const historyItem = userHistory.find(h => 
-      h.productName?.toLowerCase().includes(match.product.name?.toLowerCase().split(' ')[0] || '') ||
-      match.product.name?.toLowerCase().includes(h.productName?.toLowerCase().split(' ')[0] || '')
+      h.productName?.toLowerCase().includes(match?.product?.name?.toLowerCase().split(' ')[0] || '') ||
+      match?.product?.name?.toLowerCase().includes(h.productName?.toLowerCase().split(' ')[0] || '')
     );
 
     if (!historyItem) {
@@ -483,7 +483,7 @@ export class ProductMatchingAlgorithm {
    * Calculate brand boost based on preferences
    */
   private calculateBrandBoost(match: MatchedProduct, options: SmartMatchingOptions): number {
-    const productBrand = this.extractFeatures(match.product.name).brand;
+    const productBrand = this.extractFeatures(match?.product?.name).brand;
     
     if (!productBrand) {
       return 0;
@@ -522,7 +522,7 @@ export class ProductMatchingAlgorithm {
     options: SmartMatchingOptions,
     userHistory: ProductFrequency[]
   ): number {
-    const currentPrice = match.product.livePrice?.price || match.product.price || 0;
+    const currentPrice = match?.product?.livePrice?.price || match?.product?.price || 0;
     
     if (currentPrice === 0) {
       return 0;
@@ -531,14 +531,15 @@ export class ProductMatchingAlgorithm {
     let boost = 0;
 
     // Price threshold boost
-    if (options.priceThreshold && currentPrice <= options.priceThreshold) {
-      const savings = (options.priceThreshold - currentPrice) / options.priceThreshold;
+    const numericPrice = typeof currentPrice === 'number' ? currentPrice : currentPrice.regular;
+    if (options.priceThreshold && numericPrice <= options.priceThreshold) {
+      const savings = (options.priceThreshold - numericPrice) / options.priceThreshold;
       boost += Math.min(0.2, savings);
     }
 
     // Historical price comparison
     if (match.averagePurchasePrice && match.averagePurchasePrice > 0) {
-      const priceDiff = (match.averagePurchasePrice - currentPrice) / match.averagePurchasePrice;
+      const priceDiff = (match.averagePurchasePrice - numericPrice) / match.averagePurchasePrice;
       if (priceDiff > 0) {
         boost += Math.min(0.2, priceDiff); // Boost for better deals
       } else {
@@ -547,8 +548,8 @@ export class ProductMatchingAlgorithm {
     }
 
     // Sale price boost
-    const salePrice = match.product.livePrice?.salePrice;
-    const wasPrice = match.product.livePrice?.wasPrice;
+    const salePrice = match?.product?.livePrice?.salePrice;
+    const wasPrice = match?.product?.livePrice?.wasPrice;
     if (salePrice && wasPrice && salePrice < wasPrice) {
       const saleBoost = Math.min(0.15, (wasPrice - salePrice) / wasPrice);
       boost += saleBoost;
@@ -561,7 +562,7 @@ export class ProductMatchingAlgorithm {
    * Calculate freshness boost based on price update recency
    */
   private calculateFreshnessBoost(match: MatchedProduct): number {
-    const priceData = match.product.livePrice;
+    const priceData = match?.product?.livePrice;
     if (!priceData?.lastUpdated) {
       return 0;
     }
@@ -582,7 +583,7 @@ export class ProductMatchingAlgorithm {
    * Calculate availability boost
    */
   private calculateAvailabilityBoost(match: MatchedProduct): number {
-    const inStock = match.product.livePrice?.inStock ?? true;
+    const inStock = match?.product?.livePrice?.inStock ?? true;
     return inStock ? 0.1 : -0.2;
   }
 
@@ -594,7 +595,7 @@ export class ProductMatchingAlgorithm {
       return 0;
     }
 
-    const productName = match.product.name.toLowerCase();
+    const productName = match?.product?.name.toLowerCase();
     let adjustment = 0;
 
     for (const restriction of options.dietaryRestrictions) {
@@ -659,14 +660,14 @@ export class ProductMatchingAlgorithm {
 
   private calculateLevenshteinSimilarity(s1: string, s2: string): number {
     const distance = this.levenshteinDistance(s1, s2);
-    const maxLength = Math.max(s1.length, s2.length);
+    const maxLength = Math.max(s1?.length || 0, s2?.length || 0);
     return maxLength === 0 ? 1 : 1 - distance / maxLength;
   }
 
-  private levenshteinDistance(s1: string, s2: string): number {
-    const matrix = [];
-    const n = s2.length;
-    const m = s1.length;
+  protected levenshteinDistance(s1: string, s2: string): number {
+    const matrix: number[][] = [];
+    const n = s2?.length || 0;
+    const m = s1?.length || 0;
 
     if (n === 0) return m;
     if (m === 0) return n;
@@ -676,15 +677,15 @@ export class ProductMatchingAlgorithm {
     }
 
     for (let j = 0; j <= m; j++) {
-      matrix[0][j] = j;
+      matrix[0]![j] = j;
     }
 
     for (let i = 1; i <= n; i++) {
       for (let j = 1; j <= m; j++) {
         if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1]?.[j - 1] ?? 0;
+          matrix[i]![j] = matrix[i - 1]?.[j - 1] ?? 0;
         } else {
-          matrix[i][j] = Math.min(
+          matrix[i]![j] = Math.min(
             (matrix[i - 1]?.[j - 1] ?? 0) + 1,
             (matrix[i]?.[j - 1] ?? 0) + 1,
             (matrix[i - 1]?.[j] ?? 0) + 1
@@ -708,16 +709,16 @@ export class ProductMatchingAlgorithm {
     return union.size === 0 ? 1 : intersection.size / union.size;
   }
 
-  private generateNGrams(text: string, n: number): string[] {
+  protected generateNGrams(text: string, n: number): string[] {
     const ngrams = [];
-    for (let i = 0; i <= text.length - n; i++) {
+    for (let i = 0; i <= text?.length || 0 - n; i++) {
       ngrams.push(text.substring(i, i + n));
     }
     return ngrams;
   }
 
   private calculateContainmentSimilarity(s1: string, s2: string): number {
-    if (s1.length === 0 || s2.length === 0) return 0;
+    if (s1?.length || 0 === 0 || s2?.length || 0 === 0) return 0;
     
     if (s1.includes(s2) || s2.includes(s1)) {
       return 0.8;
@@ -734,14 +735,14 @@ export class ProductMatchingAlgorithm {
       }
     }
     
-    return containedWords / Math.max(words1.length, words2.length);
+    return containedWords / Math.max(words1?.length || 0, words2?.length || 0);
   }
 
   private calculateKeywordSimilarity(keywords1: string[], keywords2: string[]): number {
-    if (keywords1.length === 0 || keywords2.length === 0) return 0;
+    if (keywords1?.length || 0 === 0 || keywords2?.length || 0 === 0) return 0;
     
-    const set1 = new Set(keywords1.map(k => k.toLowerCase()));
-    const set2 = new Set(keywords2.map(k => k.toLowerCase()));
+    const set1 = new Set(keywords1?.map(k => k.toLowerCase()));
+    const set2 = new Set(keywords2?.map(k => k.toLowerCase()));
     
     const intersection = new Set([...set1].filter(x => set2.has(x)));
     const union = new Set([...set1, ...set2]);

@@ -66,9 +66,9 @@ async function basicManualIngestionExample(): Promise<void> {
     const result = await service.ingestEmail(sampleEmail, IngestionSource.JSON_FILE);
     
     if (result.success) {
-      console.log(`✅ Email ingested successfully: ${result.data.emailId}`);
-      console.log(`   Status: ${result.data.status}`);
-      console.log(`   Processing time: ${result.data.processingTime}ms`);
+      console.log(`✅ Email ingested successfully: ${result?.data?.emailId}`);
+      console.log(`   Status: ${result?.data?.status}`);
+      console.log(`   Processing time: ${result?.data?.processingTime}ms`);
     } else {
       console.log(`❌ Failed to ingest email: ${result.error}`);
     }
@@ -79,7 +79,7 @@ async function basicManualIngestionExample(): Promise<void> {
     console.log(`   Total ingested: ${metrics.totalIngested}`);
     console.log(`   Duplicates detected: ${metrics.duplicatesDetected}`);
     console.log(`   Failed ingestions: ${metrics.failedIngestions}`);
-    console.log(`   Average processing time: ${metrics.averageProcessingTime.toFixed(2)}ms`);
+    console.log(`   Average processing time: ${metrics?.averageProcessingTime?.toFixed(2)}ms`);
 
   } finally {
     await service.shutdown();
@@ -123,7 +123,7 @@ async function batchProcessingExample(): Promise<void> {
       });
     }
 
-    console.log(`Processing batch of ${emailBatch.length} emails...`);
+    console.log(`Processing batch of ${emailBatch?.length || 0} emails...`);
     const startTime = Date.now();
     
     const batchResult = await service.ingestBatch(emailBatch, IngestionSource.JSON_FILE);
@@ -132,11 +132,11 @@ async function batchProcessingExample(): Promise<void> {
 
     if (batchResult.success) {
       console.log(`✅ Batch processing completed in ${totalTime}ms`);
-      console.log(`   Total emails: ${batchResult.data.totalEmails}`);
-      console.log(`   Processed: ${batchResult.data.processed}`);
-      console.log(`   Duplicates: ${batchResult.data.duplicates}`);
-      console.log(`   Failed: ${batchResult.data.failed}`);
-      console.log(`   Throughput: ${batchResult.data.throughput.toFixed(2)} emails/min`);
+      console.log(`   Total emails: ${batchResult?.data?.totalEmails}`);
+      console.log(`   Processed: ${batchResult?.data?.processed}`);
+      console.log(`   Duplicates: ${batchResult?.data?.duplicates}`);
+      console.log(`   Failed: ${batchResult?.data?.failed}`);
+      console.log(`   Throughput: ${batchResult?.data?.throughput.toFixed(2)} emails/min`);
     } else {
       console.log(`❌ Batch processing failed: ${batchResult.error}`);
     }
@@ -259,12 +259,12 @@ function environmentValidationExample(): void {
     console.log('✅ Environment validation passed');
   } else {
     console.log('❌ Environment validation failed:');
-    validation.errors.forEach(error => console.log(`   - ${error}`));
+    validation?.errors?.forEach(error => console.log(`   - ${error}`));
   }
 
   // Get recommendations
   const recommendations = EmailIngestionEnvironmentValidator.getRecommendations();
-  if (recommendations.length > 0) {
+  if (recommendations?.length || 0 > 0) {
     console.log('\n💡 Configuration Recommendations:');
     recommendations.forEach(rec => console.log(`   - ${rec}`));
   } else {
@@ -306,8 +306,8 @@ async function performanceMonitoringExample(): Promise<void> {
     const totalTime = Date.now() - startTime;
 
     // Analyze results
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
+    const successful = results?.filter(r => r.success).length;
+    const failed = results?.filter(r => !r.success).length;
     const throughput = (successful / totalTime) * 1000 * 60; // emails per minute
 
     console.log(`\nPerformance Results:`);
@@ -319,7 +319,7 @@ async function performanceMonitoringExample(): Promise<void> {
     // Get detailed metrics
     const metrics = await service.getMetrics();
     console.log(`\nDetailed Metrics:`);
-    console.log(`   Average processing time: ${metrics.averageProcessingTime.toFixed(2)}ms`);
+    console.log(`   Average processing time: ${metrics?.averageProcessingTime?.toFixed(2)}ms`);
     console.log(`   Current queue size: ${metrics.currentQueueSize}`);
     console.log(`   Source breakdown:`, metrics.bySource);
 
@@ -392,8 +392,8 @@ async function completeIntegrationExample(): Promise<void> {
     console.log('\n5. Monitoring performance metrics...');
     const finalMetrics = await service.getMetrics();
     console.log(`   Total processed: ${finalMetrics.totalIngested}`);
-    console.log(`   Average processing time: ${finalMetrics.averageProcessingTime.toFixed(2)}ms`);
-    console.log(`   Throughput: ${finalMetrics.throughput.lastMinute} emails/min (last minute)`);
+    console.log(`   Average processing time: ${finalMetrics?.averageProcessingTime?.toFixed(2)}ms`);
+    console.log(`   Throughput: ${finalMetrics?.throughput?.lastMinute} emails/min (last minute)`);
 
     // 6. Final health check
     console.log('\n6. Final health check...');

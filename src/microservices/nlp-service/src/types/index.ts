@@ -3,8 +3,30 @@
  * Comprehensive type definitions for the standalone NLP service
  */
 
-// Re-export shared types
-export * from '../../../api/types/grocery-nlp.types.js';
+// Self-contained types for NLP service (avoiding rootDir violations)
+
+// Core NLP types (previously from grocery-nlp.types)
+export interface GroceryNLPRequest {
+  query: string;
+  priority?: 'high' | 'normal' | 'low';
+  timeout?: number;
+  metadata?: Record<string, any>;
+}
+
+export interface GroceryNLPResponse {
+  success: boolean;
+  requestId: string;
+  result?: GroceryNLPResult;
+  error?: string;
+  processingTime: number;
+  queueTime: number;
+}
+
+export interface ProcessingOptions {
+  timeout?: number;
+  priority?: 'high' | 'normal' | 'low';
+  metadata?: Record<string, any>;
+}
 
 // Service-specific types
 export interface NLPServiceConfig {
@@ -81,14 +103,14 @@ export type ServiceEvent =
 export interface ServiceStatus {
   service: 'nlp-service';
   version: string;
-  status: 'starting' | 'healthy' | 'degraded' | 'unhealthy' | 'stopping';
+  status: 'starting' | 'healthy' | 'degraded' | 'unhealthy' | 'stopping' | 'stopped';
   uptime: number;
   startedAt: number;
   lastHealthCheck: number;
   dependencies: {
-    ollama: 'healthy' | 'unhealthy' | 'unknown';
-    redis: 'healthy' | 'unhealthy' | 'unknown';
-    queue: 'healthy' | 'degraded' | 'unhealthy';
+    llamacpp: 'healthy' | 'unhealthy' | 'unknown';
+    model: 'healthy' | 'unhealthy' | 'unknown';
+    queue: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
   };
   resources: {
     cpu: number;
@@ -101,7 +123,7 @@ export interface ServiceStatus {
   queue: {
     size: number;
     activeRequests: number;
-    health: 'healthy' | 'degraded' | 'unhealthy';
+    health: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
   };
 }
 
@@ -333,15 +355,16 @@ export interface ServiceMetrics {
     };
   };
   dependencies: {
-    ollama: {
+    llamacpp: {
       status: 'healthy' | 'unhealthy';
       responseTime?: number;
       lastCheck: number;
     };
-    redis: {
+    model: {
       status: 'healthy' | 'unhealthy';
       responseTime?: number;
       lastCheck: number;
+      modelName?: string;
     };
   };
 }

@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
-import { CentralizedCacheService } from './CentralizedCacheService.js';
-import type { CacheTier } from './CentralizedCacheService.js';
+import { CentralizedCacheService, CacheTier } from './CentralizedCacheService.js';
 import { PricingService } from '../../microservices/pricing-service/PricingService.js';
 import type { PriceRequest, PriceResponse } from '../../microservices/pricing-service/PricingService.js';
 import { ListManagementService } from './ListManagementService.js';
@@ -54,7 +53,7 @@ export class CacheIntegrationService extends EventEmitter {
   private centralCache: CentralizedCacheService;
   private pricingService?: PricingService;
   private listService?: ListManagementService;
-  private stats: CacheStats;
+  private stats!: CacheStats;
   private warmupCompleted = false;
 
   constructor(
@@ -88,32 +87,38 @@ export class CacheIntegrationService extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Listen to central cache events
-    this.centralCache.on('cache:hit', (data) => {
-      this.stats.unified.totalHits++;
-      this.stats.unified.tierDistribution[data.tier]++;
+    this.centralCache?.on('cache:hit', (data: any) => {
+      if (this.stats) {
+        this.stats.unified.totalHits++;
+        if (data.tier && this.stats.unified.tierDistribution[data.tier as CacheTier] !== undefined) {
+          this.stats.unified.tierDistribution[data.tier as CacheTier]++;
+        }
+      }
       this.updateOverallStats();
       this.emit('cache:unified:hit', data);
     });
 
-    this.centralCache.on('cache:set', (data) => {
+    this?.centralCache?.on('cache:set', (data: any) => {
       this.emit('cache:unified:set', data);
     });
 
-    this.centralCache.on('error', (error) => {
+    this?.centralCache?.on('error', (error: any) => {
       this.emit('cache:error', error);
     });
   }
 
   private updateOverallStats(): void {
-    const total = this.stats.unified.totalHits + this.stats.unified.totalMisses;
-    this.stats.unified.overallHitRatio = total > 0 ? (this.stats.unified.totalHits / total) * 100 : 0;
+    if (this.stats) {
+      const total = this.stats.unified.totalHits + this.stats.unified.totalMisses;
+      this.stats.unified.overallHitRatio = total > 0 ? (this.stats.unified.totalHits / total) * 100 : 0;
+    }
   }
 
   // Service registration methods
   public registerPricingService(pricingService: PricingService): void {
     this.pricingService = pricingService;
     
-    if (this.config.enablePricingCache) {
+    if (this?.config?.enablePricingCache) {
       this.setupPricingCacheIntegration();
     }
 
@@ -123,7 +128,7 @@ export class CacheIntegrationService extends EventEmitter {
   public registerListService(listService: ListManagementService): void {
     this.listService = listService;
     
-    if (this.config.enableListCache) {
+    if (this?.config?.enableListCache) {
       this.setupListCacheIntegration();
     }
 
@@ -137,17 +142,20 @@ export class CacheIntegrationService extends EventEmitter {
     // Override pricing service cache methods to use unified cache
     const originalGetPrice = this.pricingService.getPrice.bind(this.pricingService);
     
-    this.pricingService.getPrice = async (request: PriceRequest): Promise<PriceResponse> => {
+    if (this.pricingService) {
+      this.pricingService.getPrice = async (request: PriceRequest): Promise<PriceResponse> => {
       const cacheKey = this.generatePricingCacheKey(request);
       const startTime = Date.now();
 
       try {
         // Try to get from unified cache first
-        const cachedResult = await this.centralCache.get<PriceResponse>(cacheKey);
+        const cachedResult = await this?.centralCache?.get<PriceResponse>(cacheKey);
         
         if (cachedResult.found && cachedResult.value) {
-          this.stats.pricing.hits++;
-          this.stats.pricing.avgLatency = this.updateAvgLatency(this.stats.pricing.avgLatency, cachedResult.latency);
+          if (this.stats) {
+            this.stats.pricing.hits++;
+            this.stats.pricing.avgLatency = this.updateAvgLatency(this.stats.pricing.avgLatency, cachedResult.latency);
+          }
           
           this.emit('cache:pricing:hit', {
             key: cacheKey,
@@ -160,17 +168,21 @@ export class CacheIntegrationService extends EventEmitter {
         }
 
         // Cache miss - fetch from original service
-        this.stats.pricing.misses++;
+        if (this.stats) {
+          this.stats.pricing.misses++;
+        }
         const result = await originalGetPrice(request);
         
         // Store in unified cache
-        await this.centralCache.set(cacheKey, result, {
-          ttl: this.config.pricingCacheTtl,
+        await this?.centralCache?.set(cacheKey, result, {
+          ttl: this?.config?.pricingCacheTtl,
           tags: [`pricing`, `product:${request.productId}`, `store:${request.storeId}`]
         });
 
         const totalLatency = Date.now() - startTime;
-        this.stats.pricing.avgLatency = this.updateAvgLatency(this.stats.pricing.avgLatency, totalLatency);
+        if (this.stats) {
+          this.stats.pricing.avgLatency = this.updateAvgLatency(this.stats.pricing.avgLatency, totalLatency);
+        }
 
         this.emit('cache:pricing:miss', {
           key: cacheKey,
@@ -185,7 +197,8 @@ export class CacheIntegrationService extends EventEmitter {
         // Fallback to original service
         return originalGetPrice(request);
       }
-    };
+      };
+    }
   }
 
   // List service cache integration
@@ -195,7 +208,8 @@ export class CacheIntegrationService extends EventEmitter {
     // Override list service methods to use unified cache
     const originalGetList = this.listService.getList.bind(this.listService);
     
-    this.listService.getList = (listId: string): List | undefined => {
+    if (this.listService) {
+      this.listService.getList = (listId: string): List | undefined => {
       const cacheKey = this.generateListCacheKey(listId);
       
       // For synchronous methods, we'll use a different approach
@@ -204,8 +218,8 @@ export class CacheIntegrationService extends EventEmitter {
       
       if (list) {
         // Asynchronously cache in unified system
-        this.centralCache.set(cacheKey, list, {
-          ttl: this.config.listCacheTtl,
+        this?.centralCache?.set(cacheKey, list, {
+          ttl: this?.config?.listCacheTtl,
           tags: [`list`, `list:${listId}`, `owner:${list.ownerId}`]
         }).catch(error => {
           this.emit('cache:list:error', { key: cacheKey, error });
@@ -213,11 +227,12 @@ export class CacheIntegrationService extends EventEmitter {
       }
 
       return list;
-    };
+      };
+    }
 
     // Listen to list updates and invalidate cache
-    this.listService.on('list:updated', (data) => {
-      if (this.config.invalidationStrategy === 'immediate') {
+    this?.listService?.on('list:updated', (data: any) => {
+      if (this?.config?.invalidationStrategy === 'immediate') {
         this.invalidateListCache(data.listId);
       }
     });
@@ -225,11 +240,11 @@ export class CacheIntegrationService extends EventEmitter {
 
   // Cache key generation
   private generatePricingCacheKey(request: PriceRequest): string {
-    return `${this.config.cacheKeyPrefix}pricing:${request.productId}:${request.storeId}:${request.quantity}:${request.includePromotions}`;
+    return `${this?.config?.cacheKeyPrefix}pricing:${request.productId}:${request.storeId}:${request.quantity}:${request.includePromotions}`;
   }
 
   private generateListCacheKey(listId: string): string {
-    return `${this.config.cacheKeyPrefix}list:${listId}`;
+    return `${this?.config?.cacheKeyPrefix}list:${listId}`;
   }
 
   // Cache warming operations
@@ -237,7 +252,7 @@ export class CacheIntegrationService extends EventEmitter {
     productIds: string[], 
     storeIds: string[] = ['default']
   ): Promise<{ warmed: number; errors: number }> {
-    if (!this.config.enableCacheWarm || !this.pricingService) {
+    if (!this?.config?.enableCacheWarm || !this.pricingService) {
       return { warmed: 0, errors: 0 };
     }
 
@@ -251,42 +266,42 @@ export class CacheIntegrationService extends EventEmitter {
             quantity: 1,
             includePromotions: true
           }),
-          value: await this.pricingService.getPrice({
+          value: await this?.pricingService?.getPrice({
             productId,
             storeId,
             quantity: 1,
             includePromotions: true
           }),
-          ttl: this.config.pricingCacheTtl,
+          ttl: this?.config?.pricingCacheTtl,
           tags: [`pricing`, `product:${productId}`, `store:${storeId}`]
         });
       }
     }
 
-    const result = await this.centralCache.warm(warmEntries);
+    const result = await this?.centralCache?.warm(warmEntries);
     this.emit('cache:warm:pricing', result);
     return result;
   }
 
   public async warmListCache(listIds: string[]): Promise<{ warmed: number; errors: number }> {
-    if (!this.config.enableCacheWarm || !this.listService) {
+    if (!this?.config?.enableCacheWarm || !this.listService) {
       return { warmed: 0, errors: 0 };
     }
 
     const warmEntries = [];
     for (const listId of listIds) {
-      const list = this.listService.getList(listId);
+      const list = this?.listService?.getList(listId);
       if (list) {
         warmEntries.push({
           key: this.generateListCacheKey(listId),
           value: list,
-          ttl: this.config.listCacheTtl,
+          ttl: this?.config?.listCacheTtl,
           tags: [`list`, `list:${listId}`, `owner:${list.ownerId}`]
         });
       }
     }
 
-    const result = await this.centralCache.warm(warmEntries);
+    const result = await this?.centralCache?.warm(warmEntries);
     this.emit('cache:warm:lists', result);
     return result;
   }
@@ -300,9 +315,9 @@ export class CacheIntegrationService extends EventEmitter {
     
     if (productId) tags.push(`product:${productId}`);
     if (storeId) tags.push(`store:${storeId}`);
-    if (tags.length === 0) tags.push('pricing');
+    if (tags?.length || 0 === 0) tags.push('pricing');
 
-    const result = await this.centralCache.invalidateByTags(tags);
+    const result = await this?.centralCache?.invalidateByTags(tags);
     this.emit('cache:invalidate:pricing', { tags, result });
     return result;
   }
@@ -310,25 +325,25 @@ export class CacheIntegrationService extends EventEmitter {
   public async invalidateListCache(listId?: string): Promise<{ invalidated: number; tiers: CacheTier[] }> {
     const tags = listId ? [`list:${listId}`] : ['list'];
     
-    const result = await this.centralCache.invalidateByTags(tags);
+    const result = await this?.centralCache?.invalidateByTags(tags);
     this.emit('cache:invalidate:lists', { tags, result });
     return result;
   }
 
   public async invalidateAllCaches(): Promise<void> {
-    await this.centralCache.clear();
+    await this?.centralCache?.clear();
     this.initializeStats();
     this.emit('cache:clear:all');
   }
 
   // Performance monitoring methods
   public getStats(): CacheStats {
-    const centralStats = this.centralCache.getStats();
+    const centralStats = this?.centralCache?.getStats();
     
     return {
       ...this.stats,
       unified: {
-        ...this.stats.unified,
+        ...this?.stats?.unified,
         tierDistribution: centralStats.hits
       }
     };
@@ -336,7 +351,7 @@ export class CacheIntegrationService extends EventEmitter {
 
   public resetStats(): void {
     this.initializeStats();
-    this.centralCache.resetStats();
+    this?.centralCache?.resetStats();
     this.emit('stats:reset');
   }
 
@@ -346,7 +361,7 @@ export class CacheIntegrationService extends EventEmitter {
     services: Record<string, 'healthy' | 'unhealthy'>;
     cache: Awaited<ReturnType<CentralizedCacheService['healthCheck']>>;
   }> {
-    const cacheHealth = await this.centralCache.healthCheck();
+    const cacheHealth = await this?.centralCache?.healthCheck();
     
     const services: Record<string, 'healthy' | 'unhealthy'> = {};
     
@@ -379,7 +394,7 @@ export class CacheIntegrationService extends EventEmitter {
   }
 
   public async startup(): Promise<void> {
-    if (this.config.warmOnStartup && !this.warmupCompleted) {
+    if (this?.config?.warmOnStartup && !this.warmupCompleted) {
       this.emit('startup:begin');
       
       try {
@@ -393,7 +408,7 @@ export class CacheIntegrationService extends EventEmitter {
   }
 
   public async shutdown(): Promise<void> {
-    await this.centralCache.shutdown();
+    await this?.centralCache?.shutdown();
     this.removeAllListeners();
     this.emit('shutdown');
   }

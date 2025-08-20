@@ -71,7 +71,7 @@ export class DataCollectionPipeline extends EventEmitter {
       createdAt: new Date(),
     };
 
-    this.sources.set(id, newSource);
+    this?.sources?.set(id, newSource);
 
     logger.info("Data source added", "DATA_PIPELINE", {
       sourceId: id,
@@ -86,12 +86,12 @@ export class DataCollectionPipeline extends EventEmitter {
    * Remove a data source
    */
   async removeDataSource(sourceId: string): Promise<void> {
-    const source = this.sources.get(sourceId);
+    const source = this?.sources?.get(sourceId);
     if (!source) {
       throw new Error(`Data source not found: ${sourceId}`);
     }
 
-    this.sources.delete(sourceId);
+    this?.sources?.delete(sourceId);
 
     logger.info("Data source removed", "DATA_PIPELINE", { sourceId });
     this.emit("source:removed", source);
@@ -104,13 +104,13 @@ export class DataCollectionPipeline extends EventEmitter {
     sourceId: string,
     updates: Partial<DataSource>,
   ): Promise<void> {
-    const source = this.sources.get(sourceId);
+    const source = this?.sources?.get(sourceId);
     if (!source) {
       throw new Error(`Data source not found: ${sourceId}`);
     }
 
     const updatedSource = { ...source, ...updates };
-    this.sources.set(sourceId, updatedSource);
+    this?.sources?.set(sourceId, updatedSource);
 
     logger.info("Data source updated", "DATA_PIPELINE", { sourceId, updates });
     this.emit("source:updated", updatedSource);
@@ -120,7 +120,7 @@ export class DataCollectionPipeline extends EventEmitter {
    * Run data collection for a specific source
    */
   async collectFromSource(sourceId: string): Promise<string> {
-    const source = this.sources.get(sourceId);
+    const source = this?.sources?.get(sourceId);
     if (!source) {
       throw new Error(`Data source not found: ${sourceId}`);
     }
@@ -138,13 +138,13 @@ export class DataCollectionPipeline extends EventEmitter {
       startTime: new Date(),
     };
 
-    this.jobs.set(jobId, job);
+    this?.jobs?.set(jobId, job);
     this.emit("job:started", job);
 
     try {
       // Update job status
       job.status = "running";
-      this.jobs.set(jobId, job);
+      this?.jobs?.set(jobId, job);
 
       // Collect data based on source type
       let collectedData: CollectedData[] = [];
@@ -172,17 +172,17 @@ export class DataCollectionPipeline extends EventEmitter {
       // Update job completion
       job.status = "completed";
       job.endTime = new Date();
-      job.recordsCollected = processedData.length;
-      this.jobs.set(jobId, job);
+      job.recordsCollected = processedData?.length || 0;
+      this?.jobs?.set(jobId, job);
 
       // Update source last run time
       source.lastRun = new Date();
-      this.sources.set(sourceId, source);
+      this?.sources?.set(sourceId, source);
 
       logger.info("Data collection completed", "DATA_PIPELINE", {
         jobId,
         sourceId,
-        recordsCollected: processedData.length,
+        recordsCollected: processedData?.length || 0,
       });
 
       this.emit("job:completed", job, processedData);
@@ -192,7 +192,7 @@ export class DataCollectionPipeline extends EventEmitter {
       job.status = "failed";
       job.endTime = new Date();
       job.error = (error as Error).message;
-      this.jobs.set(jobId, job);
+      this?.jobs?.set(jobId, job);
 
       logger.error("Data collection failed", "DATA_PIPELINE", {
         jobId,
@@ -209,25 +209,25 @@ export class DataCollectionPipeline extends EventEmitter {
    * Run scheduled data collection for all active sources
    */
   async runScheduledCollection(): Promise<void> {
-    const activeSources = Array.from(this.sources.values()).filter(
-      (source) => source.status === "active",
+    const activeSources = Array.from(this?.sources?.values()).filter(
+      (source: any) => source.status === "active",
     );
 
     logger.info("Running scheduled data collection", "DATA_PIPELINE", {
-      activeSources: activeSources.length,
+      activeSources: activeSources?.length || 0,
     });
 
     const results = await Promise.allSettled(
-      activeSources.map((source) => this.collectFromSource(source.id)),
+      activeSources?.map((source: any) => this.collectFromSource(source.id)),
     );
 
-    const successful = results.filter((r) => r.status === "fulfilled").length;
-    const failed = results.filter((r) => r.status === "rejected").length;
+    const successful = results?.filter((r: any) => r.status === "fulfilled").length;
+    const failed = results?.filter((r: any) => r.status === "rejected").length;
 
     logger.info("Scheduled data collection completed", "DATA_PIPELINE", {
       successful,
       failed,
-      total: activeSources.length,
+      total: activeSources?.length || 0,
     });
   }
 
@@ -235,22 +235,22 @@ export class DataCollectionPipeline extends EventEmitter {
    * Get pipeline statistics
    */
   async getStats(): Promise<DataPipelineStats> {
-    const sources = Array.from(this.sources.values());
-    const jobs = Array.from(this.jobs.values());
+    const sources = Array.from(this?.sources?.values());
+    const jobs = Array.from(this?.jobs?.values());
 
     return {
-      totalSources: sources.length,
-      activeSources: sources.filter((s) => s.status === "active").length,
-      totalJobs: jobs.length,
-      successfulJobs: jobs.filter((j) => j.status === "completed").length,
-      failedJobs: jobs.filter((j) => j.status === "failed").length,
+      totalSources: sources?.length || 0,
+      activeSources: sources?.filter((s: any) => s.status === "active").length,
+      totalJobs: jobs?.length || 0,
+      successfulJobs: jobs?.filter((j: any) => j.status === "completed").length,
+      failedJobs: jobs?.filter((j: any) => j.status === "failed").length,
       recordsCollected: jobs.reduce(
         (sum, j) => sum + (j.recordsCollected || 0),
         0,
       ),
       lastActivity:
-        jobs.length > 0
-          ? new Date(Math.max(...jobs.map((j) => j.startTime?.getTime() || 0)))
+        jobs?.length || 0 > 0
+          ? new Date(Math.max(...jobs?.map((j: any) => j.startTime?.getTime() || 0)))
           : undefined,
     };
   }
@@ -259,22 +259,22 @@ export class DataCollectionPipeline extends EventEmitter {
    * Get all data sources
    */
   getDataSources(): DataSource[] {
-    return Array.from(this.sources.values());
+    return Array.from(this?.sources?.values());
   }
 
   /**
    * Get all jobs
    */
   getJobs(): DataCollectionJob[] {
-    return Array.from(this.jobs.values());
+    return Array.from(this?.jobs?.values());
   }
 
   /**
    * Get jobs for a specific source
    */
   getJobsForSource(sourceId: string): DataCollectionJob[] {
-    return Array.from(this.jobs.values()).filter(
-      (job) => job.sourceId === sourceId,
+    return Array.from(this?.jobs?.values()).filter(
+      (job: any) => job.sourceId === sourceId,
     );
   }
 
@@ -306,7 +306,7 @@ export class DataCollectionPipeline extends EventEmitter {
     this.schedulerInterval = setInterval(
       () => {
         if (this.isRunning) {
-          this.runScheduledCollection().catch((error) => {
+          this.runScheduledCollection().catch((error: any) => {
             logger.error("Scheduled collection failed", "DATA_PIPELINE", {
               error,
             });
@@ -321,65 +321,65 @@ export class DataCollectionPipeline extends EventEmitter {
     source: DataSource,
   ): Promise<CollectedData[]> {
     const params = {
-      query: source.config.keywords?.join(" ") || "",
+      query: source?.config?.keywords?.join(" ") || "",
       engine: "google" as const,
-      maxResults: source.config.maxResults || 10,
+      maxResults: source?.config?.maxResults || 10,
     };
 
-    return await this.brightDataService.collectSearchResults(params);
+    return await this?.brightDataService?.collectSearchResults(params);
   }
 
   private async collectWebScrapingData(
     source: DataSource,
   ): Promise<CollectedData[]> {
-    if (!source.config.url) {
+    if (!source?.config?.url) {
       throw new Error("URL is required for web scraping");
     }
 
     const params = {
-      url: source.config.url,
-      extractionPrompt: source.config.filters?.extractionPrompt,
-      followLinks: source.config.filters?.followLinks || false,
-      maxDepth: source.config.filters?.maxDepth || 1,
+      url: source?.config?.url,
+      extractionPrompt: source?.config?.filters?.extractionPrompt,
+      followLinks: source?.config?.filters?.followLinks || false,
+      maxDepth: source?.config?.filters?.maxDepth || 1,
     };
 
-    return await this.brightDataService.collectWebScrapingData(params);
+    return await this?.brightDataService?.collectWebScrapingData(params);
   }
 
   private async collectEcommerceData(
     source: DataSource,
   ): Promise<CollectedData[]> {
-    const platform = source.config.filters?.platform;
+    const platform = source?.config?.filters?.platform;
     if (!platform) {
       throw new Error("Platform is required for e-commerce data collection");
     }
 
     const params = {
       platform,
-      productUrl: source.config.url,
-      searchKeyword: source.config.keywords?.[0],
-      maxProducts: source.config.maxResults || 10,
+      productUrl: source?.config?.url,
+      searchKeyword: source?.config?.keywords?.[0],
+      maxProducts: source?.config?.maxResults || 10,
     };
 
-    return await this.brightDataService.collectEcommerceData(params);
+    return await this?.brightDataService?.collectEcommerceData(params);
   }
 
   private async collectSocialMediaData(
     source: DataSource,
   ): Promise<CollectedData[]> {
-    const platform = source.config.filters?.platform;
+    const platform = source?.config?.filters?.platform;
     if (!platform) {
       throw new Error("Platform is required for social media data collection");
     }
 
     const params = {
       platform,
-      profileUrl: source.config.url,
-      searchTerm: source.config.keywords?.[0],
-      maxPosts: source.config.maxResults || 10,
+      profileUrl: source?.config?.url,
+      searchTerm: source?.config?.keywords?.[0],
+      maxPosts: source?.config?.maxResults || 10,
     };
 
-    return await this.brightDataService.collectSocialMediaData(params);
+    return await this?.brightDataService?.collectSocialMediaData(params);
   }
 
   private async processCollectedData(
@@ -404,8 +404,8 @@ export class DataCollectionPipeline extends EventEmitter {
   ): boolean {
     // Check if rule should be applied based on source types and other criteria
     return (
-      rule.sourceTypes.includes("*") ||
-      rule.sourceTypes.some((type) => data.tags?.includes(type))
+      rule?.sourceTypes?.includes("*") ||
+      rule?.sourceTypes?.some((type: any) => data.tags?.includes(type))
     );
   }
 

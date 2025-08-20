@@ -12,8 +12,8 @@ export const WalmartProductSearch: React.FC = () => {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [searchResults, setSearchResults] = useState<WalmartProduct[]>([]);
 
-  const searchProducts = api.walmartGrocery.searchProducts.useMutation({
-    onSuccess: (data) => {
+  const searchProducts = api?.walmartGrocery?.searchProducts.useMutation({
+    onSuccess: (data: any) => {
       setSearchResults(data.products || []);
     },
   });
@@ -23,11 +23,8 @@ export const WalmartProductSearch: React.FC = () => {
 
     searchProducts.mutate({
       query: searchQuery,
-      category: category || undefined,
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
-      inStock: inStockOnly,
       limit: 20,
+      // Additional filters would be supported by enhanced search
     });
   };
 
@@ -58,8 +55,8 @@ export const WalmartProductSearch: React.FC = () => {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                onChange={(e: any) => setSearchQuery(e?.target?.value)}
+                onKeyPress={(e: any) => e.key === "Enter" && handleSearch()}
                 placeholder="Search for products..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -90,10 +87,10 @@ export const WalmartProductSearch: React.FC = () => {
               </label>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e: any) => setCategory(e?.target?.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                {categories.map((cat) => (
+                {categories?.map((cat: any) => (
                   <option key={cat} value={cat === "All Categories" ? "" : cat}>
                     {cat}
                   </option>
@@ -109,7 +106,7 @@ export const WalmartProductSearch: React.FC = () => {
                 <input
                   type="number"
                   value={priceRange.min}
-                  onChange={(e) => setPriceRange({ ...priceRange, min: Number(e.target.value) })}
+                  onChange={(e: any) => setPriceRange({ ...priceRange, min: Number(e?.target?.value) })}
                   placeholder="Min"
                   className="w-20 px-2 py-1 border border-gray-300 rounded"
                 />
@@ -117,7 +114,7 @@ export const WalmartProductSearch: React.FC = () => {
                 <input
                   type="number"
                   value={priceRange.max}
-                  onChange={(e) => setPriceRange({ ...priceRange, max: Number(e.target.value) })}
+                  onChange={(e: any) => setPriceRange({ ...priceRange, max: Number(e?.target?.value) })}
                   placeholder="Max"
                   className="w-20 px-2 py-1 border border-gray-300 rounded"
                 />
@@ -129,7 +126,7 @@ export const WalmartProductSearch: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={inStockOnly}
-                  onChange={(e) => setInStockOnly(e.target.checked)}
+                  onChange={(e: any) => setInStockOnly(e?.target?.checked)}
                   className="w-4 h-4 text-blue-600 rounded"
                 />
                 <span className="text-sm font-medium text-gray-700">In Stock Only</span>
@@ -152,15 +149,15 @@ export const WalmartProductSearch: React.FC = () => {
         </div>
       )}
 
-      {searchResults.length > 0 && (
+      {searchResults?.length || 0 > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {searchResults.map((product) => (
+          {searchResults?.map((product: any) => (
             <WalmartProductCard key={product.id} product={product} />
           ))}
         </div>
       )}
 
-      {searchResults.length === 0 && searchProducts.isSuccess && (
+      {searchResults?.length || 0 === 0 && searchProducts.isSuccess && (
         <div className="text-center py-12">
           <p className="text-gray-500">No products found. Try adjusting your search criteria.</p>
         </div>

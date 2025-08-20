@@ -75,7 +75,7 @@ export class PricingService extends EventEmitter {
   constructor(config: {
     cache?: Partial<CacheConfig>;
     api?: Partial<WalmartAPIConfig>;
-    redis?: Redis.RedisOptions;
+    redis?: any; // Redis options - use any to avoid namespace issues
     sqlitePath?: string;
   } = {}) {
     super();
@@ -181,9 +181,9 @@ export class PricingService extends EventEmitter {
   }
 
   private setupErrorHandlers(): void {
-    this.redisClient.on('error', (err) => {
+    this.redisClient.on('error', (err: any) => {
       this.emit('error', { source: 'redis', error: err });
-      this.metrics.errors.redis++;
+      if (this.metrics.errors.redis) { this.metrics.errors.redis++ };
     });
 
     this.redisClient.on('ready', () => {
@@ -228,12 +228,12 @@ export class PricingService extends EventEmitter {
     this.metrics.latency.memory.push(latency);
 
     if (cached) {
-      this.metrics.hits.memory++;
+      if (this.metrics.hits.memory) { this.metrics.hits.memory++ };
       this.emit('cache:hit', { level: 'memory', key: cacheKey, latency });
       return { ...cached, source: 'memory' };
     }
 
-    this.metrics.misses.memory++;
+    if (this.metrics.misses.memory) { this.metrics.misses.memory++ };
     return null;
   }
 
@@ -251,7 +251,7 @@ export class PricingService extends EventEmitter {
 
       if (cached) {
         const parsed = JSON.parse(cached) as PriceResponse;
-        this.metrics.hits.redis++;
+        if (this.metrics.hits.redis) { this.metrics.hits.redis++ };
         this.emit('cache:hit', { level: 'redis', key: cacheKey, latency });
         
         // Promote to memory cache
@@ -260,10 +260,10 @@ export class PricingService extends EventEmitter {
         return { ...parsed, source: 'redis' };
       }
 
-      this.metrics.misses.redis++;
+      if (this.metrics.misses.redis) { this.metrics.misses.redis++ };
       return null;
     } catch (error) {
-      this.metrics.errors.redis++;
+      if (this.metrics.errors.redis) { this.metrics.errors.redis++ };
       this.emit('error', { source: 'redis', error, key: cacheKey });
       return null;
     }
@@ -301,7 +301,7 @@ export class PricingService extends EventEmitter {
           ttl: row.expires_at - now
         };
 
-        this.metrics.hits.sqlite++;
+        if (this.metrics.hits.sqlite) { this.metrics.hits.sqlite++ };
         this.emit('cache:hit', { level: 'sqlite', key: cacheKey, latency });
         
         // Promote to higher cache layers
@@ -310,10 +310,10 @@ export class PricingService extends EventEmitter {
         return response;
       }
 
-      this.metrics.misses.sqlite++;
+      if (this.metrics.misses.sqlite) { this.metrics.misses.sqlite++ };
       return null;
     } catch (error) {
-      this.metrics.errors.sqlite++;
+      if (this.metrics.errors.sqlite) { this.metrics.errors.sqlite++ };
       this.emit('error', { source: 'sqlite', error, key: cacheKey });
       return null;
     }
@@ -329,7 +329,7 @@ export class PricingService extends EventEmitter {
         
         const latency = Date.now() - startTime;
         this.metrics.latency.api.push(latency);
-        this.metrics.hits.api++;
+        if (this.metrics.hits.api) { this.metrics.hits.api++ };
         
         this.emit('api:fetch', { 
           productId: request.productId, 
@@ -344,7 +344,7 @@ export class PricingService extends EventEmitter {
           ttl: this.config.cache.memory.ttl
         };
       } catch (error) {
-        this.metrics.errors.api++;
+        if (this.metrics.errors.api) { this.metrics.errors.api++ };
         this.emit('error', { source: 'api', error, request });
         throw error;
       }
@@ -444,16 +444,16 @@ export class PricingService extends EventEmitter {
 
     // Process in batches to avoid overwhelming the system
     const batchSize = 50;
-    for (let i = 0; i < requests.length; i += batchSize) {
+    for (let i = 0; i < requests?.length || 0; i += batchSize) {
       const batch = requests.slice(i, i + batchSize);
-      await Promise.all(batch.map(req => this.getPrice(req).catch(() => null)));
+      await Promise.all(batch?.map(req => this.getPrice(req).catch(() => null)));
       this.emit('cache:warm:progress', { 
-        completed: Math.min(i + batchSize, requests.length), 
-        total: requests.length 
+        completed: Math.min(i + batchSize, requests?.length || 0), 
+        total: requests?.length || 0 
       });
     }
 
-    this.emit('cache:warm:complete', { count: requests.length });
+    this.emit('cache:warm:complete', { count: requests?.length || 0 });
   }
 
   public async invalidateCache(
@@ -478,9 +478,9 @@ export class PricingService extends EventEmitter {
     // Clear Redis cache
     const redisPattern = this.buildRedisPattern(criteria);
     const keys = await this.redisClient.keys(redisPattern);
-    if (keys.length > 0) {
+    if (keys?.length || 0 > 0) {
       await this.redisClient.del(...keys);
-      invalidated += keys.length;
+      invalidated += keys?.length || 0;
     }
 
     // Clear SQLite cache
@@ -496,8 +496,8 @@ export class PricingService extends EventEmitter {
     criteria: { productId?: string; storeId?: string }
   ): boolean {
     const parts = key.split(':');
-    if (criteria.productId && !parts[0].includes(criteria.productId)) return false;
-    if (criteria.storeId && !parts[1].includes(criteria.storeId)) return false;
+    if (criteria.productId && parts[0] && !parts[0].includes(criteria.productId)) return false;
+    if (criteria.storeId && parts[1] && !parts[1].includes(criteria.storeId)) return false;
     return true;
   }
 
@@ -530,7 +530,7 @@ export class PricingService extends EventEmitter {
   // Metrics and monitoring
   public getMetrics() {
     const calculateAverage = (arr: number[]) => 
-      arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+      arr?.length || 0 ? arr.reduce((a: any, b: any) => a + b, 0) / arr?.length || 0 : 0;
 
     return {
       hits: this.metrics.hits,

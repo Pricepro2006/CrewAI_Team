@@ -5,6 +5,7 @@ import type {
   AgentResult,
 } from "../base/AgentTypes.js";
 
+
 export class DataAnalysisAgent extends BaseAgent {
   constructor() {
     super(
@@ -15,14 +16,48 @@ export class DataAnalysisAgent extends BaseAgent {
 
   async execute(task: string, context: AgentContext): Promise<AgentResult> {
     try {
-      // Analyze the data analysis task
-      const taskAnalysis = await this.analyzeDataTask(task, context);
+      // Query RAG for historical data patterns and insights
+      let ragContext = "";
+      let historicalPatterns: any[] = [];
+      
+      if (this.ragSystem && this.ragEnabled) {
+        // Search for similar data analysis patterns
+        ragContext = await this.queryRAG(task, {
+          limit: 5,
+          filter: { 
+            agentType: 'DataAnalysisAgent',
+            category: 'data_patterns'
+          }
+        });
+        
+        // Search for historical insights
+        const insightsContext = await this.queryRAG(task, {
+          limit: 3,
+          filter: {
+            category: 'business_insights'
+          }
+        });
+        
+        if (ragContext || insightsContext) {
+          console.log(`[DataAnalysisAgent] Retrieved RAG context: ${(ragContext + insightsContext).length} characters`);
+          ragContext = ragContext + "\n" + insightsContext;
+        }
+        
+        // Search for similar analysis results
+        const searchResults = await this.searchRAG(task, 5);
+        historicalPatterns = searchResults.filter(r => 
+          r.metadata?.type === 'analysis' || r.metadata?.type === 'pattern'
+        );
+      }
+
+      // Analyze the data analysis task with historical context
+      const taskAnalysis = await this.analyzeDataTask(task, context, ragContext);
 
       // Execute based on task type
-      let result: unknown;
+      let result: AnalysisResult;
       switch (taskAnalysis.type) {
         case "statistical":
-          result = await this.performStatisticalAnalysis(taskAnalysis, context);
+          result = await this.performStatisticalAnalysis(taskAnalysis, context, historicalPatterns);
           break;
         case "visualization":
           result = await this.createVisualization(taskAnalysis, context);
@@ -31,10 +66,28 @@ export class DataAnalysisAgent extends BaseAgent {
           result = await this.transformData(taskAnalysis, context);
           break;
         case "exploration":
-          result = await this.exploreData(taskAnalysis, context);
+          result = await this.exploreData(taskAnalysis, context, historicalPatterns);
           break;
         default:
           result = await this.generalDataAnalysis(task, context);
+      }
+
+      // Index valuable analysis results and patterns back into RAG
+      if (this.ragSystem && this.ragEnabled && result) {
+        const valuableInsights = this.extractValuableInsights(result);
+        if (valuableInsights && valuableInsights.length > 0) {
+          await this.indexAgentKnowledge(valuableInsights.map(insight => ({
+            content: JSON.stringify(insight),
+            metadata: {
+              type: 'analysis',
+              category: insight.category || 'data_patterns',
+              task: task,
+              taskType: taskAnalysis.type,
+              confidence: insight.confidence || 0.7,
+              timestamp: new Date().toISOString()
+            }
+          })));
+        }
       }
 
       return {
@@ -45,6 +98,8 @@ export class DataAnalysisAgent extends BaseAgent {
           agent: this.name,
           taskType: taskAnalysis.type,
           dataSize: taskAnalysis.dataSize,
+          ragEnhanced: !!ragContext,
+          historicalPatternsUsed: historicalPatterns.length,
           timestamp: new Date().toISOString(),
         },
       };
@@ -56,29 +111,33 @@ export class DataAnalysisAgent extends BaseAgent {
   private async analyzeDataTask(
     task: string,
     context: AgentContext,
+    ragContext?: string
   ): Promise<DataTaskAnalysis> {
     const prompt = `
       Analyze this data analysis task: "${task}"
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${ragContext ? `Additional Context:\n${ragContext}` : ""}
       
-      Determine:
+      Provide a comprehensive analysis including:
       1. Analysis type: statistical, visualization, transformation, or exploration
       2. Required techniques or methods
       3. Expected output format
       4. Data characteristics
-      
-      Respond in JSON format:
-      {
-        "type": "statistical|visualization|transformation|exploration",
-        "techniques": ["technique1", "technique2"],
-        "outputFormat": "table|chart|summary|report",
-        "dataSize": "small|medium|large",
-        "complexity": "simple|moderate|complex"
-      }
     `;
 
-    const response = await this.llm.generate(prompt, { format: "json" });
+    const llmResponse = await this.generateLLMResponse(prompt);
+    const response = llmResponse?.response;
+    if (!response) {
+      // Return default analysis if LLM response fails
+      return {
+        type: "exploration",
+        techniques: [],
+        outputFormat: "summary",
+        dataSize: "medium",
+        complexity: "moderate",
+      };
+    }
     return this.parseDataTaskAnalysis(response);
   }
 
@@ -106,12 +165,13 @@ export class DataAnalysisAgent extends BaseAgent {
   private async performStatisticalAnalysis(
     analysis: DataTaskAnalysis,
     context: AgentContext,
+    historicalPatterns: any[] = []
   ): Promise<AnalysisResult> {
     const prompt = `
       Perform statistical analysis based on these requirements:
-      Techniques: ${analysis.techniques.join(", ")}
+      Techniques: ${analysis?.techniques?.join(", ")}
       
-      ${context.ragDocuments ? `Data context:\n${context.ragDocuments[0]?.content}` : ""}
+      ${context.ragDocuments && context.ragDocuments.length > 0 ? `Data context:\n${context.ragDocuments[0]?.content}` : ""}
       
       Provide:
       1. Descriptive statistics
@@ -123,7 +183,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Format as a structured analysis report.
     `;
 
-    const analysisReport = await this.llm.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
+    const analysisReport = llmResponse?.response;
 
     return {
       type: "statistical",
@@ -141,7 +202,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Create visualization specifications for this data:
       Output format: ${analysis.outputFormat}
       
-      ${context.ragDocuments ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
+      ${context.ragDocuments && context.ragDocuments.length > 0 ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
       
       Provide:
       1. Chart type recommendation
@@ -153,7 +214,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Return as visualization configuration in JSON format.
     `;
 
-    const vizConfig = await this.llm.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
+    const vizConfig = llmResponse?.response;
 
     return {
       type: "visualization",
@@ -169,9 +231,9 @@ export class DataAnalysisAgent extends BaseAgent {
   ): Promise<AnalysisResult> {
     const prompt = `
       Transform data according to these requirements:
-      Techniques: ${analysis.techniques.join(", ")}
+      Techniques: ${analysis?.techniques?.join(", ")}
       
-      ${context.ragDocuments ? `Input data:\n${context.ragDocuments[0]?.content}` : ""}
+      ${context.ragDocuments && context.ragDocuments.length > 0 ? `Input data:\n${context.ragDocuments[0]?.content}` : ""}
       
       Apply transformations:
       1. Data cleaning
@@ -183,7 +245,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Provide transformed data and transformation steps.
     `;
 
-    const transformation = await this.llm.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
+    const transformation = llmResponse?.response;
 
     return {
       type: "transformation",
@@ -196,13 +259,14 @@ export class DataAnalysisAgent extends BaseAgent {
   private async exploreData(
     analysis: DataTaskAnalysis,
     context: AgentContext,
+    historicalPatterns: any[] = []
   ): Promise<AnalysisResult> {
     const prompt = `
       Explore this dataset comprehensively:
       Analysis complexity: ${analysis.complexity}
-      Expected techniques: ${analysis.techniques.join(", ")}
+      Expected techniques: ${analysis?.techniques?.join(", ")}
       
-      ${context.ragDocuments ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
+      ${context.ragDocuments && context.ragDocuments.length > 0 ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
       
       Provide:
       1. Data structure overview
@@ -216,7 +280,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Format as an exploratory data analysis report.
     `;
 
-    const exploration = await this.llm.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
+    const exploration = llmResponse?.response;
 
     return {
       type: "exploration",
@@ -233,13 +298,14 @@ export class DataAnalysisAgent extends BaseAgent {
     const prompt = `
       Perform data analysis for: ${task}
       
-      ${context.ragDocuments ? `Data:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Data:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Provide comprehensive analysis including relevant statistics, 
       patterns, insights, and recommendations.
     `;
 
-    const analysis = await this.llm.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
+    const analysis = llmResponse?.response;
 
     return {
       type: "general",
@@ -283,6 +349,35 @@ export class DataAnalysisAgent extends BaseAgent {
     }
   }
 
+  private extractValuableInsights(result: AnalysisResult): Array<{category: string, confidence: number, content: string}> {
+    const insights: Array<{category: string, confidence: number, content: string}> = [];
+    
+    // Extract insights from the analysis result
+    if (result.insights && result.insights.length > 0) {
+      result.insights.forEach(insight => {
+        insights.push({
+          category: result.type === 'statistical' ? 'statistical_patterns' : 'data_patterns',
+          confidence: 0.8,
+          content: insight
+        });
+      });
+    }
+    
+    // Extract valuable patterns from the report
+    if (result.report) {
+      const reportInsights = this.extractInsights(result.report);
+      reportInsights.forEach(insight => {
+        insights.push({
+          category: 'analysis_findings',
+          confidence: 0.7,
+          content: insight
+        });
+      });
+    }
+    
+    return insights.filter(insight => insight.content.length > 20); // Only meaningful insights
+  }
+
   private formatAnalysisOutput(result: AnalysisResult): string {
     const parts: string[] = [];
 
@@ -292,16 +387,16 @@ export class DataAnalysisAgent extends BaseAgent {
       parts.push(`\n**Report:**\n${result.report}`);
     }
 
-    if (result.insights && result.insights.length > 0) {
+    if (result.insights && result?.insights?.length > 0) {
       parts.push(`\n**Key Insights:**`);
-      result.insights.forEach((insight, i) => {
+      result?.insights?.forEach((insight, i) => {
         parts.push(`${i + 1}. ${insight}`);
       });
     }
 
-    if (result.visualizations && result.visualizations.length > 0) {
+    if (result.visualizations && result?.visualizations?.length > 0) {
       parts.push(
-        `\n**Visualizations:** ${result.visualizations.length} chart(s) configured`,
+        `\n**Visualizations:** ${result?.visualizations?.length} chart(s) configured`,
       );
     }
 

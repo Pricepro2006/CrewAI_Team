@@ -51,14 +51,14 @@ export class WebSearchTool extends BaseTool {
   }): Promise<ToolResult> {
     const validation = this.validateParameters(params);
     if (!validation.valid) {
-      return this.error(validation.errors.join(", "));
+      return this.error(validation?.errors?.join(", "));
     }
 
     try {
       const limit = params.limit || 10;
       const engineName = params.engine || "duckduckgo";
 
-      const engine = this.searchEngines.find((e) => e.name === engineName);
+      const engine = this?.searchEngines?.find((e: any) => e.name === engineName);
       if (!engine) {
         return this.error(`Search engine ${engineName} not found`);
       }
@@ -69,7 +69,7 @@ export class WebSearchTool extends BaseTool {
         results,
         query: params.query,
         engine: engineName,
-        count: results.length,
+        count: results?.length || 0,
       });
     } catch (error) {
       return this.error(error as Error);
@@ -95,7 +95,7 @@ class DuckDuckGoEngine extends SearchEngine {
   async search(query: string, limit: number): Promise<SearchResult[]> {
     try {
       // Use DuckDuckGo Instant Answer API for search
-      const response = await axios.get("https://api.duckduckgo.com/", {
+      const response = await axios.get("https://api?.duckduckgo?.com/", {
         params: {
           q: query,
           format: "json",
@@ -109,7 +109,7 @@ class DuckDuckGoEngine extends SearchEngine {
       });
 
       const results: SearchResult[] = [];
-      const data = response.data;
+      const data = response?.data;
 
       // Add main result if available
       if (data.Abstract && data.AbstractURL) {
@@ -122,13 +122,13 @@ class DuckDuckGoEngine extends SearchEngine {
 
       // Add related topics
       if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-        for (const topic of data.RelatedTopics.slice(
+        for (const topic of data?.RelatedTopics?.slice(
           0,
-          limit - results.length,
+          limit - results?.length || 0,
         )) {
           if (topic.FirstURL && topic.Text) {
             results.push({
-              title: topic.Text.split(" - ")[0] || topic.Text.substring(0, 60),
+              title: topic?.Text?.split(" - ")[0] || topic?.Text?.substring(0, 60),
               url: topic.FirstURL,
               snippet: topic.Text,
             });
@@ -148,7 +148,7 @@ class DuckDuckGoEngine extends SearchEngine {
       }
 
       // If we still don't have enough results, add a fallback search link
-      if (results.length === 0) {
+      if (results?.length || 0 === 0) {
         results.push({
           title: `Search results for: ${query}`,
           url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
@@ -187,7 +187,7 @@ class SearxEngine extends SearchEngine {
         },
       });
 
-      return response.data.results.map((result: any) => ({
+      return response?.data?.results?.map((result: any) => ({
         title: result.title,
         url: result.url,
         snippet: result.content || "",
@@ -207,7 +207,7 @@ export class SearchEngineWrapper {
     const result = await tool.execute({ query, limit });
 
     if (result.success && result.data) {
-      return result.data.results;
+      return result?.data?.results;
     }
 
     return [];

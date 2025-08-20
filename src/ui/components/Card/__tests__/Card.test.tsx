@@ -3,9 +3,9 @@
  * Tests card component functionality and variants
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock Card component
@@ -119,7 +119,7 @@ describe("Card Component", () => {
   it("should render different variants", () => {
     const variants = ["default", "elevated", "outlined"] as const;
 
-    variants.forEach((variant) => {
+    variants.forEach((variant: any) => {
       const { rerender } = render(
         <Card variant={variant} data-testid="test-card">
           {variant} content

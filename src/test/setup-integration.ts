@@ -14,7 +14,9 @@ import {
   handleTestError,
   testErrorReporter,
 } from "./utils/error-handling.js";
-import { logger } from "../utils/logger.js";
+import { Logger } from "../utils/logger.js";
+
+const logger = new Logger("test:setup-integration");
 
 // Set up test environment variables
 process.env['NODE_ENV'] = "test";
@@ -33,11 +35,11 @@ beforeAll(async () => {
     const validation = await validateTestEnvironment();
     if (!validation.isValid) {
       logger.warn("Test environment validation issues found:");
-      validation.issues.forEach(issue => logger.warn(`  - ${issue}`));
+      validation?.issues?.forEach(issue => logger.warn(`  - ${issue}`));
       
-      if (validation.recommendations.length > 0) {
+      if (validation?.recommendations?.length > 0) {
         logger.info("Recommendations:");
-        validation.recommendations.forEach(rec => logger.info(`  - ${rec}`));
+        validation?.recommendations?.forEach(rec => logger.info(`  - ${rec}`));
       }
     }
     
@@ -63,7 +65,7 @@ beforeAll(async () => {
       "Global test setup"
     );
     
-    logger.error("Failed to setup integration test environment:", error);
+    logger.error("Failed to setup integration test environment:", String(error));
     handleTestError(error, "Global test setup");
   }
 }, 120000); // 2 minutes timeout for setup
@@ -86,7 +88,7 @@ afterAll(async () => {
     
     logger.info("Integration test cleanup completed");
   } catch (error) {
-    logger.error("Error during test cleanup:", error);
+    logger.error("Error during test cleanup:", String(error));
     // Don't throw here to avoid masking test results
   }
 });

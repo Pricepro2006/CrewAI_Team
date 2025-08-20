@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { MonitoringAlert } from '../../services/MonitoringService';
+import type { MonitoringAlert } from '../../services/MonitoringService.js';
 
 interface AlertsPanelProps {
   alerts: MonitoringAlert[];
@@ -21,7 +21,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
 
   // Filter alerts based on current filters
   const filteredAlerts = useMemo(() => {
-    return alerts.filter(alert => {
+    return alerts?.filter(alert => {
       if (filter === 'active' && alert.acknowledged) return false;
       if (filter === 'acknowledged' && !alert.acknowledged) return false;
       if (severityFilter !== 'all' && alert.severity !== severityFilter) return false;
@@ -39,18 +39,18 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
   // Alert statistics
   const alertStats = useMemo(() => {
     const stats = {
-      total: alerts.length,
-      active: alerts.filter(a => !a.acknowledged).length,
-      acknowledged: alerts.filter(a => a.acknowledged).length,
-      critical: alerts.filter(a => a.severity === 'critical' && !a.acknowledged).length,
-      high: alerts.filter(a => a.severity === 'high' && !a.acknowledged).length,
-      medium: alerts.filter(a => a.severity === 'medium' && !a.acknowledged).length,
-      low: alerts.filter(a => a.severity === 'low' && !a.acknowledged).length,
+      total: alerts?.length || 0,
+      active: alerts?.filter(a => !a.acknowledged).length,
+      acknowledged: alerts?.filter(a => a.acknowledged).length,
+      critical: alerts?.filter(a => a.severity === 'critical' && !a.acknowledged).length,
+      high: alerts?.filter(a => a.severity === 'high' && !a.acknowledged).length,
+      medium: alerts?.filter(a => a.severity === 'medium' && !a.acknowledged).length,
+      low: alerts?.filter(a => a.severity === 'low' && !a.acknowledged).length,
       byType: {
-        performance: alerts.filter(a => a.type === 'performance' && !a.acknowledged).length,
-        error: alerts.filter(a => a.type === 'error' && !a.acknowledged).length,
-        connection: alerts.filter(a => a.type === 'connection' && !a.acknowledged).length,
-        health: alerts.filter(a => a.type === 'health' && !a.acknowledged).length,
+        performance: alerts?.filter(a => a.type === 'performance' && !a.acknowledged).length,
+        error: alerts?.filter(a => a.type === 'error' && !a.acknowledged).length,
+        connection: alerts?.filter(a => a.type === 'connection' && !a.acknowledged).length,
+        health: alerts?.filter(a => a.type === 'health' && !a.acknowledged).length,
       }
     };
     return stats;
@@ -105,7 +105,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
         <div className="alerts-controls">
           <div className="control-group">
             <label>Status:</label>
-            <select value={filter} onChange={(e) => setFilter(e.target.value as any)}>
+            <select value={filter} onChange={(e: any) => setFilter(e?.target?.value as any)}>
               <option value="all">All Alerts ({alertStats.total})</option>
               <option value="active">Active ({alertStats.active})</option>
               <option value="acknowledged">Acknowledged ({alertStats.acknowledged})</option>
@@ -114,7 +114,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
           
           <div className="control-group">
             <label>Severity:</label>
-            <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as any)}>
+            <select value={severityFilter} onChange={(e: any) => setSeverityFilter(e?.target?.value as any)}>
               <option value="all">All Severities</option>
               <option value="critical">Critical ({alertStats.critical})</option>
               <option value="high">High ({alertStats.high})</option>
@@ -125,12 +125,12 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
           
           <div className="control-group">
             <label>Type:</label>
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as any)}>
+            <select value={typeFilter} onChange={(e: any) => setTypeFilter(e?.target?.value as any)}>
               <option value="all">All Types</option>
-              <option value="performance">Performance ({alertStats.byType.performance})</option>
-              <option value="error">Error ({alertStats.byType.error})</option>
-              <option value="connection">Connection ({alertStats.byType.connection})</option>
-              <option value="health">Health ({alertStats.byType.health})</option>
+              <option value="performance">Performance ({alertStats?.byType?.performance})</option>
+              <option value="error">Error ({alertStats?.byType?.error})</option>
+              <option value="connection">Connection ({alertStats?.byType?.connection})</option>
+              <option value="health">Health ({alertStats?.byType?.health})</option>
             </select>
           </div>
         </div>
@@ -181,7 +181,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
 
       {/* Alerts List */}
       <div className="alerts-list">
-        {filteredAlerts.length === 0 ? (
+        {filteredAlerts?.length || 0 === 0 ? (
           <div className="no-alerts">
             {filter === 'active' ? (
               <div className="no-alerts-content">
@@ -199,7 +199,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
           </div>
         ) : (
           <div className="alert-items">
-            {filteredAlerts.map(alert => (
+            {filteredAlerts?.map(alert => (
               <div 
                 key={alert.id} 
                 className={`alert-item ${alert.severity} ${alert.acknowledged ? 'acknowledged' : ''}`}
@@ -222,7 +222,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
                           className="severity-badge"
                           style={{ backgroundColor: getSeverityColor(alert.severity) }}
                         >
-                          {alert.severity.toUpperCase()}
+                          {alert?.severity?.toUpperCase()}
                         </span>
                         <span className="type-badge">
                           {alert.type}

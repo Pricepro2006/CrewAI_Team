@@ -128,7 +128,7 @@ export class DatabaseErrorHandler {
    * Check if error message contains sensitive database information
    */
   private static containsSensitiveInformation(message: string): boolean {
-    return this.SENSITIVE_PATTERNS.some((pattern) => pattern.test(message));
+    return this?.SENSITIVE_PATTERNS?.some((pattern: any) => pattern.test(message));
   }
 
   /**
@@ -146,10 +146,10 @@ export class DatabaseErrorHandler {
     }
 
     // Extract from message patterns
-    const codeMatch = error.message.match(
+    const codeMatch = error?.message?.match(
       /\b(SQLITE_\w+|ENOENT|EACCES|EPERM|EMFILE|ENFILE|ENOSPC)\b/i,
     );
-    if (codeMatch) {
+    if (codeMatch && codeMatch[1]) {
       return codeMatch[1].toUpperCase();
     }
 
@@ -244,7 +244,7 @@ export class DatabaseErrorHandler {
     // Informational for expected errors (like not found)
     if (
       errorCode === "SQLITE_NOTFOUND" ||
-      error.message.toLowerCase().includes("not found")
+      error?.message?.toLowerCase().includes("not found")
     ) {
       return "info";
     }
@@ -263,7 +263,7 @@ export class DatabaseErrorHandler {
     safeDetails.timestamp = new Date().toISOString();
 
     // Add error type
-    safeDetails.type = error.constructor.name;
+    safeDetails.type = error?.constructor?.name;
 
     // Add safe properties
     if ("errno" in error && typeof error.errno === "number") {
@@ -288,7 +288,7 @@ export class DatabaseErrorHandler {
   ): void {
     const logContext = {
       ...context,
-      errorType: error.constructor.name,
+      errorType: error?.constructor?.name,
       errorCode: errorInfo.errorCode,
       isSensitive: errorInfo.isSensitive,
       userMessage: errorInfo.userMessage,
@@ -358,13 +358,13 @@ export class DatabaseErrorHandler {
       if (isSafe === test.expectedSafe) {
         passed++;
         results.push({
-          error: test.error.message,
+          error: test?.error?.message,
           passed: true,
         });
       } else {
         failed++;
         results.push({
-          error: test.error.message,
+          error: test?.error?.message,
           passed: false,
           reason: `Expected safe: ${test.expectedSafe}, got: ${isSafe}`,
         });

@@ -32,20 +32,20 @@ export class DocumentProcessor {
 
     // Split into chunks based on method
     const chunks = this.chunkText(cleaned, {
-      size: this.config.size,
-      overlap: this.config.overlap,
-      ...(this.config.separator && { separator: this.config.separator }),
+      size: this?.config?.size,
+      overlap: this?.config?.overlap,
+      ...(this?.config?.separator && { separator: this?.config?.separator }),
     });
 
     // Create document objects
-    return chunks.map((chunk, index) => ({
+    return chunks?.map((chunk, index) => ({
       id: `${metadata.sourceId}-chunk-${index}`,
       content: chunk,
       metadata: {
         ...metadata,
         chunkIndex: index,
-        totalChunks: chunks.length,
-        chunkSize: chunk.length,
+        totalChunks: chunks?.length || 0,
+        chunkSize: chunk?.length || 0,
       },
     }));
   }
@@ -53,13 +53,13 @@ export class DocumentProcessor {
   private cleanText(text: string): string {
     let cleaned = text;
 
-    if (!this.config.preserveFormatting) {
+    if (!this?.config?.preserveFormatting) {
       // Remove special formatting characters
       cleaned = cleaned.replace(/[\r\n\t]+/g, " ");
       // Remove multiple spaces
       cleaned = cleaned.replace(/ {2,}/g, " ");
 
-      if (this.config.trimWhitespace) {
+      if (this?.config?.trimWhitespace) {
         // Remove extra whitespace
         cleaned = cleaned.replace(/\s+/g, " ").trim();
       }
@@ -67,7 +67,7 @@ export class DocumentProcessor {
       // Normalize line endings but preserve them
       cleaned = cleaned.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
-      if (this.config.trimWhitespace) {
+      if (this?.config?.trimWhitespace) {
         // Only trim leading/trailing spaces, preserve internal formatting
         cleaned = cleaned.trim();
       }
@@ -82,7 +82,7 @@ export class DocumentProcessor {
   }
 
   private chunkText(text: string, options: ChunkOptions): string[] {
-    switch (this.config.method) {
+    switch (this?.config?.method) {
       case "sentence":
         return this.chunkBySentence(text, options);
       case "token":
@@ -102,24 +102,26 @@ export class DocumentProcessor {
     let currentLength = 0;
 
     for (const sentence of sentences) {
-      if (currentLength + sentence.length > options.size && currentChunk) {
+      const sentenceLength = sentence?.length ?? 0;
+      if (currentLength + sentenceLength > options.size && currentChunk) {
         chunks.push(currentChunk.trim());
 
         // Handle overlap
         if (options.overlap > 0) {
+          const currentChunkLength = currentChunk?.length ?? 0;
           const overlapStart = Math.max(
             0,
-            currentChunk.length - options.overlap,
+            currentChunkLength - options.overlap,
           );
           currentChunk = currentChunk.slice(overlapStart) + " " + sentence;
-          currentLength = currentChunk.length;
+          currentLength = currentChunk?.length ?? 0;
         } else {
           currentChunk = sentence;
-          currentLength = sentence.length;
+          currentLength = sentenceLength;
         }
       } else {
         currentChunk += (currentChunk ? " " : "") + sentence;
-        currentLength += sentence.length;
+        currentLength += sentenceLength;
       }
     }
 
@@ -138,7 +140,8 @@ export class DocumentProcessor {
     const tokensPerChunk = Math.floor(options.size / avgCharsPerToken);
     const overlapTokens = Math.floor(options.overlap / avgCharsPerToken);
 
-    for (let i = 0; i < words.length; i += tokensPerChunk - overlapTokens) {
+    const wordCount = words?.length ?? 0;
+    for (let i = 0; i < wordCount; i += tokensPerChunk - overlapTokens) {
       const chunk = words.slice(i, i + tokensPerChunk).join(" ");
       if (chunk.trim()) {
         chunks.push(chunk.trim());
@@ -151,7 +154,8 @@ export class DocumentProcessor {
   private chunkByCharacter(text: string, options: ChunkOptions): string[] {
     const chunks: string[] = [];
 
-    for (let i = 0; i < text.length; i += options.size - options.overlap) {
+    const textLength = text?.length ?? 0;
+    for (let i = 0; i < textLength; i += options.size - options.overlap) {
       const chunk = text.slice(i, i + options.size);
       if (chunk.trim()) {
         chunks.push(chunk.trim());
@@ -167,7 +171,8 @@ export class DocumentProcessor {
     const parts = text.split(sentenceEnders);
     const sentences: string[] = [];
 
-    for (let i = 0; i < parts.length; i += 2) {
+    const partsLength = parts?.length ?? 0;
+    for (let i = 0; i < partsLength; i += 2) {
       const sentence = parts[i] + (parts[i + 1] || "");
       if (sentence.trim()) {
         sentences.push(sentence.trim());
@@ -175,7 +180,8 @@ export class DocumentProcessor {
     }
 
     // Handle edge cases
-    if (sentences.length === 0 && text.trim()) {
+    const sentencesLength = sentences?.length ?? 0;
+    if (sentencesLength === 0 && text.trim()) {
       sentences.push(text.trim());
     }
 
@@ -197,8 +203,8 @@ export class DocumentProcessor {
 
   estimateChunks(content: string): number {
     const cleaned = this.cleanText(content);
-    const totalLength = cleaned.length;
-    const effectiveChunkSize = this.config.size - this.config.overlap;
+    const totalLength = cleaned?.length || 0;
+    const effectiveChunkSize = this?.config?.size - this?.config?.overlap;
 
     return Math.ceil(totalLength / effectiveChunkSize);
   }
@@ -208,9 +214,9 @@ export class DocumentProcessor {
     const maxSize = 10000; // Maximum reasonable chunk size
 
     return (
-      this.config.size >= minSize &&
-      this.config.size <= maxSize &&
-      this.config.overlap < this.config.size
+      this?.config?.size >= minSize &&
+      this?.config?.size <= maxSize &&
+      this?.config?.overlap < this?.config?.size
     );
   }
 }

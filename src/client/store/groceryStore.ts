@@ -122,21 +122,24 @@ export const useGroceryStore = create<GroceryState>()(
 
         // Computed values
         get cartItemCount(): number {
-          return get().cart.items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+          const state = get();
+          return state.cart?.items?.reduce((sum: number, item: CartItem) => sum + item.quantity, 0) ?? 0;
         },
         
         get cartTotal(): number {
           const state = get();
-          return state.cart.items.reduce((sum: number, item: CartItem) => sum + (item.price * item.quantity), 0);
+          return state.cart?.items?.reduce((sum: number, item: CartItem) => sum + (item.price * item.quantity), 0) ?? 0;
         },
         
         get favoriteProductIds(): Set<string> {
-          return new Set(get().preferences.favoriteProducts || []);
+          const state = get();
+          return new Set(state.preferences.favoriteProducts || []);
         },
 
         // Performance optimized batch update
         batchUpdateCart: (updates: Array<{ productId: string; quantity: number }>) => {
           set((state) => {
+            if (!state.cart?.items) return;
             updates.forEach(({ productId, quantity }) => {
               const existingItem = state.cart.items.find(item => item.productId === productId);
               if (existingItem) {
@@ -155,6 +158,8 @@ export const useGroceryStore = create<GroceryState>()(
         // Cart Actions (optimized with Immer)
         addToCart: (product: WalmartProduct, quantity: number) => {
           set((state) => {
+            if (!state.cart?.items) return;
+            
             const existingItem = state.cart.items.find(
               (item) => item.productId === product.id,
             );
@@ -165,12 +170,16 @@ export const useGroceryStore = create<GroceryState>()(
               existingItem.updatedAt = new Date().toISOString();
             } else {
               // Add new item
+              const productPrice = typeof product.price === 'number' 
+                ? product.price 
+                : (product.price as any)?.regular ?? 0;
+              
               const newItem: CartItem = {
                 id: `item-${product.id}-${Date.now()}`,
                 productId: product.id,
                 product,
                 quantity,
-                price: typeof product.price === 'number' ? product.price : product.price.regular,
+                price: productPrice,
                 addedAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               };
@@ -183,6 +192,8 @@ export const useGroceryStore = create<GroceryState>()(
 
         updateCartItemQuantity: (productId: string, quantity: number) => {
           set((state) => {
+            if (!state.cart?.items) return;
+            
             const item = state.cart.items.find(item => item.productId === productId);
             if (item) {
               if (quantity <= 0) {
@@ -198,10 +209,12 @@ export const useGroceryStore = create<GroceryState>()(
 
         removeFromCart: (productId: string) => {
           set((state) => {
-            state.cart.items = state.cart.items.filter(
-              (item) => item.productId !== productId,
-            );
-            state.cart.updatedAt = new Date().toISOString();
+            if (state.cart?.items) {
+              state.cart.items = state.cart.items.filter(
+                (item) => item.productId !== productId,
+              );
+              state.cart.updatedAt = new Date().toISOString();
+            }
           });
         },
 
@@ -230,7 +243,7 @@ export const useGroceryStore = create<GroceryState>()(
             updatedAt: new Date().toISOString(),
           };
 
-          set((state) => ({
+          set((state: any) => ({
             lists: [...state.lists, newList],
           }));
 
@@ -264,14 +277,20 @@ export const useGroceryStore = create<GroceryState>()(
             lists: state.lists.map((list) => {
               if (list.id !== listId) return list;
 
-              const productPrice = typeof product.price === 'number' ? product.price : product.price.regular;
+              const productPrice = typeof product.price === 'number' 
+                ? product.price 
+                : (product.price as any)?.regular ?? 0;
+              const productCategory = typeof product.category === 'string' 
+                ? product.category 
+                : (product.category as any)?.name ?? 'Uncategorized';
+              
               const newItem: GroceryItem = {
                 id: `item-${Date.now()}`,
                 list_id: listId,
                 item_name: product.name,
                 product_id: product.id,
-                brand: product.brand,
-                category: typeof product.category === 'string' ? product.category : product.category.name,
+                brand: product.brand ?? '',
+                category: productCategory,
                 quantity,
                 estimated_price: productPrice,
                 status: "pending",
@@ -291,35 +310,39 @@ export const useGroceryStore = create<GroceryState>()(
           }));
         },
 
-        removeFromList: (listId, itemId) => {
+        removeFromList: (listId: string, itemId: string) => {
           set((state) => ({
             lists: state.lists.map((list) => {
               if (list.id !== listId) return list;
 
-              const item = list.items.find((i) => i.id === itemId);
+              const items = list.items || [];
+              const item = items.find((i) => i.id === itemId);
               if (!item) return list;
+
+              const itemPrice = typeof item.product?.price === 'number' 
+                ? item.product.price 
+                : (item.product?.price as any)?.regular ?? 0;
 
               return {
                 ...list,
-                items: list.items.filter((i) => i.id !== itemId),
+                items: items.filter((i) => i.id !== itemId),
                 estimated_total:
-                  (list.estimated_total || 0) -
-                  (typeof item.product?.price === 'number' ? item.product.price : item.product?.price?.regular || 0) * item.quantity,
-                updatedAt: new Date(),
+                  (list.estimated_total || 0) - itemPrice * item.quantity,
+                updatedAt: new Date().toISOString(),
               };
             }),
           }));
         },
 
         // User Preferences
-        updatePreferences: (updates) => {
+        updatePreferences: (updates: Partial<UserPreferences>) => {
           set((state) => ({
             preferences: { ...state.preferences, ...updates },
           }));
         },
 
         // Price Alerts
-        createPriceAlert: (productId, targetPrice) => {
+        createPriceAlert: (productId: string, targetPrice: number) => {
           const newAlert: PriceAlert = {
             id: `alert-${Date.now()}`,
             userId: "current-user",
@@ -335,7 +358,7 @@ export const useGroceryStore = create<GroceryState>()(
           }));
         },
 
-        deletePriceAlert: (alertId) => {
+        deletePriceAlert: (alertId: string) => {
           set((state) => ({
             priceAlerts: state.priceAlerts.filter(
               (alert) => alert.id !== alertId,
@@ -344,14 +367,14 @@ export const useGroceryStore = create<GroceryState>()(
         },
 
         // Order History
-        addOrder: (order) => {
+        addOrder: (order: Order) => {
           set((state) => ({
             orders: [order, ...state.orders],
           }));
         },
 
         // Search History
-        addSearchTerm: (term) => {
+        addSearchTerm: (term: string) => {
           set((state) => {
             const filtered = state.searchHistory.filter((t) => t !== term);
             return {
@@ -365,8 +388,8 @@ export const useGroceryStore = create<GroceryState>()(
         },
 
         // UI State
-        setLoading: (loading) => set({ loading }),
-        setError: (error) => set({ error }),
+        setLoading: (loading: boolean) => set({ loading }),
+        setError: (error: string | null) => set({ error }),
 
         // Reset store
         reset: () => {

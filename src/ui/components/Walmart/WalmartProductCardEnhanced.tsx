@@ -22,12 +22,13 @@ import {
   HeartIcon as HeartSolidIcon,
   StarIcon as StarSolidIcon
 } from "@heroicons/react/24/solid";
-import { api } from "../../../lib/trpc.js";
-import { useGroceryStore } from "../../../client/store/groceryStore.js";
-import type { WalmartProduct } from "../../../types/walmart-grocery.js";
+import { trpc } from "../../../utils/trpc";
+import { useGroceryStore } from "../../../client/store/groceryStore";
+import type { WalmartProduct } from "../../../types/walmart-grocery";
+import type { ExtendedWalmartProduct } from "./types/WalmartTypes";
 
 interface WalmartProductCardEnhancedProps {
-  product: WalmartProduct;
+  product: WalmartProduct & ExtendedWalmartProduct;
   onCompare?: (product: WalmartProduct) => void;
   onQuickView?: (product: WalmartProduct) => void;
   inComparisonMode?: boolean;
@@ -40,16 +41,16 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
   onQuickView,
   inComparisonMode = false,
   isCompared = false
-}) => {
-  const [quantity, setQuantity] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
-  const [showPriceAlert, setShowPriceAlert] = useState(false);
-  const [targetPrice, setTargetPrice] = useState("");
-  const [isAddedToList, setIsAddedToList] = useState(false);
+}): React.ReactElement => {
+  const [quantity, setQuantity] = useState<number>(1);
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+  const [showShareMenu, setShowShareMenu] = useState<boolean>(false);
+  const [showPriceAlert, setShowPriceAlert] = useState<boolean>(false);
+  const [targetPrice, setTargetPrice] = useState<string>("");
+  const [isAddedToList, setIsAddedToList] = useState<boolean>(false);
   const [selectedList, setSelectedList] = useState<string | null>(null);
-  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState<string>("");
   
   const { 
     addToCart: addToCartStore,
@@ -62,11 +63,11 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
   } = useGroceryStore();
 
   // Track product view
-  const trackView = api.cart.trackView.useMutation();
+  const trackView = trpc?.cart?.trackView?.useMutation();
   
   // Price alert mutation
-  const setPriceAlert = api.priceAlerts.createAlert.useMutation({
-    onSuccess: () => {
+  const setPriceAlert = trpc?.priceAlerts?.createAlert?.useMutation({
+    onSuccess: (): void => {
       showNotification("Price alert set successfully!");
       setShowPriceAlert(false);
       setTargetPrice("");
@@ -94,12 +95,12 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     });
   }, [product.id]);
 
-  const showNotification = (message: string) => {
+  const showNotification = (message: string): void => {
     setNotificationMessage(message);
     setTimeout(() => setNotificationMessage(""), 3000);
   };
 
-  const handleAddToGroceryList = () => {
+  const handleAddToGroceryList = (): void => {
     const listId = selectedList || currentListId || lists[0]?.id;
     
     if (!listId) {
@@ -109,13 +110,13 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     
     addToList(listId, product, quantity);
     setIsAddedToList(true);
-    showNotification(`Added to ${lists.find(l => l.id === listId)?.name || "grocery list"}`);
+    showNotification(`Added to ${lists.find(l => l.id === listId)?.list_name || "grocery list"}`);
     
     // Reset after animation
     setTimeout(() => setIsAddedToList(false), 2000);
   };
 
-  const toggleFavorite = () => {
+  const toggleFavorite = (): void => {
     const newFavoriteStatus = !isFavorite;
     setIsFavorite(newFavoriteStatus);
     
@@ -127,13 +128,13 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     showNotification(newFavoriteStatus ? "Added to favorites" : "Removed from favorites");
   };
 
-  const handleShare = (method: "copy" | "email" | "sms") => {
+  const handleShare = (method: "copy" | "email" | "sms"): void => {
     const shareUrl = `https://walmart.com/product/${product.id}`;
     const shareText = `Check out ${product.name} for $${product.price} at Walmart`;
     
     switch (method) {
       case "copy":
-        navigator.clipboard.writeText(shareUrl);
+        navigator?.clipboard?.writeText(shareUrl);
         showNotification("Link copied to clipboard!");
         break;
       case "email":
@@ -147,39 +148,41 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     setShowShareMenu(false);
   };
 
-  const handleSetPriceAlert = () => {
+  const handleSetPriceAlert = (): void => {
     if (!targetPrice || isNaN(Number(targetPrice))) {
       showNotification("Please enter a valid target price");
       return;
     }
     
     const target = Number(targetPrice);
-    const currentPrice = typeof product.price === "number" 
+    const alertCurrentPrice = typeof product.price === "number" 
       ? product.price 
-      : product.price.sale || product.price.regular;
+      : (product.price as any)?.sale || (product.price as any)?.regular || 0;
     
-    if (target >= currentPrice) {
+    if (target >= alertCurrentPrice) {
       showNotification("Target price should be lower than current price");
       return;
     }
     
     createPriceAlert(product.id, target);
     setPriceAlert.mutate({
-      productId: product.id,
+      alertType: "price_drop",
+      alertName: `Price drop for ${product.name}`,
       productName: product.name,
-      currentPrice,
+      productBrand: product.brand,
+      productCategory: typeof product.category === 'string' ? product.category : (product.category as any)?.name || 'Unknown',
       targetPrice: target,
-      userId: "current-user"
+      notificationMethods: ["email"]
     });
   };
 
-  const handleCompare = () => {
+  const handleCompare = (): void => {
     if (onCompare) {
       onCompare(product);
     }
   };
 
-  const handleQuickView = () => {
+  const handleQuickView = (): void => {
     const sessionId = localStorage.getItem("walmart-session") || "";
     trackView.mutate({
       productId: product.id,
@@ -192,15 +195,15 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     }
   };
 
-  const incrementQuantity = () => setQuantity(q => Math.min(99, q + 1));
-  const decrementQuantity = () => setQuantity(q => Math.max(1, q - 1));
+  const incrementQuantity = (): void => setQuantity(q => Math.min(99, q + 1));
+  const decrementQuantity = (): void => setQuantity(q => Math.max(1, q - 1));
 
   const currentPrice = typeof product.price === "number" 
     ? product.price 
-    : product.price.sale || product.price.regular;
+    : (product.price as any)?.sale || (product.price as any)?.regular || 0;
     
-  const originalPrice = typeof product.price === "object" && product.price.wasPrice
-    ? product.price.wasPrice
+  const originalPrice = typeof product.price === "object" && (product.price as any)?.wasPrice
+    ? (product.price as any)?.wasPrice
     : product.originalPrice;
     
   const savings = originalPrice && originalPrice > currentPrice 
@@ -238,7 +241,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
         <div className="absolute top-2 right-2 flex gap-2">
           {/* Favorite Button */}
           <button
-            onClick={toggleFavorite}
+            onClick={(): void => toggleFavorite()}
             className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
             title={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
@@ -251,7 +254,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
 
           {/* Quick View Button */}
           <button
-            onClick={handleQuickView}
+            onClick={(): void => handleQuickView()}
             className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
             title="Quick view"
           >
@@ -261,7 +264,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
           {/* Compare Button */}
           {onCompare && (
             <button
-              onClick={handleCompare}
+              onClick={(): void => handleCompare()}
               className={`p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow ${
                 isCompared ? "ring-2 ring-blue-500" : ""
               }`}
@@ -301,7 +304,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
       <div className="p-4">
         {/* Product Name */}
         <h3 className="font-medium text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600"
-            onClick={handleQuickView}>
+            onClick={(): void => handleQuickView()}>
           {product.name}
         </h3>
         
@@ -310,7 +313,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
           {product.brand && <span>{product.brand}</span>}
           {product.brand && product.category && <span>•</span>}
           {product.category && (
-            <span>{typeof product.category === "string" ? product.category : product.category.name}</span>
+            <span>{typeof product.category === "string" ? product.category : (product.category as any)?.name || 'Unknown'}</span>
           )}
         </div>
 
@@ -355,7 +358,12 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
         {product.deliveryInfo && (
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
             <TruckIcon className="h-4 w-4" />
-            <span>{product.deliveryInfo}</span>
+            <span>
+              {typeof product.deliveryInfo === 'string' 
+                ? product.deliveryInfo 
+                : `Available: ${product.deliveryInfo.available ? 'Yes' : 'No'}${product.deliveryInfo.estimatedDays ? ` (${product.deliveryInfo.estimatedDays} days)` : ''}`
+              }
+            </span>
           </div>
         )}
 
@@ -363,7 +371,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
         <div className="flex items-center gap-2 mb-3">
           <div className="flex items-center border rounded">
             <button
-              onClick={decrementQuantity}
+              onClick={(): void => decrementQuantity()}
               className="p-2 hover:bg-gray-50"
               disabled={!product.inStock}
             >
@@ -371,7 +379,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
             </button>
             <span className="px-3 font-medium">{quantity}</span>
             <button
-              onClick={incrementQuantity}
+              onClick={(): void => incrementQuantity()}
               className="p-2 hover:bg-gray-50"
               disabled={!product.inStock}
             >
@@ -380,7 +388,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
           </div>
           
           <button
-            onClick={handleAddToGroceryList}
+            onClick={(): void => handleAddToGroceryList()}
             disabled={!product.inStock}
             className={`flex-1 py-2 px-4 rounded font-medium transition-all ${
               isAddedToList 
@@ -407,7 +415,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
           {/* Share Button */}
           <div className="relative">
             <button
-              onClick={() => setShowShareMenu(!showShareMenu)}
+              onClick={(): void => setShowShareMenu(!showShareMenu)}
               className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600"
             >
               <ShareIcon className="h-4 w-4" />
@@ -417,19 +425,19 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
             {showShareMenu && (
               <div className="absolute bottom-full left-0 mb-2 bg-white border rounded-lg shadow-lg p-2 z-10">
                 <button
-                  onClick={() => handleShare("copy")}
+                  onClick={(): void => handleShare("copy")}
                   className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-50 rounded"
                 >
                   Copy Link
                 </button>
                 <button
-                  onClick={() => handleShare("email")}
+                  onClick={(): void => handleShare("email")}
                   className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-50 rounded"
                 >
                   Email
                 </button>
                 <button
-                  onClick={() => handleShare("sms")}
+                  onClick={(): void => handleShare("sms")}
                   className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-50 rounded"
                 >
                   Text Message
@@ -440,7 +448,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
 
           {/* Price Alert Button */}
           <button
-            onClick={() => setShowPriceAlert(!showPriceAlert)}
+            onClick={(): void => setShowPriceAlert(!showPriceAlert)}
             className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600"
           >
             <BellIcon className="h-4 w-4" />
@@ -449,7 +457,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
 
           {/* Product Details Toggle */}
           <button
-            onClick={() => setShowDetails(!showDetails)}
+            onClick={(): void => setShowDetails(!showDetails)}
             className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600"
           >
             <InformationCircleIcon className="h-4 w-4" />
@@ -466,12 +474,12 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
                 type="number"
                 step="0.01"
                 value={targetPrice}
-                onChange={(e) => setTargetPrice(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTargetPrice(e.target.value)}
                 placeholder={`Below $${currentPrice.toFixed(2)}`}
                 className="flex-1 px-2 py-1 border rounded text-sm"
               />
               <button
-                onClick={handleSetPriceAlert}
+                onClick={(): void => handleSetPriceAlert()}
                 className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
               >
                 Set Alert
@@ -502,7 +510,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
               <div>
                 <p className="font-medium">Nutrition Info:</p>
                 <div className="text-xs grid grid-cols-2 gap-1 mt-1">
-                  {Object.entries(product.nutritionalInfo).map(([key, value]) => (
+                  {Object.entries(product.nutritionalInfo).map(([key, value]: [string, any]) => (
                     <div key={key}>
                       <span className="capitalize">{key}:</span> {value}
                     </div>
@@ -511,10 +519,10 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
               </div>
             )}
             
-            {product.allergens && product.allergens.length > 0 && (
+            {product.allergens && product?.allergens?.length > 0 && (
               <div>
                 <p className="font-medium text-red-600">Allergens:</p>
-                <p className="text-xs">{product.allergens.join(", ")}</p>
+                <p className="text-xs">{product?.allergens?.join(", ")}</p>
               </div>
             )}
           </div>

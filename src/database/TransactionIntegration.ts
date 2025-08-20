@@ -22,9 +22,9 @@ export async function saveEmailAnalysisWithTransaction(
   relatedOperations?: Array<(tx: TransactionContext) => Promise<void>>,
 ): Promise<void> {
   return retryManager.retry(async () => {
-    await transactionManager.executeTransaction(async (tx) => {
+    await transactionManager.executeTransaction(async (tx: any) => {
       // Save email analysis
-      const stmt = tx.db.prepare(`
+      const stmt = tx?.db?.prepare(`
           INSERT OR REPLACE INTO email_analysis (
             email_id, analysis_data, created_at, updated_at
           ) VALUES (?, ?, datetime('now'), datetime('now'))
@@ -62,24 +62,29 @@ export async function importEmailBatchWithTransaction(
   );
 
   await operation.process(emails, async (email, index) => {
-    await transactionManager.executeTransaction(async (tx) => {
-      const emailStmt = tx.db.prepare(`
+    await transactionManager.executeTransaction(async (tx: any) => {
+      const emailStmt = tx?.db?.prepare(`
           INSERT OR IGNORE INTO emails (
             id, message_id, subject, body_text, 
             created_at, updated_at
           ) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
         `);
 
-      emailStmt.run(email.id, email.message_id, email.subject, email.body_text);
+      emailStmt.run(
+        (email as any).id, 
+        (email as any).message_id, 
+        (email as any).subject, 
+        (email as any).body_text
+      );
 
       // Log import for audit
-      const auditStmt = tx.db.prepare(`
+      const auditStmt = tx?.db?.prepare(`
           INSERT INTO email_import_log (
             email_id, imported_at, batch_index
           ) VALUES (?, datetime('now'), ?)
         `);
 
-      auditStmt.run(email.id, index);
+      auditStmt.run((email as any).id, index);
     });
   });
 }
@@ -95,9 +100,9 @@ export async function updateChainCompletenessWithTransaction(
     missing_stages?: string[];
   },
 ): Promise<void> {
-  return transactionManager.executeTransaction(async (tx) => {
+  return transactionManager.executeTransaction(async (tx: any) => {
     // Update chain completeness
-    const updateStmt = tx.db.prepare(`
+    const updateStmt = tx?.db?.prepare(`
       UPDATE email_chains 
       SET completeness_score = ?, 
           is_complete = ?,
@@ -114,7 +119,7 @@ export async function updateChainCompletenessWithTransaction(
     );
 
     // Update all emails in chain
-    const emailUpdateStmt = tx.db.prepare(`
+    const emailUpdateStmt = tx?.db?.prepare(`
       UPDATE emails 
       SET chain_completeness_score = ?,
           updated_at = datetime('now')
@@ -133,7 +138,7 @@ export async function updateWorkflowStateWithTransaction(
   workflowState: string,
   metadata?: Record<string, unknown>,
 ): Promise<void> {
-  return transactionManager.executeTransaction(async (tx) => {
+  return transactionManager.executeTransaction(async (tx: any) => {
     // Create savepoint for partial rollback
     const savepoint = await transactionManager.createSavepoint(
       tx,
@@ -142,7 +147,7 @@ export async function updateWorkflowStateWithTransaction(
 
     try {
       // Update email workflow state
-      const updateStmt = tx.db.prepare(`
+      const updateStmt = tx?.db?.prepare(`
         UPDATE emails 
         SET workflow_state = ?,
             workflow_metadata = ?,
@@ -153,7 +158,7 @@ export async function updateWorkflowStateWithTransaction(
       updateStmt.run(workflowState, JSON.stringify(metadata || {}), emailId);
 
       // Log state transition
-      const logStmt = tx.db.prepare(`
+      const logStmt = tx?.db?.prepare(`
         INSERT INTO workflow_transitions (
           email_id, from_state, to_state, transition_at, metadata
         ) VALUES (
@@ -201,11 +206,11 @@ export class BulkOperationManager {
     const results = { succeeded: 0, failed: 0, errors: [] as Error[] };
 
     // Process in batches
-    for (let i = 0; i < items.length; i += batchSize) {
+    for (let i = 0; i < items?.length || 0; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
 
       try {
-        await transactionManager.executeTransaction(async (tx) => {
+        await transactionManager.executeTransaction(async (tx: any) => {
           for (const item of batch) {
             if (continueOnError) {
               // Create savepoint for each item
@@ -217,7 +222,7 @@ export class BulkOperationManager {
               } catch (error) {
                 await transactionManager.rollbackToSavepoint(tx, savepoint);
                 results.failed++;
-                results.errors.push(error as Error);
+                results?.errors?.push(error as Error);
               }
             } else {
               await updateFn(item, tx);
@@ -230,8 +235,8 @@ export class BulkOperationManager {
           throw error;
         }
         // Entire batch failed
-        results.failed += batch.length;
-        results.errors.push(error as Error);
+        results.failed += batch?.length || 0;
+        results?.errors?.push(error as Error);
       }
     }
 
@@ -252,18 +257,18 @@ export class BulkOperationManager {
     const { cascade = false, batchSize = 100 } = options;
     let totalDeleted = 0;
 
-    for (let i = 0; i < ids.length; i += batchSize) {
+    for (let i = 0; i < ids?.length || 0; i += batchSize) {
       const batch = ids.slice(i, i + batchSize);
 
       const deleted = await transactionManager.executeTransaction(
-        async (tx) => {
+        async (tx: any) => {
           if (cascade) {
             // Handle cascading deletes based on table
             await this.handleCascadingDeletes(tx, tableName, batch);
           }
 
-          const placeholders = batch.map(() => "?").join(",");
-          const stmt = tx.db.prepare(
+          const placeholders = batch?.map(() => "?").join(",");
+          const stmt = tx?.db?.prepare(
             `DELETE FROM ${tableName} WHERE id IN (${placeholders})`,
           );
 
@@ -286,7 +291,7 @@ export class BulkOperationManager {
     tableName: string,
     ids: string[],
   ): Promise<void> {
-    const placeholders = ids.map(() => "?").join(",");
+    const placeholders = ids?.map(() => "?").join(",");
 
     switch (tableName) {
       case "emails":
@@ -336,7 +341,7 @@ export function createTransactionalRepository<T>(
               if (typeof original === "function") {
                 return (...args: unknown[]) => {
                   // Replace db with transaction db
-                  const originalDb = innerTarget.db;
+                  const originalDb = innerTarget?.db;
                   innerTarget.db = tx.db;
                   try {
                     return original.apply(innerTarget, args);
@@ -363,7 +368,7 @@ export class TransactionMonitor {
   private static readonly SLOW_TRANSACTION_THRESHOLD = 1000; // 1 second
 
   static startMonitoring(): void {
-    transactionManager.on("transaction:success", (data) => {
+    transactionManager.on("transaction:success", (data: any) => {
       if (data.duration > this.SLOW_TRANSACTION_THRESHOLD) {
         logger.warn(
           `Slow transaction detected: ${data.transactionId} took ${data.duration}ms`,
@@ -371,14 +376,14 @@ export class TransactionMonitor {
       }
     });
 
-    transactionManager.on("transaction:failure", (data) => {
+    transactionManager.on("transaction:failure", (data: any) => {
       logger.error(`Transaction failed: ${data.transactionId}`, data.error);
     });
 
     // Log metrics periodically
     setInterval(() => {
       const metrics = transactionManager.getMetrics();
-      logger.info("Transaction metrics:", metrics);
+      logger.info("Transaction metrics:", "TransactionIntegration", metrics);
     }, 60000); // Every minute
   }
 }

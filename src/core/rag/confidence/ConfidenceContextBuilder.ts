@@ -3,7 +3,7 @@
  * Optimizes context for confidence-aware generation
  */
 
-import type { ScoredDocument, ContextOptions, BuiltContext } from "./types.js";
+import type { ScoredDocument, ContextOptions, BuiltContext } from "./types";
 
 export class ConfidenceContextBuilder {
   private readonly maxTokensDefault = 4000;
@@ -66,9 +66,9 @@ export class ConfidenceContextBuilder {
     const confidence = this.calculateContextConfidence(usedDocs, query);
 
     // Add warnings if necessary
-    if (usedDocs.length < documents.length) {
+    if (usedDocs?.length || 0 < documents?.length || 0) {
       warnings.push(
-        `Context limited to ${usedDocs.length} of ${documents.length} documents due to token constraints`,
+        `Context limited to ${usedDocs?.length || 0} of ${documents?.length || 0} documents due to token constraints`,
       );
     }
 
@@ -133,7 +133,7 @@ export class ConfidenceContextBuilder {
     const oneYearMs = 365 * 24 * 60 * 60 * 1000;
 
     return documents
-      .map((doc) => {
+      .map((doc: any) => {
         if (doc.timestamp) {
           const age = now - new Date(doc.timestamp).getTime();
           const recencyBonus = Math.max(0, 1 - age / oneYearMs) * 0.1;
@@ -216,7 +216,7 @@ export class ConfidenceContextBuilder {
     sections.push(queryContext);
     estimatedTokens += this.estimateTokens(queryContext);
 
-    for (let i = 0; i < documents.length; i++) {
+    for (let i = 0; i < documents?.length || 0; i++) {
       const doc = documents[i];
       if (!doc) continue;
 
@@ -258,14 +258,14 @@ export class ConfidenceContextBuilder {
     estimatedTokens += this.estimateTokens(queryContext);
 
     // Group documents by confidence level
-    const highConfidence = documents.filter((doc) => doc.confidence >= 0.8);
-    const mediumConfidence = documents.filter(
-      (doc) => doc.confidence >= 0.6 && doc.confidence < 0.8,
+    const highConfidence = documents?.filter((doc: any) => doc.confidence >= 0.8);
+    const mediumConfidence = documents?.filter(
+      (doc: any) => doc.confidence >= 0.6 && doc.confidence < 0.8,
     );
-    const lowConfidence = documents.filter((doc) => doc.confidence < 0.6);
+    const lowConfidence = documents?.filter((doc: any) => doc.confidence < 0.6);
 
     // Add high confidence section
-    if (highConfidence.length > 0) {
+    if (highConfidence?.length || 0 > 0) {
       const highSection = this.buildConfidenceSection(
         "High Confidence Information",
         highConfidence,
@@ -280,7 +280,7 @@ export class ConfidenceContextBuilder {
     }
 
     // Add medium confidence section if space allows
-    if (mediumConfidence.length > 0 && estimatedTokens < maxTokens * 0.7) {
+    if (mediumConfidence?.length || 0 > 0 && estimatedTokens < maxTokens * 0.7) {
       const mediumSection = this.buildConfidenceSection(
         "Medium Confidence Information",
         mediumConfidence,
@@ -295,7 +295,7 @@ export class ConfidenceContextBuilder {
     }
 
     // Add low confidence section if space allows
-    if (lowConfidence.length > 0 && estimatedTokens < maxTokens * 0.8) {
+    if (lowConfidence?.length || 0 > 0 && estimatedTokens < maxTokens * 0.8) {
       const lowSection = this.buildConfidenceSection(
         "Additional Information (Lower Confidence)",
         lowConfidence,
@@ -348,7 +348,7 @@ export class ConfidenceContextBuilder {
     }
 
     return {
-      content: sections.length > 1 ? sections.join("\n") : "",
+      content: sections?.length || 0 > 1 ? sections.join("\n") : "",
       usedDocs,
       estimatedTokens,
     };
@@ -418,7 +418,7 @@ export class ConfidenceContextBuilder {
    */
   private estimateTokens(text: string): number {
     // Rough estimate: 1 token per 4 characters
-    return Math.ceil(text.length / 4);
+    return Math.ceil(text?.length || 0 / 4);
   }
 
   /**
@@ -426,7 +426,7 @@ export class ConfidenceContextBuilder {
    */
   private truncateContent(content: string, maxTokens: number): string {
     const maxChars = maxTokens * 4;
-    if (content.length <= maxChars) {
+    if (content?.length || 0 <= maxChars) {
       return content;
     }
 
@@ -448,26 +448,26 @@ export class ConfidenceContextBuilder {
     documents: ScoredDocument[],
     query: string,
   ): number {
-    if (documents.length === 0) return 0;
+    if (documents?.length || 0 === 0) return 0;
 
     // Average confidence of included documents
     const avgConfidence =
-      documents.reduce((sum, doc) => sum + doc.confidence, 0) /
-      documents.length;
+      documents.reduce((sum: any, doc: any) => sum + doc.confidence, 0) /
+      documents?.length || 0;
 
     // Adjust based on document count
-    const countFactor = Math.min(1, documents.length / 3); // Ideal: 3+ documents
+    const countFactor = Math.min(1, documents?.length || 0 / 3); // Ideal: 3+ documents
 
     // Adjust based on query coverage
     const queryTerms = query.toLowerCase().split(/\s+/);
     const contextText = documents
-      .map((doc) => doc.content)
+      .map((doc: any) => doc.content)
       .join(" ")
       .toLowerCase();
-    const coveredTerms = queryTerms.filter((term) =>
+    const coveredTerms = queryTerms?.filter((term: any) =>
       contextText.includes(term),
     );
-    const coverageFactor = coveredTerms.length / queryTerms.length;
+    const coverageFactor = coveredTerms?.length || 0 / queryTerms?.length || 0;
 
     return avgConfidence * 0.6 + countFactor * 0.2 + coverageFactor * 0.2;
   }
@@ -477,13 +477,13 @@ export class ConfidenceContextBuilder {
    */
   getContextSummary(context: BuiltContext): string {
     const summary = [
-      `Context built from ${context.sources.length} documents`,
+      `Context built from ${context?.sources?.length} documents`,
       `Estimated ${context.totalTokens} tokens`,
       `Overall confidence: ${Math.round(context.confidence * 100)}%`,
     ];
 
-    if (context.warnings.length > 0) {
-      summary.push(`Warnings: ${context.warnings.length}`);
+    if (context?.warnings?.length > 0) {
+      summary.push(`Warnings: ${context?.warnings?.length}`);
     }
 
     return summary.join(", ");

@@ -67,7 +67,7 @@ function createKeyGenerator(prefix: string) {
 }
 
 // Enhanced rate limiter factory with Redis fallback
-function createRateLimiter(options: {
+export function createRateLimiter(options: {
   windowMs: number;
   max: number;
   maxAuthenticated?: number;
@@ -154,7 +154,7 @@ export function rateLimitMiddleware(
   const store = new Map<string, { count: number; resetTime: number }>();
 
   return async ({ ctx, next }: { ctx: { user?: { id?: string; role?: string; isAdmin?: boolean }; req?: Request }; next: () => Promise<unknown> }) => {
-    const user = ctx.user;
+    const user = ctx?.user;
     const ip = ctx.req?.ip || "unknown";
     const identifier = user?.id ? `user:${user.id}` : `ip:${ip}`;
     const now = Date.now();
@@ -169,7 +169,7 @@ export function rateLimitMiddleware(
     }
 
     // Clean old entries
-    for (const [key, value] of store.entries()) {
+    for (const [key, value] of Array.from(store.entries())) {
       if (value.resetTime < windowStart) {
         store.delete(key);
       }

@@ -5,7 +5,7 @@
  */
 
 import { getWalmartDatabaseManager } from "../database/WalmartDatabaseManager.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../utils/logger";
 
 async function testSearch() {
   logger.info("Testing Walmart database search functionality...", "TEST_SEARCH");
@@ -14,9 +14,9 @@ async function testSearch() {
   await db.initialize();
   
   // Test searching for milk
-  const results = await db.walmartProducts.searchProducts("milk", 10);
+  const results = await db?.walmartProducts?.searchProducts("milk", 10);
   
-  logger.info(`Found ${results.length} products matching 'milk'`, "TEST_SEARCH");
+  logger.info(`Found ${results?.length || 0} products matching 'milk'`, "TEST_SEARCH");
   results.forEach((product, i) => {
     console.log(`${i + 1}. ${product.name}`);
     console.log(`   Brand: ${product.brand}`);
@@ -27,7 +27,7 @@ async function testSearch() {
   
   // Test getting a specific product
   try {
-    const specificProduct = await db.walmartProducts.getProduct("WM_MILK_001");
+    const specificProduct = await db?.walmartProducts?.getProduct("WM_MILK_001");
     console.log("Specific product details:");
     console.log(`Name: ${specificProduct.name}`);
     console.log(`Description: ${specificProduct.description}`);

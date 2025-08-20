@@ -40,7 +40,7 @@ describe('${agentName} - SuperClaude Enhanced Tests', () => {
   let agent: unknown;
   
   beforeEach(() => {
-    console.log('Executing: ${this.testCommands.unit}');
+    console.log('Executing: ${this?.testCommands?.unit}');
     agent = new ${agentName}();
   });
   
@@ -59,7 +59,7 @@ describe('${agentName} - SuperClaude Enhanced Tests', () => {
       
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      expect(result.metadata.confidence).toBeGreaterThan(0.8);
+      expect(result?.metadata?.confidence).toBeGreaterThan(0.8);
     });
     
     it('should handle error scenarios gracefully', async () => {
@@ -81,7 +81,7 @@ describe('${agentName} - SuperClaude Enhanced Tests', () => {
   
   describe('Integration Tests', () => {
     it('should integrate with MCP tools', async () => {
-      console.log('Executing: ${this.testCommands.integration}');
+      console.log('Executing: ${this?.testCommands?.integration}');
       
       // Mock MCP tool responses
       const mockWebSearch = jest.fn().mockResolvedValue({
@@ -98,20 +98,20 @@ describe('${agentName} - SuperClaude Enhanced Tests', () => {
       
       expect(mockWebSearch).toHaveBeenCalled();
       expect(mockContext7).toHaveBeenCalled();
-      expect(result.metadata.sources).toContain('web');
-      expect(result.metadata.sources).toContain('documentation');
+      expect(result?.metadata?.sources).toContain('web');
+      expect(result?.metadata?.sources).toContain('documentation');
     });
   });
   
   describe('Performance Tests', () => {
     it('should complete tasks within acceptable time', async () => {
-      console.log('Executing: ${this.testCommands.performance}');
+      console.log('Executing: ${this?.testCommands?.performance}');
       
       const startTime = Date.now();
       const tasks = generateBatchTasks(10);
       
       const results = await Promise.all(
-        tasks.map(task => agent.execute(task))
+        tasks?.map(task => agent.execute(task))
       );
       
       const executionTime = Date.now() - startTime;
@@ -126,7 +126,7 @@ describe('${agentName} - SuperClaude Enhanced Tests', () => {
       
       const startTime = Date.now();
       const results = await Promise.all(
-        tasks.map(task => agent.execute(task))
+        tasks?.map(task => agent.execute(task))
       );
       const executionTime = Date.now() - startTime;
       
@@ -137,7 +137,7 @@ describe('${agentName} - SuperClaude Enhanced Tests', () => {
   
   describe('Security Tests', () => {
     it('should sanitize inputs to prevent injection', async () => {
-      console.log('Executing: ${this.testCommands.security}');
+      console.log('Executing: ${this?.testCommands?.security}');
       
       const maliciousTask = {
         id: 'security-test',
@@ -169,7 +169,7 @@ describe('AI Agent Team System - E2E Tests', () => {
   let orchestrator: EnhancedMasterOrchestrator;
   
   beforeEach(() => {
-    console.log('Executing: ${this.testCommands.e2e}');
+    console.log('Executing: ${this?.testCommands?.e2e}');
     orchestrator = new EnhancedMasterOrchestrator();
   });
   
@@ -180,17 +180,17 @@ describe('AI Agent Team System - E2E Tests', () => {
     
     // Verify plan creation
     expect(response.plan).toBeDefined();
-    expect(response.plan.steps).toHaveLength(4);
+    expect(response?.plan?.steps).toHaveLength(4);
     
     // Verify agent selection
-    expect(response.plan.steps[0].agent).toBe('code');
-    expect(response.plan.steps[1].agent).toBe('research');
-    expect(response.plan.steps[2].agent).toBe('data');
-    expect(response.plan.steps[3].agent).toBe('writer');
+    expect(response?.plan?.steps[0].agent).toBe('code');
+    expect(response?.plan?.steps[1].agent).toBe('research');
+    expect(response?.plan?.steps[2].agent).toBe('data');
+    expect(response?.plan?.steps[3].agent).toBe('writer');
     
     // Verify execution results
     expect(response.results).toBeDefined();
-    expect(response.results.every(r => r.success)).toBe(true);
+    expect(response?.results?.every(r => r.success)).toBe(true);
     
     // Verify final output
     expect(response.finalOutput).toContain('scraper');
@@ -244,7 +244,7 @@ describe('Output Validation Tests', () => {
       // Source validation
       if (output.sources) {
         expect(Array.isArray(output.sources)).toBe(true);
-        output.sources.forEach(source => {
+        output?.sources?.forEach(source => {
           expect(source).toHaveProperty('url');
           expect(source).toHaveProperty('relevance');
         });
@@ -258,11 +258,11 @@ describe('Output Validation Tests', () => {
       
       // Check agent communication
       expect(response.agentCommunications).toBeDefined();
-      expect(response.agentCommunications.length).toBeGreaterThan(0);
+      expect(response?.agentCommunications?.length).toBeGreaterThan(0);
       
       // Check error handling
       if (response.errors) {
-        response.errors.forEach(error => {
+        response?.errors?.forEach(error => {
           expect(error).toHaveProperty('timestamp');
           expect(error).toHaveProperty('agent');
           expect(error).toHaveProperty('recoveryAction');
@@ -271,8 +271,8 @@ describe('Output Validation Tests', () => {
       
       // Check performance metrics
       expect(response.metrics).toBeDefined();
-      expect(response.metrics.totalExecutionTime).toBeLessThan(10000);
-      expect(response.metrics.tokensUsed).toBeLessThan(8000);
+      expect(response?.metrics?.totalExecutionTime).toBeLessThan(10000);
+      expect(response?.metrics?.tokensUsed).toBeLessThan(8000);
       
       return true;
     }

@@ -13,12 +13,12 @@ import type {
   WorkflowWebSocketEvent,
   SystemWebSocketEvent,
   WebSocketError,
-} from '../../shared/types/websocket-events.js';
+} from '../../shared/types/websocket-events';
 
 interface PendingUpdate {
   id: string;
   type: string;
-  data: any;
+  data: unknown;
   timestamp: Date;
   retries: number;
   maxRetries: number;
@@ -27,8 +27,8 @@ interface PendingUpdate {
 interface OptimisticUpdate {
   id: string;
   type: string;
-  apply: (state: any) => void;
-  rollback: (state: any) => void;
+  apply: (state: unknown) => void;
+  rollback: (state: unknown) => void;
   timestamp: Date;
   confirmed: boolean;
 }
@@ -50,7 +50,7 @@ interface WebSocketStateManager {
   
   // Email state cache
   emailCache: Map<string, {
-    data: any;
+    data: unknown;
     version: number;
     lastUpdated: Date;
   }>;
@@ -84,8 +84,8 @@ interface WebSocketStateManager {
   confirmOptimisticUpdate: (updateId: string) => void;
   rollbackOptimisticUpdate: (updateId: string) => void;
   
-  updateEmailCache: (emailId: string, data: any) => void;
-  updateStatsCache: (stats: any) => void;
+  updateEmailCache: (emailId: string, data: unknown) => void;
+  updateStatsCache: (stats: unknown) => void;
   
   addError: (error: WebSocketError) => void;
   clearErrors: () => void;
@@ -104,7 +104,7 @@ interface WebSocketStateManager {
 // Event deduplication helper
 const getEventKey = (event: WebSocketEvent): string => {
   if ('data' in event && event.data && typeof event.data === 'object') {
-    const data = event.data as any;
+    const data = event.data as unknown;
     if ('emailId' in data) return `${event.type}:${data.emailId}`;
     if ('taskId' in data) return `${event.type}:${data.taskId}`;
   }
@@ -127,32 +127,32 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
 
       // Connection management
       setConnectionStatus: (endpoint, status) => {
-        set((state) => {
-          state.connections.set(endpoint, {
+        set((state: WebSocketStateManager) => {
+          state?.connections?.set(endpoint, {
             endpoint,
             status,
             lastActivity: new Date(),
             reconnectAttempts: status === 'error' 
-              ? (state.connections.get(endpoint)?.reconnectAttempts || 0) + 1 
+              ? (state?.connections?.get(endpoint)?.reconnectAttempts || 0) + 1 
               : 0,
           });
         });
       },
 
       // Event queue management with deduplication
-      queueEvent: (event) => {
-        set((state) => {
+      queueEvent: (event: WebSocketEvent) => {
+        set((state: WebSocketStateManager) => {
           const eventKey = getEventKey(event);
           
           // Check if we're already processing this event
-          if (state.processingEvents.has(eventKey)) {
+          if (state?.processingEvents?.has(eventKey)) {
             console.debug('Event already being processed:', eventKey);
             return;
           }
           
           // Check if this event is already in the queue
-          const existingIndex = state.eventQueue.findIndex(
-            e => getEventKey(e) === eventKey
+          const existingIndex = state?.eventQueue?.findIndex(
+            (e: WebSocketEvent) => getEventKey(e) === eventKey
           );
           
           if (existingIndex !== -1) {
@@ -160,168 +160,177 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
             state.eventQueue[existingIndex] = event;
           } else {
             // Add to queue
-            state.eventQueue.push(event);
+            state?.eventQueue?.push(event);
           }
           
           // Limit queue size to prevent memory issues
-          if (state.eventQueue.length > 1000) {
-            state.eventQueue = state.eventQueue.slice(-500);
+          if (state?.eventQueue?.length > 1000) {
+            state.eventQueue = state?.eventQueue?.slice(-500);
           }
         });
       },
 
       // Process event with race condition prevention
-      processEvent: async (eventId) => {
+      processEvent: async (eventId: string) => {
         const state = get();
-        const event = state.eventQueue.find(e => e.id === eventId);
+        const event = state?.eventQueue?.find(e => e.id === eventId);
         
         if (!event) return;
         
         const eventKey = getEventKey(event);
         
         // Check if already processing
-        if (state.processingEvents.has(eventKey)) {
+        if (state?.processingEvents?.has(eventKey)) {
           console.debug('Event already being processed:', eventKey);
           return;
         }
         
         // Mark as processing
-        set((state) => {
-          state.processingEvents.add(eventKey);
+        set((state: WebSocketStateManager) => {
+          state?.processingEvents?.add(eventKey);
         });
         
         try {
           // Process based on event type
           if (event.type === 'email:stats_updated') {
-            set((state) => {
-              state.updateStatsCache((event as any).data.stats);
+            set((state: WebSocketStateManager) => {
+              if (state.updateStatsCache) {
+                state.updateStatsCache((event as unknown).data.stats);
+              }
             });
-          } else if (event.type.startsWith('email:')) {
+          } else if (event?.type?.startsWith('email:')) {
             const emailEvent = event as EmailWebSocketEvent;
             if ('data' in emailEvent && 'emailId' in emailEvent.data) {
-              const emailId = (emailEvent.data as any).emailId;
-              set((state) => {
-                state.updateEmailCache(emailId, emailEvent.data);
+              const emailId = (emailEvent.data as unknown).emailId;
+              set((state: WebSocketStateManager) => {
+                if (state.updateEmailCache) {
+                  state.updateEmailCache(emailId, emailEvent.data);
+                }
               });
             }
           }
           
           // Remove from queue after successful processing
-          set((state) => {
-            state.eventQueue = state.eventQueue.filter(e => e.id !== eventId);
+          set((state: WebSocketStateManager) => {
+            state.eventQueue = state?.eventQueue?.filter((e: WebSocketEvent) => e.id !== eventId);
           });
           
         } catch (error) {
           console.error('Error processing event:', error);
-          set((state) => {
-            state.addError({
-              code: 'EVENT_PROCESSING_ERROR',
-              message: `Failed to process event ${eventKey}`,
-              recoverable: true,
-            });
+          set((state: WebSocketStateManager) => {
+            if (state.addError) {
+              state.addError({
+                code: 'EVENT_PROCESSING_ERROR',
+                message: `Failed to process event ${eventKey}`,
+                recoverable: true,
+              });
+            }
           });
         } finally {
           // Remove from processing set
-          set((state) => {
-            state.processingEvents.delete(eventKey);
+          set((state: WebSocketStateManager) => {
+            state?.processingEvents?.delete(eventKey);
           });
         }
       },
 
       // Pending update management
-      addPendingUpdate: (update) => {
-        set((state) => {
-          state.pendingUpdates.set(update.id, update);
+      addPendingUpdate: (update: PendingUpdate) => {
+        set((state: WebSocketStateManager) => {
+          state?.pendingUpdates?.set(update.id, update);
         });
       },
 
-      confirmUpdate: (updateId) => {
-        set((state) => {
-          state.pendingUpdates.delete(updateId);
+      confirmUpdate: (updateId: string) => {
+        set((state: WebSocketStateManager) => {
+          state?.pendingUpdates?.delete(updateId);
         });
       },
 
-      retryUpdate: (updateId) => {
-        set((state) => {
-          const update = state.pendingUpdates.get(updateId);
+      retryUpdate: (updateId: string) => {
+        set((state: WebSocketStateManager) => {
+          const update = state?.pendingUpdates?.get(updateId);
           if (update && update.retries < update.maxRetries) {
             update.retries++;
             update.timestamp = new Date();
           } else if (update) {
             // Max retries reached, remove update
-            state.pendingUpdates.delete(updateId);
-            state.addError({
-              code: 'UPDATE_FAILED',
-              message: `Failed to apply update ${updateId} after ${update.retries} retries`,
-              recoverable: false,
-            });
+            state?.pendingUpdates?.delete(updateId);
+            if (state.addError) {
+              state.addError({
+                code: 'UPDATE_FAILED',
+                message: `Failed to apply update ${updateId} after ${update.retries} retries`,
+                recoverable: false,
+              });
+            }
           }
         });
       },
 
       // Optimistic update management
-      applyOptimisticUpdate: (update) => {
-        set((state) => {
+      applyOptimisticUpdate: (update: OptimisticUpdate) => {
+        set((state: WebSocketStateManager) => {
           // Apply the update
           update.apply(state);
           
           // Store for potential rollback
-          state.optimisticUpdates.set(update.id, update);
+          state?.optimisticUpdates?.set(update.id, update);
         });
       },
 
-      confirmOptimisticUpdate: (updateId) => {
-        set((state) => {
-          const update = state.optimisticUpdates.get(updateId);
+      confirmOptimisticUpdate: (updateId: string) => {
+        set((state: WebSocketStateManager) => {
+          const update = state?.optimisticUpdates?.get(updateId);
           if (update) {
             update.confirmed = true;
             // Remove after confirmation
             setTimeout(() => {
-              set((state) => {
-                state.optimisticUpdates.delete(updateId);
+              set((state: WebSocketStateManager) => {
+                state?.optimisticUpdates?.delete(updateId);
               });
             }, 5000);
           }
         });
       },
 
-      rollbackOptimisticUpdate: (updateId) => {
-        set((state) => {
-          const update = state.optimisticUpdates.get(updateId);
+      rollbackOptimisticUpdate: (updateId: string) => {
+        set((state: WebSocketStateManager) => {
+          const update = state?.optimisticUpdates?.get(updateId);
           if (update && !update.confirmed) {
             // Rollback the update
             update.rollback(state);
-            state.optimisticUpdates.delete(updateId);
+            state?.optimisticUpdates?.delete(updateId);
           }
         });
       },
 
       // Cache management
-      updateEmailCache: (emailId, data) => {
-        set((state) => {
-          const existing = state.emailCache.get(emailId);
-          state.emailCache.set(emailId, {
+      updateEmailCache: (emailId: string, data: unknown) => {
+        set((state: WebSocketStateManager) => {
+          const existing = state?.emailCache?.get(emailId);
+          state?.emailCache?.set(emailId, {
             data: { ...(existing?.data || {}), ...data },
             version: (existing?.version || 0) + 1,
             lastUpdated: new Date(),
           });
           
           // Limit cache size
-          if (state.emailCache.size > 500) {
+          if (state?.emailCache?.size > 500) {
             // Remove oldest entries
-            const entries = Array.from(state.emailCache.entries());
+            const entries: Array<[string, { data: unknown; version: number; lastUpdated: Date }]> = 
+              Array.from(state?.emailCache?.entries() || []);
             entries.sort((a, b) => 
               a[1].lastUpdated.getTime() - b[1].lastUpdated.getTime()
             );
             entries.slice(0, 100).forEach(([id]) => {
-              state.emailCache.delete(id);
+              state?.emailCache?.delete(id);
             });
           }
         });
       },
 
-      updateStatsCache: (stats) => {
-        set((state) => {
+      updateStatsCache: (stats: unknown) => {
+        set((state: WebSocketStateManager) => {
           state.statsCache = {
             ...stats,
             lastUpdated: new Date(),
@@ -330,60 +339,66 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
       },
 
       // Error management
-      addError: (error) => {
-        set((state) => {
-          state.errors.push(error);
+      addError: (error: WebSocketError) => {
+        set((state: WebSocketStateManager) => {
+          state?.errors?.push(error);
           
           // Limit error history
-          if (state.errors.length > 50) {
-            state.errors = state.errors.slice(-25);
+          if (state?.errors?.length > 50) {
+            state.errors = state?.errors?.slice(-25);
           }
         });
       },
 
       clearErrors: () => {
-        set((state) => {
+        set((state: WebSocketStateManager) => {
           state.errors = [];
         });
       },
 
       // Utilities
-      isProcessingEvent: (eventId) => {
-        return get().processingEvents.has(eventId);
+      isProcessingEvent: (eventId: string) => {
+        const state = get();
+        return state?.processingEvents?.has(eventId) || false;
       },
 
       getEventQueue: () => {
-        return [...get().eventQueue];
+        const state = get();
+        return [...(state?.eventQueue || [])];
       },
 
       getPendingUpdates: () => {
-        return Array.from(get().pendingUpdates.values());
+        const state = get();
+        return Array.from(state?.pendingUpdates?.values() || []);
       },
 
       getOptimisticUpdates: () => {
-        return Array.from(get().optimisticUpdates.values());
+        const state = get();
+        return Array.from(state?.optimisticUpdates?.values() || []);
       },
 
       // Cleanup
-      clearOldEvents: (olderThan) => {
-        set((state) => {
-          state.eventQueue = state.eventQueue.filter(
-            e => e.timestamp > olderThan
+      clearOldEvents: (olderThan: Date) => {
+        set((state: WebSocketStateManager) => {
+          state.eventQueue = state?.eventQueue?.filter(
+            (e: WebSocketEvent) => e.timestamp > olderThan
           );
           
           // Clean up old pending updates
-          const pendingEntries = Array.from(state.pendingUpdates.entries());
+          const pendingEntries: Array<[string, PendingUpdate]> = 
+            Array.from(state?.pendingUpdates?.entries() || []);
           pendingEntries.forEach(([id, update]) => {
             if (update.timestamp < olderThan) {
-              state.pendingUpdates.delete(id);
+              state?.pendingUpdates?.delete(id);
             }
           });
           
           // Clean up old optimistic updates
-          const optimisticEntries = Array.from(state.optimisticUpdates.entries());
+          const optimisticEntries: Array<[string, OptimisticUpdate]> = 
+            Array.from(state?.optimisticUpdates?.entries() || []);
           optimisticEntries.forEach(([id, update]) => {
             if (update.timestamp < olderThan && update.confirmed) {
-              state.optimisticUpdates.delete(id);
+              state?.optimisticUpdates?.delete(id);
             }
           });
         });
@@ -407,23 +422,23 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
 
 // Selectors for common queries
 export const selectConnectionStatus = (endpoint: string) =>
-  (state: WebSocketStateManager) => state.connections.get(endpoint);
+  (state: WebSocketStateManager) => state?.connections?.get(endpoint);
 
 export const selectIsConnected = (endpoint: string) =>
   (state: WebSocketStateManager) => 
-    state.connections.get(endpoint)?.status === 'connected';
+    state?.connections?.get(endpoint)?.status === 'connected';
 
 export const selectStatsCache = () =>
   (state: WebSocketStateManager) => state.statsCache;
 
 export const selectEmailCache = (emailId: string) =>
-  (state: WebSocketStateManager) => state.emailCache.get(emailId);
+  (state: WebSocketStateManager) => state?.emailCache?.get(emailId);
 
 export const selectPendingUpdatesCount = () =>
-  (state: WebSocketStateManager) => state.pendingUpdates.size;
+  (state: WebSocketStateManager) => state?.pendingUpdates?.size;
 
 export const selectHasErrors = () =>
-  (state: WebSocketStateManager) => state.errors.length > 0;
+  (state: WebSocketStateManager) => state?.errors?.length > 0;
 
 // Event processor for background processing
 export class WebSocketEventProcessor {

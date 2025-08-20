@@ -3,7 +3,7 @@
  * Measures semantic similarity and intent fulfillment
  */
 
-import type { ScoredDocument } from "../types.js";
+import type { ScoredDocument } from "../types";
 
 export interface RelevanceResult {
   score: number;
@@ -44,11 +44,11 @@ export class RelevanceScorer {
     );
 
     // Identify matched and missing terms
-    const keyTermsMatched = queryTerms.filter((term) =>
-      responseTerms.some((rTerm) => this.termsMatch(term, rTerm)),
+    const keyTermsMatched = queryTerms?.filter((term: any) =>
+      responseTerms.some((rTerm: any) => this.termsMatch(term, rTerm)),
     );
-    const missingKeyTerms = queryTerms.filter(
-      (term) => !keyTermsMatched.includes(term),
+    const missingKeyTerms = queryTerms?.filter(
+      (term: any) => !keyTermsMatched.includes(term),
     );
 
     // Calculate overall score (weighted average)
@@ -116,7 +116,7 @@ export class RelevanceScorer {
       .toLowerCase()
       .replace(/[?.,!]/g, "")
       .split(/\s+/)
-      .filter((term) => term.length > 2 && !stopWords.has(term));
+      .filter((term: any) => term?.length || 0 > 2 && !stopWords.has(term));
 
     // Also extract important phrases
     const phrases = this.extractPhrases(query);
@@ -164,7 +164,7 @@ export class RelevanceScorer {
       .toLowerCase()
       .replace(/[.,!]/g, "")
       .split(/\s+/)
-      .filter((term) => term.length > 2 && !stopWords.has(term));
+      .filter((term: any) => term?.length || 0 > 2 && !stopWords.has(term));
   }
 
   /**
@@ -187,10 +187,10 @@ export class RelevanceScorer {
       /best practice/gi,
     ];
 
-    phrasePatterns.forEach((pattern) => {
+    phrasePatterns.forEach((pattern: any) => {
       const matches = text.match(pattern);
       if (matches) {
-        phrases.push(...matches.map((m) => m.toLowerCase()));
+        phrases.push(...matches?.map((m: any) => m.toLowerCase()));
       }
     });
 
@@ -275,14 +275,14 @@ export class RelevanceScorer {
 
     // Calculate Jaccard similarity
     const intersection = new Set(
-      [...queryWords].filter((x) => responseWords.has(x)),
+      [...queryWords].filter((x: any) => responseWords.has(x)),
     );
     const union = new Set([...queryWords, ...responseWords]);
 
     const jaccardSimilarity = intersection.size / union.size;
 
     // Boost score if response is substantially longer (more detailed)
-    const lengthBonus = Math.min(0.2, (response.length / query.length) * 0.02);
+    const lengthBonus = Math.min(0.2, (response?.length || 0 / query?.length || 0) * 0.02);
 
     return Math.min(1, jaccardSimilarity + lengthBonus);
   }
@@ -294,13 +294,13 @@ export class RelevanceScorer {
     queryTerms: string[],
     responseTerms: string[],
   ): number {
-    if (queryTerms.length === 0) return 1;
+    if (queryTerms?.length || 0 === 0) return 1;
 
-    const coveredTerms = queryTerms.filter((term) =>
-      responseTerms.some((rTerm) => this.termsMatch(term, rTerm)),
+    const coveredTerms = queryTerms?.filter((term: any) =>
+      responseTerms.some((rTerm: any) => this.termsMatch(term, rTerm)),
     );
 
-    return coveredTerms.length / queryTerms.length;
+    return coveredTerms?.length || 0 / queryTerms?.length || 0;
   }
 
   /**
@@ -314,7 +314,7 @@ export class RelevanceScorer {
     if (this.simpleStem(term1) === this.simpleStem(term2)) return true;
 
     // Substring matching for longer terms
-    if (term1.length > 5 && term2.length > 5) {
+    if (term1?.length || 0 > 5 && term2?.length || 0 > 5) {
       return term1.includes(term2) || term2.includes(term1);
     }
 
@@ -345,16 +345,16 @@ export class RelevanceScorer {
     const responseLower = response.toLowerCase();
 
     // Check for expected elements based on intent type
-    if (intent.expectedElements.length === 0) {
+    if (intent?.expectedElements?.length === 0) {
       return 0.7; // Default score for general queries
     }
 
-    const foundElements = intent.expectedElements.filter((element) =>
+    const foundElements = intent?.expectedElements?.filter((element: any) =>
       responseLower.includes(element),
     );
 
     const fulfillmentRatio =
-      foundElements.length / intent.expectedElements.length;
+      foundElements?.length || 0 / intent?.expectedElements?.length;
 
     // Additional checks based on intent type
     switch (intent.type) {
@@ -393,7 +393,7 @@ export class RelevanceScorer {
         const listMarkers = response.match(
           /(\d+[.)]\s|[-*]\s|\b(first|second|third)\b)/gi,
         );
-        if (listMarkers && listMarkers.length > 1) {
+        if (listMarkers && listMarkers?.length || 0 > 1) {
           return Math.max(0.8, fulfillmentRatio);
         }
         break;
@@ -410,7 +410,7 @@ export class RelevanceScorer {
     return (
       relevanceResult.score >= 0.7 &&
       relevanceResult.intentFulfillment >= 0.7 &&
-      relevanceResult.missingKeyTerms.length <= 1
+      relevanceResult?.missingKeyTerms?.length <= 1
     );
   }
 

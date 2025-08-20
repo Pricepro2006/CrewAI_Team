@@ -70,7 +70,7 @@ export const walmartDataRouter = router({
 
         logger.info('Search completed successfully', 'WALMART_API', {
           query: input.query,
-          productsFound: response.products.length
+          productsFound: response?.products?.length
         });
 
         return response;
@@ -109,7 +109,7 @@ export const walmartDataRouter = router({
           productUrl: input.productUrl
         });
 
-        if (!productData || productData.length === 0) {
+        if (!productData || productData?.length || 0 === 0) {
           throw new Error('Product not found');
         }
 

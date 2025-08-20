@@ -4,18 +4,18 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card.js";
-import { Badge } from "../../../components/ui/badge.js";
-import { Button } from "../../../components/ui/button.js";
-import { EmailTable } from "../email/EmailTable.js";
-import { StatusIndicator } from "../email/StatusIndicator.js";
-import { cn } from "../../../lib/utils.js";
-import { TEAM_MEMBERS } from "../../../config/team-members.config.js";
+} from "../../../components/ui/card";
+import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
+import { EmailTable } from "../email/EmailTable";
+import { StatusIndicator } from "../email/StatusIndicator";
+import { cn } from "../../../lib/utils";
+import { TEAM_MEMBERS } from "../../../config/team-members.config";
 import type {
   EmailRecord,
   EmailStatus,
   Priority,
-} from "../../../types/email-dashboard.interfaces.js";
+} from "../../../types/email-dashboard.interfaces";
 
 interface EmailDashboardMultiPanelProps {
   emails: EmailRecord[];
@@ -53,9 +53,9 @@ export const EmailDashboardMultiPanel = React.memo(({
     () =>
       emails
         .filter(
-          (email) =>
-            email.email_alias.toLowerCase().includes("marketing") ||
-            email.email_alias.toLowerCase().includes("splunk"),
+          (email: EmailRecord) =>
+            email?.email_alias?.toLowerCase().includes("marketing") ||
+            email?.email_alias?.toLowerCase().includes("splunk"),
         )
         .slice(0, 5), // Show top 5
     [emails],
@@ -65,9 +65,9 @@ export const EmailDashboardMultiPanel = React.memo(({
     () =>
       emails
         .filter(
-          (email) =>
-            email.email_alias.toLowerCase().includes("vmware") ||
-            email.email_alias.toLowerCase().includes("tdsynnex"),
+          (email: EmailRecord) =>
+            email?.email_alias?.toLowerCase().includes("vmware") ||
+            email?.email_alias?.toLowerCase().includes("tdsynnex"),
         )
         .slice(0, 5), // Show top 5
     [emails],
@@ -146,12 +146,12 @@ export const EmailDashboardMultiPanel = React.memo(({
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Marketing-Splunk</CardTitle>
-              <Badge variant="secondary">{marketingEmails.length}</Badge>
+              <Badge variant="secondary">{marketingEmails?.length || 0}</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {marketingEmails.length > 0 ? (
-              marketingEmails.map(renderPanelItem)
+            {marketingEmails?.length || 0 > 0 ? (
+              marketingEmails?.map(renderPanelItem)
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No marketing emails
@@ -165,12 +165,12 @@ export const EmailDashboardMultiPanel = React.memo(({
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">VMware@TDSynnex</CardTitle>
-              <Badge variant="secondary">{vmwareEmails.length}</Badge>
+              <Badge variant="secondary">{vmwareEmails?.length || 0}</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {vmwareEmails.length > 0 ? (
-              vmwareEmails.map(renderPanelItem)
+            {vmwareEmails?.length || 0 > 0 ? (
+              vmwareEmails?.map(renderPanelItem)
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No VMware emails

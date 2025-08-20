@@ -20,17 +20,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../components/ui/table.js";
-import { Checkbox } from "../../../components/ui/checkbox.js";
-import { StatusIndicator } from "./StatusIndicator.js";
-import { InlineAssignment } from "./AssignmentDropdown.js";
+} from "../../../components/ui/table";
+import { Checkbox } from "../../../components/ui/checkbox";
+import { StatusIndicator } from "./StatusIndicator";
+import { InlineAssignment } from "./AssignmentDropdown";
 import { formatDistanceToNow } from "date-fns";
-import { cn } from "../../../lib/utils.js";
+import { cn } from "../../../lib/utils";
 import type {
   EmailRecord,
   SortableColumn,
   SortDirection,
-} from "../../../types/email-dashboard.interfaces.js";
+} from "../../../types/email-dashboard.interfaces";
 
 interface TeamMember {
   id: string;
@@ -75,8 +75,8 @@ export function EmailTable({
   // Convert selected emails array to row selection object
   const rowSelectionFromProps = useMemo(() => {
     const selection: RowSelectionState = {};
-    selectedEmails.forEach((id) => {
-      const index = emails.findIndex((email) => email.id === id);
+    selectedEmails.forEach((id: string) => {
+      const index = emails.findIndex((email: EmailRecord) => email.id === id);
       if (index !== -1) {
         selection[index] = true;
       }
@@ -96,7 +96,7 @@ export function EmailTable({
         header: ({ table }: { table: TanstackTable<EmailRecord> }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value: boolean) =>
+            onCheckedChange={(value) =>
               table.toggleAllPageRowsSelected(!!value)
             }
             aria-label="Select all"
@@ -106,7 +106,7 @@ export function EmailTable({
         cell: ({ row }) => (
           <Checkbox
             checked={row.getIsSelected()}
-            onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
             className="translate-y-[2px]"
           />
@@ -191,8 +191,8 @@ export function EmailTable({
         accessorKey: "assignedTo",
         header: "Assigned To",
         cell: ({ row }) => (
-          <div className="text-sm" onClick={(e) => e.stopPropagation()}>
-            {onAssignEmail && teamMembers.length > 0 ? (
+          <div className="text-sm" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            {onAssignEmail && (teamMembers?.length || 0) > 0 ? (
               <InlineAssignment
                 emailId={row.original.id}
                 currentAssignee={row.original.assignedTo}
@@ -238,27 +238,25 @@ export function EmailTable({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: (updater) => {
-      setSorting(updater);
+      const newSorting = typeof updater === "function" ? updater(sorting) : updater;
+      setSorting(newSorting);
       // Call external sort handler if provided
-      if (onSort && typeof updater === "function") {
-        const newSorting = updater(sorting);
-        if (newSorting.length > 0 && newSorting[0]) {
-          const { id, desc } = newSorting[0];
-          onSort(id as SortableColumn, desc ? "desc" : "asc");
-        }
+      if (onSort && newSorting.length > 0 && newSorting[0]) {
+        const { id, desc } = newSorting[0];
+        onSort(id as SortableColumn, desc ? "desc" : "asc");
       }
     },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
-      setRowSelection(updater);
+      const newSelection = typeof updater === "function" ? updater(rowSelection) : updater;
+      setRowSelection(newSelection);
       // Call external selection handler if provided
-      if (onEmailsSelect && typeof updater === "function") {
-        const newSelection = updater(rowSelection);
+      if (onEmailsSelect) {
         const selectedIds = Object.keys(newSelection)
-          .filter((key) => newSelection[key])
-          .map((index) => emails[parseInt(index)]?.id)
-          .filter((id): id is string => id !== undefined);
+          .filter((key: string) => newSelection[key])
+          .map((index: string) => emails[parseInt(index)]?.id)
+          .filter((id: string | undefined): id is string => id !== undefined);
         onEmailsSelect(selectedIds);
       }
     },
@@ -319,7 +317,7 @@ export function EmailTable({
     );
   }
 
-  if (emails.length === 0) {
+  if ((emails?.length || 0) === 0) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="flex flex-col items-center gap-4 text-center">
@@ -372,7 +370,7 @@ export function EmailTable({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   generateCSRFToken,
   setCSRFCookie,
@@ -5,21 +6,22 @@ import {
   getRequestCSRFToken,
   validateCSRFToken,
   getCSRFStats,
-} from "../middleware/security/csrf.js";
-import { csrfValidator } from "../middleware/csrfValidator.js";
-import { describe, test, expect, vi } from "vitest";
+} from '../middleware/security/csrf';
+import { csrfValidator } from '../middleware/csrfValidator';
 import type { Request, Response, NextFunction } from "express";
 
 // Mock request and response objects for testing
-const createMockRequest = (options: {
+interface MockRequestOptions {
   cookies?: Record<string, string>;
   headers?: Record<string, string>;
-  body?: any;
-  query?: any;
+  body?: Record<string, unknown>;
+  query?: Record<string, unknown>;
   method?: string;
   path?: string;
   ip?: string;
-}): Partial<Request> => ({
+}
+
+const createMockRequest = (options: MockRequestOptions): Partial<Request> => ({
   cookies: options.cookies || {},
   headers: options.headers || {},
   body: options.body || {},
@@ -29,14 +31,28 @@ const createMockRequest = (options: {
   ip: options.ip || '127.0.0.1',
 });
 
-const createMockResponse = (): Partial<Response> & { _cookies: any[]; _headers: Record<string, string>; _status?: number; _json?: any } => {
-  const cookies: Array<{ name: string; value: string; options: any }> = [];
+interface MockCookieOptions {
+  httpOnly?: boolean;
+  secure?: boolean;
+  maxAge?: number;
+  sameSite?: string;
+}
+
+interface MockResponseExtensions {
+  _cookies: Array<{ name: string; value: string; options: MockCookieOptions }>;
+  _headers: Record<string, string>;
+  _status?: number;
+  _json?: unknown;
+}
+
+const createMockResponse = (): Partial<Response> & MockResponseExtensions => {
+  const cookies: Array<{ name: string; value: string; options: MockCookieOptions }> = [];
   const headers: Record<string, string> = {};
   let status: number | undefined;
-  let jsonData: any;
+  let jsonData: unknown;
   
   const mockResponse = {
-    cookie: (name: string, value: string, options: any) => {
+    cookie: (name: string, value: string, options: MockCookieOptions) => {
       cookies.push({ name, value, options });
       return mockResponse;
     },
@@ -49,7 +65,7 @@ const createMockResponse = (): Partial<Response> & { _cookies: any[]; _headers: 
       status = code;
       return mockResponse;
     },
-    json: (data: any) => {
+    json: (data: unknown) => {
       jsonData = data;
       return mockResponse;
     },
@@ -57,7 +73,7 @@ const createMockResponse = (): Partial<Response> & { _cookies: any[]; _headers: 
     _headers: headers,
     get _status() { return status; },
     get _json() { return jsonData; },
-  } as any;
+  } as Partial<Response> & MockResponseExtensions;
   
   return mockResponse;
 };
@@ -87,10 +103,10 @@ describe("CSRF Protection Unit Tests", () => {
       
       expect(cookie.name).toMatch(/csrf-token/);
       expect(cookie.value).toBe(token);
-      expect(cookie.options.httpOnly).toBe(true);
-      expect(cookie.options.sameSite).toBe("strict");
-      expect(cookie.options.path).toBe("/");
-      expect(typeof cookie.options.maxAge).toBe("number");
+      expect(cookie?.options?.length).toBe(true);
+      expect(cookie?.options?.length).toBe("strict");
+      expect(cookie?.options?.length).toBe("/");
+      expect(typeof cookie?.options?.length).toBe("number");
     });
   });
 
@@ -241,7 +257,7 @@ describe("CSRF Protection Unit Tests", () => {
       expect(mockNext).not.toHaveBeenCalled();
       expect(mockRes._status).toBe(403);
       expect(mockRes._json).toHaveProperty("error");
-      expect(mockRes._json.error).toContain("CSRF");
+      expect(mockRes?._json?.length).toContain("CSRF");
     });
 
     test("csrfValidator should accept POST requests with valid CSRF tokens", () => {
@@ -262,7 +278,7 @@ describe("CSRF Protection Unit Tests", () => {
 
       expect(mockNext).toHaveBeenCalledWith();
       expect(mockRes._status).toBeUndefined();
-      expect((mockReq as any).csrfToken).toBe(token);
+      expect((mockReq as Request & { csrfToken?: string }).csrfToken).toBe(token);
     });
 
     test("csrfValidator should reject POST requests with mismatched CSRF tokens", () => {
@@ -284,8 +300,8 @@ describe("CSRF Protection Unit Tests", () => {
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(mockRes._status).toBe(403);
-      expect(mockRes._json.error).toContain("CSRF");
-      expect(mockRes._json.reason).toBe("Token mismatch");
+      expect(mockRes?._json?.length).toContain("CSRF");
+      expect(mockRes?._json?.length).toBe("Token mismatch");
     });
   });
 
@@ -357,13 +373,13 @@ describe("CSRF Protection Unit Tests", () => {
       const cookie = mockRes._cookies[0];
       
       // Verify basic security attributes
-      expect(cookie.options.httpOnly).toBe(true);
-      expect(cookie.options.sameSite).toBe("strict");
-      expect(cookie.options.path).toBe("/");
-      expect(typeof cookie.options.maxAge).toBe("number");
+      expect(cookie?.options?.length).toBe(true);
+      expect(cookie?.options?.length).toBe("strict");
+      expect(cookie?.options?.length).toBe("/");
+      expect(typeof cookie?.options?.length).toBe("number");
       
       // The secure flag depends on environment and parameter
-      expect(typeof cookie.options.secure).toBe("boolean");
+      expect(typeof cookie?.options?.length).toBe("boolean");
     });
 
     test("setCSRFCookie should respect the secure parameter correctly", () => {
@@ -377,9 +393,9 @@ describe("CSRF Protection Unit Tests", () => {
       // In non-production, secure should still be false regardless of parameter
       // In production, it follows the environment logic
       if (process.env.NODE_ENV === 'production') {
-        expect(cookie.options.secure).toBe(true);
+        expect(cookie?.options?.length).toBe(true);
       } else {
-        expect(cookie.options.secure).toBe(false);
+        expect(cookie?.options?.length).toBe(false);
       }
     });
   });

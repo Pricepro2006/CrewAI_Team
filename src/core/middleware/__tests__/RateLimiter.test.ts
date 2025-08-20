@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from "express";
-import { RateLimiter } from "../RateLimiter.js";
+import { RateLimiter } from '../RateLimiter';
 
 // Mock Redis
 vi.mock("ioredis", () => {
@@ -196,7 +196,7 @@ describe("RateLimiter", () => {
       expect(nextFn).not.toHaveBeenCalled();
 
       // Wait for window to slide
-      await new Promise((resolve) => setTimeout(resolve, 1100));
+      await new Promise((resolve: any) => setTimeout(resolve, 1100));
 
       // Should allow request again
       if ("mockReset" in nextFn) nextFn.mockReset();
@@ -235,7 +235,7 @@ describe("RateLimiter", () => {
       expect(nextFn).not.toHaveBeenCalled();
 
       // Wait for token refill
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve: any) => setTimeout(resolve, 600));
 
       // Should have 1 token now
       if ("mockReset" in nextFn) nextFn.mockReset();

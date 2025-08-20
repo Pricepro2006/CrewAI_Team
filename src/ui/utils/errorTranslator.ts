@@ -154,10 +154,10 @@ export function translateError(error: Error | string): string {
   // Find matching error pattern
   for (const mapping of ERROR_MAPPINGS) {
     if (typeof mapping.pattern === "string") {
-      if (errorString.includes(mapping.pattern.toLowerCase())) {
+      if (errorString.includes(mapping?.pattern?.toLowerCase())) {
         return mapping.message;
       }
-    } else if (mapping.pattern.test(errorMessage)) {
+    } else if (mapping?.pattern?.test(errorMessage)) {
       return mapping.message;
     }
   }
@@ -182,10 +182,10 @@ export function getErrorCategory(error: Error | string): ErrorMapping["category"
 
   for (const mapping of ERROR_MAPPINGS) {
     if (typeof mapping.pattern === "string") {
-      if (errorMessage.toLowerCase().includes(mapping.pattern.toLowerCase())) {
+      if (errorMessage.toLowerCase().includes(mapping?.pattern?.toLowerCase())) {
         return mapping.category;
       }
-    } else if (mapping.pattern.test(errorMessage)) {
+    } else if (mapping?.pattern?.test(errorMessage)) {
       return mapping.category;
     }
   }

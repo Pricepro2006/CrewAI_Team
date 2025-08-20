@@ -3,7 +3,38 @@
  * Provides structured logging with proper levels and formatting
  */
 
-import pino from 'pino';
+// Optional Pino dependency - fallback to console if not available
+let pino: any;
+let pinoLogger: any;
+
+try {
+  pino = require('pino');
+  
+  // Create logger instance
+  pinoLogger = pino({
+    name: 'nlp-service',
+    level: process.env.LOG_LEVEL || 'info',
+    formatters: {
+      level: (label: string) => {
+        return { level: label.toUpperCase() };
+      },
+    },
+    timestamp: pino.stdTimeFunctions?.isoTime || (() => `,"time":"${new Date().toISOString()}"`),
+    // Pretty print in development
+    transport: process.env.NODE_ENV !== 'production' ? {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'SYS:standard',
+        ignore: 'pid,hostname'
+      }
+    } : undefined
+  });
+} catch (error) {
+  // Pino not available - use fallback console logger
+  pino = null;
+  pinoLogger = null;
+}
 
 export interface LogContext {
   component?: string;
@@ -13,81 +44,129 @@ export interface LogContext {
   [key: string]: any;
 }
 
-// Create logger instance
-const pinoLogger = pino({
-  name: 'nlp-service',
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label) => {
-      return { level: label.toUpperCase() };
-    },
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-  // Pretty print in development
-  transport: process.env.NODE_ENV !== 'production' ? {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'SYS:standard',
-      ignore: 'pid,hostname'
-    }
-  } : undefined
-});
+/**
+ * Console logger fallback
+ */
+class ConsoleLogger {
+  private formatMessage(level: string, message: string, component?: string, context?: LogContext): string {
+    const timestamp = new Date().toISOString();
+    const comp = component ? `[${component}]` : '';
+    const ctx = context ? JSON.stringify(context) : '';
+    return `${timestamp} ${level.toUpperCase()} ${comp} ${message} ${ctx}`;
+  }
+
+  debug(message: string, component?: string, context?: LogContext): void {
+    console.debug(this.formatMessage('debug', message, component, context));
+  }
+
+  info(message: string, component?: string, context?: LogContext): void {
+    console.info(this.formatMessage('info', message, component, context));
+  }
+
+  warn(message: string, component?: string, context?: LogContext): void {
+    console.warn(this.formatMessage('warn', message, component, context));
+  }
+
+  error(message: string, component?: string, context?: LogContext): void {
+    console.error(this.formatMessage('error', message, component, context));
+  }
+
+  fatal(message: string, component?: string, context?: LogContext): void {
+    console.error(this.formatMessage('fatal', message, component, context));
+  }
+
+  child(defaultContext: LogContext): ConsoleLogger {
+    const childLogger = new ConsoleLogger();
+    // Store default context for child logger
+    (childLogger as any).defaultContext = defaultContext;
+    return childLogger;
+  }
+
+  getRawLogger() {
+    return console;
+  }
+
+  async flush(): Promise<void> {
+    // Console doesn't need flushing
+    return Promise.resolve();
+  }
+}
 
 /**
  * Enhanced logger with context support
  */
 class Logger {
   private pino = pinoLogger;
+  private fallbackLogger = new ConsoleLogger();
 
   /**
    * Debug level logging
    */
   debug(message: string, component?: string, context?: LogContext): void {
-    this.pino.debug({
-      component,
-      ...context
-    }, message);
+    if (this.pino) {
+      this.pino.debug({
+        component,
+        ...context
+      }, message);
+    } else {
+      this.fallbackLogger.debug(message, component, context);
+    }
   }
 
   /**
    * Info level logging
    */
   info(message: string, component?: string, context?: LogContext): void {
-    this.pino.info({
-      component,
-      ...context
-    }, message);
+    if (this.pino) {
+      this.pino.info({
+        component,
+        ...context
+      }, message);
+    } else {
+      this.fallbackLogger.info(message, component, context);
+    }
   }
 
   /**
    * Warning level logging
    */
   warn(message: string, component?: string, context?: LogContext): void {
-    this.pino.warn({
-      component,
-      ...context
-    }, message);
+    if (this.pino) {
+      this.pino.warn({
+        component,
+        ...context
+      }, message);
+    } else {
+      this.fallbackLogger.warn(message, component, context);
+    }
   }
 
   /**
    * Error level logging
    */
   error(message: string, component?: string, context?: LogContext): void {
-    this.pino.error({
-      component,
-      ...context
-    }, message);
+    if (this.pino) {
+      this.pino.error({
+        component,
+        ...context
+      }, message);
+    } else {
+      this.fallbackLogger.error(message, component, context);
+    }
   }
 
   /**
    * Fatal level logging
    */
   fatal(message: string, component?: string, context?: LogContext): void {
-    this.pino.fatal({
-      component,
-      ...context
-    }, message);
+    if (this.pino) {
+      this.pino.fatal({
+        component,
+        ...context
+      }, message);
+    } else {
+      this.fallbackLogger.fatal(message, component, context);
+    }
   }
 
   /**
@@ -95,7 +174,11 @@ class Logger {
    */
   child(defaultContext: LogContext): Logger {
     const childLogger = new Logger();
-    childLogger.pino = this.pino.child(defaultContext);
+    if (this.pino) {
+      childLogger.pino = this.pino.child(defaultContext);
+    } else {
+      childLogger.fallbackLogger = this.fallbackLogger.child(defaultContext);
+    }
     return childLogger;
   }
 
@@ -103,18 +186,22 @@ class Logger {
    * Get raw pino instance
    */
   getRawLogger() {
-    return this.pino;
+    return this.pino || this.fallbackLogger.getRawLogger();
   }
 
   /**
    * Flush logs (useful for graceful shutdown)
    */
   async flush(): Promise<void> {
-    return new Promise((resolve) => {
-      this.pino.flush(() => {
-        resolve();
+    if (this.pino && this.pino.flush) {
+      return new Promise<void>((resolve) => {
+        this.pino.flush(() => {
+          resolve();
+        });
       });
-    });
+    } else {
+      return this.fallbackLogger.flush();
+    }
   }
 
   /**
@@ -139,7 +226,8 @@ class Logger {
     context: LogContext = {}
   ): void {
     const level = statusCode >= 400 ? 'warn' : 'info';
-    this[level]('Request completed', 'REQUEST', {
+    const logMethod = this[level] as (message: string, component?: string, context?: LogContext) => void;
+    logMethod.call(this, 'Request completed', 'REQUEST', {
       method,
       url,
       statusCode,
@@ -159,7 +247,8 @@ class Logger {
     context: LogContext = {}
   ): void {
     const level = success ? 'info' : 'error';
-    this[level]('NLP operation completed', 'NLP_OPERATION', {
+    const logMethod = this[level] as (message: string, component?: string, context?: LogContext) => void;
+    logMethod.call(this, 'NLP operation completed', 'NLP_OPERATION', {
       operation,
       query: query.length > 100 ? query.substring(0, 100) + '...' : query,
       queryLength: query.length,
@@ -241,7 +330,8 @@ class Logger {
     const level = status === 'healthy' ? 'debug' : 
                  status === 'degraded' ? 'warn' : 'error';
     
-    this[level]('Health check', 'HEALTH', {
+    const logMethod = this[level] as (message: string, component?: string, context?: LogContext) => void;
+    logMethod.call(this, 'Health check', 'HEALTH', {
       component,
       status,
       details,
@@ -307,6 +397,3 @@ export const logger = new Logger();
 
 // Export Logger class for creating child loggers
 export { Logger };
-
-// Export types
-export type { LogContext };

@@ -14,9 +14,9 @@ export class ServiceCleanupManager {
    * Register a cleanup task
    */
   registerCleanupTask(task: CleanupTask): void {
-    this.cleanupTasks.push(task);
+    this?.cleanupTasks?.push(task);
     // Sort by priority (higher first)
-    this.cleanupTasks.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    this?.cleanupTasks?.sort((a, b) => (b.priority || 0) - (a.priority || 0));
   }
 
   /**
@@ -37,7 +37,7 @@ export class ServiceCleanupManager {
 
     this.isShuttingDown = true;
     logger.info("Starting service cleanup", "CLEANUP", {
-      taskCount: this.cleanupTasks.length,
+      taskCount: this?.cleanupTasks?.length,
     });
 
     const results = {
@@ -56,7 +56,7 @@ export class ServiceCleanupManager {
         results.failed++;
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
-        results.errors.push({ task: task.name, error: errorMessage });
+        results?.errors?.push({ task: task.name, error: errorMessage });
         logger.error(`Failed to cleanup: ${task.name}`, "CLEANUP", { error });
       }
     }

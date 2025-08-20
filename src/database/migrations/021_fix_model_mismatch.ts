@@ -3,10 +3,10 @@
  * Updates default model from qwen2.5:0.5b to qwen3:0.6b
  */
 
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 
-export function up(db: Database.Database): void {
+export function up(db: DatabaseInstance): void {
   logger.info("Fixing model mismatch in database", "MIGRATION");
   
   try {
@@ -91,7 +91,7 @@ export function up(db: Database.Database): void {
   }
 }
 
-export function down(db: Database.Database): void {
+export function down(db: DatabaseInstance): void {
   // Reverting would change back to incorrect model
   logger.warn("Reverting model fix - this will restore the mismatch", "MIGRATION");
   

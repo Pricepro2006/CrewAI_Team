@@ -109,8 +109,8 @@ export class BusinessSearchMiddleware extends EventEmitter {
     this.featureFlags = FeatureFlagService.getInstance();
     this.rateLimiter = new RateLimiter(process.env.USE_REDIS === "true");
     this.cache = new BusinessSearchCache({
-      maxAge: this.config.cacheMaxAge,
-      staleWhileRevalidate: this.config.cacheStaleWhileRevalidate,
+      maxAge: this?.config?.cacheMaxAge,
+      staleWhileRevalidate: this?.config?.cacheStaleWhileRevalidate,
       useRedis: process.env.USE_REDIS === "true",
     });
 
@@ -187,7 +187,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         }
 
         // Track request
-        this.metrics.totalRequests++;
+        if (this.metrics.totalRequests) { this.metrics.totalRequests++ };
 
         // Check if we should enhance this prompt
         const shouldEnhance = await this.shouldEnhancePrompt(prompt);
@@ -198,17 +198,17 @@ export class BusinessSearchMiddleware extends EventEmitter {
 
         // Extract location from prompt for cache key
         const optimization = BusinessQueryOptimizer.optimize(prompt);
-        const location = optimization.components.location;
+        const location = optimization?.components?.location;
 
         // Check cache if enabled
-        if (this.config.cacheEnabled) {
-          const cacheEntry = await this.cache.get(
+        if (this?.config?.cacheEnabled) {
+          const cacheEntry = await this?.cache?.get(
             prompt,
             location?.rawLocation,
           );
 
           if (cacheEntry) {
-            this.metrics.cacheHits++;
+            if (this.metrics.cacheHits) { this.metrics.cacheHits++ };
             this.updateCacheMetrics();
 
             // Track latency for cached response
@@ -230,33 +230,33 @@ export class BusinessSearchMiddleware extends EventEmitter {
 
             return cacheEntry.response;
           } else {
-            this.metrics.cacheMisses++;
+            if (this.metrics.cacheMisses) { this.metrics.cacheMisses++ };
             this.updateCacheMetrics();
           }
         }
 
         // Enhance the prompt
         const enhancedPrompt = await this.enhancePrompt(prompt);
-        this.metrics.enhancedRequests++;
+        if (this.metrics.enhancedRequests) { this.metrics.enhancedRequests++ };
 
         // Call the original method with enhanced prompt
         const response = await originalMethod(enhancedPrompt, options) as string;
 
         // Validate response if enabled
         let validation: ValidationResult | undefined;
-        if (this.config.validateResponses) {
+        if (this?.config?.validateResponses) {
           validation = await this.validateResponse(response);
-          this.metrics.validatedResponses++;
+          if (this.metrics.validatedResponses) { this.metrics.validatedResponses++ };
 
           if (!validation.isValid) {
-            this.metrics.failedValidations++;
+            if (this.metrics.failedValidations) { this.metrics.failedValidations++ };
             this.handleValidationFailure(validation, prompt, response);
           }
         }
 
         // Store in cache if enabled and response is valid
-        if (this.config.cacheEnabled && (!validation || validation.isValid)) {
-          await this.cache.set(
+        if (this?.config?.cacheEnabled && (!validation || validation.isValid)) {
+          await this?.cache?.set(
             prompt,
             location?.rawLocation,
             response,
@@ -308,7 +308,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         }
 
         // Track request
-        this.metrics.totalRequests++;
+        if (this.metrics.totalRequests) { this.metrics.totalRequests++ };
 
         // Check if we should enhance this prompt
         const shouldEnhance = await this.shouldEnhancePrompt(prompt);
@@ -319,18 +319,18 @@ export class BusinessSearchMiddleware extends EventEmitter {
 
         // Enhance the prompt
         const enhancedPrompt = await this.enhancePrompt(prompt);
-        this.metrics.enhancedRequests++;
+        if (this.metrics.enhancedRequests) { this.metrics.enhancedRequests++ };
 
         // Call the original method with enhanced prompt
         const response = await originalMethod(enhancedPrompt, options) as OllamaGenerateWithLogProbsResponse;
 
         // Validate response if enabled
-        if (this.config.validateResponses && response.text) {
+        if (this?.config?.validateResponses && response.text) {
           const validation = await this.validateResponse(response.text);
-          this.metrics.validatedResponses++;
+          if (this.metrics.validatedResponses) { this.metrics.validatedResponses++ };
 
           if (!validation.isValid) {
-            this.metrics.failedValidations++;
+            if (this.metrics.failedValidations) { this.metrics.failedValidations++ };
             this.handleValidationFailure(validation, prompt, response.text);
           }
         }
@@ -375,7 +375,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         }
 
         // Track request
-        this.metrics.totalRequests++;
+        if (this.metrics.totalRequests) { this.metrics.totalRequests++ };
 
         // Check if we should enhance this prompt
         const shouldEnhance = await this.shouldEnhancePrompt(prompt);
@@ -386,7 +386,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
 
         // Enhance the prompt
         const enhancedPrompt = await this.enhancePrompt(prompt);
-        this.metrics.enhancedRequests++;
+        if (this.metrics.enhancedRequests) { this.metrics.enhancedRequests++ };
 
         // Wrap the chunk callback to collect full response for validation
         let fullResponse = "";
@@ -405,14 +405,14 @@ export class BusinessSearchMiddleware extends EventEmitter {
         ) as string;
 
         // Validate response if enabled
-        if (this.config.validateResponses) {
+        if (this?.config?.validateResponses) {
           const validation = await this.validateResponse(
             fullResponse || response,
           );
-          this.metrics.validatedResponses++;
+          if (this.metrics.validatedResponses) { this.metrics.validatedResponses++ };
 
           if (!validation.isValid) {
-            this.metrics.failedValidations++;
+            if (this.metrics.failedValidations) { this.metrics.failedValidations++ };
             this.handleValidationFailure(
               validation,
               prompt,
@@ -444,8 +444,8 @@ export class BusinessSearchMiddleware extends EventEmitter {
    */
   private isEnabled(): boolean {
     return (
-      this.featureFlags.isEnabled("business-search-enhancement") &&
-      this.config.enabled
+      this?.featureFlags?.isEnabled("business-search-enhancement") &&
+      this?.config?.enabled
     );
   }
 
@@ -454,8 +454,8 @@ export class BusinessSearchMiddleware extends EventEmitter {
    */
   private async shouldEnhancePrompt(prompt: string): Promise<boolean> {
     // Check bypass patterns
-    if (this.config.bypassPatterns) {
-      for (const pattern of this.config.bypassPatterns) {
+    if (this?.config?.bypassPatterns) {
+      for (const pattern of this?.config?.bypassPatterns) {
         if (pattern.test(prompt)) {
           logger.debug("Prompt matches bypass pattern, skipping enhancement");
           return false;
@@ -464,8 +464,8 @@ export class BusinessSearchMiddleware extends EventEmitter {
     }
 
     // Check force enhance patterns
-    if (this.config.forceEnhancePatterns) {
-      for (const pattern of this.config.forceEnhancePatterns) {
+    if (this?.config?.forceEnhancePatterns) {
+      for (const pattern of this?.config?.forceEnhancePatterns) {
         if (pattern.test(prompt)) {
           logger.debug("Prompt matches force enhance pattern");
           return true;
@@ -477,31 +477,31 @@ export class BusinessSearchMiddleware extends EventEmitter {
     const optimization = BusinessQueryOptimizer.optimize(prompt);
 
     // Check for security issues
-    if (optimization.securityFlags.some((f) => f.severity === "high")) {
+    if (optimization?.securityFlags?.some((f: any) => f.severity === "high")) {
       logger.warn("Security issue detected in prompt, skipping enhancement");
       return false;
     }
 
     // Check if it's a business-related query
     const isBusinessQuery =
-      optimization.components.serviceType !== "" ||
-      optimization.components.businessIndicators.length > 0 ||
+      optimization?.components?.serviceType !== "" ||
+      optimization?.components?.businessIndicators?.length || 0 > 0 ||
       optimization.confidence > 0.5;
 
     // Check if prompt already has enhancement
-    if (this.promptEnhancer.isAlreadyEnhanced(prompt)) {
+    if (this?.promptEnhancer?.isAlreadyEnhanced(prompt)) {
       return false;
     }
 
     // Use A/B testing percentage from feature flags
     if (isBusinessQuery) {
-      const percentage = this.featureFlags.getUserPercentage(
+      const percentage = this?.featureFlags?.getUserPercentage(
         "business-search-enhancement",
       );
       const shouldEnhance = Math.random() * 100 < percentage;
 
       if (shouldEnhance) {
-        this.metrics.searchTriggeredRequests++;
+        if (this.metrics.searchTriggeredRequests) { this.metrics.searchTriggeredRequests++ };
       }
 
       return shouldEnhance;
@@ -551,27 +551,28 @@ export class BusinessSearchMiddleware extends EventEmitter {
     }
 
     const options: BusinessSearchEnhancementOptions = {
-      enhancementLevel: this.config.enhancementLevel,
-      includeExamples: true,
-      preserveOriginalMarkers: true,
+      enableEntityExtraction: true,
+      enableSentimentAnalysis: true,
+      enableWorkflowDetection: true,
+      maxContextLength: 2000,
     };
 
-    const enhanced = this.promptEnhancer.enhance(prompt, options);
+    const enhanced = this?.promptEnhancer?.enhance(prompt, options);
 
     logger.debug("Prompt enhanced for business search", "BUSINESS_SEARCH", {
-      originalLength: prompt.length,
-      enhancedLength: enhanced.length,
-      level: this.config.enhancementLevel,
+      originalLength: prompt?.length || 0,
+      enhancedLength: enhanced?.user?.length,
+      level: this?.config?.enhancementLevel,
     });
 
-    return enhanced;
+    return enhanced.user;
   }
 
   /**
    * Validate a response for business information
    */
   private async validateResponse(response: string): Promise<ValidationResult> {
-    return this.responseValidator.validateResponse(response);
+    return this?.responseValidator?.validateResponse(response);
   }
 
   /**
@@ -601,9 +602,9 @@ export class BusinessSearchMiddleware extends EventEmitter {
   private async checkRateLimit(key: string): Promise<boolean> {
     // Use token bucket limiter for WebSearch operations
     // 30 requests per 5 minutes with burst capacity of 5
-    const tokenBucket = this.rateLimiter.tokenBucketLimiter(5, 0.1); // 0.1 tokens/second = 6 tokens/minute
+    const tokenBucket = this?.rateLimiter?.tokenBucketLimiter(5, 0.1); // 0.1 tokens/second = 6 tokens/minute
 
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       const mockReq = { ip: key } as any;
       const mockRes = {
         setHeader: () => {},
@@ -630,7 +631,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
     if (this.circuitBreakerStatus === "open") {
       if (
         now - this.circuitBreakerLastFailure >
-        this.config.circuitBreakerCooldownMs
+        this?.config?.circuitBreakerCooldownMs
       ) {
         this.circuitBreakerStatus = "half-open";
         this.circuitBreakerFailures = 0;
@@ -646,11 +647,11 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Handle errors and update circuit breaker
    */
   private handleError(error: unknown): void {
-    this.metrics.errors++;
+    if (this.metrics.errors) { this.metrics.errors++ };
     this.circuitBreakerFailures++;
     this.circuitBreakerLastFailure = Date.now();
 
-    if (this.circuitBreakerFailures >= this.config.circuitBreakerThreshold) {
+    if (this.circuitBreakerFailures >= this?.config?.circuitBreakerThreshold) {
       this.circuitBreakerStatus = "open";
       logger.error("Circuit breaker opened due to repeated failures");
     }
@@ -665,25 +666,33 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Track latency and update metrics
    */
   private trackLatency(latency: number): void {
-    this.latencyHistory.push(latency);
+    this?.latencyHistory?.push(latency);
 
-    if (this.latencyHistory.length > this.MAX_LATENCY_HISTORY) {
-      this.latencyHistory.shift();
+    if (this?.latencyHistory?.length > this.MAX_LATENCY_HISTORY) {
+      this?.latencyHistory?.shift();
     }
 
     // Update average latency
-    const sum = this.latencyHistory.reduce((a, b) => a + b, 0);
-    this.metrics.averageLatency = sum / this.latencyHistory.length;
+    const sum = this?.latencyHistory?.reduce((a: any, b: any) => a + b, 0);
+    if (this.metrics) {
+
+      this.metrics.averageLatency = sum / this?.latencyHistory?.length;
+
+    }
 
     // Update circuit breaker status in metrics
-    this.metrics.circuitBreakerStatus = this.circuitBreakerStatus;
+    if (this.metrics) {
+
+      this.metrics.circuitBreakerStatus = this.circuitBreakerStatus;
+
+    }
 
     // Check if latency is too high
-    if (latency > this.config.maxLatencyMs) {
+    if (latency > this?.config?.maxLatencyMs) {
       logger.warn(`High latency detected: ${latency}ms`);
       this.emit("high_latency", {
         latency,
-        threshold: this.config.maxLatencyMs,
+        threshold: this?.config?.maxLatencyMs,
       });
     }
   }
@@ -692,9 +701,12 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Update cache metrics
    */
   private updateCacheMetrics(): void {
-    const total = this.metrics.cacheHits + this.metrics.cacheMisses;
-    this.metrics.cacheHitRate =
-      total > 0 ? (this.metrics.cacheHits / total) * 100 : 0;
+    const total = this?.metrics?.cacheHits + this?.metrics?.cacheMisses;
+    if (this.metrics) {
+
+      this.metrics.cacheHitRate = total > 0 ? (this?.metrics?.cacheHits / total) * 100 : 0;
+
+    }
   }
 
   /**
@@ -759,17 +771,29 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Get cache statistics
    */
   public getCacheStats() {
-    return this.cache.getStats();
+    return this?.cache?.getStats();
   }
 
   /**
    * Clear cache
    */
   public async clearCache(): Promise<void> {
-    await this.cache.clear();
-    this.metrics.cacheHits = 0;
-    this.metrics.cacheMisses = 0;
-    this.metrics.cacheHitRate = 0;
+    await this?.cache?.clear();
+    if (this.metrics) {
+
+      this.metrics.cacheHits = 0;
+
+    }
+    if (this.metrics) {
+
+      this.metrics.cacheMisses = 0;
+
+    }
+    if (this.metrics) {
+
+      this.metrics.cacheHitRate = 0;
+
+    }
     logger.info("Business search cache cleared");
   }
 
@@ -779,30 +803,30 @@ export class BusinessSearchMiddleware extends EventEmitter {
   public async preloadCache(
     queries: Array<{ query: string; location?: string; response: string }>,
   ): Promise<void> {
-    await this.cache.preload(queries);
-    logger.info(`Preloaded ${queries.length} queries into cache`);
+    await this?.cache?.preload(queries);
+    logger.info(`Preloaded ${queries?.length || 0} queries into cache`);
   }
 
   /**
    * Analyze cache performance
    */
   public analyzeCachePerformance() {
-    return this.cache.analyzePerformance();
+    return this?.cache?.analyzePerformance();
   }
 
   /**
    * Search cache entries
    */
   public async searchCache(pattern: RegExp) {
-    return this.cache.search(pattern);
+    return this?.cache?.search(pattern);
   }
 
   /**
    * Cleanup resources
    */
   public async cleanup(): Promise<void> {
-    await this.cache.cleanup();
-    this.rateLimiter.cleanup();
+    await this?.cache?.cleanup();
+    this?.rateLimiter?.cleanup();
     logger.info("BusinessSearchMiddleware cleaned up");
   }
 }

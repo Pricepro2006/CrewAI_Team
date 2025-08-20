@@ -88,7 +88,7 @@ async function testNLPSearch() {
       });
       
       const endTime = Date.now();
-      const data = response.data;
+      const data = response?.data;
       
       // Check intent
       const intentMatch = data.intent === test.expectedIntent;
@@ -108,14 +108,14 @@ async function testNLPSearch() {
       console.log(`   Time: ${endTime - startTime}ms`);
       
       // Show extracted items
-      if (data.items && data.items.length > 0) {
-        console.log(`   Items: ${data.items.join(", ")}`);
+      if (data.items && data?.items?.length > 0) {
+        console.log(`   Items: ${data?.items?.join(", ")}`);
       }
       
       // Show products if found
-      if (data.products && data.products.length > 0) {
-        console.log(`   Products found: ${data.products.length}`);
-        data.products.slice(0, 2).forEach((p: any) => {
+      if (data.products && data?.products?.length > 0) {
+        console.log(`   Products found: ${data?.products?.length}`);
+        data?.products?.slice(0, 2).forEach((p: any) => {
           console.log(`     - ${p.name} ($${p.price})`);
         });
       }
@@ -133,15 +133,15 @@ async function testNLPSearch() {
   
   // Summary
   console.log("=== Test Summary ===");
-  console.log(`Total tests: ${testCases.length}`);
-  console.log(`Passed: ${results.passed} (${((results.passed/testCases.length)*100).toFixed(1)}%)`);
+  console.log(`Total tests: ${testCases?.length || 0}`);
+  console.log(`Passed: ${results.passed} (${((results.passed/testCases?.length || 0)*100).toFixed(1)}%)`);
   console.log(`Failed: ${results.failed}`);
   console.log(`Errors: ${results.errors}`);
   
   // Overall result
-  if (results.passed === testCases.length) {
+  if (results.passed === testCases?.length || 0) {
     console.log("\n🎉 All tests passed! NLP search is working correctly.");
-  } else if (results.passed > testCases.length * 0.7) {
+  } else if (results.passed > testCases?.length || 0 * 0.7) {
     console.log("\n⚠️  Most tests passed, but some issues need attention.");
   } else {
     console.log("\n❌ Many tests failed. NLP search needs debugging.");

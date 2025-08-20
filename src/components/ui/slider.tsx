@@ -1,8 +1,7 @@
 import * as React from "react";
 import { cn } from "../../lib/utils.js";
 
-interface SliderProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
+interface SliderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange" | "defaultValue"> {
   value?: number[];
   defaultValue?: number[];
   min?: number;
@@ -32,7 +31,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
     const currentValue = value || internalValue;
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = [parseFloat(event.target.value)];
+      const newValue = [parseFloat(event?.target?.value)];
       setInternalValue(newValue);
       onValueChange?.(newValue);
     };

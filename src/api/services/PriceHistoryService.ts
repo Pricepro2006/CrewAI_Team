@@ -156,12 +156,12 @@ export class PriceHistoryService {
           priceTrend = 'falling';
           
           // Check if this is a potential deal
-          isDealCandidate = Math.abs(priceChangePercentage) >= (this.DEAL_THRESHOLDS.moderate * 100);
+          isDealCandidate = Math.abs(priceChangePercentage) >= (this?.DEAL_THRESHOLDS?.moderate * 100);
         }
       }
 
       // Insert price record
-      const insertStmt = this.db.prepare(`
+      const insertStmt = this?.db?.prepare(`
         INSERT INTO price_history_enhanced (
           id, product_id, walmart_id, product_name, category, brand,
           current_price, sale_price, was_price, original_price,
@@ -176,7 +176,7 @@ export class PriceHistoryService {
         product.walmartId || product.id,
         product.walmartId || product.id,
         product.name,
-        product.category?.name,
+        typeof product.category === 'string' ? product.category : product.category?.name,
         product.brand,
         priceData.currentPrice,
         priceData.salePrice,
@@ -227,7 +227,7 @@ export class PriceHistoryService {
     }>
   ): Promise<void> {
     try {
-      const transaction = this.db.transaction(() => {
+      const transaction = this?.db?.transaction(() => {
         for (const record of priceRecords) {
           this.recordPrice(record.product, record.priceData);
         }
@@ -236,7 +236,7 @@ export class PriceHistoryService {
       transaction();
       
       logger.info("Batch price recording completed", "PRICE_HISTORY", {
-        count: priceRecords.length
+        count: priceRecords?.length || 0
       });
 
     } catch (error) {
@@ -250,7 +250,7 @@ export class PriceHistoryService {
    */
   async getLatestPrice(productId: string): Promise<PriceRecord | null> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM price_history_enhanced 
         WHERE product_id = ? OR walmart_id = ?
         ORDER BY recorded_at DESC 
@@ -300,7 +300,7 @@ export class PriceHistoryService {
     limit: number = 100
   ): Promise<PriceRecord[]> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM price_history_enhanced 
         WHERE (product_id = ? OR walmart_id = ?)
         AND recorded_at >= datetime('now', '-${days} days')
@@ -310,7 +310,7 @@ export class PriceHistoryService {
 
       const rows = stmt.all(productId, productId, limit) as any[];
       
-      return rows.map(row => ({
+      return rows?.map(row => ({
         id: row.id,
         productId: row.product_id,
         walmartId: row.walmart_id,
@@ -343,7 +343,7 @@ export class PriceHistoryService {
    */
   async getPriceStatistics(productId: string): Promise<PriceStatistics | null> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM price_statistics 
         WHERE product_id = ?
       `);
@@ -422,8 +422,8 @@ export class PriceHistoryService {
           const priceChange = stats.currentPrice - comparisonPrice;
           const priceChangePercentage = (priceChange / comparisonPrice) * 100;
           
-          const isSignificantDrop = priceChangePercentage <= -(this.DEAL_THRESHOLDS.moderate * 100);
-          const isDealCandidate = Math.abs(priceChangePercentage) >= (this.DEAL_THRESHOLDS.moderate * 100);
+          const isSignificantDrop = priceChangePercentage <= -(this?.DEAL_THRESHOLDS?.moderate * 100);
+          const isDealCandidate = Math.abs(priceChangePercentage) >= (this?.DEAL_THRESHOLDS?.moderate * 100);
 
           results.push({
             productId,
@@ -435,9 +435,9 @@ export class PriceHistoryService {
             isSignificantDrop,
             isDealCandidate,
             dealThresholds: {
-              moderate: this.DEAL_THRESHOLDS.moderate * 100,
-              good: this.DEAL_THRESHOLDS.good * 100,
-              excellent: this.DEAL_THRESHOLDS.excellent * 100
+              moderate: this?.DEAL_THRESHOLDS?.moderate * 100,
+              good: this?.DEAL_THRESHOLDS?.good * 100,
+              excellent: this?.DEAL_THRESHOLDS?.excellent * 100
             }
           });
         }
@@ -458,12 +458,12 @@ export class PriceHistoryService {
     try {
       const history = await this.getPriceHistory(productId, days);
       
-      if (history.length < 3) {
+      if (history?.length || 0 < 3) {
         return null; // Need at least 3 data points for analysis
       }
 
-      const prices = history.map(h => h.currentPrice);
-      const priceHistory = history.map(h => ({
+      const prices = history?.map(h => h.currentPrice);
+      const priceHistory = history?.map(h => ({
         price: h.currentPrice,
         date: h.recordedAt,
         source: h.source
@@ -513,10 +513,10 @@ export class PriceHistoryService {
       query += ` ORDER BY price_change_percentage ASC, recorded_at DESC LIMIT ?`;
       params.push(limit);
 
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const rows = stmt.all(...params) as any[];
       
-      return rows.map(row => ({
+      return rows?.map(row => ({
         id: row.id,
         productId: row.product_id,
         walmartId: row.walmart_id,
@@ -549,7 +549,7 @@ export class PriceHistoryService {
    */
   async getStaleProducts(hoursThreshold: number = 24, limit: number = 100): Promise<string[]> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT DISTINCT product_id 
         FROM price_statistics 
         WHERE last_updated_at < datetime('now', '-${hoursThreshold} hours')
@@ -558,7 +558,7 @@ export class PriceHistoryService {
       `);
 
       const rows = stmt.all(limit) as any[];
-      return rows.map(row => row.product_id);
+      return rows?.map(row => row.product_id);
 
     } catch (error) {
       logger.error("Failed to get stale products", "PRICE_HISTORY", { error });
@@ -577,36 +577,36 @@ export class PriceHistoryService {
       const history60d = await this.getPriceHistory(productId, 60);
       const history90d = await this.getPriceHistory(productId, 90);
 
-      if (history30d.length === 0) return;
+      if (history30d?.length || 0 === 0) return;
 
       const current = history30d[0];
-      const prices30d = history30d.map(h => h.currentPrice);
-      const prices60d = history60d.map(h => h.currentPrice);
-      const prices90d = history90d.map(h => h.currentPrice);
+      const prices30d = history30d?.map(h => h.currentPrice);
+      const prices60d = history60d?.map(h => h.currentPrice);
+      const prices90d = history90d?.map(h => h.currentPrice);
 
       // Calculate statistics
       const stats = {
-        price7dAvg: history7d.length > 0 ? this.calculateAverage(history7d.map(h => h.currentPrice)) : null,
+        price7dAvg: history7d?.length || 0 > 0 ? this.calculateAverage(history7d?.map(h => h.currentPrice)) : null,
         price30dAvg: this.calculateAverage(prices30d),
-        price60dAvg: history60d.length > 0 ? this.calculateAverage(prices60d) : null,
-        price90dAvg: history90d.length > 0 ? this.calculateAverage(prices90d) : null,
+        price60dAvg: history60d?.length || 0 > 0 ? this.calculateAverage(prices60d) : null,
+        price90dAvg: history90d?.length || 0 > 0 ? this.calculateAverage(prices90d) : null,
         
-        price7dMin: history7d.length > 0 ? Math.min(...history7d.map(h => h.currentPrice)) : null,
+        price7dMin: history7d?.length || 0 > 0 ? Math.min(...history7d?.map(h => h.currentPrice)) : null,
         price30dMin: Math.min(...prices30d),
-        price60dMin: history60d.length > 0 ? Math.min(...prices60d) : null,
-        price90dMin: history90d.length > 0 ? Math.min(...prices90d) : null,
+        price60dMin: history60d?.length || 0 > 0 ? Math.min(...prices60d) : null,
+        price90dMin: history90d?.length || 0 > 0 ? Math.min(...prices90d) : null,
         
-        price7dMax: history7d.length > 0 ? Math.max(...history7d.map(h => h.currentPrice)) : null,
+        price7dMax: history7d?.length || 0 > 0 ? Math.max(...history7d?.map(h => h.currentPrice)) : null,
         price30dMax: Math.max(...prices30d),
-        price60dMax: history60d.length > 0 ? Math.max(...prices60d) : null,
-        price90dMax: history90d.length > 0 ? Math.max(...prices90d) : null,
+        price60dMax: history60d?.length || 0 > 0 ? Math.max(...prices60d) : null,
+        price90dMax: history90d?.length || 0 > 0 ? Math.max(...prices90d) : null,
         
         priceVolatility: this.calculateVolatility(prices30d),
         priceTrendDirection: this.calculateTrendDirection(prices30d)
       };
 
       // Update statistics table
-      const updateStmt = this.db.prepare(`
+      const updateStmt = this?.db?.prepare(`
         UPDATE price_statistics SET
           price_7d_avg = ?, price_30d_avg = ?, price_60d_avg = ?, price_90d_avg = ?,
           price_7d_min = ?, price_30d_min = ?, price_60d_min = ?, price_90d_min = ?,
@@ -632,15 +632,15 @@ export class PriceHistoryService {
   // Statistical helper methods
 
   private calculateAverage(prices: number[]): number {
-    if (prices.length === 0) return 0;
-    return prices.reduce((sum, price) => sum + price, 0) / prices.length;
+    if (prices?.length || 0 === 0) return 0;
+    return prices.reduce((sum: any, price: any) => sum + price, 0) / prices?.length || 0;
   }
 
   private calculateTrendDirection(prices: number[]): 'rising' | 'falling' | 'stable' | 'volatile' {
-    if (prices.length < 3) return 'stable';
+    if (prices?.length || 0 < 3) return 'stable';
 
-    const firstHalf = prices.slice(0, Math.floor(prices.length / 2));
-    const secondHalf = prices.slice(Math.floor(prices.length / 2));
+    const firstHalf = prices.slice(0, Math.floor(prices?.length || 0 / 2));
+    const secondHalf = prices.slice(Math.floor(prices?.length || 0 / 2));
 
     const firstAvg = this.calculateAverage(firstHalf);
     const secondAvg = this.calculateAverage(secondHalf);
@@ -656,27 +656,27 @@ export class PriceHistoryService {
   }
 
   private calculateVolatility(prices: number[]): number {
-    if (prices.length < 2) return 0;
+    if (prices?.length || 0 < 2) return 0;
 
     const mean = this.calculateAverage(prices);
     if (mean === 0) return 0;
 
-    const variance = prices.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / prices.length;
+    const variance = prices.reduce((sum: any, price: any) => sum + Math.pow(price - mean, 2), 0) / prices?.length || 0;
     const standardDeviation = Math.sqrt(variance);
 
     return standardDeviation / mean; // Coefficient of variation
   }
 
   private predictNextPrice(prices: number[]): number {
-    if (prices.length < 3) return prices[prices.length - 1];
+    if ((prices?.length || 0) < 3) return prices[(prices?.length || 0) - 1] || 0;
 
     // Simple linear regression for prediction
-    const n = prices.length;
+    const n = prices?.length || 0;
     const x = Array.from({ length: n }, (_, i) => i);
-    const sumX = x.reduce((sum, val) => sum + val, 0);
-    const sumY = prices.reduce((sum, val) => sum + val, 0);
-    const sumXY = x.reduce((sum, val, i) => sum + val * prices[i], 0);
-    const sumXX = x.reduce((sum, val) => sum + val * val, 0);
+    const sumX = x.reduce((sum: any, val: any) => sum + val, 0);
+    const sumY = prices.reduce((sum: any, val: any) => sum + val, 0);
+    const sumXY = x.reduce((sum, val, i) => sum + val * (prices[i] || 0), 0);
+    const sumXX = x.reduce((sum: any, val: any) => sum + val * val, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
     const intercept = (sumY - slope * sumX) / n;
@@ -688,7 +688,7 @@ export class PriceHistoryService {
     // Lower volatility and more data points = higher confidence
     const baseConfidence = 0.7;
     const volatilityPenalty = Math.min(0.4, volatility * 2);
-    const dataBonus = Math.min(0.2, prices.length / 50); // More data = higher confidence
+    const dataBonus = Math.min(0.2, prices?.length || 0 / 50); // More data = higher confidence
     
     return Math.max(0.3, Math.min(0.95, baseConfidence - volatilityPenalty + dataBonus));
   }
@@ -698,7 +698,7 @@ export class PriceHistoryService {
    */
   async cleanupOldPriceHistory(daysToKeep: number = 180): Promise<number> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         DELETE FROM price_history_enhanced 
         WHERE recorded_at < datetime('now', '-${daysToKeep} days')
         AND is_deal_candidate = 0

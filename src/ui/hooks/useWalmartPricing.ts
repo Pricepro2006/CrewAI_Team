@@ -2,7 +2,7 @@
  * React hooks for Walmart live pricing functionality
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api.js';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../api/trpc/router.js';
@@ -30,7 +30,7 @@ export function useWalmartPrice(
 ) {
   const { location = { zipCode: '29301' }, enabled = true, refetchInterval } = options;
 
-  return api.walmartPrice.getProductPrice.useQuery(
+  return api.walmartPrice?.getProductPrice.useQuery(
     { productId, location },
     {
       enabled: enabled && !!productId,
@@ -50,10 +50,10 @@ export function useWalmartPrices(
 ) {
   const { location = { zipCode: '29301' }, enabled = true } = options;
 
-  return api.walmartPrice.getMultiplePrices.useQuery(
+  return api.walmartPrice?.getMultiplePrices.useQuery(
     { productIds, location },
     {
-      enabled: enabled && productIds.length > 0,
+      enabled: enabled && ((productIds?.length || 0) > 0),
       staleTime: 30 * 60 * 1000,
       cacheTime: 60 * 60 * 1000,
     }
@@ -73,10 +73,10 @@ export function useWalmartSearch(
     enabled = true 
   } = options;
 
-  return api.walmartPrice.searchWithPrices.useQuery(
+  return api.walmartPrice?.searchWithPrices.useQuery(
     { query, location, limit },
     {
-      enabled: enabled && query.length > 0,
+      enabled: enabled && ((query?.length || 0) > 0),
       staleTime: 5 * 60 * 1000, // 5 minutes for search results
       cacheTime: 10 * 60 * 1000,
     }
@@ -87,7 +87,7 @@ export function useWalmartSearch(
  * Hook to get nearby Walmart stores
  */
 export function useNearbyWalmartStores(zipCode: string = '29301') {
-  return api.walmartPrice.getNearbyStores.useQuery(
+  return api.walmartPrice?.getNearbyStores.useQuery(
     { zipCode },
     {
       staleTime: 24 * 60 * 60 * 1000, // Store data changes rarely
@@ -119,7 +119,7 @@ export function useWalmartPriceMonitor(
 
   const { data, refetch, isLoading, error } = useWalmartPrices(productIds, {
     location,
-    enabled: productIds.length > 0,
+    enabled: (productIds?.length || 0) > 0,
     refetchInterval: autoRefresh ? refreshInterval : undefined,
   });
 
@@ -129,7 +129,7 @@ export function useWalmartPriceMonitor(
       data.forEach(({ productId, data: priceData }) => {
         if (priceData) {
           const history = priceHistory.get(productId) || [];
-          const lastPrice = history[history.length - 1];
+          const lastPrice = history[(history?.length || 0) - 1];
           
           if (lastPrice !== undefined && lastPrice !== priceData.price) {
             onPriceChange?.(productId, lastPrice, priceData.price);
@@ -144,7 +144,7 @@ export function useWalmartPriceMonitor(
       });
       setLastFetch(new Date());
     }
-  }, [data]);
+  }, [data, onPriceChange, priceHistory]);
 
   return {
     prices: data,
@@ -167,15 +167,18 @@ export function useWalmartPriceComparison(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchComparisons = async () => {
+  // Get the utils context once at the top level
+  const utils = api.useContext();
+
+  const fetchComparisons = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
       const results = await Promise.all(
-        zipCodes.map(async (zipCode) => {
+        zipCodes?.map(async (zipCode: string) => {
           try {
-            const response = await api.walmartPrice.getProductPrice.query({
+            const response = await utils.walmartPrice?.getProductPrice?.fetch({
               productId,
               location: { zipCode }
             });
@@ -197,13 +200,13 @@ export function useWalmartPriceComparison(
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [productId, zipCodes, utils]);
 
   useEffect(() => {
-    if (productId && zipCodes.length > 0) {
+    if (productId && ((zipCodes?.length || 0) > 0)) {
       fetchComparisons();
     }
-  }, [productId, zipCodes.join(',')]);
+  }, [fetchComparisons, productId, zipCodes]);
 
   return {
     comparisons,
@@ -212,7 +215,7 @@ export function useWalmartPriceComparison(
     refetch: fetchComparisons,
     lowestPrice: Array.from(comparisons.values())
       .filter(Boolean)
-      .reduce((min, curr) => 
+      .reduce((min: PriceResult | null, curr: PriceResult | null) => 
         !min || (curr && curr.price < min.price) ? curr : min, 
         null as PriceResult | null
       ),
@@ -223,10 +226,10 @@ export function useWalmartPriceComparison(
  * Mutation hook to clear the price cache
  */
 export function useClearPriceCache() {
-  return api.walmartPrice.clearCache.useMutation({
+  return api.walmartPrice?.clearCache?.useMutation({
     onSuccess: () => {
       // Invalidate all price queries after clearing cache
-      api.useContext().walmartPrice.invalidate();
+      api.useContext().walmartPrice?.invalidate();
     },
   });
 }
@@ -235,7 +238,7 @@ export function useClearPriceCache() {
  * Hook to check pricing service health
  */
 export function useWalmartPricingHealth() {
-  return api.walmartPrice.healthCheck.useQuery(undefined, {
+  return api.walmartPrice?.healthCheck?.useQuery(undefined, {
     staleTime: 60 * 1000, // Check health every minute
     cacheTime: 5 * 60 * 1000,
   });

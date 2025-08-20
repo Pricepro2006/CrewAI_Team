@@ -65,7 +65,7 @@ export class RateLimiter {
         },
       });
 
-      this.redisClient.on("error", (err) => {
+      this?.redisClient?.on("error", (err: any) => {
         logger.error(
           "Redis error:",
           err instanceof Error ? err.message : String(err),
@@ -139,7 +139,7 @@ export class RateLimiter {
         if (!req.user?.premium) {
           return "non-premium";
         }
-        return `premium:${req.user.id}`;
+        return `premium:${req?.user?.id}`;
       },
     };
 
@@ -150,7 +150,7 @@ export class RateLimiter {
   private createLimiter(config: RateLimitConfig) {
     const limiterConfig: any = {
       ...config,
-      handler: this.rateLimitHandler.bind(this),
+      handler: this?.rateLimitHandler?.bind(this),
       // Disable IPv6 validation warning for local development
       validate: false,
     };
@@ -200,12 +200,12 @@ export class RateLimiter {
       const userRequests = requests.get(key) || [];
 
       // Filter out old requests outside the window
-      const validRequests = userRequests.filter(
-        (timestamp) => timestamp > windowStart,
+      const validRequests = userRequests?.filter(
+        (timestamp: any) => timestamp > windowStart,
       );
 
       // Check if limit exceeded
-      if (validRequests.length >= max) {
+      if (validRequests?.length || 0 >= max) {
         return this.rateLimitHandler(req, res);
       }
 
@@ -215,7 +215,7 @@ export class RateLimiter {
 
       // Set rate limit headers
       res.setHeader("X-RateLimit-Limit", max);
-      res.setHeader("X-RateLimit-Remaining", max - validRequests.length);
+      res.setHeader("X-RateLimit-Remaining", max - validRequests?.length || 0);
       res.setHeader(
         "X-RateLimit-Reset",
         new Date(now + windowMs).toISOString(),
@@ -264,7 +264,7 @@ export class RateLimiter {
   // Cleanup method for memory management
   public cleanup() {
     if (this.redisClient) {
-      this.redisClient.disconnect();
+      this?.redisClient?.disconnect();
     }
   }
 

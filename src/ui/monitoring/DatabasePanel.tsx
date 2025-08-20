@@ -4,8 +4,8 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { DatabaseQuery, MonitoringMetric } from '../../services/MonitoringService';
-import { MetricsChart } from './MetricsChart';
+import type { DatabaseQuery, MonitoringMetric } from '../../services/MonitoringService.js';
+import { MetricsChart } from './MetricsChart.js';
 
 interface DatabasePanelProps {
   queries: DatabaseQuery[];
@@ -35,7 +35,7 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
     const cutoffTime = now - timeWindow;
 
     // Filter recent queries
-    const recentQueries = queries.filter(q => 
+    const recentQueries = queries?.filter(q => 
       new Date(q.timestamp).getTime() > cutoffTime
     );
 
@@ -51,16 +51,16 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
     // Calculate stats for each database
     const stats: DatabaseStats[] = [];
     for (const [database, dbQueries] of grouped.entries()) {
-      const executionTimes = dbQueries.map(q => q.executionTime);
-      const slowQueries = dbQueries.filter(q => q.executionTime > slowQueryThreshold);
-      const errorCount = dbQueries.filter(q => q.error).length;
+      const executionTimes = dbQueries?.map(q => q.executionTime);
+      const slowQueries = dbQueries?.filter(q => q.executionTime > slowQueryThreshold);
+      const errorCount = dbQueries?.filter(q => q.error).length;
 
       stats.push({
         database,
-        totalQueries: dbQueries.length,
-        averageTime: executionTimes.length > 0 ? 
-          executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length : 0,
-        slowQueries: slowQueries.length,
+        totalQueries: dbQueries?.length || 0,
+        averageTime: executionTimes?.length || 0 > 0 ? 
+          executionTimes.reduce((sum: any, time: any) => sum + time, 0) / executionTimes?.length || 0 : 0,
+        slowQueries: slowQueries?.length || 0,
         errorCount,
         recentQueries: dbQueries.slice(-10) // Last 10 queries
       });
@@ -73,11 +73,11 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
   const overallStats = useMemo(() => {
     const now = Date.now();
     const cutoffTime = now - timeWindow;
-    const recentQueries = queries.filter(q => 
+    const recentQueries = queries?.filter(q => 
       new Date(q.timestamp).getTime() > cutoffTime
     );
 
-    if (recentQueries.length === 0) {
+    if (recentQueries?.length || 0 === 0) {
       return {
         totalQueries: 0,
         averageTime: 0,
@@ -87,28 +87,28 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
       };
     }
 
-    const executionTimes = recentQueries.map(q => q.executionTime);
-    const slowQueries = recentQueries.filter(q => q.executionTime > slowQueryThreshold);
-    const errorCount = recentQueries.filter(q => q.error).length;
+    const executionTimes = recentQueries?.map(q => q.executionTime);
+    const slowQueries = recentQueries?.filter(q => q.executionTime > slowQueryThreshold);
+    const errorCount = recentQueries?.filter(q => q.error).length;
 
     return {
-      totalQueries: recentQueries.length,
-      averageTime: executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length,
-      slowQueries: slowQueries.length,
+      totalQueries: recentQueries?.length || 0,
+      averageTime: executionTimes.reduce((sum: any, time: any) => sum + time, 0) / executionTimes?.length || 0,
+      slowQueries: slowQueries?.length || 0,
       errorCount,
-      qps: recentQueries.length / (timeWindow / 1000)
+      qps: recentQueries?.length || 0 / (timeWindow / 1000)
     };
   }, [queries, timeWindow, slowQueryThreshold]);
 
   // Filter queries for selected database
   const filteredQueries = useMemo(() => {
     if (selectedDatabase === 'all') return queries;
-    return queries.filter(q => q.database === selectedDatabase);
+    return queries?.filter(q => q.database === selectedDatabase);
   }, [queries, selectedDatabase]);
 
   // Convert query data to metrics for charting
   const chartMetrics = useMemo(() => {
-    return filteredQueries.map((query, index) => ({
+    return filteredQueries?.map((query, index) => ({
       id: query.id,
       name: 'query_time',
       value: query.executionTime,
@@ -161,7 +161,7 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
             <label>Time Window:</label>
             <select 
               value={timeWindow} 
-              onChange={(e) => setTimeWindow(Number(e.target.value))}
+              onChange={(e: any) => setTimeWindow(Number(e?.target?.value))}
             >
               <option value={60000}>1 minute</option>
               <option value={300000}>5 minutes</option>
@@ -174,10 +174,10 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
             <label>Database:</label>
             <select 
               value={selectedDatabase} 
-              onChange={(e) => setSelectedDatabase(e.target.value)}
+              onChange={(e: any) => setSelectedDatabase(e?.target?.value)}
             >
               <option value="all">All Databases</option>
-              {databaseStats.map(stat => (
+              {databaseStats?.map(stat => (
                 <option key={stat.database} value={stat.database}>
                   {stat.database} ({stat.totalQueries})
                 </option>
@@ -189,7 +189,7 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
             <label>Slow Query Threshold:</label>
             <select 
               value={slowQueryThreshold} 
-              onChange={(e) => setSlowQueryThreshold(Number(e.target.value))}
+              onChange={(e: any) => setSlowQueryThreshold(Number(e?.target?.value))}
             >
               <option value={50}>50ms</option>
               <option value={100}>100ms</option>
@@ -222,7 +222,7 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
         <div className="db-stat-card">
           <div className="db-stat-icon">🔄</div>
           <div className="db-stat-content">
-            <div className="db-stat-value">{overallStats.qps.toFixed(1)}</div>
+            <div className="db-stat-value">{overallStats?.qps?.toFixed(1)}</div>
             <div className="db-stat-label">QPS</div>
           </div>
         </div>
@@ -260,10 +260,10 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
         <div className="database-stats">
           <h3>📈 Database Statistics</h3>
           <div className="database-list">
-            {databaseStats.length === 0 ? (
+            {databaseStats?.length || 0 === 0 ? (
               <div className="no-data">No database activity in selected time window</div>
             ) : (
-              databaseStats.map(stat => (
+              databaseStats?.map(stat => (
                 <div key={stat.database} className="database-item">
                   <div className="database-header">
                     <span className="database-name">{stat.database}</span>
@@ -306,10 +306,10 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({
         <div className="query-log">
           <h3>📝 Recent Queries</h3>
           <div className="query-list">
-            {filteredQueries.length === 0 ? (
+            {filteredQueries?.length || 0 === 0 ? (
               <div className="no-data">No queries to display</div>
             ) : (
-              filteredQueries.slice(-20).reverse().map((query) => (
+              filteredQueries.slice(-20).reverse().map((query: any) => (
                 <div key={query.id} className="query-entry">
                   <div className="query-header">
                     <div className="query-time">

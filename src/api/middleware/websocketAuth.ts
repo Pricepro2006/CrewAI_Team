@@ -57,7 +57,7 @@ export class WebSocketAuthManager {
   ): Promise<AuthResult> {
     try {
       // Verify JWT token and get user
-      const user = await this.userService.verifyToken(token);
+      const user = await this?.userService?.verifyToken(token);
 
       if (!user) {
         return { success: false, error: "Invalid token" };
@@ -81,7 +81,7 @@ export class WebSocketAuthManager {
       ws.clientId = `${user.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
       // Store authenticated client info
-      this.authenticatedClients.set(ws.clientId, {
+      this?.authenticatedClients?.set(ws.clientId, {
         userId: user.id,
         userRole: user.role,
         permissions: ws.permissions,
@@ -185,7 +185,7 @@ export class WebSocketAuthManager {
    */
   removeClient(ws: AuthenticatedWebSocket): void {
     if (ws.clientId) {
-      this.authenticatedClients.delete(ws.clientId);
+      this?.authenticatedClients?.delete(ws.clientId);
       logger.debug("Removed authenticated WebSocket client", "WS_AUTH", {
         clientId: ws.clientId,
         userId: ws.userId,
@@ -198,7 +198,7 @@ export class WebSocketAuthManager {
    */
   getClientsByUserId(userId: string): string[] {
     const clients: string[] = [];
-    this.authenticatedClients.forEach((info, clientId) => {
+    this?.authenticatedClients?.forEach((info, clientId) => {
       if (info.userId === userId) {
         clients.push(clientId);
       }
@@ -211,9 +211,9 @@ export class WebSocketAuthManager {
    */
   disconnectUser(userId: string, wsService: any): void {
     const clientIds = this.getClientsByUserId(userId);
-    clientIds.forEach((clientId) => {
+    clientIds.forEach((clientId: any) => {
       // Remove from authenticated clients
-      this.authenticatedClients.delete(clientId);
+      this?.authenticatedClients?.delete(clientId);
 
       // Notify WebSocket service to disconnect
       wsService.forceDisconnectClient(clientId);
@@ -250,19 +250,19 @@ export class WebSocketAuthManager {
         const now = new Date();
         const expired: string[] = [];
 
-        this.authenticatedClients.forEach((info, clientId) => {
+        this?.authenticatedClients?.forEach((info, clientId) => {
           if (info.expiresAt < now) {
             expired.push(clientId);
           }
         });
 
-        expired.forEach((clientId) => {
-          this.authenticatedClients.delete(clientId);
+        expired.forEach((clientId: any) => {
+          this?.authenticatedClients?.delete(clientId);
         });
 
-        if (expired.length > 0) {
+        if (expired?.length || 0 > 0) {
           logger.debug(
-            `Cleaned up ${expired.length} expired WebSocket sessions`,
+            `Cleaned up ${expired?.length || 0} expired WebSocket sessions`,
             "WS_AUTH",
           );
         }
@@ -290,12 +290,12 @@ export class WebSocketAuthManager {
     byUser: Record<string, number>;
   } {
     const stats = {
-      totalAuthenticated: this.authenticatedClients.size,
+      totalAuthenticated: this?.authenticatedClients?.size,
       byRole: {} as Record<string, number>,
       byUser: {} as Record<string, number>,
     };
 
-    this.authenticatedClients.forEach((info) => {
+    this?.authenticatedClients?.forEach((info: any) => {
       // Count by role
       stats.byRole[info.userRole] = (stats.byRole[info.userRole] || 0) + 1;
 
@@ -314,8 +314,8 @@ export function createWebSocketAuthMiddleware(
   return async (ws: AuthenticatedWebSocket, req: any) => {
     // Extract token from query params or headers
     const token = req.url?.includes("token=")
-      ? new URLSearchParams(req.url.split("?")[1]).get("token")
-      : req.headers.authorization?.replace("Bearer ", "");
+      ? new URLSearchParams(req?.url?.split("?")[1]).get("token")
+      : req?.headers?.authorization?.replace("Bearer ", "");
 
     if (token) {
       // Attempt immediate authentication
@@ -354,7 +354,7 @@ export function createWebSocketAuthMiddleware(
     }
 
     // Set up message handler for authentication
-    ws.on("message", async (data) => {
+    ws.on("message", async (data: any) => {
       try {
         const message = JSON.parse(data.toString());
 
@@ -387,7 +387,7 @@ export async function authenticateWebSocket(
   // This is a simplified version for compatibility
   // In a real implementation, you'd inject the UserService
   try {
-    if (!token || token.length < 10) {
+    if (!token || token?.length || 0 < 10) {
       return false;
     }
 

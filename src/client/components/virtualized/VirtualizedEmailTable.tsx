@@ -1,9 +1,9 @@
 import React, { useMemo, useCallback, useRef, useEffect } from "react";
 import { FixedSizeList as VirtualList } from "react-window";
-import { StatusIndicator } from "../email/StatusIndicator";
+import { StatusIndicator } from "../email/StatusIndicator.js";
 import { formatDistanceToNow } from "date-fns";
-import { cn } from "../../../lib/utils";
-import type { EmailRecord } from "../../../types/email-dashboard.interfaces";
+import { cn } from "../../../lib/utils.js";
+import type { EmailRecord } from "../../../types/email-dashboard.interfaces.js";
 
 interface VirtualizedEmailTableProps {
   emails: EmailRecord[];
@@ -21,6 +21,7 @@ interface RowProps {
     onRowClick?: (email: EmailRecord) => void;
     selectedEmailId?: string;
   };
+  key?: React.Key;
 }
 
 const EmailRow = React.memo<RowProps>(({ index, style, data }) => {
@@ -60,10 +61,10 @@ const EmailRow = React.memo<RowProps>(({ index, style, data }) => {
       <div className="w-55 flex-shrink-0 px-2">
         <div className="flex flex-col">
           <span className="font-medium text-sm truncate">
-            {email.email_alias.split("@")[0]}
+            {email?.email_alias?.split("@")[0]}
           </span>
           <span className="text-xs text-gray-500">
-            @{email.email_alias.split("@")[1]}
+            @{email?.email_alias?.split("@")[1]}
           </span>
         </div>
       </div>
@@ -127,9 +128,9 @@ export const VirtualizedEmailTable = React.memo<VirtualizedEmailTableProps>(
     // Scroll to selected item when it changes
     useEffect(() => {
       if (selectedEmailId && listRef.current) {
-        const index = emails.findIndex((email) => email.id === selectedEmailId);
+        const index = emails.findIndex((email: any) => email.id === selectedEmailId);
         if (index !== -1) {
-          listRef.current.scrollToItem(index, "center");
+          listRef?.current?.scrollToItem(index, "center");
         }
       }
     }, [selectedEmailId, emails]);
@@ -157,7 +158,7 @@ export const VirtualizedEmailTable = React.memo<VirtualizedEmailTableProps>(
       );
     }
 
-    if (emails.length === 0) {
+    if (emails?.length || 0 === 0) {
       return (
         <div
           className="flex items-center justify-center"
@@ -187,17 +188,17 @@ export const VirtualizedEmailTable = React.memo<VirtualizedEmailTableProps>(
         <VirtualList
           ref={listRef}
           height={height - 48} // Subtract header height
-          itemCount={emails.length}
+          width="100%" // Required prop for react-window
+          itemCount={emails?.length || 0}
           itemSize={64} // Row height
           itemData={itemData}
           overscanCount={5} // Render 5 extra items for smooth scrolling
-        >
-          {EmailRow}
-        </VirtualList>
+          children={EmailRow}
+        />
 
         {/* Footer with row count */}
         <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-sm text-gray-500">
-          Showing {emails.length} email{emails.length !== 1 ? "s" : ""}
+          Showing {emails?.length || 0} email{(emails?.length || 0) !== 1 ? "s" : ""}
         </div>
       </div>
     );

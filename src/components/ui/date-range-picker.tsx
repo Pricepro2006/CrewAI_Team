@@ -51,7 +51,7 @@ export function DateRangePicker({
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             selected={value?.from}
-            onSelect={(newDate) => {
+            onSelect={(newDate: any) => {
               onChange?.({
                 from: newDate,
                 to: value?.to,

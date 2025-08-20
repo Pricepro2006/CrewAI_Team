@@ -8,9 +8,13 @@ export * from "./async-error-wrapper.js";
 import { AppError, ErrorCode } from "./error-types.js";
 import { getUserFriendlyError } from "./error-messages.js";
 
-// Use browser-compatible logger for client-side code
+// Use environment-appropriate logger
 let logger: any;
-if (typeof window !== "undefined") {
+
+// Check if we're in a browser environment
+const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
+
+if (isBrowser) {
   // Browser environment - use console as logger
   logger = {
     error: (
@@ -32,10 +36,27 @@ if (typeof window !== "undefined") {
     },
   };
 } else {
-  // Server environment - use the full logger
-  import("../logger.js").then(loggerModule => {
+  // Server environment - import the full logger synchronously
+  try {
+    const loggerModule = require("../logger.js");
     logger = loggerModule.logger;
-  });
+  } catch (error) {
+    // Fallback to console if logger import fails
+    logger = {
+      error: (message: string, component?: string, metadata?: any, error?: Error) => {
+        console.error(`[${component || "ERROR"}] ${message}`, metadata, error);
+      },
+      warn: (message: string, component?: string, metadata?: any) => {
+        console.warn(`[${component || "WARN"}] ${message}`, metadata);
+      },
+      info: (message: string, component?: string, metadata?: any) => {
+        console.info(`[${component || "INFO"}] ${message}`, metadata);
+      },
+      debug: (message: string, component?: string, metadata?: any) => {
+        console.debug(`[${component || "DEBUG"}] ${message}`, metadata);
+      },
+    };
+  }
 }
 
 /**
@@ -62,7 +83,7 @@ export function setupGlobalErrorHandlers(): void {
     });
   }
 
-  if (typeof window !== "undefined") {
+  if (isBrowser && typeof window !== "undefined") {
     window.addEventListener("error", (event: ErrorEvent) => {
       logger.error("Window Error", "GLOBAL_ERROR_HANDLER", {
         message: event.message,
@@ -118,9 +139,9 @@ export function sanitizeError(error: Error): any {
         "secret",
         "authorization",
       ];
-      sanitized.details = Object.keys(error.details).reduce((acc, key) => {
+      sanitized.details = Object.keys(error.details).reduce((acc: any, key: any) => {
         if (
-          sensitiveFields.some((field) => key.toLowerCase().includes(field))
+          sensitiveFields.some((field: any) => key.toLowerCase().includes(field))
         ) {
           acc[key] = "[REDACTED]";
         } else {

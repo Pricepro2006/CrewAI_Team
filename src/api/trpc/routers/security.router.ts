@@ -48,7 +48,7 @@ export const securityRouter = router({
       activeTokens: stats.activeTokens,
       expiredTokens: stats.expiredTokens,
       averageRotationCount: stats.averageRotationCount,
-      userTokenCounts: Array.from(stats.tokensByUser.entries()).map(
+      userTokenCounts: Array.from(stats?.tokensByUser?.entries()).map(
         ([userId, count]) => ({
           userId,
           count,

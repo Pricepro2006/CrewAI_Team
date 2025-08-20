@@ -22,6 +22,8 @@ import type {
   ShoppingCart,
   SearchQuery,
   WalmartApiResponse,
+  SearchResults,
+  Order,
 } from "../../types/walmart-grocery.js";
 import type { WebSocketService } from "../../api/services/WebSocketService.js";
 
@@ -32,7 +34,7 @@ import type { WebSocketService } from "../../api/services/WebSocketService.js";
 export class WalmartIntegrationCoordinator extends EventEmitter {
   private static instance: WalmartIntegrationCoordinator;
   private services: WalmartServiceRegistry;
-  private monitoring: WalmartMonitoringSystem;
+  private monitoring!: WalmartMonitoringSystem; // Using definite assignment assertion since it's initialized in initialize()
   private eventBus: WalmartEventBus;
   private config: IntegrationConfig;
   private healthStatus: IntegrationHealth;
@@ -84,7 +86,10 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     try {
       // Initialize monitoring system
       this.monitoring = WalmartMonitoringSystem.create(this.config.monitoring);
-      this.services.register("monitoring", this.monitoring);
+      this.services.register("monitoring", {
+        name: "monitoring",
+        ...this.monitoring
+      } as WalmartService);
 
       // Register error handlers
       this.setupErrorHandling();
@@ -101,7 +106,13 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       // Start periodic tasks
       this.startPeriodicTasks();
 
-      this.healthStatus.status = "healthy";
+      if (this.healthStatus) {
+
+
+        this.healthStatus.status = "healthy";
+
+
+      }
       this.initialized = true;
 
       logger.info(
@@ -112,7 +123,11 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       // Emit initialization complete event
       this.emit("initialized", { timestamp: new Date().toISOString() });
     } catch (error) {
-      this.healthStatus.status = "unhealthy";
+      if (this.healthStatus) {
+
+        this.healthStatus.status = "unhealthy";
+
+      }
       logger.error(
         "Failed to initialize Walmart Integration Coordinator",
         "WALMART_INTEGRATION",
@@ -139,7 +154,11 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       await this.eventBus.shutdown();
 
       this.initialized = false;
-      this.healthStatus.status = "stopped";
+      if (this.healthStatus) {
+
+        this.healthStatus.status = "stopped";
+
+      }
 
       logger.info(
         "Walmart Integration Coordinator shutdown complete",
@@ -214,7 +233,12 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     eventType: WalmartWebSocketEventType,
     handler?: WalmartEventHandler<T>,
   ): void {
-    this.eventBus.off(eventType, handler);
+    // If handler is provided, remove specific handler; otherwise remove all handlers for this event type
+    if (handler) {
+      this.eventBus.off(eventType, handler);
+    } else {
+      this.eventBus.removeAllListeners(eventType);
+    }
   }
 
   // =====================================================
@@ -245,7 +269,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       );
 
       // Publish search event
-      await this.publishEvent("walmart.search.completed", {
+      await this.publishEvent("walmart.search?.completed", {
         operationId,
         query,
         results: result,
@@ -262,7 +286,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         executionTime: Date.now() - startTime,
         metadata: {
           cached: result.metadata?.cached || false,
-          totalResults: result.data.length,
+          totalResults: Array.isArray(result?.data) ? result.data.length : 0,
         },
       };
     } catch (error) {
@@ -318,7 +342,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       );
 
       // Publish cart event
-      await this.publishEvent("walmart.cart.item_updated", {
+      await this.publishEvent("walmart.cart?.item_updated", {
         operationId,
         operation,
         cart: result,
@@ -368,7 +392,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     try {
       this.monitoring.increment("walmart.order.attempts", 1, {
         userId: orderRequest.userId,
-        fulfillmentMethod: orderRequest.fulfillment.method,
+        fulfillmentMethod: orderRequest.fulfillment?.method,
       });
 
       // Get order service
@@ -389,7 +413,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         await transaction.commit();
 
         // Publish order events
-        await this.publishEvent("walmart.order.placed", {
+        await this.publishEvent("walmart.order?.placed", {
           operationId,
           order,
           userId: orderRequest.userId,
@@ -447,10 +471,10 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       metrics: {
         totalServices: Object.keys(serviceStatuses).length,
         healthyServices: Object.values(serviceStatuses).filter(
-          (s) => s.status === "healthy",
+          (s: any) => s.status === "healthy",
         ).length,
         unhealthyServices: Object.values(serviceStatuses).filter(
-          (s) => s.status === "unhealthy",
+          (s: any) => s.status === "unhealthy",
         ).length,
       },
     };
@@ -464,15 +488,15 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     return {
       timestamp: new Date().toISOString(),
       systemHealth: dashboardData.health,
-      activeAlerts: dashboardData.alerts.length,
+      activeAlerts: dashboardData?.alerts?.length,
       operationMetrics: {
-        searches: dashboardData.summary.totalSearches,
-        cartOperations: dashboardData.summary.totalCartOps,
-        orders: dashboardData.summary.totalOrders,
-        errors: dashboardData.summary.totalErrors,
+        searches: dashboardData?.summary?.totalSearches || 0,
+        cartOperations: dashboardData?.summary?.totalCartOps || 0,
+        orders: dashboardData?.summary?.totalOrders || 0,
+        errors: dashboardData?.summary?.totalErrors || 0,
       },
       performanceMetrics: {
-        averageResponseTime: dashboardData.summary.avgResponseTime,
+        averageResponseTime: dashboardData?.summary?.avgResponseTime,
         throughput: this.calculateThroughput(dashboardData),
         errorRate: this.calculateErrorRate(dashboardData),
       },
@@ -504,14 +528,14 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     );
 
     // Set up process error handlers
-    process.on("unhandledRejection", (error) => {
+    process.on("unhandledRejection", (error: any) => {
       logger.error("Unhandled promise rejection", "WALMART_INTEGRATION", {
         error,
       });
       this.monitoring.increment("walmart.unhandled_errors", 1);
     });
 
-    process.on("uncaughtException", (error) => {
+    process.on("uncaughtException", (error: any) => {
       logger.error("Uncaught exception", "WALMART_INTEGRATION", { error });
       this.monitoring.increment("walmart.uncaught_errors", 1);
     });
@@ -559,7 +583,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
   private startPeriodicTasks(): void {
     // Update health status every 30 seconds
     setInterval(() => {
-      this.getHealthStatus().catch((error) => {
+      this.getHealthStatus().catch((error: any) => {
         logger.error("Health check failed", "WALMART_INTEGRATION", { error });
       });
     }, 30000);
@@ -567,10 +591,10 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     // Emit metrics every minute
     setInterval(() => {
       this.getMetrics()
-        .then((metrics) => {
+        .then((metrics: any) => {
           this.emit("metrics", metrics);
         })
-        .catch((error) => {
+        .catch((error: any) => {
           logger.error("Metrics collection failed", "WALMART_INTEGRATION", {
             error,
           });
@@ -601,18 +625,18 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
 
   private calculateThroughput(dashboardData: any): number {
     const totalOperations =
-      dashboardData.summary.totalSearches +
-      dashboardData.summary.totalCartOps +
-      dashboardData.summary.totalOrders;
+      dashboardData?.summary?.totalSearches +
+      dashboardData?.summary?.totalCartOps +
+      dashboardData?.summary?.totalOrders;
     return totalOperations / 60; // operations per minute
   }
 
   private calculateErrorRate(dashboardData: any): number {
     const totalOperations =
-      dashboardData.summary.totalSearches +
-      dashboardData.summary.totalCartOps +
-      dashboardData.summary.totalOrders;
-    const totalErrors = dashboardData.summary.totalErrors;
+      dashboardData?.summary?.totalSearches +
+      dashboardData?.summary?.totalCartOps +
+      dashboardData?.summary?.totalOrders;
+    const totalErrors = dashboardData?.summary?.totalErrors;
     return totalOperations > 0 ? (totalErrors / totalOperations) * 100 : 0;
   }
 }
@@ -634,7 +658,7 @@ class WalmartServiceRegistry {
 
   async shutdownAll(): Promise<void> {
     const shutdownPromises = Array.from(this.services.values()).map(
-      (service) => {
+      (service: any) => {
         if ("shutdown" in service && typeof service.shutdown === "function") {
           return (service as any).shutdown();
         }
@@ -709,7 +733,7 @@ class WalmartEventBus extends EventEmitter {
       channels: subscription.channels,
       events: subscription.events,
       filters: subscription.filters,
-      handler: (event) => {
+      handler: (event: any) => {
         this.emit(event.type, event);
       },
     };
@@ -718,7 +742,7 @@ class WalmartEventBus extends EventEmitter {
 
     logger.debug("Event subscription created", "WALMART_INTEGRATION", {
       subscriptionId,
-      channels: subscription.channels.length,
+      channels: subscription.channels?.length || 0,
       events: subscription.events?.length || 0,
     });
 
@@ -753,7 +777,15 @@ class WalmartEventBus extends EventEmitter {
 
     // Publish via WebSocket if available
     if (this.wsService) {
-      await this.wsService.broadcast(eventType, event);
+      try {
+        // Use the event type as the channel and the event as data
+        await (this.wsService as any).broadcast?.(eventType, event);
+      } catch (error) {
+        logger.warn("Failed to broadcast WebSocket event", "WALMART_INTEGRATION", {
+          eventType,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
     }
 
     logger.debug("Event published", "WALMART_INTEGRATION", {

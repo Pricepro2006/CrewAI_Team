@@ -117,7 +117,7 @@ const DealNotificationCard: React.FC<{
   isAnimating?: boolean;
 }> = ({ notification, onDismiss, onAction, isAnimating = false }) => {
   const timeLeft = notification.expiresAt
-    ? Math.max(0, notification.expiresAt.getTime() - Date.now())
+    ? Math.max(0, notification?.expiresAt?.getTime() - Date.now())
     : null;
   
   const hours = timeLeft ? Math.floor(timeLeft / (1000 * 60 * 60)) : 0;
@@ -180,7 +180,7 @@ const DealNotificationCard: React.FC<{
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="text-xs">
-                    {notification.dealType ? notification.dealType.replace('_', ' ') : 'Deal'}
+                    {notification.dealType ? notification?.dealType?.replace('_', ' ') : 'Deal'}
                   </Badge>
                   <span className="text-sm font-medium text-green-600">
                     Save {formatPrice(notification.savings)}
@@ -333,7 +333,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
         // Mark as not new after animation
         setTimeout(() => {
           setNotifications((prev: ExtendedDealNotification[]) =>
-            prev.map((n: ExtendedDealNotification) => n.id === newDeal.id ? { ...n, isNew: false } : n)
+            prev?.map((n: ExtendedDealNotification) => n.id === newDeal.id ? { ...n, isNew: false } : n)
           );
         }, 3000);
       }
@@ -343,7 +343,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
   }, [settings]);
   
   const handleDismiss = (id: string) => {
-    setNotifications((prev: ExtendedDealNotification[]) => prev.filter((n: ExtendedDealNotification) => n.id !== id));
+    setNotifications((prev: ExtendedDealNotification[]) => prev?.filter((n: ExtendedDealNotification) => n.id !== id));
   };
   
   const handleAction = async (notification: ExtendedDealNotification) => {
@@ -380,7 +380,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
     }
   };
   
-  const filteredNotifications = notifications.filter((n: ExtendedDealNotification) => {
+  const filteredNotifications = notifications?.filter((n: ExtendedDealNotification) => {
     if (filter === 'active') {
       return !n.expiresAt || n.expiresAt > new Date();
     } else if (filter === 'expired') {
@@ -389,7 +389,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
     return true;
   });
   
-  const activeDealsCount = notifications.filter(
+  const activeDealsCount = notifications?.filter(
     (n: ExtendedDealNotification) => !n.expiresAt || n.expiresAt > new Date()
   ).length;
   
@@ -416,7 +416,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
           </div>
         </CardHeader>
         <CardContent className="pb-3">
-          {filteredNotifications.length === 0 ? (
+          {filteredNotifications?.length || 0 === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               No active deals at the moment
             </p>
@@ -528,20 +528,20 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
           <Tabs value={filter} onValueChange={(value: string) => setFilter(value as 'all' | 'active' | 'expired')}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="all" className="text-xs">
-                All ({filteredNotifications.length})
+                All ({filteredNotifications?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="active" className="text-xs">
                 Active ({activeDealsCount})
               </TabsTrigger>
               <TabsTrigger value="expired" className="text-xs">
-                Expired ({notifications.length - activeDealsCount})
+                Expired ({notifications?.length || 0 - activeDealsCount})
               </TabsTrigger>
             </TabsList>
           </Tabs>
           
           {/* Notifications List */}
           <div className="space-y-3">
-            {filteredNotifications.length === 0 ? (
+            {filteredNotifications?.length || 0 === 0 ? (
               <div className="text-center py-12">
                 <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-lg font-medium mb-1">No deals yet</p>
@@ -552,7 +552,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
                 </p>
               </div>
             ) : (
-              filteredNotifications.map((notification, index) => (
+              filteredNotifications?.map((notification, index) => (
                 <DealNotificationCard
                   key={notification.id}
                   notification={notification}
@@ -565,12 +565,12 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
           </div>
           
           {/* Quick Stats */}
-          {notifications.length > 0 && (
+          {notifications?.length || 0 > 0 && (
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">
                   {formatPrice(
-                    notifications.reduce((sum, n) => sum + n.savings, 0)
+                    notifications.reduce((sum: any, n: any) => sum + n.savings, 0)
                   )}
                 </p>
                 <p className="text-sm text-muted-foreground">Total Savings</p>
@@ -581,7 +581,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
                     notifications.reduce(
                       (sum, n) => sum + (n.originalPrice ? (n.savings / n.originalPrice) * 100 : 0),
                       0
-                    ) / notifications.length
+                    ) / notifications?.length || 0
                   )}%
                 </p>
                 <p className="text-sm text-muted-foreground">Avg. Discount</p>
@@ -655,13 +655,13 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
                   <div key={id} className="flex items-center space-x-2">
                     <Switch
                       id={id}
-                      checked={settings.alertTypes.includes(id as any)}
+                      checked={settings?.alertTypes?.includes(id as any)}
                       onCheckedChange={(checked: boolean) => {
                         setSettings((prev: ExtendedAlertSettings) => ({
                           ...prev,
                           alertTypes: checked
                             ? [...prev.alertTypes, id]
-                            : prev.alertTypes.filter((t: string) => t !== id),
+                            : prev?.alertTypes?.filter((t: string) => t !== id),
                         }));
                       }}
                     />

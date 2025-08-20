@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -16,7 +16,7 @@ import { logger } from "../../utils/logger.js";
  * - Add triggers for automatic validation
  */
 
-export function up(db: Database.Database): void {
+export function up(db: DatabaseInstance): void {
   logger.info("Starting migration: fix_negative_processing_times");
 
   try {
@@ -141,12 +141,12 @@ export function up(db: Database.Database): void {
       );
     })();
   } catch (error) {
-    logger.error("Failed to fix negative processing times", error);
+    logger.error("Failed to fix negative processing times", error as string);
     throw error;
   }
 }
 
-export function down(db: Database.Database): void {
+export function down(db: DatabaseInstance): void {
   logger.info("Rolling back migration: fix_negative_processing_times");
 
   try {
@@ -183,7 +183,7 @@ export function down(db: Database.Database): void {
       db.exec(`DROP INDEX IF EXISTS idx_email_analysis_processing_time`);
     })();
   } catch (error) {
-    logger.error("Failed to rollback negative processing times fix", error);
+    logger.error("Failed to rollback negative processing times fix", error as string);
     throw error;
   }
 }
@@ -196,3 +196,5 @@ export const migration = {
   up,
   down,
 };
+
+export default migration;

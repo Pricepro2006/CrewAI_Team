@@ -9,11 +9,14 @@ const logger = new Logger("test:error-handling");
 export function setupTestErrorHandling(): void {
   // Set up error handling for tests
   process.on("unhandledRejection", (reason, promise) => {
-    logger.error("Unhandled Rejection at:", promise, "reason:", reason);
+    logger.error("Unhandled Rejection at:", `Promise: ${String(promise)}, Reason: ${String(reason)}`);
   });
 
-  process.on("uncaughtException", (error) => {
-    logger.error("Uncaught Exception:", error);
+  process.on("uncaughtException", (error: any) => {
+    logger.error("Uncaught Exception:", error instanceof Error ? error.message : String(error));
+    if (error instanceof Error && error.stack) {
+      logger.error("Stack trace:", error.stack);
+    }
   });
 }
 
@@ -37,7 +40,7 @@ export async function validateTestEnvironment(): Promise<{
   }
 
   return {
-    isValid: issues.length === 0,
+    isValid: (issues?.length || 0) === 0,
     issues,
     recommendations,
   };
@@ -78,7 +81,7 @@ export async function checkOllamaHealth(baseUrl: string): Promise<{
 }
 
 export function handleTestError(error: unknown, context: string): void {
-  logger.error(`Test error in ${context}:`, error);
+  logger.error(`Test error in ${context}:`, String(error));
   
   if (error instanceof Error) {
     logger.error("Stack trace:", error.stack);
@@ -89,7 +92,7 @@ export const testErrorReporter = {
   errors: [] as Array<{ error: Error; context: string; timestamp: Date }>,
   
   reportError(error: Error, context: string): void {
-    this.errors.push({
+    this?.errors?.push({
       error,
       context,
       timestamp: new Date(),
@@ -102,13 +105,13 @@ export const testErrorReporter = {
   } {
     const errorsByType: Record<string, number> = {};
     
-    this.errors.forEach(({ error }) => {
-      const type = error.constructor.name;
+    this?.errors?.forEach(({ error }) => {
+      const type = error?.constructor?.name;
       errorsByType[type] = (errorsByType[type] || 0) + 1;
     });
     
     return {
-      totalErrors: this.errors.length,
+      totalErrors: this?.errors?.length,
       errorsByType,
     };
   },

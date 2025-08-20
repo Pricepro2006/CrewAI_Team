@@ -95,7 +95,7 @@ export class GraphSubscriptionManager {
     );
 
     const authProvider = new TokenCredentialAuthenticationProvider(credential, {
-      scopes: ["https://graph.microsoft.com/.default"],
+      scopes: ["https://graph?.microsoft?.com/.default"],
     });
 
     this.graphClient = Client.initWithMiddleware({
@@ -124,7 +124,7 @@ export class GraphSubscriptionManager {
 
     try {
       const subscription = {
-        changeType: finalConfig.changeTypes.join(","),
+        changeType: finalConfig?.changeTypes?.join(","),
         notificationUrl: `${process.env.API_URL}/api/webhooks/microsoft-graph`,
         resource: finalConfig.resource,
         expirationDateTime: new Date(
@@ -143,14 +143,14 @@ export class GraphSubscriptionManager {
         .api("/subscriptions")
         .post(subscription);
 
-      this.subscriptions.set(result.id, result);
+      this?.subscriptions?.set(result.id, result);
 
       logger.info("Graph subscription created", "GRAPH_SUBSCRIPTION", {
         subscriptionId: result.id,
         expirationDateTime: result.expirationDateTime,
       });
 
-      metrics.increment("graph.subscription.created");
+      metrics.increment("graph?.subscription?.created");
 
       // Store subscription in database for persistence
       await this.storeSubscription(result);
@@ -166,7 +166,7 @@ export class GraphSubscriptionManager {
         },
       );
 
-      metrics.increment("graph.subscription.create_error");
+      metrics.increment("graph?.subscription?.create_error");
       throw error;
     }
   }
@@ -195,10 +195,10 @@ export class GraphSubscriptionManager {
       }
     }
 
-    if (errors.length > 0) {
+    if (errors?.length || 0 > 0) {
       logger.warn("Some subscriptions failed to create", "GRAPH_SUBSCRIPTION", {
-        successful: results.length,
-        failed: errors.length,
+        successful: results?.length || 0,
+        failed: errors?.length || 0,
         errors,
       });
     }
@@ -214,7 +214,7 @@ export class GraphSubscriptionManager {
       throw new Error("Microsoft Graph dependencies not available");
     }
     try {
-      const subscription = this.subscriptions.get(subscriptionId);
+      const subscription = this?.subscriptions?.get(subscriptionId);
       if (!subscription) {
         logger.warn(
           "Subscription not found for renewal",
@@ -236,14 +236,14 @@ export class GraphSubscriptionManager {
           expirationDateTime: newExpiration,
         });
 
-      this.subscriptions.set(subscriptionId, updated);
+      this?.subscriptions?.set(subscriptionId, updated);
 
       logger.info("Subscription renewed", "GRAPH_SUBSCRIPTION", {
         subscriptionId,
         newExpiration,
       });
 
-      metrics.increment("graph.subscription.renewed");
+      metrics.increment("graph?.subscription?.renewed");
 
       // Update stored subscription
       await this.updateStoredSubscription(updated);
@@ -253,10 +253,10 @@ export class GraphSubscriptionManager {
         error: error instanceof Error ? error.message : String(error),
       });
 
-      metrics.increment("graph.subscription.renew_error");
+      metrics.increment("graph?.subscription?.renew_error");
 
       // Remove failed subscription from tracking
-      this.subscriptions.delete(subscriptionId);
+      this?.subscriptions?.delete(subscriptionId);
     }
   }
 
@@ -268,15 +268,15 @@ export class GraphSubscriptionManager {
       throw new Error("Microsoft Graph dependencies not available");
     }
     try {
-      await this.graphClient.api(`/subscriptions/${subscriptionId}`).delete();
+      await this?.graphClient?.api(`/subscriptions/${subscriptionId}`).delete();
 
-      this.subscriptions.delete(subscriptionId);
+      this?.subscriptions?.delete(subscriptionId);
 
       logger.info("Subscription deleted", "GRAPH_SUBSCRIPTION", {
         subscriptionId,
       });
 
-      metrics.increment("graph.subscription.deleted");
+      metrics.increment("graph?.subscription?.deleted");
 
       // Remove from storage
       await this.removeStoredSubscription(subscriptionId);
@@ -286,7 +286,7 @@ export class GraphSubscriptionManager {
         error: error instanceof Error ? error.message : String(error),
       });
 
-      metrics.increment("graph.subscription.delete_error");
+      metrics.increment("graph?.subscription?.delete_error");
     }
   }
 
@@ -298,16 +298,16 @@ export class GraphSubscriptionManager {
       return [];
     }
     try {
-      const response = await this.graphClient.api("/subscriptions").get();
+      const response = await this?.graphClient?.api("/subscriptions").get();
 
-      const activeSubscriptions = response.value.filter(
+      const activeSubscriptions = response?.value?.filter(
         (sub: Subscription) => new Date(sub.expirationDateTime) > new Date(),
       );
 
       // Update local cache
-      this.subscriptions.clear();
+      this?.subscriptions?.clear();
       activeSubscriptions.forEach((sub: Subscription) => {
-        this.subscriptions.set(sub.id, sub);
+        this?.subscriptions?.set(sub.id, sub);
       });
 
       return activeSubscriptions;
@@ -332,7 +332,7 @@ export class GraphSubscriptionManager {
       await this.renewExpiringSubscriptions();
     });
 
-    this.renewalJob.start();
+    this?.renewalJob?.start();
     logger.info("Subscription renewal job started", "GRAPH_SUBSCRIPTION");
   }
 
@@ -372,12 +372,12 @@ export class GraphSubscriptionManager {
     // This is a placeholder for the actual implementation
     try {
       const stored = await this.getStoredSubscriptions();
-      stored.forEach((sub) => {
-        this.subscriptions.set(sub.id, sub);
+      stored.forEach((sub: any) => {
+        this?.subscriptions?.set(sub.id, sub);
       });
 
       logger.info("Loaded stored subscriptions", "GRAPH_SUBSCRIPTION", {
-        count: stored.length,
+        count: stored?.length || 0,
       });
     } catch (error) {
       logger.error(
@@ -395,7 +395,7 @@ export class GraphSubscriptionManager {
    */
   async shutdown(): Promise<void> {
     if (this.renewalJob) {
-      this.renewalJob.stop();
+      this?.renewalJob?.stop();
     }
 
     logger.info("Graph subscription manager shutdown", "GRAPH_SUBSCRIPTION");

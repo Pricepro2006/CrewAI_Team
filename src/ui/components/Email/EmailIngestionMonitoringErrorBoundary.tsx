@@ -62,7 +62,7 @@ export class EmailIngestionMonitoringErrorBoundary extends Component<Props, Stat
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error
     console.error('EmailIngestionMonitoring Error Boundary caught an error:', error, errorInfo);
     
@@ -73,8 +73,8 @@ export class EmailIngestionMonitoringErrorBoundary extends Component<Props, Stat
     });
 
     // Call the optional onError callback
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
+    if (this?.props?.onError) {
+      this?.props?.onError(error, errorInfo);
     }
 
     // Send error to monitoring service
@@ -90,14 +90,14 @@ export class EmailIngestionMonitoringErrorBoundary extends Component<Props, Stat
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          errorId: this.state.errorId,
+          errorId: this?.state?.errorId,
           component: 'EmailIngestionMonitoring',
           message: error.message,
           stack: error.stack,
           componentStack: errorInfo.componentStack,
           timestamp: new Date().toISOString(),
           userAgent: navigator.userAgent,
-          url: window.location.href,
+          url: window?.location?.href,
           retryCount: this.retryCount,
         }),
       });
@@ -119,29 +119,29 @@ export class EmailIngestionMonitoringErrorBoundary extends Component<Props, Stat
   };
 
   private handleReload = () => {
-    window.location.reload();
+    window?.location?.reload();
   };
 
   private copyErrorDetails = () => {
     const errorDetails = {
-      errorId: this.state.errorId,
-      message: this.state.error?.message,
-      stack: this.state.error?.stack,
-      componentStack: this.state.errorInfo?.componentStack,
+      errorId: this?.state?.errorId,
+      message: this?.state?.error?.message,
+      stack: this?.state?.error?.stack,
+      componentStack: this?.state?.errorInfo?.componentStack,
       timestamp: new Date().toISOString(),
     };
 
-    navigator.clipboard.writeText(JSON.stringify(errorDetails, null, 2)).then(() => {
+    navigator?.clipboard?.writeText(JSON.stringify(errorDetails, null, 2)).then(() => {
       // Could show a toast notification here
       console.log('Error details copied to clipboard');
     });
   };
 
-  render() {
-    if (this.state.hasError) {
+  override render() {
+    if (this?.state?.hasError) {
       // If a custom fallback is provided, use it
-      if (this.props.fallback) {
-        return this.props.fallback;
+      if (this?.props?.fallback) {
+        return this?.props?.fallback;
       }
 
       // Default error UI
@@ -171,28 +171,28 @@ export class EmailIngestionMonitoringErrorBoundary extends Component<Props, Stat
                 <div className="text-sm">
                   <span className="font-medium">Error ID:</span>{' '}
                   <code className="bg-muted px-2 py-1 rounded text-xs">
-                    {this.state.errorId}
+                    {this?.state?.errorId}
                   </code>
                 </div>
                 
-                {this.state.error && (
+                {this?.state?.error && (
                   <div className="text-sm">
                     <span className="font-medium">Error Message:</span>
                     <div className="mt-1 p-3 bg-muted rounded border-l-4 border-red-500">
                       <code className="text-xs text-red-600">
-                        {this.state.error.message}
+                        {this?.state?.error.message}
                       </code>
                     </div>
                   </div>
                 )}
 
-                {process.env.NODE_ENV === 'development' && this.state.error?.stack && (
+                {process.env.NODE_ENV === 'development' && this?.state?.error?.stack && (
                   <details className="text-sm">
                     <summary className="font-medium cursor-pointer">
                       Stack Trace (Development)
                     </summary>
                     <pre className="mt-2 p-3 bg-muted rounded text-xs overflow-auto max-h-48">
-                      {this.state.error.stack}
+                      {this?.state?.error.stack}
                     </pre>
                   </details>
                 )}
@@ -255,7 +255,7 @@ export class EmailIngestionMonitoringErrorBoundary extends Component<Props, Stat
       );
     }
 
-    return this.props.children;
+    return this?.props?.children;
   }
 }
 
@@ -286,7 +286,7 @@ export const useEmailIngestionMonitoringErrorHandler = () => {
         stack: error.stack,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
-        url: window.location.href,
+        url: window?.location?.href,
       }),
     }).catch(console.error);
   }, []);

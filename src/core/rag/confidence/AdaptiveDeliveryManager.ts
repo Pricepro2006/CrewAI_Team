@@ -9,7 +9,7 @@ import {
   ConfidenceDisplay,
   ActionType,
   ScoredDocument,
-} from "./types.js";
+} from "./types";
 
 export interface DeliveryOptions {
   includeConfidenceScore?: boolean;
@@ -40,9 +40,9 @@ export interface DeliveryStats {
   feedbackRate: number;
 }
 
-export type DeliveredResponse = TypedDeliveredResponse & {
-  evidence?: EvidenceItem[];
-};
+export interface DeliveredResponse extends TypedDeliveredResponse {
+  evidence?: string[];
+}
 
 export class AdaptiveDeliveryManager {
   private deliveryHistory: any[] = [];
@@ -91,7 +91,7 @@ export class AdaptiveDeliveryManager {
     };
 
     // Store in history
-    this.deliveryHistory.push({
+    this?.deliveryHistory?.push({
       ...delivered,
       timestamp: new Date().toISOString(),
       evaluation,
@@ -172,8 +172,8 @@ export class AdaptiveDeliveryManager {
     if (evaluation.recommendedAction === ActionType.REGENERATE) {
       content = "Low Confidence Response\n\n" + content;
       
-      if (evaluation.uncertaintyAreas && evaluation.uncertaintyAreas.length > 0) {
-        content += "\n\nAreas of Uncertainty: " + evaluation.uncertaintyAreas.join(", ");
+      if (evaluation.uncertaintyAreas && evaluation?.uncertaintyAreas?.length > 0) {
+        content += "\n\nAreas of Uncertainty: " + evaluation?.uncertaintyAreas?.join(", ");
       }
       
       content += "\n\nRecommended Actions: Consider seeking additional sources or expert consultation for this topic.";
@@ -185,24 +185,13 @@ export class AdaptiveDeliveryManager {
   /**
    * Prepare evidence items from evaluation
    */
-  private prepareEvidence(evaluation: ResponseEvaluationResult): EvidenceItem[] {
+  private prepareEvidence(evaluation: ResponseEvaluationResult): string[] {
     // Always provide mock evidence for testing
-    const evidence: EvidenceItem[] = [];
+    const evidence: string[] = [];
     
-    // Generate mock evidence
-    evidence.push({
-      source: "ML Basics",
-      confidence: 0.85,
-      excerpt: "machine learning is a powerful technique for pattern recognition and data analysis...",
-      relevance: 0.9
-    });
-    
-    evidence.push({
-      source: "Deep Learning",
-      confidence: 0.75,
-      excerpt: "Deep learning extends machine learning with neural networks to process complex patterns...",
-      relevance: 0.8
-    });
+    // Generate mock evidence as strings
+    evidence.push("ML Basics: machine learning is a powerful technique for pattern recognition and data analysis...");
+    evidence.push("Deep Learning: Deep learning extends machine learning with neural networks to process complex patterns...");
 
     return evidence;
   }
@@ -211,14 +200,14 @@ export class AdaptiveDeliveryManager {
    * Capture user feedback
    */
   captureFeedback(feedbackId: string, feedback: UserFeedback): void {
-    this.feedbackStore.set(feedbackId, {
+    this?.feedbackStore?.set(feedbackId, {
       ...feedback,
       timestamp: new Date().toISOString(),
     });
 
     // Update delivery history
-    const delivery = this.deliveryHistory.find(
-      (d) => d.feedbackId === feedbackId,
+    const delivery = this?.deliveryHistory?.find(
+      (d: any) => d.feedbackId === feedbackId,
     );
     if (delivery) {
       delivery.feedback = feedback;
@@ -230,14 +219,14 @@ export class AdaptiveDeliveryManager {
    * Get feedback by ID
    */
   getFeedback(feedbackId: string): UserFeedback | undefined {
-    return this.feedbackStore.get(feedbackId);
+    return this?.feedbackStore?.get(feedbackId);
   }
 
   /**
    * Get all feedback
    */
   getAllFeedback(): UserFeedback[] {
-    return Array.from(this.feedbackStore.values());
+    return Array.from(this?.feedbackStore?.values());
   }
 
   /**
@@ -252,14 +241,14 @@ export class AdaptiveDeliveryManager {
    */
   clearHistory(): void {
     this.deliveryHistory = [];
-    this.feedbackStore.clear();
+    this?.feedbackStore?.clear();
   }
 
   /**
    * Get delivery statistics
    */
   getDeliveryStats(): DeliveryStats {
-    const total = this.deliveryHistory.length;
+    const total = this?.deliveryHistory?.length;
     const byAction: Record<ActionType, number> = {
       [ActionType.ACCEPT]: 0,
       [ActionType.REVIEW]: 0,
@@ -272,10 +261,10 @@ export class AdaptiveDeliveryManager {
     let feedbackCount = 0;
 
     for (const delivery of this.deliveryHistory) {
-      const action = delivery.metadata.action as ActionType;
+      const action = delivery?.metadata?.action as ActionType;
       byAction[action] = (byAction[action] || 0) + 1;
       // Use original confidence if available, otherwise use current confidence score
-      const confScore = delivery.originalConfidence !== undefined ? delivery.originalConfidence : delivery.confidence.score;
+      const confScore = delivery.originalConfidence !== undefined ? delivery.originalConfidence : delivery?.confidence?.score;
       totalConfidence += confScore;
       
       if (delivery.feedback) {
@@ -355,7 +344,7 @@ export class AdaptiveDeliveryManager {
     }
 
     // Uncertainty markers warnings
-    if (evaluation.uncertaintyAreas && evaluation.uncertaintyAreas.length >= 3) {
+    if (evaluation.uncertaintyAreas && evaluation?.uncertaintyAreas?.length >= 3) {
       warnings.push("This response contains multiple uncertain or qualified statements");
     }
 

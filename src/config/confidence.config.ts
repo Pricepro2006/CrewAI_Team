@@ -146,31 +146,31 @@ export function mergeConfidenceConfigs(
 export function validateConfidenceConfig(config: ConfidenceConfig): boolean {
   // Ensure all values are between 0 and 1
   const allValues = [
-    config.retrieval.minimum,
-    config.retrieval.preferred,
-    config.generation.acceptable,
-    config.generation.review,
-    config.overall.high,
-    config.overall.medium,
-    config.overall.low,
+    config?.retrieval?.minimum,
+    config?.retrieval?.preferred,
+    config?.generation?.acceptable,
+    config?.generation?.review,
+    config?.overall?.high,
+    config?.overall?.medium,
+    config?.overall?.low,
   ];
 
-  if (!allValues.every((v) => v >= 0 && v <= 1)) {
+  if (!allValues.every((v: any) => v >= 0 && v <= 1)) {
     return false;
   }
 
   // Ensure logical ordering
-  if (config.retrieval.minimum > config.retrieval.preferred) {
+  if (config?.retrieval?.minimum > config?.retrieval?.preferred) {
     return false;
   }
 
-  if (config.generation.review > config.generation.acceptable) {
+  if (config?.generation?.review > config?.generation?.acceptable) {
     return false;
   }
 
   if (
-    config.overall.low > config.overall.medium ||
-    config.overall.medium > config.overall.high
+    config?.overall?.low > config?.overall?.medium ||
+    config?.overall?.medium > config?.overall?.high
   ) {
     return false;
   }

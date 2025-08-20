@@ -123,15 +123,15 @@ export function createWebSocketErrorRecovery() {
     };
 
     // Wrap send method with error handling
-    const originalSend = ws.send.bind(ws);
+    const originalSend = ws?.send?.bind(ws);
     ws.send = function (
       data: Parameters<typeof originalSend>[0],
       ...args: any[]
     ) {
       try {
         const cb =
-          typeof args[args.length - 1] === "function"
-            ? args[args.length - 1]
+          typeof args[args?.length || 0 - 1] === "function"
+            ? args[args?.length || 0 - 1]
             : undefined;
         originalSend(data, ...args);
       } catch (error) {
@@ -142,7 +142,7 @@ export function createWebSocketErrorRecovery() {
     } as typeof ws.send;
 
     // Enhanced error event handling
-    ws.on("error", (error) => {
+    ws.on("error", (error: any) => {
       handleWebSocketError(ws, error, { event: "error" });
     });
 
@@ -239,12 +239,12 @@ export class WebSocketRateLimiter {
   check(ws: ErrorHandlingWebSocket): boolean {
     const clientId = ws.clientId || "anonymous";
     const now = Date.now();
-    const requests = this.requests.get(clientId) || [];
+    const requests = this?.requests?.get(clientId) || [];
 
     // Remove old requests
-    const validRequests = requests.filter((time) => now - time < this.windowMs);
+    const validRequests = requests?.filter((time: any) => now - time < this.windowMs);
 
-    if (validRequests.length >= this.maxRequests) {
+    if (validRequests?.length || 0 >= this.maxRequests) {
       const error = new AppError(
         "RATE_LIMIT_EXCEEDED" as ErrorCode,
         "WebSocket rate limit exceeded",
@@ -253,8 +253,8 @@ export class WebSocketRateLimiter {
           limit: this.maxRequests,
           window: this.windowMs,
           retryAfter:
-            validRequests.length > 0 && validRequests[0] !== undefined
-              ? this.windowMs - (now - validRequests[0])
+            validRequests?.length || 0 > 0 && validRequests?.[0] !== undefined
+              ? this.windowMs - (now - (validRequests?.[0] || 0))
               : this.windowMs,
         },
       );
@@ -264,15 +264,15 @@ export class WebSocketRateLimiter {
     }
 
     validRequests.push(now);
-    this.requests.set(clientId, validRequests);
+    this?.requests?.set(clientId, validRequests);
     return true;
   }
 
   reset(clientId?: string): void {
     if (clientId) {
-      this.requests.delete(clientId);
+      this?.requests?.delete(clientId);
     } else {
-      this.requests.clear();
+      this?.requests?.clear();
     }
   }
 }
@@ -299,20 +299,20 @@ export class WebSocketConnectionManager {
   private reconnectAttempts = new Map<string, number>();
 
   add(clientId: string, ws: ErrorHandlingWebSocket): void {
-    this.connections.set(clientId, ws);
-    this.reconnectAttempts.set(clientId, 0);
+    this?.connections?.set(clientId, ws);
+    this?.reconnectAttempts?.set(clientId, 0);
 
     ws.on("close", () => {
-      this.connections.delete(clientId);
+      this?.connections?.delete(clientId);
     });
   }
 
   remove(clientId: string): void {
-    const ws = this.connections.get(clientId);
+    const ws = this?.connections?.get(clientId);
     if (ws) {
       ws.close(1000, "Connection closed by server");
-      this.connections.delete(clientId);
-      this.reconnectAttempts.delete(clientId);
+      this?.connections?.delete(clientId);
+      this?.reconnectAttempts?.delete(clientId);
     }
   }
 
@@ -322,7 +322,7 @@ export class WebSocketConnectionManager {
   ): void {
     const data = JSON.stringify(message);
 
-    this.connections.forEach((ws, clientId) => {
+    this?.connections?.forEach((ws, clientId) => {
       if (ws.readyState === WebSocket.OPEN && (!filter || filter(ws))) {
         try {
           ws.send(data);
@@ -335,10 +335,10 @@ export class WebSocketConnectionManager {
   }
 
   getConnection(clientId: string): ErrorHandlingWebSocket | undefined {
-    return this.connections.get(clientId);
+    return this?.connections?.get(clientId);
   }
 
   getAllConnections(): ErrorHandlingWebSocket[] {
-    return Array.from(this.connections.values());
+    return Array.from(this?.connections?.values());
   }
 }

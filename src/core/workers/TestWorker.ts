@@ -13,7 +13,7 @@ log("Test worker starting up...", { workerData });
 
 // Set up message handlers
 if (parentPort) {
-  parentPort.on("message", (message) => {
+  parentPort.on("message", (message: any) => {
     log("Received message", { type: message.type });
     
     switch (message.type) {
@@ -31,7 +31,6 @@ if (parentPort) {
           message: "Worker shutting down gracefully"
         });
         process.exit(0);
-        break;
         
       default:
         log("Unknown message type", { type: message.type });

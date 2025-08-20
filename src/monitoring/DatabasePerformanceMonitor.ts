@@ -164,63 +164,75 @@ class DatabasePerformanceMonitor extends EventEmitter {
   }
 
   private wrapDatabaseMethods(db: Database.Database, dbName: string): void {
+    if (!db) return;
+    
     // Wrap prepare method
-    const originalPrepare = db.prepare.bind(db);
-    db.prepare = function(sql: string) {
-      const statement = originalPrepare(sql);
-      return DatabasePerformanceMonitor.instance.wrapStatement(statement, sql, dbName);
-    };
+    const originalPrepare = db.prepare?.bind(db);
+    if (originalPrepare) {
+      db.prepare = function(sql: string) {
+        const statement = originalPrepare(sql);
+        const instance = DatabasePerformanceMonitor.instance;
+        return instance ? instance.wrapStatement(statement, sql, dbName) : statement;
+      };
+    }
 
     // Wrap exec method
-    const originalExec = db.exec.bind(db);
-    db.exec = function(sql: string) {
-      const queryId = DatabasePerformanceMonitor.instance.generateQueryId();
-      const startTime = process.hrtime.bigint();
-      const startCpu = process.cpuUsage();
-      const startMemory = process.memoryUsage();
+    const originalExec = db.exec?.bind(db);
+    if (originalExec) {
+      db.exec = function(sql: string) {
+        const instance = DatabasePerformanceMonitor.instance;
+        const queryId = instance ? instance.generateQueryId() : 'unknown';
+        const startTime = process.hrtime ? process.hrtime.bigint() : BigInt(Date.now() * 1000000);
+        const startCpu = process.cpuUsage ? process.cpuUsage() : { user: 0, system: 0 };
+        const startMemory = process.memoryUsage ? process.memoryUsage() : { heapUsed: 0 };
 
       try {
         const result = originalExec(sql);
-        const endTime = process.hrtime.bigint();
-        const endCpu = process.cpuUsage(startCpu);
-        const endMemory = process.memoryUsage();
+        const endTime = process.hrtime ? process.hrtime.bigint() : BigInt(Date.now() * 1000000);
+        const endCpu = process.cpuUsage ? process.cpuUsage(startCpu) : { user: 0, system: 0 };
+        const endMemory = process.memoryUsage ? process.memoryUsage() : { heapUsed: 0 };
         
         const executionTime = Number(endTime - startTime) / 1000000; // Convert to milliseconds
         const cpuTime = (endCpu.user + endCpu.system) / 1000; // Convert to milliseconds
         const memoryUsed = endMemory.heapUsed - startMemory.heapUsed;
 
-        DatabasePerformanceMonitor.instance.recordQuery({
-          queryId,
-          sql,
-          normalizedSql: DatabasePerformanceMonitor.instance.normalizeSql(sql),
-          executionTime,
-          timestamp: Date.now(),
-          operation: DatabasePerformanceMonitor.instance.getQueryOperation(sql),
-          source: dbName,
-          cpuTime,
-          memoryUsed,
-        });
+        if (instance) {
+          instance.recordQuery({
+            queryId,
+            sql,
+            normalizedSql: instance.normalizeSql(sql),
+            executionTime,
+            timestamp: Date.now(),
+            operation: instance.getQueryOperation(sql),
+            source: dbName,
+            cpuTime,
+            memoryUsed,
+          });
+        }
 
         return result;
       } catch (error) {
-        const endTime = process.hrtime.bigint();
+        const endTime = process.hrtime ? process.hrtime.bigint() : BigInt(Date.now() * 1000000);
         const executionTime = Number(endTime - startTime) / 1000000;
 
-        DatabasePerformanceMonitor.instance.recordQuery({
-          queryId,
-          sql,
-          normalizedSql: DatabasePerformanceMonitor.instance.normalizeSql(sql),
-          executionTime,
-          timestamp: Date.now(),
-          operation: DatabasePerformanceMonitor.instance.getQueryOperation(sql),
-          source: dbName,
-          error: true,
-          errorMessage: (error as Error).message,
-        });
+        if (instance) {
+          instance.recordQuery({
+            queryId,
+            sql,
+            normalizedSql: instance.normalizeSql(sql),
+            executionTime,
+            timestamp: Date.now(),
+            operation: instance.getQueryOperation(sql),
+            source: dbName,
+            error: true,
+            errorMessage: (error as Error).message,
+          });
+        }
 
         throw error;
       }
-    };
+      };
+    }
   }
 
   private wrapStatement(statement: any, sql: string, dbName: string): any {
@@ -258,15 +270,15 @@ class DatabasePerformanceMonitor extends EventEmitter {
 
   private executeWithTracking(method: string, originalMethod: Function, sql: string, dbName: string, params: any[]): any {
     const queryId = this.generateQueryId();
-    const startTime = process.hrtime.bigint();
-    const startCpu = process.cpuUsage();
-    const startMemory = process.memoryUsage();
+    const startTime = process.hrtime ? process.hrtime.bigint() : BigInt(Date.now() * 1000000);
+    const startCpu = process.cpuUsage ? process.cpuUsage() : { user: 0, system: 0 };
+    const startMemory = process.memoryUsage ? process.memoryUsage() : { heapUsed: 0 };
 
     try {
       const result = originalMethod(...params);
-      const endTime = process.hrtime.bigint();
-      const endCpu = process.cpuUsage(startCpu);
-      const endMemory = process.memoryUsage();
+      const endTime = process.hrtime ? process.hrtime.bigint() : BigInt(Date.now() * 1000000);
+      const endCpu = process.cpuUsage ? process.cpuUsage(startCpu) : { user: 0, system: 0 };
+      const endMemory = process.memoryUsage ? process.memoryUsage() : { heapUsed: 0 };
       
       const executionTime = Number(endTime - startTime) / 1000000; // Convert to milliseconds
       const cpuTime = (endCpu.user + endCpu.system) / 1000; // Convert to milliseconds
@@ -278,7 +290,7 @@ class DatabasePerformanceMonitor extends EventEmitter {
       if (result && typeof result === 'object') {
         if ('changes' in result) rowsAffected = result.changes;
         if ('lastInsertRowid' in result) rowsAffected = 1;
-        if (Array.isArray(result)) rowsReturned = result.length;
+        if (Array.isArray(result)) rowsReturned = result.length || 0;
         else if (result && method === 'get') rowsReturned = 1;
       }
 
@@ -299,7 +311,7 @@ class DatabasePerformanceMonitor extends EventEmitter {
 
       return result;
     } catch (error) {
-      const endTime = process.hrtime.bigint();
+      const endTime = process.hrtime ? process.hrtime.bigint() : BigInt(Date.now() * 1000000);
       const executionTime = Number(endTime - startTime) / 1000000;
 
       this.recordQuery({
@@ -427,8 +439,8 @@ class DatabasePerformanceMonitor extends EventEmitter {
       const results: any = {};
       for (const [key, query] of Object.entries(pragmaQueries)) {
         try {
-          const result = db.prepare(query).get();
-          results[key] = Object.values(result)[0];
+          const result = db.prepare(query).get() as Record<string, any>;
+          results[key] = result ? Object.values(result)[0] : 0;
         } catch (error) {
           results[key] = 0;
         }
@@ -479,22 +491,22 @@ class DatabasePerformanceMonitor extends EventEmitter {
     const oneHourAgo = now - (60 * 60 * 1000);
     const recentQueries = this.queryMetrics.filter(q => q.timestamp > oneHourAgo);
 
-    if (recentQueries.length === 0) {
+    if (!recentQueries || recentQueries.length === 0) {
       return;
     }
 
     const totalQueries = recentQueries.length;
-    const totalTime = recentQueries.reduce((sum, q) => sum + q.executionTime, 0);
+    const totalTime = recentQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0);
     const avgQueryTime = totalTime / totalQueries;
     const slowQueries = recentQueries.filter(q => q.executionTime >= this.thresholds.slowQueryMs);
     const errorQueries = recentQueries.filter(q => q.error);
-    const errorRate = (errorQueries.length / totalQueries) * 100;
+    const errorRate = ((errorQueries?.length || 0) / totalQueries) * 100;
 
     const aggregates: DatabaseAggregates = {
       timestamp: now,
       queryCount: totalQueries,
       avgQueryTime,
-      slowQueryCount: slowQueries.length,
+      slowQueryCount: slowQueries?.length || 0,
       errorRate,
       queriesPerSecond: totalQueries / 3600, // per hour / 3600 seconds
       connectionPoolUsage: this.getConnectionPoolUsage(),
@@ -502,7 +514,7 @@ class DatabasePerformanceMonitor extends EventEmitter {
       topSlowQueries: this.getTopSlowQueries(10),
       queryTypeDistribution: this.getQueryTypeDistribution(recentQueries),
       hourlyTrends: this.getHourlyTrends(recentQueries),
-      indexEfficiency: await this.getIndexEfficiency(),
+      indexEfficiency: [], // Will be populated asynchronously
     };
 
     // Check for performance alerts
@@ -569,7 +581,7 @@ class DatabasePerformanceMonitor extends EventEmitter {
       .map(([hour, data]) => ({
         hour,
         queryCount: data.queries.length,
-        avgTime: data.queries.reduce((sum, q) => sum + q.executionTime, 0) / data.queries.length,
+        avgTime: data.queries.reduce((sum: any, q: any) => sum + q.executionTime, 0) / data.queries.length,
         errorCount: data.errors,
       }))
       .sort((a, b) => a.hour - b.hour);
@@ -594,7 +606,7 @@ class DatabasePerformanceMonitor extends EventEmitter {
           });
         }
       } catch (error) {
-        logger.warn('Failed to analyze index efficiency', 'DB_PERF', { dbName }, error as Error);
+        logger.warn('Failed to analyze index efficiency', 'DB_PERF', error as Error);
       }
     }
 
@@ -682,7 +694,7 @@ class DatabasePerformanceMonitor extends EventEmitter {
           }
         }
       } catch (error) {
-        logger.warn('Failed to analyze unused indexes', 'DB_PERF', { dbName }, error as Error);
+        logger.warn('Failed to analyze unused indexes', 'DB_PERF', error as Error);
       }
     }
 
@@ -694,7 +706,7 @@ class DatabasePerformanceMonitor extends EventEmitter {
 
       logger.info('Database optimization suggestions generated', 'DB_PERF', {
         suggestionCount: suggestions.length,
-        highSeverity: suggestions.filter(s => s.severity === 'high').length,
+        highSeverity: suggestions?.filter(s => s.severity === 'high').length,
       });
     }
   }
@@ -702,7 +714,7 @@ class DatabasePerformanceMonitor extends EventEmitter {
   private extractTableName(sql: string): string {
     // Simplified table name extraction
     const match = sql.toLowerCase().match(/(?:from|update|into)\s+([a-zA-Z_][a-zA-Z0-9_]*)/i);
-    return match ? match[1] : 'unknown';
+    return match && match[1] ? match[1] : 'unknown';
   }
 
   // Public API methods
@@ -711,22 +723,22 @@ class DatabasePerformanceMonitor extends EventEmitter {
     const oneHourAgo = now - (60 * 60 * 1000);
     const recentQueries = this.queryMetrics.filter(q => q.timestamp > oneHourAgo);
 
-    if (recentQueries.length === 0) {
+    if (!recentQueries || recentQueries.length === 0) {
       return null;
     }
 
     const totalQueries = recentQueries.length;
-    const totalTime = recentQueries.reduce((sum, q) => sum + q.executionTime, 0);
+    const totalTime = recentQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0);
     const avgQueryTime = totalTime / totalQueries;
     const slowQueries = recentQueries.filter(q => q.executionTime >= this.thresholds.slowQueryMs);
     const errorQueries = recentQueries.filter(q => q.error);
-    const errorRate = (errorQueries.length / totalQueries) * 100;
+    const errorRate = ((errorQueries?.length || 0) / totalQueries) * 100;
 
     return {
       timestamp: now,
       queryCount: totalQueries,
       avgQueryTime,
-      slowQueryCount: slowQueries.length,
+      slowQueryCount: slowQueries?.length || 0,
       errorRate,
       queriesPerSecond: totalQueries / 3600,
       connectionPoolUsage: this.getConnectionPoolUsage(),

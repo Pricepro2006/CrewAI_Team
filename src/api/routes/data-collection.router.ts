@@ -110,7 +110,7 @@ export const dataCollectionRouter = createFeatureRouter(
             "Search engine data collection completed",
             "DATA_COLLECTION",
             {
-              recordsCollected: results.length,
+              recordsCollected: results?.length || 0,
               requestId: ctx.requestId,
             },
           );
@@ -119,7 +119,7 @@ export const dataCollectionRouter = createFeatureRouter(
             success: true,
             data: results,
             metadata: {
-              totalRecords: results.length,
+              totalRecords: results?.length || 0,
               engine: input.engine,
               timestamp: new Date().toISOString(),
               requestId: ctx.requestId,
@@ -169,7 +169,7 @@ export const dataCollectionRouter = createFeatureRouter(
             "Web scraping data collection completed",
             "DATA_COLLECTION",
             {
-              recordsCollected: results.length,
+              recordsCollected: results?.length || 0,
               requestId: ctx.requestId,
             },
           );
@@ -178,7 +178,7 @@ export const dataCollectionRouter = createFeatureRouter(
             success: true,
             data: results,
             metadata: {
-              totalRecords: results.length,
+              totalRecords: results?.length || 0,
               url: input.url,
               timestamp: new Date().toISOString(),
               requestId: ctx.requestId,
@@ -224,7 +224,7 @@ export const dataCollectionRouter = createFeatureRouter(
             "DATA_COLLECTION",
             {
               platform: input.platform,
-              recordsCollected: results.length,
+              recordsCollected: results?.length || 0,
               requestId: ctx.requestId,
             },
           );
@@ -233,7 +233,7 @@ export const dataCollectionRouter = createFeatureRouter(
             success: true,
             data: results,
             metadata: {
-              totalRecords: results.length,
+              totalRecords: results?.length || 0,
               platform: input.platform,
               timestamp: new Date().toISOString(),
               requestId: ctx.requestId,
@@ -280,7 +280,7 @@ export const dataCollectionRouter = createFeatureRouter(
             "DATA_COLLECTION",
             {
               platform: input.platform,
-              recordsCollected: results.length,
+              recordsCollected: results?.length || 0,
               requestId: ctx.requestId,
             },
           );
@@ -289,7 +289,7 @@ export const dataCollectionRouter = createFeatureRouter(
             success: true,
             data: results,
             metadata: {
-              totalRecords: results.length,
+              totalRecords: results?.length || 0,
               platform: input.platform,
               timestamp: new Date().toISOString(),
               requestId: ctx.requestId,

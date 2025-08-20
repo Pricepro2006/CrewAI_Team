@@ -1,6 +1,5 @@
 import { BaseAgent } from "../base/BaseAgent.js";
 import type { AgentContext, AgentResult } from "../base/AgentTypes.js";
-import { LlamaCppProvider } from "../../llm/LlamaCppProvider.js";
 import { logger } from "../../../utils/logger.js";
 // Re-export types for backward compatibility
 export * from "./EmailAnalysisTypes.js";
@@ -17,7 +16,6 @@ import {
 } from "./EmailAnalysisConfig.js";
 
 export class EmailAnalysisAgent extends BaseAgent {
-  private ollamaProvider: LlamaCppProvider;
   private cache: any; // Will be initialized later to avoid circular import
 
   // TD SYNNEX specific categories
@@ -74,19 +72,28 @@ export class EmailAnalysisAgent extends BaseAgent {
   };
 
   constructor() {
-    super(
-      "EmailAnalysisAgent",
-      "Specializes in analyzing and categorizing TD SYNNEX email communications",
-      PRODUCTION_EMAIL_CONFIG.primaryModel, // Use production-tested model
-    );
+    try {
+      super(
+        "EmailAnalysisAgent",
+        "Specializes in analyzing and categorizing TD SYNNEX email communications",
+        PRODUCTION_EMAIL_CONFIG.primaryModel, // Use production-tested model
+      );
+    } catch (error) {
+      // If super constructor fails, create a minimal agent
+      logger.error('Failed to initialize EmailAnalysisAgent base class', 'EMAIL_AGENT', { error });
+      // Continue with a simplified initialization
+      super(
+        "EmailAnalysisAgent",
+        "Specializes in analyzing and categorizing TD SYNNEX email communications",
+        "llama3.2:3b", // Fallback to default model
+      );
+    }
 
-    this.llamaCppProvider = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/this.model.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
+    // IMPORTANT: Disable RAG for EmailAnalysisAgent to prevent circular dependencies
+    // Email content is indexed into RAG by the email processing pipeline
+    this.ragEnabled = false;
+
+    // LLM provider will be initialized by BaseAgent
 
     // Cache will be initialized lazily to avoid circular import
     this.cache = null;
@@ -96,6 +103,26 @@ export class EmailAnalysisAgent extends BaseAgent {
     this.addCapability("entity-extraction");
     this.addCapability("workflow-management");
     this.addCapability("priority-assessment");
+  }
+  
+  override async initialize(): Promise<void> {
+    if (this.initialized) return;
+    
+    try {
+      // Initialize cache
+      await this.initializeCache();
+      
+      // Initialize base agent if it has an init method
+      if (super.initialize && typeof super.initialize === 'function') {
+        await super.initialize();
+      }
+      
+      this.initialized = true;
+      logger.info('EmailAnalysisAgent initialized successfully', 'EMAIL_AGENT');
+    } catch (error) {
+      logger.error('Failed to initialize EmailAnalysisAgent', 'EMAIL_AGENT', { error });
+      // Don't throw - allow graceful degradation
+    }
   }
 
   private async initializeCache(): Promise<void> {
@@ -110,7 +137,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     }
   }
 
-  async execute(task: string, context: AgentContext): Promise<AgentResult> {
+  override async execute(task: string, context: AgentContext): Promise<AgentResult> {
     try {
       // Parse email data from task
       const email = context.metadata?.email as Email;
@@ -143,9 +170,14 @@ export class EmailAnalysisAgent extends BaseAgent {
   async analyzeEmail(email: Email): Promise<EmailAnalysis> {
     logger.info(`Analyzing email: ${email.subject}`, "EMAIL_AGENT");
 
+    // Ensure initialized
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    
     // Check cache first
     await this.initializeCache();
-    const cached = this.cache.get(email.id);
+    const cached = this?.cache?.get(email.id);
     if (cached) {
       logger.debug(
         `Using cached analysis for email: ${email.id}`,
@@ -207,43 +239,37 @@ export class EmailAnalysisAgent extends BaseAgent {
 
     // Cache the result
     await this.initializeCache();
-    this.cache.set(email.id, analysis);
+    this?.cache?.set(email.id, analysis);
 
     return analysis;
   }
 
   private async quickCategorize(email: Email): Promise<Partial<EmailAnalysis>> {
-    const prompt = `Analyze this email and categorize it. Respond ONLY with a JSON object.
+    const prompt = `Analyze this email and categorize it.
 
 Subject: ${email.subject}
-From: ${email.from.emailAddress.address}
+From: ${email?.from?.emailAddress.address}
 Preview: ${email.bodyPreview || email.body?.substring(0, 500)}
 
 Categories to assign:
-- workflow: ${this.categories.workflow.join(", ")}
-- priority: ${this.categories.priority.join(", ")}
-- intent: ${this.categories.intent.join(", ")}
-- urgency: ${this.categories.urgency.join(", ")}
+- workflow: ${this?.categories?.workflow.join(", ")}
+- priority: ${this?.categories?.priority.join(", ")}
+- intent: ${this?.categories?.intent.join(", ")}
+- urgency: ${this?.categories?.urgency.join(", ")}
 
-Response format:
-{
-  "categories": {
-    "workflow": ["selected workflow categories"],
-    "priority": "selected priority",
-    "intent": "selected intent",
-    "urgency": "selected urgency"
-  },
-  "priority": "Critical|High|Medium|Low",
-  "confidence": 0.0-1.0
-}`;
+Please provide:
+1. Workflow categories that apply
+2. Priority level (Critical, High, Medium, or Low)
+3. Intent of the email
+4. Urgency level
+5. Confidence score (0.0 to 1.0)`;
 
     try {
-      const response = await this.llamaCppProvider.generate(prompt, {
+      const response = await this.generateLLMResponse(prompt, {
         temperature: 0.1,
-        format: "json",
       });
 
-      return JSON.parse(response);
+      return this.parseCategorizeResponse(response.response);
     } catch (error) {
       logger.error("Quick categorization failed", "EMAIL_AGENT", { error });
 
@@ -252,12 +278,66 @@ Response format:
     }
   }
 
+  private parseCategorizeResponse(response: string): Partial<EmailAnalysis> {
+    const lowerResponse = response.toLowerCase();
+    
+    // Extract priority
+    let priority: "Critical" | "High" | "Medium" | "Low" = "Medium";
+    if (lowerResponse.includes("critical")) priority = "Critical";
+    else if (lowerResponse.includes("high")) priority = "High";
+    else if (lowerResponse.includes("low")) priority = "Low";
+    
+    // Extract workflow categories
+    const workflowCategories: string[] = [];
+    for (const category of this?.categories?.workflow || []) {
+      if (lowerResponse.includes(category.toLowerCase())) {
+        workflowCategories.push(category);
+      }
+    }
+    
+    // Extract intent
+    let intent = "general";
+    for (const intentType of this?.categories?.intent || []) {
+      if (lowerResponse.includes(intentType.toLowerCase())) {
+        intent = intentType;
+        break;
+      }
+    }
+    
+    // Extract urgency
+    let urgency = "normal";
+    for (const urgencyLevel of this?.categories?.urgency || []) {
+      if (lowerResponse.includes(urgencyLevel.toLowerCase())) {
+        urgency = urgencyLevel;
+        break;
+      }
+    }
+    
+    // Extract confidence (look for decimal numbers)
+    let confidence = 0.7;
+    const confidenceMatch = response.match(/\b0?\.\d+\b|\b1\.0\b/);
+    if (confidenceMatch) {
+      confidence = parseFloat(confidenceMatch[0]);
+    }
+    
+    return {
+      categories: {
+        workflow: workflowCategories,
+        priority,
+        intent,
+        urgency,
+      },
+      priority,
+      confidence,
+    };
+  }
+
   private async deepAnalyze(email: Email): Promise<Partial<EmailAnalysis>> {
     // Switch to more capable model for deep analysis
     const prompt = `Perform deep analysis of this email for TD SYNNEX workflow.
 
 Subject: ${email.subject}
-From: ${email.from.emailAddress.address}
+From: ${email?.from?.emailAddress.address}
 Body: ${email.body || email.bodyPreview}
 
 Analyze:
@@ -270,21 +350,12 @@ Analyze:
 Provide detailed categorization with high confidence.`;
 
     try {
-      // Create a new provider instance with quality-focused model
-      const deepProvider = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/ANALYSIS_SCENARIOS.qualityFocus.primaryModel.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
-
-      const response = await deepProvider.generate(prompt, {
+      const response = await this.generateLLMResponse(prompt, {
         temperature: 0.2,
       });
 
       // Parse and structure the response
-      return this.parseDeepAnalysis(response);
+      return this.parseDeepAnalysis(response.response);
     } catch (error) {
       logger.error("Deep analysis failed", "EMAIL_AGENT", { error });
       return {};
@@ -306,24 +377,24 @@ Provide detailed categorization with high confidence.`;
     };
 
     // Extract using regex patterns
-    entities.poNumbers = this.extractMatches(text, this.patterns.poNumber);
+    entities.poNumbers = this.extractMatches(text, this?.patterns?.poNumber);
     entities.quoteNumbers = this.extractMatches(
       text,
-      this.patterns.quoteNumber,
+      this?.patterns?.quoteNumber,
     );
     entities.orderNumbers = this.extractMatches(
       text,
-      this.patterns.orderNumber,
+      this?.patterns?.orderNumber,
     );
     entities.trackingNumbers = this.extractMatches(
       text,
-      this.patterns.trackingNumber,
+      this?.patterns?.trackingNumber,
     );
-    entities.caseNumbers = this.extractMatches(text, this.patterns.caseNumber);
+    entities.caseNumbers = this.extractMatches(text, this?.patterns?.caseNumber);
 
     // Extract amounts
-    const amountMatches = text.match(this.patterns.amount) || [];
-    entities.amounts = amountMatches.map((match) => {
+    const amountMatches = text.match(this?.patterns?.amount) || [];
+    entities.amounts = amountMatches?.map((match: any) => {
       const value = parseFloat(
         match.replace(/[$,]/g, "").replace(/\s*[A-Z]{3}$/, ""),
       );
@@ -332,8 +403,8 @@ Provide detailed categorization with high confidence.`;
     });
 
     // Extract dates
-    const dateMatches = text.match(this.patterns.date) || [];
-    entities.dates = dateMatches.map((date) => ({
+    const dateMatches = text.match(this?.patterns?.date) || [];
+    entities.dates = dateMatches?.map((date: any) => ({
       date,
       context: this.getDateContext(date, text),
     }));
@@ -364,7 +435,7 @@ Provide detailed categorization with high confidence.`;
   private getDateContext(date: string, text: string): string {
     const index = text.indexOf(date);
     const contextStart = Math.max(0, index - 30);
-    const contextEnd = Math.min(text.length, index + date.length + 30);
+    const contextEnd = Math.min(text?.length || 0, index + date?.length || 0 + 30);
     return text.substring(contextStart, contextEnd).trim();
   }
 
@@ -389,10 +460,10 @@ Provide detailed categorization with high confidence.`;
       /\b(?:HP|HPE|Dell|Lenovo|Microsoft)\s+([A-Za-z0-9\s-]+)/gi,
     ];
 
-    customerPatterns.forEach((pattern) => {
+    customerPatterns.forEach((pattern: any) => {
       const matches = text.match(pattern) || [];
       customers.push(
-        ...matches.map((m) =>
+        ...matches?.map((m: any) =>
           m
             .replace(/^(customer|client|partner|reseller|for|to|from):\s*/i, "")
             .trim(),
@@ -400,7 +471,7 @@ Provide detailed categorization with high confidence.`;
       );
     });
 
-    productPatterns.forEach((pattern) => {
+    productPatterns.forEach((pattern: any) => {
       const matches = text.match(pattern) || [];
       products.push(...matches);
     });
@@ -421,15 +492,15 @@ Provide detailed categorization with high confidence.`;
     }
 
     // Check for specific entity patterns that indicate state
-    if (entities.trackingNumbers.length > 0) {
+    if (entities?.trackingNumbers?.length > 0) {
       return "Pending External"; // Waiting for delivery
     }
 
-    if (entities.poNumbers.length > 0 || entities.orderNumbers.length > 0) {
+    if (entities?.poNumbers?.length > 0 || entities?.orderNumbers?.length > 0) {
       return "In Progress"; // Active order processing
     }
 
-    if (entities.quoteNumbers.length > 0) {
+    if (entities?.quoteNumbers?.length > 0) {
       return "In Review"; // Quote needs review
     }
 
@@ -467,12 +538,12 @@ Provide detailed categorization with high confidence.`;
     }
 
     // Entity-based actions
-    if (email.categories.includes("Order Management")) {
+    if (email?.categories?.includes("Order Management")) {
       actions.push("Verify order details in system");
       actions.push("Check inventory availability");
     }
 
-    if (email.categories.includes("Customer Support")) {
+    if (email?.categories?.includes("Customer Support")) {
       actions.push("Create or update support ticket");
       actions.push("Check customer history");
     }
@@ -483,21 +554,21 @@ Provide detailed categorization with high confidence.`;
   private async generateSummary(email: Email): Promise<string> {
     const prompt = `Generate a concise 1-2 sentence summary of this email:
 Subject: ${email.subject}
-From: ${email.from.emailAddress.name || email.from.emailAddress.address}
+From: ${email?.from?.emailAddress.name || email?.from?.emailAddress.address}
 Preview: ${email.bodyPreview || email.body?.substring(0, 300)}
 
 Summary:`;
 
     try {
-      const summary = await this.llamaCppProvider.generate(prompt, {
+      const summary = await this.generateLLMResponse(prompt, {
         temperature: 0.3,
         maxTokens: 100,
       });
 
-      return summary.trim();
+      return summary?.response?.trim();
     } catch (error) {
       // Fallback to subject-based summary
-      return `Email from ${email.from.emailAddress.name || email.from.emailAddress.address} regarding: ${email.subject}`;
+      return `Email from ${email?.from?.emailAddress.name || email?.from?.emailAddress.address} regarding: ${email.subject}`;
     }
   }
 
@@ -528,7 +599,7 @@ Summary:`;
 
   private fallbackCategorization(email: Email): Partial<EmailAnalysis> {
     // Simple rule-based fallback
-    const subject = email.subject.toLowerCase();
+    const subject = email?.subject?.toLowerCase();
     const preview = (email.bodyPreview || "").toLowerCase();
     const content = subject + " " + preview;
 
@@ -541,13 +612,13 @@ Summary:`;
 
     // Workflow detection
     if (content.includes("order") || content.includes("po ")) {
-      categories.workflow.push("Order Management");
+      categories?.workflow?.push("Order Management");
     }
     if (content.includes("ship") || content.includes("tracking")) {
-      categories.workflow.push("Shipping/Logistics");
+      categories?.workflow?.push("Shipping/Logistics");
     }
     if (content.includes("quote") || content.includes("pricing")) {
-      categories.workflow.push("Quote Processing");
+      categories?.workflow?.push("Quote Processing");
     }
 
     // Priority detection
@@ -629,21 +700,21 @@ Summary:`;
   private formatAnalysisOutput(analysis: EmailAnalysis): string {
     return `Email Analysis Complete:
 Priority: ${analysis.priority}
-Workflow: ${analysis.categories.workflow.join(", ")}
-Intent: ${analysis.categories.intent}
-Urgency: ${analysis.categories.urgency}
+Workflow: ${analysis?.categories?.workflow.join(", ")}
+Intent: ${analysis?.categories?.intent}
+Urgency: ${analysis?.categories?.urgency}
 State: ${analysis.workflowState}
 Confidence: ${(analysis.confidence * 100).toFixed(1)}%
 
 Summary: ${analysis.summary}
 
 Suggested Actions:
-${analysis.suggestedActions.map((action) => `- ${action}`).join("\n")}
+${analysis?.suggestedActions?.map((action: any) => `- ${action}`).join("\n")}
 
 Extracted Entities:
-- PO Numbers: ${analysis.entities.poNumbers.join(", ") || "None"}
-- Quote Numbers: ${analysis.entities.quoteNumbers.join(", ") || "None"}
-- Order Numbers: ${analysis.entities.orderNumbers.join(", ") || "None"}
-- Customers: ${analysis.entities.customers.join(", ") || "None"}`;
+- PO Numbers: ${analysis?.entities?.poNumbers.join(", ") || "None"}
+- Quote Numbers: ${analysis?.entities?.quoteNumbers.join(", ") || "None"}
+- Order Numbers: ${analysis?.entities?.orderNumbers.join(", ") || "None"}
+- Customers: ${analysis?.entities?.customers.join(", ") || "None"}`;
   }
 }

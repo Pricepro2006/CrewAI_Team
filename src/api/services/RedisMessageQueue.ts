@@ -118,8 +118,8 @@ export interface QueueConsumer<T = BaseMessage> {
  */
 export class RedisMessageQueue extends EventEmitter {
   private config: MessageQueueConfig;
-  private redisClient: Redis;
-  private subscriberClient: Redis;
+  private redisClient!: Redis;
+  private subscriberClient!: Redis;
   private isConnected = false;
   private consumers: Map<string, QueueConsumer> = new Map();
   private processingQueues: Map<string, Set<string>> = new Map();
@@ -160,7 +160,7 @@ export class RedisMessageQueue extends EventEmitter {
       this.emit('connected');
     });
 
-    this.redisClient.on('error', (error) => {
+    this.redisClient.on('error', (error: any) => {
       this.isConnected = false;
       this.emit('error', { source: 'redis', error });
     });
@@ -170,7 +170,7 @@ export class RedisMessageQueue extends EventEmitter {
       this.startProcessingLoop();
     });
 
-    this.subscriberClient.on('error', (error) => {
+    this.subscriberClient.on('error', (error: any) => {
       this.emit('error', { source: 'subscriber', error });
     });
   }
@@ -212,7 +212,7 @@ export class RedisMessageQueue extends EventEmitter {
     };
 
     // Validate message based on type
-    if (message.type.startsWith('grocery:')) {
+    if (message?.type?.startsWith('grocery:')) {
       GroceryMessageSchema.parse(queueMessage);
     } else {
       BaseMessageSchema.parse(queueMessage);
@@ -233,14 +233,14 @@ export class RedisMessageQueue extends EventEmitter {
       // Add to Redis Stream
       await this.redisClient.xadd(
         streamKey,
-        'MAXLEN', '~', this.config.queues.maxLength.toString(),
+        'MAXLEN', '~', String(this.config.queues.maxLength),
         '*', // Auto-generate stream ID
         'message', JSON.stringify(queueMessage)
       );
 
       // Handle delayed messages
-      if (options.delay) {
-        await this.scheduleMessage(queueName, messageId, queueMessage.scheduledAt!);
+      if (options.delay && queueMessage.scheduledAt) {
+        await this.scheduleMessage(queueName, messageId, queueMessage.scheduledAt);
       }
 
       // Update stats
@@ -278,20 +278,20 @@ export class RedisMessageQueue extends EventEmitter {
 
       // Try to read new messages
       const results = await this.redisClient.xreadgroup(
-        'GROUP', consumerGroup, consumerName,
-        'COUNT', count.toString(),
-        'BLOCK', this.config.processing.blockTimeout.toString(),
-        'STREAMS', streamKey, '>'
+      'GROUP', consumerGroup, consumerName,
+      'COUNT', count.toString(),
+      'BLOCK', this.config.processing.blockTimeout.toString(),
+      'STREAMS', streamKey, '>'
       );
 
       const messages: BaseMessage[] = [];
       
-      if (results && results.length > 0) {
-        const [, streamEntries] = results[0];
+      if (results && Array.isArray(results) && results.length > 0) {
+      const [, streamEntries] = results[0] as [string, [string, string[]][] | undefined] || [, []];
         
-        for (const [streamId, fields] of streamEntries) {
-          const messageData = fields[1]; // fields = ['message', '{...}']
-          const message = JSON.parse(messageData) as BaseMessage;
+        for (const [streamId, fields] of streamEntries || []) {
+        const messageData = fields?.[1] || '{}'; // fields = ['message', '{...}']
+        const message = JSON.parse(messageData) as BaseMessage;
           
           messages.push({
             ...message,
@@ -307,7 +307,7 @@ export class RedisMessageQueue extends EventEmitter {
 
       this.emit('messages:dequeued', {
         queueName,
-        count: messages.length,
+        count: messages?.length || 0,
         consumerName
       });
 
@@ -385,13 +385,13 @@ export class RedisMessageQueue extends EventEmitter {
       try {
         const messages = await this.dequeue(queueName, this.config.processing.batchSize);
         
-        if (messages.length === 0) {
+        if ((messages?.length || 0) === 0) {
           await this.sleep(this.config.processing.idleTimeout);
           continue;
         }
 
         // Process messages concurrently within batch
-        const processingPromises = messages.map(message => 
+        const processingPromises = messages?.map(message => 
           this.processMessage(queueName, consumer, message, workerName)
         );
 
@@ -617,7 +617,7 @@ export class RedisMessageQueue extends EventEmitter {
     scheduledAt: number
   ): Promise<void> {
     const key = `${this.config.redis.keyPrefix}${queueName}:scheduled`;
-    await this.redisClient.zadd(key, scheduledAt.toString(), messageId);
+    await this.redisClient.zadd(key, String(scheduledAt), messageId);
   }
 
   private calculateRetryDelay(retryCount: number): number {

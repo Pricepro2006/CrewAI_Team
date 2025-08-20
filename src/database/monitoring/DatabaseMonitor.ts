@@ -29,7 +29,7 @@ export class DatabaseMonitor {
   registerDatabase(config: DatabaseConfig): Database.Database {
     try {
       const db = new Database(config.path, { 
-        verbose: this.queryLogger.bind(this, config.name),
+        verbose: (...args: unknown[]) => this.queryLogger(config.name, String(args[0] || '')),
         readonly: false
       });
 
@@ -112,7 +112,7 @@ export class DatabaseMonitor {
 
     // Wrap prepare method to monitor prepared statements
     const originalPrepare = db.prepare.bind(db);
-    db.prepare = (sql: string) => {
+    (db as any).prepare = (sql: string) => {
       const statement = originalPrepare(sql);
       
       // Wrap statement methods
@@ -305,7 +305,7 @@ export class DatabaseMonitor {
       try {
         // Get basic database info
         const db = connection.db;
-        const info = {
+        const info: Record<string, any> = {
           name,
           inMemory: db.memory,
           open: db.open,

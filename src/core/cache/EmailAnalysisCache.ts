@@ -25,7 +25,9 @@ export class EmailAnalysisCache {
       ttl: ttl,
       updateAgeOnGet: true,
       dispose: (value, key) => {
-        this.stats.evictions++;
+        if (this.stats) {
+          this.stats.evictions++;
+        }
         logger.debug(`Cache entry evicted: ${key}`, "EMAIL_CACHE", {
           hits: value.hits,
         });
@@ -42,16 +44,20 @@ export class EmailAnalysisCache {
    * Get cached analysis
    */
   get(emailId: string): EmailAnalysis | undefined {
-    const entry = this.cache.get(emailId);
+    const entry = this?.cache?.get(emailId);
 
     if (entry) {
-      this.stats.hits++;
+      if (this.stats) {
+        this.stats.hits++;
+      }
       entry.hits++;
       logger.debug(`Cache hit for email: ${emailId}`, "EMAIL_CACHE");
       return entry.analysis;
     }
 
-    this.stats.misses++;
+    if (this.stats) {
+      this.stats.misses++;
+    }
     return undefined;
   }
 
@@ -65,7 +71,7 @@ export class EmailAnalysisCache {
       hits: 0,
     };
 
-    this.cache.set(emailId, entry);
+    this?.cache?.set(emailId, entry);
     logger.debug(`Cached analysis for email: ${emailId}`, "EMAIL_CACHE");
   }
 
@@ -73,14 +79,14 @@ export class EmailAnalysisCache {
    * Check if email is cached
    */
   has(emailId: string): boolean {
-    return this.cache.has(emailId);
+    return this?.cache?.has(emailId);
   }
 
   /**
    * Invalidate cache entry
    */
   invalidate(emailId: string): boolean {
-    const deleted = this.cache.delete(emailId);
+    const deleted = this?.cache?.delete(emailId);
     if (deleted) {
       logger.debug(`Cache invalidated for email: ${emailId}`, "EMAIL_CACHE");
     }
@@ -91,8 +97,8 @@ export class EmailAnalysisCache {
    * Clear entire cache
    */
   clear(): void {
-    const size = this.cache.size;
-    this.cache.clear();
+    const size = this?.cache?.size;
+    this?.cache?.clear();
     logger.info(`Cache cleared. Removed ${size} entries`, "EMAIL_CACHE");
   }
 
@@ -102,8 +108,8 @@ export class EmailAnalysisCache {
   getStats() {
     return {
       ...this.stats,
-      size: this.cache.size,
-      hitRate: this.stats.hits / (this.stats.hits + this.stats.misses) || 0,
+      size: this?.cache?.size,
+      hitRate: this?.stats?.hits / (this?.stats?.hits + this?.stats?.misses) || 0,
     };
   }
 
@@ -111,9 +117,9 @@ export class EmailAnalysisCache {
    * Prune old entries manually
    */
   prune(): number {
-    const sizeBefore = this.cache.size;
-    this.cache.purgeStale();
-    const pruned = sizeBefore - this.cache.size;
+    const sizeBefore = this?.cache?.size;
+    this?.cache?.purgeStale();
+    const pruned = sizeBefore - this?.cache?.size;
 
     if (pruned > 0) {
       logger.info(`Pruned ${pruned} stale cache entries`, "EMAIL_CACHE");

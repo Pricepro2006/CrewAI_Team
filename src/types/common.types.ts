@@ -10,7 +10,7 @@ export type DatabaseConnection = Database.Database;
 export type DatabaseTransaction = Database.Transaction;
 
 export interface DatabaseQueryParams {
-  [key: string]: string | number | boolean | null;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface DatabaseRow {
@@ -25,6 +25,7 @@ export interface QueryResult<T = DatabaseRow> {
 
 // Email Entity Types
 export interface EmailEntity {
+  id?: string;
   type: 'po_number' | 'quote_number' | 'case_number' | 'part_number' | 'customer' | 'contact';
   value: string;
   confidence: number;

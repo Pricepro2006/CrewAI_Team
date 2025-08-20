@@ -26,7 +26,7 @@ export function requestTracking(
   res.setHeader("X-Request-ID", requestId);
 
   // Start performance tracking
-  const performanceName = `api_${req.method.toLowerCase()}_${req.path.replace(/[^a-zA-Z0-9]/g, "_")}`;
+  const performanceName = `api_${req?.method?.toLowerCase()}_${req?.path?.replace(/[^a-zA-Z0-9]/g, "_")}`;
   performanceMonitor.mark(performanceName);
 
   // Track request start
@@ -70,13 +70,13 @@ export function requestTracking(
     metricsCollector.increment("http_requests_total", 1, {
       method: req.method,
       route: req.route?.path || req.path,
-      status: res.statusCode.toString(),
+      status: res?.statusCode?.toString(),
     });
 
     metricsCollector.histogram("http_request_duration_ms", duration, {
       method: req.method,
       route: req.route?.path || req.path,
-      status: res.statusCode.toString(),
+      status: res?.statusCode?.toString(),
     });
 
     metricsCollector.histogram(
@@ -146,7 +146,7 @@ export function requestTracking(
         errorContext,
         severity,
         true,
-        [`http-${res.statusCode}`, req.method.toLowerCase()],
+        [`http-${res.statusCode}`, req?.method?.toLowerCase()],
       );
     }
   });
@@ -205,14 +205,14 @@ export function monitorOperation(operationName: string) {
     propertyKey: string,
     descriptor: PropertyDescriptor,
   ) {
-    const originalMethod = descriptor.value;
+    const originalMethod = descriptor?.value;
 
     descriptor.value = async function (...args: unknown[]) {
       const fullOperationName = `${operationName}_${propertyKey}`;
       return performanceMonitor.trackAsync(
         fullOperationName,
         () => originalMethod.apply(this, args),
-        { class: target.constructor.name, method: propertyKey },
+        { class: target?.constructor?.name, method: propertyKey },
       );
     };
 
@@ -240,14 +240,14 @@ export function requestSizeTracking(
   }
 
   // Track response size
-  const originalSend = res.send;
+  const originalSend = res?.send;
   res.send = function (data: unknown) {
     if (data) {
       const size = Buffer.byteLength(JSON.stringify(data));
       metricsCollector.histogram("http_response_size_bytes", size, {
         method: req.method,
         route: req.route?.path || req.path,
-        status: res.statusCode.toString(),
+        status: res?.statusCode?.toString(),
       });
     }
     return originalSend.call(this, data);
@@ -258,7 +258,7 @@ export function requestSizeTracking(
 
 // Rate limit tracking
 export function rateLimitTracking(
-  req: Request,
+  req: MonitoredRequest,
   res: Response,
   next: NextFunction,
 ): void {
@@ -296,7 +296,7 @@ export function authTracking(
   next: NextFunction,
 ): void {
   res.on("finish", () => {
-    if (req.path.includes("/auth") || req.path.includes("/login")) {
+    if (req?.path?.includes("/auth") || req?.path?.includes("/login")) {
       const success = res.statusCode < 400;
 
       metricsCollector.increment("auth_attempts_total", 1, {

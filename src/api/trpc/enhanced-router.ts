@@ -50,63 +50,92 @@ const t = initTRPC.context<Context>().create({
         // Only include stack traces in development
         stack: isDev ? error.stack : undefined,
         // Add request ID for tracking if available
-        requestId: (shape.data as any)?.requestId,
+        requestId: (shape.data as Record<string, unknown>)?.requestId as string | undefined,
       },
     };
   },
 });
 
-// Enhanced middleware stack
-const securityAudit = createSecurityAuditMiddleware();
-const authRequired = createAuthMiddleware();
-const csrfProtection = createCSRFProtection({
-  enableAutoRotation: true,
-  skipPaths: [
-    // Add any paths that should skip CSRF protection here
-  ],
+// Enhanced middleware stack with proper tRPC v10+ typing
+const securityAudit = t.middleware(async ({ ctx, next, path, type, input }) => {
+  const auditFn = createSecurityAuditMiddleware();
+  return auditFn({ ctx, next, path, type, input });
 });
-const csrfTokenProvider = ensureCSRFToken();
 
-// Role-based authorization procedures
-const requireAdmin = createAuthorizationMiddleware(["admin"]);
-const requireUser = createAuthorizationMiddleware(["admin", "user"]);
+const authRequired = t.middleware(async ({ ctx, next }) => {
+  const authFn = createAuthMiddleware();
+  return authFn({ ctx, next });
+});
+
+const csrfProtection = t.middleware(async ({ ctx, next }) => {
+  const csrfFn = createCSRFProtection({
+    enableAutoRotation: true,
+    skipPaths: [
+      // Add paths that should skip CSRF protection here
+    ],
+  });
+  return csrfFn({ ctx, next });
+});
+
+const csrfTokenProvider = t.middleware(async ({ ctx, next }) => {
+  const tokenFn = ensureCSRFToken();
+  return tokenFn({ ctx, next });
+});
+
+// Role-based authorization procedures with proper middleware wrapping
+const requireAdmin = t.middleware(async ({ ctx, next }) => {
+  const authzFn = createAuthorizationMiddleware(["admin"]);
+  return authzFn({ ctx, next });
+});
+
+const requireUser = t.middleware(async ({ ctx, next }) => {
+  const authzFn = createAuthorizationMiddleware(["admin", "user"]);
+  return authzFn({ ctx, next });
+});
 
 // Input validation with security sanitization
-const secureStringValidation = createInputValidation(
-  z.object({
-    input: sanitizationSchemas.string,
-  }),
-);
+const secureStringValidation = t.middleware(async ({ ctx, next, input }) => {
+  const validationFn = createInputValidation(
+    z.object({
+      input: sanitizationSchemas.string,
+    })
+  );
+  return validationFn({ ctx, next, input });
+});
 
-const secureQueryValidation = createInputValidation(
-  z.object({
-    query: sanitizationSchemas.sqlSafe,
-    limit: z.number().min(1).max(100).optional(),
-    offset: z.number().min(0).optional(),
-  }),
-);
+const secureQueryValidation = t.middleware(async ({ ctx, next, input }) => {
+  const validationFn = createInputValidation(
+    z.object({
+      query: sanitizationSchemas.sqlSafe,
+      limit: z.number().min(1).max(100).optional(),
+      offset: z.number().min(0).optional(),
+    })
+  );
+  return validationFn({ ctx, next, input });
+});
 
-// Export router and procedure helpers with explicit types
-export const router: typeof t.router = t.router;
-export const middleware: typeof t.middleware = t.middleware;
+// Export router and procedure helpers 
+export const router = t.router;
+export const middleware = t.middleware;
 
 // Public procedure with basic security
-export const publicProcedure: ReturnType<typeof t.procedure.use> =
-  t.procedure.use(securityAudit);
+export const publicProcedure = t.procedure.use(securityAudit);
 
 // Protected procedure requiring authentication and CSRF protection for mutations
-export const protectedProcedure: ReturnType<typeof t.procedure.use> =
-  t.procedure.use(securityAudit).use(authRequired).use(csrfProtection);
+export const protectedProcedure = t.procedure
+  .use(securityAudit)
+  .use(authRequired)
+  .use(csrfProtection);
 
 // Admin-only procedure with CSRF protection
-export const adminProcedure: ReturnType<typeof t.procedure.use> = t.procedure
+export const adminProcedure = t.procedure
   .use(securityAudit)
   .use(authRequired)
   .use(csrfProtection)
   .use(requireAdmin);
 
 // User-level procedure (admin or user) with CSRF protection
-export const userProcedure: ReturnType<typeof t.procedure.use> = t.procedure
+export const userProcedure = t.procedure
   .use(securityAudit)
   .use(authRequired)
   .use(csrfProtection)
@@ -120,23 +149,19 @@ const createRateLimitMiddleware = (
   windowMs: number,
 ) =>
   t.middleware(async ({ ctx, next }) => {
-    const identifier = ctx.user?.id || ctx.req.ip || "anonymous";
+    const identifier = ctx.user?.id || ctx?.req?.ip || "anonymous";
     const rateLimitKey = `trpc_${name}_${identifier}`;
 
     // Implement simple in-memory rate limiting for tRPC procedures
     // This works alongside the Express-level rate limiting
     const now = Date.now();
-    const windowStart = now - windowMs;
 
     // Get existing rate limit data from context or create new
     if (!ctx.rateLimits) {
-      (ctx as any).rateLimits = new Map();
+      (ctx as unknown as { rateLimits: Map<string, { count: number; resetTime: number }> }).rateLimits = new Map();
     }
 
-    const rateLimits = (ctx as any).rateLimits as Map<
-      string,
-      { count: number; resetTime: number }
-    >;
+    const rateLimits = (ctx as unknown as { rateLimits: Map<string, { count: number; resetTime: number }> }).rateLimits;
 
     // Clean old entries
     for (const [key, value] of rateLimits.entries()) {
@@ -154,7 +179,7 @@ const createRateLimitMiddleware = (
 
       // Determine max requests based on user type
       let limit = maxRequests;
-      if (ctx.user?.isAdmin || ctx.user?.role === "admin") {
+      if (ctx.user && ('isAdmin' in ctx.user && ctx.user.isAdmin) || ctx.user?.role === "admin") {
         limit = maxRequests * 5; // Admins get 5x more
       } else if (ctx.user?.id) {
         limit = Math.floor(maxRequests * 1.5); // Authenticated users get 50% more
@@ -186,31 +211,30 @@ const createRateLimitMiddleware = (
     return next();
   });
 
-// Type for rate-limited procedures
-type RateLimitedProcedure = ReturnType<typeof protectedProcedure.use>;
+// Rate-limited procedures
+export const chatProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("chat", 30, 60000) // 30 requests per minute
+);
 
-export const chatProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("chat", 30, 60000), // 30 requests per minute
+export const agentProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("agent", 20, 300000) // 20 requests per 5 minutes
 );
-export const agentProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("agent", 20, 300000), // 20 requests per 5 minutes
+
+export const taskProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("task", 25, 600000) // 25 requests per 10 minutes
 );
-export const taskProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("task", 25, 600000), // 25 requests per 10 minutes
+
+export const ragProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("rag", 15, 120000) // 15 requests per 2 minutes
 );
-export const ragProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("rag", 15, 120000), // 15 requests per 2 minutes
-);
-export const strictProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("strict", 5, 1800000), // 5 requests per 30 minutes
+
+export const strictProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("strict", 5, 1800000) // 5 requests per 30 minutes
 );
 
 // Procedures with input validation
-export const secureTextProcedure: ReturnType<typeof protectedProcedure.use> =
-  protectedProcedure.use(secureStringValidation);
-
-export const secureQueryProcedure: ReturnType<typeof protectedProcedure.use> =
-  protectedProcedure.use(secureQueryValidation);
+export const secureTextProcedure = protectedProcedure.use(secureStringValidation);
+export const secureQueryProcedure = protectedProcedure.use(secureQueryValidation);
 
 // Performance monitoring middleware
 const performanceMonitoring = t.middleware(
@@ -252,14 +276,11 @@ const performanceMonitoring = t.middleware(
 );
 
 // Performance-monitored procedures
-export const monitoredProcedure: ReturnType<typeof protectedProcedure.use> =
-  protectedProcedure.use(performanceMonitoring);
-
-export const monitoredPublicProcedure: ReturnType<typeof publicProcedure.use> =
-  publicProcedure.use(performanceMonitoring);
+export const monitoredProcedure = protectedProcedure.use(performanceMonitoring);
+export const monitoredPublicProcedure = publicProcedure.use(performanceMonitoring);
 
 // Comprehensive procedure with all enhancements
-export const enhancedProcedure: ReturnType<typeof t.procedure.use> = t.procedure
+export const enhancedProcedure = t.procedure
   .use(securityAudit)
   .use(performanceMonitoring)
   .use(authRequired)
@@ -290,15 +311,10 @@ export const batchProcedure = protectedProcedure.use(batchOperationMiddleware);
 export { createRateLimitMiddleware };
 
 // Procedure that ensures CSRF token exists and returns it (for client initialization)
-export const csrfTokenProcedure: ReturnType<typeof t.procedure.use> =
-  t.procedure.use(securityAudit).use(csrfTokenProvider);
+export const csrfTokenProcedure = t.procedure.use(securityAudit).use(csrfTokenProvider);
 
 // Custom error handlers for different scenarios
-type CustomErrorHandler = ReturnType<typeof t.middleware>;
-
-export function createCustomErrorHandler(
-  errorType: string,
-): CustomErrorHandler {
+export function createCustomErrorHandler(errorType: string) {
   return t.middleware(async ({ next }) => {
     try {
       return await next();
@@ -352,7 +368,7 @@ export const commonSchemas = {
     name: z.string().max(255),
     size: z.number().max(50 * 1024 * 1024), // 50MB max
     type: z.string().refine(
-      (type) => {
+      (type: string) => {
         const allowedTypes = [
           "image/jpeg",
           "image/png",
@@ -368,6 +384,51 @@ export const commonSchemas = {
   }),
 };
 
+// Create permission middleware for role-based access control
+export function createPermissionMiddleware(requiredPermissions: string[]) {
+  return t.middleware(async ({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Authentication required",
+      });
+    }
+
+    const userRole = ctx?.user?.role || "user";
+    const userPermissions = ctx?.user?.permissions || [];
+
+    // Admin has all permissions
+    if (userRole === "admin" || requiredPermissions.includes("admin")) {
+      if (userRole === "admin") {
+        return next();
+      }
+    }
+
+    // Check if user has required permissions
+    const hasPermission = requiredPermissions.some(
+      (permission: string) => 
+        userPermissions.includes(permission) || 
+        userRole === permission
+    );
+
+    if (!hasPermission) {
+      logger.warn("Permission denied", "TRPC_PERMISSION", {
+        userId: ctx?.user?.id,
+        requiredPermissions,
+        userPermissions,
+        userRole,
+      });
+
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Insufficient permissions",
+      });
+    }
+
+    return next();
+  });
+}
+
 // Export enhanced types
 export type EnhancedContext = Context & {
   batchId?: string;
@@ -381,7 +442,7 @@ export const databaseProcedure = t.procedure.use(securityAudit).use(authRequired
 export const safeDatabaseProcedure = t.procedure.use(securityAudit);
 
 // Utility function for creating feature-specific routers
-export function createFeatureRouter<T extends Record<string, any>>(
+export function createFeatureRouter<T extends Record<string, unknown>>(
   name: string,
   procedures: T,
 ): T {
@@ -392,7 +453,7 @@ export function createFeatureRouter<T extends Record<string, any>>(
 }
 
 // Router builder with security defaults
-export function createSecureRouter<T extends Record<string, any>>(
+export function createSecureRouter<T extends Record<string, unknown>>(
   routes: T,
   options?: {
     requireAuth?: boolean;

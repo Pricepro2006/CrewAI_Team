@@ -9,7 +9,9 @@ import { WebSearchTool } from "../../tools/web/WebSearchTool.js";
 import { WebScraperTool } from "../../tools/web/WebScraperTool.js";
 import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider.js";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout.js";
-import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer.js";
+import { BusinessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer.js";
+
+const businessSearchPromptEnhancer = new BusinessSearchPromptEnhancer();
 import { SearchKnowledgeService } from "../../services/SearchKnowledgeService.js";
 
 export class ResearchAgent extends BaseAgent {
@@ -39,7 +41,7 @@ export class ResearchAgent extends BaseAgent {
           topK: 5,
         },
       });
-      await this.searchKnowledgeService.initialize();
+      await this.searchKnowledgeService?.initialize?.();
     } catch (error) {
       console.warn("Failed to initialize SearchKnowledgeService:", error);
     }
@@ -47,14 +49,57 @@ export class ResearchAgent extends BaseAgent {
 
   async execute(task: string, context: AgentContext): Promise<AgentResult> {
     try {
-      // Analyze the task to determine research strategy
-      const researchPlan = await this.createResearchPlan(task, context);
+      // First, check RAG system for relevant knowledge
+      let ragContext = "";
+      if (this.ragSystem && this.ragEnabled) {
+        ragContext = await this.queryRAG(task, {
+          limit: 5,
+          filter: { agentType: 'ResearchAgent' }
+        });
+        
+        if (ragContext) {
+          console.log(`[ResearchAgent] Retrieved RAG context: ${ragContext.length} characters`);
+        }
+      }
 
-      // Execute research based on the plan
-      const results = await this.executeResearchPlan(researchPlan, context);
+      // For simple execution, use the task directly as a search query
+      // This avoids complex LLM-based plan creation which may be failing
+      const simpleResearchPlan: ResearchPlan = {
+        queries: [task], // Use the task directly as the search query
+        sourceTypes: ["technical", "documentation", "news"],
+        extractionFocus: ["facts", "examples", "best practices"],
+        tools: ["web_search"]
+      };
 
-      // Synthesize findings
+      console.log(`[ResearchAgent] Using direct search for: "${task}"`);
+
+      // Execute research based on the simple plan
+      const results = await this.executeResearchPlan(simpleResearchPlan, context);
+
+      // Enhance results with RAG knowledge if available
+      if (ragContext) {
+        results.unshift({
+          type: 'knowledge_base',
+          source: 'RAG System',
+          content: ragContext,
+          relevance: 1.0
+        });
+      }
+
+      // Synthesize findings including RAG context
       const synthesis = await this.synthesizeFindings(results, task);
+
+      // Index successful research results back into RAG for future use
+      if (this.ragSystem && this.ragEnabled && synthesis) {
+        await this.indexAgentKnowledge([{
+          content: synthesis,
+          metadata: {
+            task,
+            timestamp: new Date().toISOString(),
+            sources: this.extractSources(results)
+          }
+        }]);
+      }
 
       return {
         success: true,
@@ -62,13 +107,15 @@ export class ResearchAgent extends BaseAgent {
           findings: results,
           synthesis: synthesis,
           sources: this.extractSources(results),
+          ragContextUsed: !!ragContext
         },
         output: synthesis,
         metadata: {
           agent: this.name,
-          toolsUsed: researchPlan.tools,
-          queriesExecuted: researchPlan.queries.length,
-          sourcesFound: results.length,
+          toolsUsed: simpleResearchPlan.tools,
+          queriesExecuted: simpleResearchPlan?.queries?.length,
+          sourcesFound: results?.length || 0,
+          ragEnhanced: !!ragContext,
           timestamp: new Date().toISOString(),
         },
       };
@@ -99,7 +146,7 @@ export class ResearchAgent extends BaseAgent {
       console.log("[ResearchAgent] Query extracted:", query);
 
       // Check if this is a business query and enhance search parameters
-      const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(
+      const isBusinessQuery = !businessSearchPromptEnhancer.isAlreadyEnhanced(
         query || taskDescription,
       );
       if (isBusinessQuery) {
@@ -112,7 +159,7 @@ export class ResearchAgent extends BaseAgent {
       // and go directly to search execution
       // Get whichever search tool is registered (SearXNG or WebSearchTool)
       const searchTool =
-        this.tools.get("searxng_search") || this.tools.get("web_search");
+        this?.tools?.get("searxng_search") || this?.tools?.get("web_search");
 
       if (!searchTool) {
         return {
@@ -133,8 +180,8 @@ export class ResearchAgent extends BaseAgent {
       if (this.searchKnowledgeService) {
         try {
           cachedResults =
-            await this.searchKnowledgeService.searchPreviousResults(query, 3);
-          if (cachedResults.length > 0) {
+            await this.searchKnowledgeService?.searchPreviousResults?.(query, 3);
+          if (cachedResults && cachedResults.length > 0) {
             console.log(
               `[ResearchAgent] Found ${cachedResults.length} cached results for similar queries`,
             );
@@ -167,7 +214,7 @@ export class ResearchAgent extends BaseAgent {
       }
 
       // Convert search results to research results
-      const results: ResearchResult[] = searchResult.data.results.map(
+      const results: ResearchResult[] = searchResult?.data?.results?.map(
         (item: any) => ({
           source: item.url,
           title: item.title,
@@ -179,7 +226,7 @@ export class ResearchAgent extends BaseAgent {
 
       console.log(
         "[ResearchAgent] Found",
-        results.length,
+        results?.length || 0,
         "results, synthesizing...",
       );
 
@@ -203,7 +250,7 @@ export class ResearchAgent extends BaseAgent {
           agent: this.name,
           tool: tool.name,
           queriesExecuted: 1,
-          sourcesFound: results.length,
+          sourcesFound: results?.length || 0,
           timestamp: new Date().toISOString(),
         },
       };
@@ -221,49 +268,120 @@ export class ResearchAgent extends BaseAgent {
       You are a research specialist. Create a research plan for the following task:
       "${task}"
       
-      ${context.ragDocuments ? `Existing knowledge base context:\n${context.ragDocuments.map((d) => d.content).join("\n\n")}` : ""}
+      ${context.ragDocuments ? `Existing knowledge base context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n\n")}` : ""}
       
-      Create a research plan that includes:
-      1. Key search queries to execute
-      2. Types of sources to prioritize
-      3. Information to extract
-      4. Validation strategies
+      Create a comprehensive research plan that includes:
+      1. Key search queries to execute (list specific search queries in quotes, e.g., "TypeScript best practices", "TypeScript 2025 features")
+      2. Types of sources to prioritize (academic, news, technical, etc.)
+      3. Information to extract (facts, statistics, expert opinions, etc.)
+      4. Tools to use (web_search, web_scraper, etc.)
       
-      Respond with a JSON object:
-      {
-        "queries": ["query1", "query2", ...],
-        "sourceTypes": ["academic", "news", "technical", ...],
-        "extractionFocus": ["facts", "statistics", "expert opinions", ...],
-        "tools": ["web_search", "web_scraper"]
-      }
+      For the task "${task}", provide at least 2-3 specific search queries that would help find relevant information.
     `;
 
-    const response = await this.llm.generate(prompt);
+    const responseResponse = await this.generateLLMResponse(prompt);
+    const response = responseResponse?.response;
+    console.log("[ResearchAgent] LLM Research Plan Response:", response?.substring(0, 500));
     return this.parseResearchPlan(response);
   }
 
   private parseResearchPlan(response: string): ResearchPlan {
-    try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return {
-          queries: parsed.queries || ["general research query"],
-          sourceTypes: parsed.sourceTypes || ["general"],
-          extractionFocus: parsed.extractionFocus || ["information"],
-          tools: parsed.tools || ["web_search"],
-        };
+    // Parse natural language response
+    const queries: string[] = [];
+    const sourceTypes: string[] = [];
+    const extractionFocus: string[] = [];
+    const tools: string[] = [];
+    
+    const lines = response.split('\n');
+    
+    // Extract queries (look for quoted text or bullet points about queries)
+    for (const line of lines) {
+      // Look for quoted queries
+      const quotedMatches = line.match(/"([^"]+)"/g);
+      if (quotedMatches) {
+        queries.push(...quotedMatches.map(m => m.replace(/"/g, '')));
       }
-    } catch (error) {
-      console.error("Failed to parse research plan:", error);
+      
+      // Look for source types
+      if (line.toLowerCase().includes('source') || line.toLowerCase().includes('type')) {
+        const sourceKeywords = ['academic', 'news', 'technical', 'blog', 'documentation', 'official'];
+        for (const keyword of sourceKeywords) {
+          if (line.toLowerCase().includes(keyword) && !sourceTypes.includes(keyword)) {
+            sourceTypes.push(keyword);
+          }
+        }
+      }
+      
+      // Look for extraction focus
+      const focusKeywords = ['facts', 'statistics', 'expert opinions', 'examples', 'trends', 'data'];
+      for (const keyword of focusKeywords) {
+        if (line.toLowerCase().includes(keyword) && !extractionFocus.includes(keyword)) {
+          extractionFocus.push(keyword);
+        }
+      }
+      
+      // Look for tools
+      if (line.toLowerCase().includes('web_search') || line.toLowerCase().includes('search')) {
+        if (!tools.includes('web_search')) tools.push('web_search');
+      }
+      if (line.toLowerCase().includes('scraper') || line.toLowerCase().includes('scrape')) {
+        if (!tools.includes('web_scraper')) tools.push('web_scraper');
+      }
     }
 
-    // Fallback plan
+    // Ensure we have at least some defaults
+    if (queries.length === 0) {
+      // If no specific queries found, use the original task or key phrases from response
+      // Look for lines that start with numbers or bullets that might be queries
+      for (const line of lines) {
+        if (/^[1-9]\./.test(line.trim()) && line.toLowerCase().includes('search')) {
+          const query = line.replace(/^[1-9]\.\s*/, '').trim();
+          if (query.length > 10 && query.length < 200) {
+            queries.push(query);
+          }
+        }
+      }
+      
+      // If still no queries, extract key phrases from the response
+      if (queries.length === 0) {
+        // Look for "search for" or "query for" patterns
+        const searchPattern = /(?:search for|query for|find|research)\s+([^.\n]+)/gi;
+        let match;
+        while ((match = searchPattern.exec(response)) !== null) {
+          if (match[1] && match[1].length > 5 && match[1].length < 100) {
+            queries.push(match[1].trim());
+          }
+        }
+      }
+      
+      // Final fallback - extract key terms from the original response
+      if (queries.length === 0) {
+        // Try to extract the task subject from the response
+        const taskMatch = response.match(/task[:\s]+"([^"]+)"/i) || 
+                          response.match(/research[:\s]+"([^"]+)"/i) ||
+                          response.match(/about[:\s]+"([^"]+)"/i);
+        if (taskMatch && taskMatch[1]) {
+          queries.push(taskMatch[1]);
+        } else {
+          // Use the first significant phrase from the response
+          const words = response.split(/\s+/).filter(w => w.length > 3 && !['the', 'and', 'for', 'with', 'that', 'this', 'from', 'will'].includes(w.toLowerCase()));
+          if (words.length >= 3) {
+            queries.push(words.slice(0, 5).join(' '));
+          } else {
+            queries.push("information about the requested topic");
+          }
+        }
+      }
+    }
+    if (sourceTypes.length === 0) sourceTypes.push("general");
+    if (extractionFocus.length === 0) extractionFocus.push("information");
+    if (tools.length === 0) tools.push("web_search");
+
     return {
-      queries: ["general research query"],
-      sourceTypes: ["general"],
-      extractionFocus: ["information"],
-      tools: ["web_search"],
+      queries: queries.slice(0, 5), // Limit to 5 queries
+      sourceTypes: sourceTypes.slice(0, 5),
+      extractionFocus: extractionFocus.slice(0, 5),
+      tools: tools.slice(0, 3),
     };
   }
 
@@ -274,18 +392,19 @@ export class ResearchAgent extends BaseAgent {
     const results: ResearchResult[] = [];
     // Get whichever search tool is registered (SearXNG or WebSearchTool)
     const searchTool =
-      this.tools.get("searxng_search") || this.tools.get("web_search");
-    const scraperTool = this.tools.get("web_scraper") as WebScraperTool;
+      this?.tools?.get("searxng_search") || this?.tools?.get("web_search");
+    const scraperTool = this?.tools?.get("web_scraper") as WebScraperTool;
 
     // Check if we have existing context that might reduce search needs
     const hasExistingContext =
-      context.ragDocuments && context.ragDocuments.length > 0;
+      context.ragDocuments && context?.ragDocuments?.length > 0;
 
     // If we have existing context, limit the search scope
     const searchLimit = hasExistingContext ? 3 : 5;
 
     // Execute searches
     for (const query of plan.queries) {
+      console.log(`[ResearchAgent] Executing search for query: "${query}"`);
       if (searchTool) {
         const searchResult = await searchTool.execute({
           query,
@@ -294,7 +413,7 @@ export class ResearchAgent extends BaseAgent {
 
         if (searchResult.success && searchResult.data) {
           // For each search result, potentially scrape the content
-          for (const item of searchResult.data.results) {
+          for (const item of searchResult?.data?.results) {
             const relevance = this.calculateRelevance(item, plan);
             results.push({
               source: item.url,
@@ -314,7 +433,7 @@ export class ResearchAgent extends BaseAgent {
                 results.push({
                   source: item.url,
                   title: item.title,
-                  content: scraped.data.content,
+                  content: scraped?.data?.content,
                   type: "scraped_content",
                   relevance: item.relevance,
                 });
@@ -336,15 +455,15 @@ export class ResearchAgent extends BaseAgent {
     const text = `${item.title} ${item.snippet}`.toLowerCase();
 
     // Check for extraction focus keywords
-    plan.extractionFocus.forEach((focus) => {
+    plan?.extractionFocus?.forEach((focus: any) => {
       if (text.includes(focus.toLowerCase())) {
         score += 0.1;
       }
     });
 
     // Check for source type indicators
-    const url = item.url.toLowerCase();
-    plan.sourceTypes.forEach((type) => {
+    const url = item?.url?.toLowerCase();
+    plan?.sourceTypes?.forEach((type: any) => {
       if (url.includes(type) || text.includes(type)) {
         score += 0.1;
       }
@@ -357,7 +476,7 @@ export class ResearchAgent extends BaseAgent {
     results: ResearchResult[],
     task: string,
   ): Promise<string> {
-    if (results.length === 0) {
+    if (!results || results.length === 0) {
       return "No relevant information found for the given task.";
     }
 
@@ -368,10 +487,10 @@ export class ResearchAgent extends BaseAgent {
     if (this.searchKnowledgeService) {
       try {
         const cachedResults =
-          await this.searchKnowledgeService.searchPreviousResults(task, 2);
-        if (cachedResults.length > 0) {
+          await this.searchKnowledgeService?.searchPreviousResults?.(task, 2);
+        if (cachedResults && cachedResults.length > 0) {
           cachedContext = `\n\nPreviously cached relevant information:\n${cachedResults
-            .map((r) => r.content)
+            .map((r: any) => r.content)
             .join("\n\n")}\n\n`;
         }
       } catch (error) {
@@ -380,7 +499,7 @@ export class ResearchAgent extends BaseAgent {
     }
 
     // Check if this is a business-related query
-    const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(task);
+    const isBusinessQuery = !businessSearchPromptEnhancer.isAlreadyEnhanced(task);
 
     // Increase content size for business queries to capture contact info
     const contentLength = isBusinessQuery ? 1500 : 500;
@@ -394,7 +513,7 @@ export class ResearchAgent extends BaseAgent {
           (r, i) => `
         ${i + 1}. Source: ${r.source}
         Title: ${r.title}
-        Content: ${r.content.substring(0, contentLength)}...
+        Content: ${r?.content?.substring(0, contentLength)}...
         Relevance: ${r.relevance}
       `,
         )
@@ -424,7 +543,7 @@ export class ResearchAgent extends BaseAgent {
         "immediately",
         "now",
       ];
-      const hasUrgency = urgentKeywords.some((keyword) =>
+      const hasUrgency = urgentKeywords.some((keyword: any) =>
         task.toLowerCase().includes(keyword),
       );
 
@@ -436,10 +555,16 @@ export class ResearchAgent extends BaseAgent {
         ? `Focus on businesses in or near ${locationMatch[1]}. Include distance/travel information.`
         : "";
 
-      basePrompt = businessSearchPromptEnhancer.enhance(basePrompt, {
-        enhancementLevel: hasUrgency ? "aggressive" : "standard",
-        includeExamples: true,
-        customInstructions: `
+      const enhancedPrompt = businessSearchPromptEnhancer.enhance(basePrompt, {
+        enableEntityExtraction: true,
+        enableSentimentAnalysis: hasUrgency,
+        enableWorkflowDetection: true,
+        maxContextLength: 3000,
+      });
+      
+      // Append custom instructions to the enhanced prompt
+      basePrompt = enhancedPrompt.user + `
+          
           ${customInstructions}
           
           CRITICAL: Extract and include the following business information:
@@ -454,21 +579,22 @@ export class ResearchAgent extends BaseAgent {
           
           Format business listings clearly with a "Recommendations" section.
           Each business should be a separate subsection with contact details prominently displayed.
-        `,
-      });
+        `;
     }
 
-    return await withTimeout(
-      this.llm.generate(basePrompt),
+    const llmResponse = await withTimeout(
+      this.generateLLMResponse(basePrompt),
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM synthesis timed out",
     );
+    
+    return llmResponse.response;
   }
 
   private extractSources(results: ResearchResult[]): Source[] {
     const uniqueSources = new Map<string, Source>();
 
-    results.forEach((result) => {
+    results.forEach((result: any) => {
       if (!uniqueSources.has(result.source)) {
         uniqueSources.set(result.source, {
           url: result.source,
@@ -512,7 +638,7 @@ export class ResearchAgent extends BaseAgent {
     const searxng = new SearXNGSearchTool();
     searxng
       .isAvailable()
-      .then((available) => {
+      .then((available: any) => {
         if (available) {
           console.log(
             "[ResearchAgent] Using SearXNG for search (unlimited, better results)",
@@ -542,9 +668,9 @@ interface ResearchPlan {
 
 interface ResearchResult {
   source: string;
-  title: string;
+  title?: string;
   content: string;
-  type: "search_result" | "scraped_content";
+  type: "search_result" | "scraped_content" | "knowledge_base";
   relevance: number;
 }
 

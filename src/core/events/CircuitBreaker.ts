@@ -252,11 +252,12 @@ export class CircuitBreaker extends EventEmitter {
     // Transition to open if failure threshold reached
     if ((this.state.state === 'closed' || this.state.state === 'half-open') &&
         this.state.failureCount >= this.config.failureThreshold) {
+      const previousState = this.state.state;
       this.state.state = 'open';
       this.state.nextAttemptTime = Date.now() + this.config.timeout;
       
       this.emit('state_changed', { 
-        from: this.state.state === 'half-open' ? 'half-open' : 'closed', 
+        from: previousState, 
         to: 'open',
         reason: 'failure_threshold_reached' 
       });
@@ -298,10 +299,10 @@ export class CircuitBreaker extends EventEmitter {
   private async executeFallback<T>(options: FallbackOptions<T>): Promise<T> {
     // Try cache first if enabled
     if (options.useCache && options.cacheKey) {
-      const cached = this.getCachedValue(options.cacheKey);
+      const cached = this.getCachedValue<T>(options.cacheKey);
       if (cached !== null) {
         this.emit('fallback_cache_hit', { cacheKey: options.cacheKey });
-        return cached;
+        return cached as T;
       }
     }
 
@@ -332,11 +333,11 @@ export class CircuitBreaker extends EventEmitter {
    * Determine if error should be retried
    */
   private shouldRetry(error: Error): boolean {
-    const errorType = error.constructor.name;
-    const errorMessage = error.message.toLowerCase();
+    const errorType = error?.constructor?.name;
+    const errorMessage = error?.message?.toLowerCase();
 
     // Check non-retryable errors first
-    if (this.retryPolicy.nonRetryableErrors.length > 0) {
+    if ((this.retryPolicy.nonRetryableErrors?.length || 0) > 0) {
       const isNonRetryable = this.retryPolicy.nonRetryableErrors.some(pattern =>
         errorType.includes(pattern) || errorMessage.includes(pattern.toLowerCase())
       );
@@ -344,7 +345,7 @@ export class CircuitBreaker extends EventEmitter {
     }
 
     // Check retryable errors
-    if (this.retryPolicy.retryableErrors.length > 0) {
+    if ((this.retryPolicy.retryableErrors?.length || 0) > 0) {
       return this.retryPolicy.retryableErrors.some(pattern =>
         errorType.includes(pattern) || errorMessage.includes(pattern.toLowerCase())
       );
@@ -383,7 +384,7 @@ export class CircuitBreaker extends EventEmitter {
   private calculateAverageResponseTime(): number {
     if (this.responseTimes.length === 0) return 0;
     
-    const sum = this.responseTimes.reduce((total, time) => total + time, 0);
+    const sum = this.responseTimes.reduce((total: any, time: any) => total + time, 0);
     return Math.round(sum / this.responseTimes.length);
   }
 
@@ -407,7 +408,7 @@ export class CircuitBreaker extends EventEmitter {
       return null;
     }
     
-    return cached.value as T;
+    return cached.value as T | null;
   }
 
   private cleanupCache(): void {

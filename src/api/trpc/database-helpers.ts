@@ -72,7 +72,7 @@ export class DatabaseHelpers {
       for (const [key, value] of Object.entries(filters)) {
         if (value !== undefined && value !== null) {
           // Check if column exists before adding to where clause
-          if (this.ctx.dbAdapter.columnExists(tableName, key)) {
+          if (this?.ctx?.dbAdapter.columnExists(tableName, key)) {
             whereConditions.push(`${key} = ?`);
             whereParams.push(value);
           } else {
@@ -86,13 +86,13 @@ export class DatabaseHelpers {
       }
     }
 
-    const whereClause = whereConditions.length > 0 
+    const whereClause = whereConditions?.length || 0 > 0 
       ? whereConditions.join(' AND ')
       : '1=1';
 
     // Build sort clause
     let sortClause = '';
-    if (sort && this.ctx.dbAdapter.columnExists(tableName, sort.column)) {
+    if (sort && this?.ctx?.dbAdapter.columnExists(tableName, sort.column)) {
       sortClause = `ORDER BY ${sort.column} ${sort.direction}`;
     } else if (sort) {
       logger.warn(`Skipping sort for non-existent column`, "DB_HELPERS", {
@@ -102,7 +102,7 @@ export class DatabaseHelpers {
     }
 
     // Get total count
-    const countResult = await this.ctx.safeDb.customQuery<{ count: number }>(
+    const countResult = await this?.ctx?.safeDb.customQuery<{ count: number }>(
       `SELECT COUNT(*) as count FROM ${tableName} WHERE ${whereClause}`,
       whereParams
     );
@@ -118,7 +118,7 @@ export class DatabaseHelpers {
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    const dataResult = await this.ctx.safeDb.customQuery<T>(dataQuery, whereParams);
+    const dataResult = await this?.ctx?.safeDb.customQuery<T>(dataQuery, whereParams);
 
     // Calculate pagination info
     const totalPages = Math.ceil(totalCount / limit);
@@ -153,21 +153,21 @@ export class DatabaseHelpers {
     if (includeTimestamps) {
       const now = new Date().toISOString();
       
-      if (timestampColumns.created && this.ctx.dbAdapter.columnExists(tableName, timestampColumns.created)) {
+      if (timestampColumns.created && this?.ctx?.dbAdapter.columnExists(tableName, timestampColumns.created)) {
         recordData[timestampColumns.created] = now;
       }
       
-      if (timestampColumns.updated && this.ctx.dbAdapter.columnExists(tableName, timestampColumns.updated)) {
+      if (timestampColumns.updated && this?.ctx?.dbAdapter.columnExists(tableName, timestampColumns.updated)) {
         recordData[timestampColumns.updated] = now;
       }
     }
 
-    const result = await this.ctx.safeDb.insert(tableName, recordData);
+    const result = await this?.ctx?.safeDb.insert(tableName, recordData);
 
     // Try to get the inserted record's ID if possible
     let insertedId: string | undefined;
     try {
-      const lastInsertResult = await this.ctx.safeDb.customQuery<{ id: string }>(
+      const lastInsertResult = await this?.ctx?.safeDb.customQuery<{ id: string }>(
         'SELECT last_insert_rowid() as id'
       );
       insertedId = lastInsertResult[0]?.id;
@@ -205,12 +205,12 @@ export class DatabaseHelpers {
 
     // Add update timestamp if enabled and column exists
     if (includeTimestamps && timestampColumns.updated) {
-      if (this.ctx.dbAdapter.columnExists(tableName, timestampColumns.updated)) {
+      if (this?.ctx?.dbAdapter.columnExists(tableName, timestampColumns.updated)) {
         updateData[timestampColumns.updated] = new Date().toISOString();
       }
     }
 
-    const result = await this.ctx.safeDb.update(
+    const result = await this?.ctx?.safeDb.update(
       tableName,
       updateData,
       `${idColumn} = ?`,
@@ -237,7 +237,7 @@ export class DatabaseHelpers {
   ): Promise<SafeOperationResult> {
     const { idColumn = 'id' } = options;
 
-    const result = await this.ctx.safeDb.delete(
+    const result = await this?.ctx?.safeDb.delete(
       tableName,
       `${idColumn} = ?`,
       [id]
@@ -263,14 +263,14 @@ export class DatabaseHelpers {
   ): Promise<boolean> {
     const { idColumn = 'id' } = options;
 
-    const result = await this.ctx.safeDb.select(
+    const result = await this?.ctx?.safeDb.select(
       tableName,
       [idColumn],
       `${idColumn} = ?`,
       [id]
     );
 
-    return result.data.length > 0;
+    return result?.data?.length > 0;
   }
 
   /**
@@ -291,14 +291,14 @@ export class DatabaseHelpers {
       required = false
     } = options;
 
-    const result = await this.ctx.safeDb.select(
+    const result = await this?.ctx?.safeDb.select(
       tableName,
       columns,
       `${idColumn} = ?`,
       [id]
     );
 
-    if (result.data.length === 0) {
+    if (result?.data?.length === 0) {
       if (required) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -319,7 +319,7 @@ export class DatabaseHelpers {
   ): Promise<T> {
     try {
       // Begin transaction
-      await this.ctx.safeDb.customQuery('BEGIN TRANSACTION');
+      await this?.ctx?.safeDb.customQuery('BEGIN TRANSACTION');
       
       logger.debug("Transaction started", "DB_HELPERS");
 
@@ -327,7 +327,7 @@ export class DatabaseHelpers {
       const result = await operations();
 
       // Commit transaction
-      await this.ctx.safeDb.customQuery('COMMIT');
+      await this?.ctx?.safeDb.customQuery('COMMIT');
       
       logger.debug("Transaction committed successfully", "DB_HELPERS");
 
@@ -335,7 +335,7 @@ export class DatabaseHelpers {
     } catch (error) {
       // Rollback transaction on error
       try {
-        await this.ctx.safeDb.customQuery('ROLLBACK');
+        await this?.ctx?.safeDb.customQuery('ROLLBACK');
         logger.debug("Transaction rolled back due to error", "DB_HELPERS");
       } catch (rollbackError) {
         logger.error("Failed to rollback transaction", "DB_HELPERS", { rollbackError });
@@ -362,11 +362,11 @@ export class DatabaseHelpers {
     warnings: string[];
   }> {
     // Filter search columns to only include existing ones
-    const validColumns = searchColumns.filter(col => 
-      this.ctx.dbAdapter.columnExists(tableName, col)
+    const validColumns = searchColumns?.filter(col => 
+      this?.ctx?.dbAdapter.columnExists(tableName, col)
     );
 
-    if (validColumns.length === 0) {
+    if (validColumns?.length || 0 === 0) {
       logger.warn("No valid search columns found", "DB_HELPERS", {
         table: tableName,
         requestedColumns: searchColumns
@@ -382,8 +382,8 @@ export class DatabaseHelpers {
     }
 
     // Build search conditions
-    const searchConditions = validColumns.map(col => `${col} LIKE ?`).join(' OR ');
-    const searchParams = validColumns.map(() => `%${searchTerm}%`);
+    const searchConditions = validColumns?.map(col => `${col} LIKE ?`).join(' OR ');
+    const searchParams = validColumns?.map(() => `%${searchTerm}%`);
 
     // Add search filters to existing filters
     const searchFilters = {

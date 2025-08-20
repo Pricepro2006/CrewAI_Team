@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 // Commented out due to missing supertest dependency
 // import request from 'supertest';
-// import { createApp } from '../../api/app.js';
-import { EmailAnalyticsService } from '../../core/database/EmailAnalyticsService.js';
+// import { createApp } from '../../api/app';
+import { EmailAnalyticsService } from '../../core/database/EmailAnalyticsService';
 import Database from 'better-sqlite3';
 import type { Express } from 'express';
 
@@ -78,7 +78,7 @@ describe.skip('Email Analytics API Integration Tests', () => {
         .get('/api/trpc/emailAnalytics.getStats')
         .expect(200);
       
-      const result = JSON.parse(response.text).result.data.json;
+      const result = JSON.parse(response.text).result?.data.json;
       
       expect(result).toHaveProperty('totalEmails');
       expect(result).toHaveProperty('processedEmails');
@@ -99,10 +99,10 @@ describe.skip('Email Analytics API Integration Tests', () => {
         .get('/api/trpc/emailAnalytics.getDailyVolume?input={"json":{"days":7}}')
         .expect(200);
       
-      const result = JSON.parse(response.text).result.data.json;
+      const result = JSON.parse(response.text).result?.data.json;
       
       expect(Array.isArray(result)).toBe(true);
-      if (result.length > 0) {
+      if (result?.length || 0 > 0) {
         expect(result[0]).toHaveProperty('date');
         expect(result[0]).toHaveProperty('received');
         expect(result[0]).toHaveProperty('processed');
@@ -116,7 +116,7 @@ describe.skip('Email Analytics API Integration Tests', () => {
         .get('/api/trpc/emailAnalytics.getEntityMetrics')
         .expect(200);
       
-      const result = JSON.parse(response.text).result.data.json;
+      const result = JSON.parse(response.text).result?.data.json;
       
       expect(Array.isArray(result)).toBe(true);
     });
@@ -128,10 +128,10 @@ describe.skip('Email Analytics API Integration Tests', () => {
         .get('/api/trpc/emailAnalytics.getWorkflowDistribution')
         .expect(200);
       
-      const result = JSON.parse(response.text).result.data.json;
+      const result = JSON.parse(response.text).result?.data.json;
       
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(2);
+      expect(result?.length || 0).toBe(2);
       
       const customerSupport = result.find((w: any) => w.workflow === 'customer_support');
       expect(customerSupport).toBeDefined();
@@ -146,7 +146,7 @@ describe.skip('Email Analytics API Integration Tests', () => {
         .get('/api/trpc/emailAnalytics.getProcessingPerformance?input={"json":{"hours":24}}')
         .expect(200);
       
-      const result = JSON.parse(response.text).result.data.json;
+      const result = JSON.parse(response.text).result?.data.json;
       
       expect(Array.isArray(result)).toBe(true);
     });
@@ -158,10 +158,10 @@ describe.skip('Email Analytics API Integration Tests', () => {
         .get('/api/trpc/emailAnalytics.getUrgencyDistribution')
         .expect(200);
       
-      const result = JSON.parse(response.text).result.data.json;
+      const result = JSON.parse(response.text).result?.data.json;
       
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(3); // low, high, urgent
+      expect(result?.length || 0).toBe(3); // low, high, urgent
       
       const urgent = result.find((u: any) => u.priority === 'urgent');
       expect(urgent).toBeDefined();

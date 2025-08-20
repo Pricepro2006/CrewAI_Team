@@ -152,7 +152,7 @@ const generateMockOrders = (): UIOrder[] => {
       };
     });
     
-    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const subtotal = items.reduce((sum: any, item: any) => sum + item.total, 0);
     const tax = subtotal * 0.08;
     const deliveryFee = i % 3 === 0 ? 0 : 4.95;
     const total = subtotal + tax + deliveryFee;
@@ -161,19 +161,19 @@ const generateMockOrders = (): UIOrder[] => {
       id: `ORDER-${1000 + i}`,
       orderNumber: `WM${1000 + i}`,
       orderDate: date,
-      status: i === 0 ? 'delivered' : (statuses[Math.floor(Math.random() * statuses.length)] || 'pending'),
+      status: i === 0 ? 'delivered' : (statuses[Math.floor(Math.random() * statuses?.length || 0)] || 'pending'),
       total,
       subtotal,
       tax,
       deliveryFee,
-      itemCount: items.length,
+      itemCount: items?.length || 0,
       deliveryAddress: '123 Main St, San Francisco, CA 94105',
       deliveryDate: new Date(date.getTime() + 86400000 * 2), // 2 days after order
       items,
     });
   }
   
-  return orders.sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime());
+  return orders.sort((a, b) => b?.orderDate?.getTime() - a?.orderDate?.getTime());
 };
 
 export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
@@ -196,13 +196,13 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   const filteredOrders = useMemo(() => {
-    return orders.filter(order => {
+    return orders?.filter(order => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesOrderNumber = order.orderNumber.toLowerCase().includes(query);
-        const matchesItems = order.items.some((item: UIOrderItem) => 
-          item.name.toLowerCase().includes(query)
+        const matchesOrderNumber = order?.orderNumber?.toLowerCase().includes(query);
+        const matchesItems = order?.items?.some((item: UIOrderItem) => 
+          item?.name?.toLowerCase().includes(query)
         );
         if (!matchesOrderNumber && !matchesItems) return false;
       }
@@ -214,7 +214,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
 
       // Date range filter
       if (selectedDateRange !== 'all') {
-        const orderDate = order.orderDate;
+        const orderDate = order?.orderDate;
         const now = new Date();
         const daysDiff = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
         
@@ -240,7 +240,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
       onReorder(order);
     } else {
       setSelectedOrder(order);
-      setSelectedItems(new Set(order.items.map((item: UIOrderItem) => item.id)));
+      setSelectedItems(new Set(order?.items?.map((item: UIOrderItem) => item.id)));
       setShowReorderDialog(true);
     }
   };
@@ -248,7 +248,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
   const handleReorderSelected = () => {
     if (!selectedOrder) return;
 
-    const itemsToReorder = selectedOrder.items.filter((item: UIOrderItem) => 
+    const itemsToReorder = selectedOrder?.items?.filter((item: UIOrderItem) => 
       selectedItems.has(item.id)
     );
 
@@ -258,12 +258,12 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
         const cartProduct = {
           ...item.product,
           price: { 
-            currency: item.product.currency, 
-            regular: item.product.price 
+            currency: item?.product?.currency, 
+            regular: item?.product?.price 
           },
-          availability: { inStock: item.product.inStock },
-          category: item.product.category as any,
-          description: item.product.description || '',
+          availability: { inStock: item?.product?.inStock },
+          category: item?.product?.category as any,
+          description: item?.product?.description || '',
           images: [],
           metadata: {},
           createdAt: new Date(),
@@ -275,7 +275,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
 
     toast({
       title: 'Items added to cart',
-      description: `${itemsToReorder.length} items from order ${selectedOrder.orderNumber} added to your cart`,
+      description: `${itemsToReorder?.length || 0} items from order ${selectedOrder.orderNumber} added to your cart`,
     });
 
     setShowReorderDialog(false);
@@ -337,7 +337,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                     id="search"
                     placeholder="Order number or item name..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e: any) => setSearchQuery(e?.target?.value)}
                     className="pl-8"
                   />
                 </div>
@@ -379,7 +379,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
 
       {/* Orders List */}
       <div className="space-y-4">
-        {filteredOrders.length === 0 ? (
+        {filteredOrders?.length || 0 === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-8 text-center">
               <History className="mb-4 h-12 w-12 text-muted-foreground" />
@@ -392,7 +392,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
             </CardContent>
           </Card>
         ) : (
-          filteredOrders.map((order) => (
+          filteredOrders?.map((order: any) => (
             <Card key={order.id} className={cn(compactMode && 'p-3')}>
               <CardHeader className={cn('cursor-pointer', compactMode && 'p-3')}
                 onClick={() => toggleOrderExpanded(order.id)}>
@@ -414,7 +414,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                       <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {order.orderDate.toLocaleDateString()}
+                          {order?.orderDate?.toLocaleDateString()}
                         </span>
                         <span className="flex items-center gap-1">
                           <Package className="h-3 w-3" />
@@ -433,7 +433,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
+                          onClick={(e: any) => {
                             e.stopPropagation();
                             handleReorder(order);
                           }}
@@ -445,7 +445,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={(e) => {
+                            onClick={(e: any) => {
                               e.stopPropagation();
                               onTrackOrder(order.id);
                             }}
@@ -484,7 +484,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                           {order.deliveryDate && (
                             <p className="flex items-center gap-2">
                               <Truck className="h-3 w-3" />
-                              Delivered on {order.deliveryDate.toLocaleDateString()}
+                              Delivered on {order?.deliveryDate?.toLocaleDateString()}
                             </p>
                           )}
                         </div>
@@ -519,7 +519,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                     <div>
                       <h4 className="mb-3 font-medium">Order Items</h4>
                       <div className="space-y-3">
-                        {order.items.map((item: UIOrderItem) => (
+                        {order?.items?.map((item: UIOrderItem) => (
                           <div key={item.id} className="flex items-center gap-3 rounded-lg border p-3">
                             <div className="h-16 w-16 rounded bg-gray-100" />
                             <div className="flex-1">
@@ -566,7 +566,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          navigator.clipboard.writeText(order.orderNumber);
+                          navigator?.clipboard?.writeText(order.orderNumber);
                           toast({
                             title: 'Order number copied',
                             description: `Order #${order.orderNumber} copied to clipboard`,
@@ -595,11 +595,11 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[400px] overflow-y-auto py-4">
-            {selectedOrder?.items.map((item: UIOrderItem) => (
+            {selectedOrder?.items?.map((item: UIOrderItem) => (
               <div key={item.id} className="flex items-center space-x-3 py-2">
                 <Checkbox
                   checked={selectedItems.has(item.id)}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={(checked: any) => {
                     const newSelected = new Set(selectedItems);
                     if (checked) {
                       newSelected.add(item.id);
@@ -646,12 +646,12 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                 <div className="rounded-lg bg-gray-50 p-4">
                   <p className="font-medium">Order Date</p>
                   <p className="text-sm text-muted-foreground">
-                    {selectedOrder.orderDate.toLocaleDateString()}
+                    {selectedOrder?.orderDate?.toLocaleDateString()}
                   </p>
                 </div>
                 <Separator />
                 <div className="space-y-2">
-                  {selectedOrder.items.map((item: UIOrderItem) => (
+                  {selectedOrder?.items?.map((item: UIOrderItem) => (
                     <div key={item.id} className="flex justify-between">
                       <div>
                         <p>{item.name}</p>

@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
  */
 export class PricingServiceIntegration extends EventEmitter {
   private static instance: PricingServiceIntegration;
-  private pricingService: PricingService;
+  private pricingService!: PricingService; // Use definite assignment assertion
   private isInitialized: boolean = false;
 
   private constructor() {
@@ -52,19 +52,19 @@ export class PricingServiceIntegration extends EventEmitter {
 
   private setupEventForwarding(): void {
     // Forward all pricing service events
-    this.pricingService.on('cache:hit', (data) => {
+    this?.pricingService?.on('cache:hit', (data: any) => {
       this.emit('cache:hit', data);
     });
 
-    this.pricingService.on('api:fetch', (data) => {
+    this?.pricingService?.on('api:fetch', (data: any) => {
       this.emit('api:fetch', data);
     });
 
-    this.pricingService.on('error', (data) => {
+    this?.pricingService?.on('error', (data: any) => {
       this.emit('error', data);
     });
 
-    this.pricingService.on('cache:warm:complete', (data) => {
+    this?.pricingService?.on('cache:warm:complete', (data: any) => {
       this.emit('cache:warm:complete', data);
     });
   }
@@ -76,7 +76,7 @@ export class PricingServiceIntegration extends EventEmitter {
     if (!this.isInitialized) {
       throw new Error('PricingServiceIntegration not initialized');
     }
-    return this.pricingService.getPrice(request);
+    return this?.pricingService?.getPrice(request);
   }
 
   /**
@@ -96,11 +96,11 @@ export class PricingServiceIntegration extends EventEmitter {
       // Process in batches to avoid overwhelming the system
       const results: (PriceResponse | { productId: string; error: string })[] = [];
       
-      for (let i = 0; i < requests.length; i += batchSize) {
+      for (let i = 0; i < requests?.length || 0; i += batchSize) {
         const batch = requests.slice(i, i + batchSize);
         const batchResults = await Promise.all(
-          batch.map(req =>
-            this.pricingService.getPrice(req).catch(err => ({
+          batch?.map(req =>
+            this?.pricingService?.getPrice(req).catch(err => ({
               productId: req.productId,
               error: err.message
             }))
@@ -116,7 +116,7 @@ export class PricingServiceIntegration extends EventEmitter {
       
       for (const request of requests) {
         try {
-          const price = await this.pricingService.getPrice(request);
+          const price = await this?.pricingService?.getPrice(request);
           results.push(price);
         } catch (err) {
           results.push({
@@ -145,7 +145,7 @@ export class PricingServiceIntegration extends EventEmitter {
     
     for (let i = 0; i <= maxRetries; i++) {
       try {
-        return await this.pricingService.getPrice(request);
+        return await this?.pricingService?.getPrice(request);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
         
@@ -171,8 +171,8 @@ export class PricingServiceIntegration extends EventEmitter {
       throw new Error('PricingServiceIntegration not initialized');
     }
 
-    console.log(`[PricingIntegration] Warming cache with ${productIds.length} products`);
-    await this.pricingService.warmCache(productIds, storeIds);
+    console.log(`[PricingIntegration] Warming cache with ${productIds?.length || 0} products`);
+    await this?.pricingService?.warmCache(productIds, storeIds);
   }
 
   /**
@@ -185,7 +185,7 @@ export class PricingServiceIntegration extends EventEmitter {
       throw new Error('PricingServiceIntegration not initialized');
     }
 
-    return this.pricingService.invalidateCache(criteria);
+    return this?.pricingService?.invalidateCache(criteria);
   }
 
   /**
@@ -196,7 +196,7 @@ export class PricingServiceIntegration extends EventEmitter {
       throw new Error('PricingServiceIntegration not initialized');
     }
 
-    return this.pricingService.getMetrics();
+    return this?.pricingService?.getMetrics();
   }
 
   /**
@@ -213,7 +213,7 @@ export class PricingServiceIntegration extends EventEmitter {
 
     const fetchPrice = async () => {
       try {
-        const price = await this.pricingService.getPrice({
+        const price = await this?.pricingService?.getPrice({
           productId,
           storeId: 'default',
           quantity: 1,
@@ -261,7 +261,7 @@ export class PricingServiceIntegration extends EventEmitter {
     }
 
     const results = await this.getBatchPrices(
-      productIds.map((id, index) => ({
+      productIds?.map((id, index) => ({
         productId: id,
         storeId: 'default',
         quantity: quantities[index] || 1,
@@ -312,7 +312,7 @@ export class PricingServiceIntegration extends EventEmitter {
    */
   public async shutdown(): Promise<void> {
     if (this.pricingService) {
-      await this.pricingService.close();
+      await this?.pricingService?.close();
       this.isInitialized = false;
       this.emit('shutdown');
     }

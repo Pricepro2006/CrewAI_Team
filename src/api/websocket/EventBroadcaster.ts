@@ -136,67 +136,67 @@ export class EventBroadcaster extends EventEmitter {
     this.setupEventBusIntegration();
     this.startPeriodicTasks();
     
-    console.log(`EventBroadcaster initialized for node: ${this.config.scaling.nodeId}`);
+    console.log(`EventBroadcaster initialized for node: ${this?.config?.scaling.nodeId}`);
   }
 
   private setupRedisSubscriptions(): void {
-    if (!this.config.scaling.enabled) return;
+    if (!this?.config?.scaling.enabled) return;
 
     // Subscribe to broadcast channel
-    const broadcastChannel = `${this.config.redis.channelPrefix}broadcast`;
-    this.redis.subscribe(broadcastChannel, (err) => {
+    const broadcastChannel = `${this?.config?.redis.channelPrefix}broadcast`;
+    this?.redis.subscribe(broadcastChannel, (err: any) => {
       if (err) {
-        this.emit('redis_subscription_error', { channel: broadcastChannel, error: err });
+        this.emit('redis_subscription_error', { channel: broadcastChannel, error: err as Error });
       } else {
         console.log(`Subscribed to Redis channel: ${broadcastChannel}`);
       }
     });
 
     // Subscribe to node discovery channel
-    const discoveryChannel = `${this.config.redis.channelPrefix}discovery`;
-    this.redis.subscribe(discoveryChannel, (err) => {
+    const discoveryChannel = `${this?.config?.redis.channelPrefix}discovery`;
+    this?.redis.subscribe(discoveryChannel, (err: any) => {
       if (err) {
-        this.emit('redis_subscription_error', { channel: discoveryChannel, error: err });
+        this.emit('redis_subscription_error', { channel: discoveryChannel, error: err as Error });
       }
     });
 
     // Handle incoming messages
-    this.redis.on('message', (channel: string, message: string) => {
+    this?.redis.on('message', (channel: string, message: string) => {
       this.handleRedisMessage(channel, message);
     });
   }
 
   private setupEventBusIntegration(): void {
     // Listen for events from the event bus and broadcast them
-    this.eventBus.on('event_published', async (data: { event: BaseEvent }) => {
+    this?.eventBus?.on('event_published', async (data: { event: BaseEvent }) => {
       await this.broadcastEvent(data.event);
     });
 
     // Monitor event bus health
-    this.eventBus.on('error', (error) => {
-      this.emit('eventbus_error', error);
+    this?.eventBus?.on('error', (error: any) => {
+      this.emit('eventbus_error', error as Error);
     });
   }
 
   private startPeriodicTasks(): void {
-    if (this.config.scaling.enabled) {
+    if (this?.config?.scaling.enabled) {
       // Send heartbeat to announce this node
       this.heartbeatTimer = setInterval(() => {
         this.sendHeartbeat();
-      }, this.config.scaling.heartbeatInterval);
+      }, this?.config?.scaling.heartbeatInterval);
 
       // Clean up inactive nodes
       this.nodeCleanupTimer = setInterval(() => {
         this.cleanupInactiveNodes();
-      }, this.config.scaling.nodeTimeout);
+      }, this?.config?.scaling.nodeTimeout);
     }
 
-    if (this.config.monitoring.enabled) {
+    if (this?.config?.monitoring.enabled) {
       // Collect and emit metrics
       this.metricsTimer = setInterval(() => {
         this.updateMetrics();
         this.emit('metrics', { ...this.metrics, timestamp: Date.now() });
-      }, this.config.monitoring.metricsInterval);
+      }, this?.config?.monitoring.metricsInterval);
     }
   }
 
@@ -213,7 +213,7 @@ export class EventBroadcaster extends EventEmitter {
     const startTime = Date.now();
     
     // Check concurrent broadcast limit
-    if (this.concurrentBroadcasts >= this.config.performance.maxConcurrentBroadcasts) {
+    if (this.concurrentBroadcasts >= this?.config?.performance.maxConcurrentBroadcasts) {
       return {
         success: false,
         localRecipients: 0,
@@ -227,9 +227,9 @@ export class EventBroadcaster extends EventEmitter {
     this.concurrentBroadcasts++;
     
     try {
-      this.metrics.totalBroadcasts++;
+      if (this.metrics.totalBroadcasts) { this.metrics.totalBroadcasts++ };
       
-      const result = await this.circuitBreaker.execute(
+      const result = await this?.circuitBreaker?.execute(
         'event_broadcasting',
         async () => {
           return await this.executeBroadcast(event, options);
@@ -247,10 +247,12 @@ export class EventBroadcaster extends EventEmitter {
       );
 
       if (result.success) {
-        this.metrics.successfulBroadcasts++;
-        this.metrics.totalRecipients += result.totalRecipients;
+        if (this.metrics.successfulBroadcasts) { this.metrics.successfulBroadcasts++ };
+        if (this.metrics) {
+          this.metrics.totalRecipients += result.totalRecipients;
+        }
       } else {
-        this.metrics.failedBroadcasts++;
+        if (this.metrics.failedBroadcasts) { this.metrics.failedBroadcasts++ };
       }
 
       this.updateBroadcastTime(result.broadcastTime);
@@ -265,7 +267,7 @@ export class EventBroadcaster extends EventEmitter {
       return result;
 
     } catch (error) {
-      this.metrics.failedBroadcasts++;
+      if (this.metrics.failedBroadcasts) { this.metrics.failedBroadcasts++ };
       this.emit('broadcast_error', {
         eventId: event.id,
         error,
@@ -278,7 +280,7 @@ export class EventBroadcaster extends EventEmitter {
         remoteNodes: 0,
         totalRecipients: 0,
         broadcastTime: Date.now() - startTime,
-        errors: [error.message]
+        errors: [(error as Error).message]
       };
       
     } finally {
@@ -296,27 +298,27 @@ export class EventBroadcaster extends EventEmitter {
 
     // Local broadcast through subscription manager
     try {
-      const routingResult = await this.subscriptionManager.routeEvent(event);
+      const routingResult = await this?.subscriptionManager?.routeEvent(event);
       localRecipients = routingResult.subscriptionsMatched;
-      this.metrics.localDeliveries++;
+      if (this.metrics.localDeliveries) { this.metrics.localDeliveries++ };
     } catch (error) {
-      errors.push(`Local broadcast failed: ${error.message}`);
+      errors.push(`Local broadcast failed: ${(error as Error).message}`);
     }
 
     // Remote broadcast via Redis (if scaling enabled and not local-only)
-    if (this.config.scaling.enabled && !options.localOnly) {
+    if (this?.config?.scaling.enabled && !options.localOnly) {
       try {
         remoteNodes = await this.broadcastToRemoteNodes(event, options);
-        this.metrics.redisPublishes++;
+        if (this.metrics.redisPublishes) { this.metrics.redisPublishes++ };
       } catch (error) {
-        errors.push(`Remote broadcast failed: ${error.message}`);
+        errors.push(`Remote broadcast failed: ${(error as Error).message}`);
       }
     }
 
     const totalRecipients = localRecipients + remoteNodes;
     
     return {
-      success: errors.length === 0 || totalRecipients > 0,
+      success: (errors?.length || 0) === 0 || totalRecipients > 0,
       localRecipients,
       remoteNodes,
       totalRecipients,
@@ -328,33 +330,33 @@ export class EventBroadcaster extends EventEmitter {
   private async broadcastToRemoteNodes(event: BaseEvent, options: any): Promise<number> {
     const broadcastMessage = {
       type: 'broadcast',
-      nodeId: this.config.scaling.nodeId,
+      nodeId: this?.config?.scaling.nodeId,
       event,
       options,
       timestamp: Date.now()
     };
 
     // Determine target nodes
-    let targetNodes = Array.from(this.activeNodes.keys());
+    let targetNodes = Array.from(this?.activeNodes?.keys());
     
     if (options.targetNodes) {
-      targetNodes = targetNodes.filter(nodeId => options.targetNodes.includes(nodeId));
+      targetNodes = targetNodes?.filter(nodeId => options?.targetNodes?.includes(nodeId));
     }
     
     if (options.excludeNodes) {
-      targetNodes = targetNodes.filter(nodeId => !options.excludeNodes.includes(nodeId));
+      targetNodes = targetNodes?.filter(nodeId => !options?.excludeNodes?.includes(nodeId));
     }
 
     // Remove self from targets
-    targetNodes = targetNodes.filter(nodeId => nodeId !== this.config.scaling.nodeId);
+    targetNodes = targetNodes?.filter(nodeId => nodeId !== this?.config?.scaling.nodeId);
 
-    if (targetNodes.length === 0) return 0;
+    if (targetNodes?.length || 0 === 0) return 0;
 
     // Publish to Redis
-    const channel = `${this.config.redis.channelPrefix}broadcast`;
-    await this.redis.publish(channel, JSON.stringify(broadcastMessage));
+    const channel = `${this?.config?.redis.channelPrefix}broadcast`;
+    await this?.redis.publish(channel, JSON.stringify(broadcastMessage));
 
-    return targetNodes.length;
+    return targetNodes?.length || 0;
   }
 
   // Redis message handling
@@ -369,17 +371,17 @@ export class EventBroadcaster extends EventEmitter {
       }
       
     } catch (error) {
-      this.emit('redis_message_error', { channel, message, error });
+      this.emit('redis_message_error', { channel, message, error: error as Error });
     }
   }
 
   private async handleRemoteBroadcast(data: any): Promise<void> {
     // Ignore messages from self
-    if (data.nodeId === this.config.scaling.nodeId) return;
+    if (data.nodeId === this?.config?.scaling.nodeId) return;
 
     // Update node activity
-    if (this.activeNodes.has(data.nodeId)) {
-      const nodeInfo = this.activeNodes.get(data.nodeId)!;
+    if (this?.activeNodes?.has(data.nodeId)) {
+      const nodeInfo = this?.activeNodes?.get(data.nodeId)!;
       nodeInfo.lastSeen = Date.now();
       nodeInfo.totalBroadcasts++;
     }
@@ -387,29 +389,29 @@ export class EventBroadcaster extends EventEmitter {
     // Process the broadcast locally
     if (data.type === 'broadcast' && data.event) {
       try {
-        await this.subscriptionManager.routeEvent(data.event);
+        await this?.subscriptionManager?.routeEvent(data.event);
         
         this.emit('remote_broadcast_received', {
           fromNode: data.nodeId,
-          eventId: data.event.id,
-          eventType: data.event.type
+          eventId: data.event?.id,
+          eventType: data.event?.type
         });
         
       } catch (error) {
         this.emit('remote_broadcast_error', {
           fromNode: data.nodeId,
           eventId: data.event?.id,
-          error
+          error: error as Error
         });
       }
     }
   }
 
   private handleNodeDiscovery(data: any): void {
-    if (data.nodeId === this.config.scaling.nodeId) return;
+    if (data.nodeId === this?.config?.scaling.nodeId) return;
 
     if (data.type === 'heartbeat') {
-      this.activeNodes.set(data.nodeId, {
+      this?.activeNodes?.set(data.nodeId, {
         nodeId: data.nodeId,
         address: data.address || 'unknown',
         lastSeen: Date.now(),
@@ -419,31 +421,31 @@ export class EventBroadcaster extends EventEmitter {
 
       this.emit('node_discovered', {
         nodeId: data.nodeId,
-        nodeInfo: this.activeNodes.get(data.nodeId)
+        nodeInfo: this?.activeNodes?.get(data.nodeId)
       });
     }
   }
 
   // Node management
   private sendHeartbeat(): void {
-    if (!this.config.scaling.enabled) return;
+    if (!this?.config?.scaling.enabled) return;
 
     const heartbeatMessage = {
       type: 'heartbeat',
-      nodeId: this.config.scaling.nodeId,
+      nodeId: this?.config?.scaling.nodeId,
       address: process.env.NODE_ADDRESS || 'localhost',
-      activeConnections: this.connectionManager.getConnectionCount(),
-      totalBroadcasts: this.metrics.totalBroadcasts,
+      activeConnections: this?.connectionManager?.getConnectionCount(),
+      totalBroadcasts: this?.metrics?.totalBroadcasts,
       timestamp: Date.now()
     };
 
-    const channel = `${this.config.redis.channelPrefix}discovery`;
-    this.redis.publish(channel, JSON.stringify(heartbeatMessage));
+    const channel = `${this?.config?.redis.channelPrefix}discovery`;
+    this?.redis.publish(channel, JSON.stringify(heartbeatMessage));
   }
 
   private cleanupInactiveNodes(): void {
     const now = Date.now();
-    const timeout = this.config.scaling.nodeTimeout;
+    const timeout = this?.config?.scaling.nodeTimeout;
     const inactiveNodes: string[] = [];
 
     for (const [nodeId, nodeInfo] of this.activeNodes) {
@@ -453,12 +455,12 @@ export class EventBroadcaster extends EventEmitter {
     }
 
     for (const nodeId of inactiveNodes) {
-      this.activeNodes.delete(nodeId);
+      this?.activeNodes?.delete(nodeId);
       this.emit('node_removed', { nodeId });
     }
 
-    if (inactiveNodes.length > 0) {
-      console.log(`Cleaned up ${inactiveNodes.length} inactive nodes`);
+    if (inactiveNodes?.length || 0 > 0) {
+      console.log(`Cleaned up ${inactiveNodes?.length || 0} inactive nodes`);
     }
   }
 
@@ -518,7 +520,8 @@ export class EventBroadcaster extends EventEmitter {
       source: options.source || 'event_broadcaster',
       timestamp: Date.now(),
       payload,
-      metadata: options.metadata || {}
+      metadata: options.metadata || {},
+      version: 1
     };
 
     return await this.broadcastEvent(event, options);
@@ -526,23 +529,30 @@ export class EventBroadcaster extends EventEmitter {
 
   // Metrics and monitoring
   private updateMetrics(): void {
-    if (this.broadcastTimes.length > 0) {
-      const sum = this.broadcastTimes.reduce((total, time) => total + time, 0);
-      this.metrics.averageBroadcastTime = sum / this.broadcastTimes.length;
+    if (this?.broadcastTimes?.length > 0) {
+      const sum = this?.broadcastTimes?.reduce((total: any, time: any) => total + time, 0);
+      if (this.metrics) {
+
+        this.metrics.averageBroadcastTime = sum / this?.broadcastTimes?.length;
+
+      }
     }
 
-    if (this.metrics.totalBroadcasts > 0) {
-      this.metrics.averageRecipientsPerBroadcast = 
-        this.metrics.totalRecipients / this.metrics.totalBroadcasts;
+    if (this?.metrics?.totalBroadcasts > 0) {
+      if (this.metrics) {
+
+        this.metrics.averageRecipientsPerBroadcast = this?.metrics?.totalRecipients / this?.metrics?.totalBroadcasts;
+
+      }
     }
   }
 
   private updateBroadcastTime(time: number): void {
-    this.broadcastTimes.push(time);
+    this?.broadcastTimes?.push(time);
     
     // Keep only recent measurements
-    if (this.broadcastTimes.length > 1000) {
-      this.broadcastTimes = this.broadcastTimes.slice(-500);
+    if (this?.broadcastTimes?.length > 1000) {
+      this.broadcastTimes = this?.broadcastTimes?.slice(-500);
     }
   }
 
@@ -558,17 +568,17 @@ export class EventBroadcaster extends EventEmitter {
   } {
     return {
       ...this.metrics,
-      activeNodes: this.activeNodes.size,
+      activeNodes: this?.activeNodes?.size,
       concurrentBroadcasts: this.concurrentBroadcasts
     };
   }
 
   public getActiveNodes(): NodeInfo[] {
-    return Array.from(this.activeNodes.values());
+    return Array.from(this?.activeNodes?.values());
   }
 
   public getNodeInfo(nodeId: string): NodeInfo | undefined {
-    return this.activeNodes.get(nodeId);
+    return this?.activeNodes?.get(nodeId);
   }
 
   public async testBroadcast(eventType: string = 'test'): Promise<BroadcastResult> {
@@ -578,7 +588,8 @@ export class EventBroadcaster extends EventEmitter {
       source: 'broadcast_test',
       timestamp: Date.now(),
       payload: { test: true, timestamp: Date.now() },
-      metadata: { test: true }
+      metadata: { test: true },
+      version: 1
     };
 
     return await this.broadcastEvent(testEvent, { priority: 'normal' });
@@ -595,35 +606,35 @@ export class EventBroadcaster extends EventEmitter {
   } {
     const issues: string[] = [];
     
-    const errorRate = this.metrics.totalBroadcasts > 0 
-      ? this.metrics.failedBroadcasts / this.metrics.totalBroadcasts 
+    const errorRate = this?.metrics?.totalBroadcasts > 0 
+      ? this?.metrics?.failedBroadcasts / this?.metrics?.totalBroadcasts 
       : 0;
 
-    const broadcastsPerSecond = this.broadcastTimes.length > 0 
-      ? this.broadcastTimes.length / 60 // Approximate over last period
+    const broadcastsPerSecond = this?.broadcastTimes?.length > 0 
+      ? this?.broadcastTimes?.length / 60 // Approximate over last period
       : 0;
 
-    if (this.concurrentBroadcasts >= this.config.performance.maxConcurrentBroadcasts * 0.8) {
+    if (this.concurrentBroadcasts >= this?.config?.performance.maxConcurrentBroadcasts * 0.8) {
       issues.push('High concurrent broadcast usage');
     }
 
-    if (this.metrics.averageBroadcastTime > 1000) {
-      issues.push(`High broadcast latency: ${Math.round(this.metrics.averageBroadcastTime)}ms`);
+    if (this?.metrics?.averageBroadcastTime > 1000) {
+      issues.push(`High broadcast latency: ${Math.round(this?.metrics?.averageBroadcastTime)}ms`);
     }
 
     if (errorRate > 0.05) {
       issues.push(`High error rate: ${Math.round(errorRate * 100)}%`);
     }
 
-    if (this.config.scaling.enabled && this.activeNodes.size === 0) {
+    if (this?.config?.scaling.enabled && this?.activeNodes?.size === 0) {
       issues.push('No other nodes discovered');
     }
 
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     
-    if (issues.length > 2 || errorRate > 0.1) {
+    if (issues?.length || 0 > 2 || errorRate > 0.1) {
       status = 'unhealthy';
-    } else if (issues.length > 0 || errorRate > 0.02) {
+    } else if (issues?.length || 0 > 0 || errorRate > 0.02) {
       status = 'degraded';
     }
 
@@ -631,8 +642,8 @@ export class EventBroadcaster extends EventEmitter {
       status,
       broadcastsPerSecond,
       errorRate,
-      averageLatency: this.metrics.averageBroadcastTime,
-      activeNodes: this.activeNodes.size,
+      averageLatency: this?.metrics?.averageBroadcastTime,
+      activeNodes: this?.activeNodes?.size,
       concurrentBroadcasts: this.concurrentBroadcasts,
       issues
     };
@@ -647,21 +658,21 @@ export class EventBroadcaster extends EventEmitter {
     if (this.nodeCleanupTimer) clearInterval(this.nodeCleanupTimer);
 
     // Unsubscribe from Redis
-    if (this.config.scaling.enabled) {
+    if (this?.config?.scaling.enabled) {
       try {
-        await this.redis.unsubscribe();
+        await this?.redis.unsubscribe();
       } catch (error) {
         console.error('Error unsubscribing from Redis:', error);
       }
     }
 
     // Clear state
-    this.activeNodes.clear();
+    this?.activeNodes?.clear();
     this.broadcastTimes = [];
 
     this.emit('shutdown', {
-      totalBroadcasts: this.metrics.totalBroadcasts,
-      successfulBroadcasts: this.metrics.successfulBroadcasts
+      totalBroadcasts: this?.metrics?.totalBroadcasts,
+      successfulBroadcasts: this?.metrics?.successfulBroadcasts
     });
   }
 }

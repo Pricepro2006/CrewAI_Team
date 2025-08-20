@@ -3,7 +3,7 @@
  * Wraps database query execution with SQL injection protection
  */
 
-import Database from "better-sqlite3";
+import type * as Database from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 import { sqlSecurity, SqlInjectionError } from "./SqlInjectionProtection.js";
 import { executeQuery as rawExecuteQuery, executeTransaction as rawExecuteTransaction } from "../ConnectionPool.js";
@@ -29,7 +29,7 @@ export async function executeSecureQuery<T>(
     maxQueryLength = 10000
   } = options;
 
-  return rawExecuteQuery((db) => {
+  return rawExecuteQuery((db: any) => {
     const { sql, params } = queryFn(db);
 
     try {
@@ -37,9 +37,9 @@ export async function executeSecureQuery<T>(
       if (validateQuery) {
         sqlSecurity.validateQuery(sql);
         
-        if (sql.length > maxQueryLength) {
+        if (sql?.length || 0 > maxQueryLength) {
           throw new SqlInjectionError(
-            `Query too long: ${sql.length} characters (max: ${maxQueryLength})`
+            `Query too long: ${sql?.length || 0} characters (max: ${maxQueryLength})`
           );
         }
       }
@@ -53,8 +53,8 @@ export async function executeSecureQuery<T>(
       if (logQueries) {
         logger.debug("Executing secure query", "SECURE_QUERY", {
           queryType: getQueryType(sql),
-          paramCount: sanitizedParams.length,
-          queryLength: sql.length,
+          paramCount: sanitizedParams?.length || 0,
+          queryLength: sql?.length || 0,
         });
       }
 
@@ -89,7 +89,7 @@ export async function executeSecureTransaction<T>(
   transactionFn: (db: Database.Database) => T,
   options: SecureQueryOptions = {}
 ): Promise<T> {
-  return rawExecuteTransaction((db) => {
+  return rawExecuteTransaction((db: any) => {
     // Wrap the database object to intercept prepare calls
     const secureDb = createSecureDatabase(db, options);
     return transactionFn(secureDb as any);
@@ -102,7 +102,7 @@ export async function executeSecureTransaction<T>(
 function createSecureDatabase(
   db: Database.Database,
   options: SecureQueryOptions
-): Partial<Database.Database> {
+): any {
   return {
     ...db,
     prepare: (sql: string) => {

@@ -107,14 +107,14 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
 
   // Priority breakdown chart data
   const priorityChartData = useMemo(() => {
-    const priorities = priorityBreakdown.map((item) => item.priority);
+    const priorities = priorityBreakdown ? priorityBreakdown.map((item: any) => item.priority) : [];
 
     return {
       labels: priorities,
       datasets: [
         {
           label: "On Track",
-          data: priorityBreakdown.map((item) => item.onTrack),
+          data: priorityBreakdown ? priorityBreakdown.map((item: any) => item.onTrack) : [],
           backgroundColor: `${CHART_COLORS.green}CC`,
           borderColor: CHART_COLORS.green,
           borderWidth: 1,
@@ -122,7 +122,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
         },
         {
           label: "At Risk",
-          data: priorityBreakdown.map((item) => item.atRisk),
+          data: priorityBreakdown ? priorityBreakdown.map((item: any) => item.atRisk) : [],
           backgroundColor: `${CHART_COLORS.yellow}CC`,
           borderColor: CHART_COLORS.yellow,
           borderWidth: 1,
@@ -130,7 +130,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
         },
         {
           label: "Overdue",
-          data: priorityBreakdown.map((item) => item.overdue),
+          data: priorityBreakdown ? priorityBreakdown.map((item: any) => item.overdue) : [],
           backgroundColor: `${CHART_COLORS.red}CC`,
           borderColor: CHART_COLORS.red,
           borderWidth: 1,
@@ -142,7 +142,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
 
   // Compliance gauge data (using doughnut chart)
   const complianceGaugeData = useMemo(() => {
-    const compliance = overallMetrics.compliance;
+    const compliance = overallMetrics?.compliance;
     const remaining = 100 - compliance;
 
     return {
@@ -185,8 +185,8 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
         tooltip: {
           callbacks: {
             label: function (context: any) {
-              const value = context.raw;
-              const total = overallSLA.totalItems;
+              const value = context?.raw;
+              const total = overallSLA?.totalItems;
               const percentage =
                 total > 0 ? ((value / total) * 100).toFixed(1) : "0";
               return `${context.label}: ${value} (${percentage}%)`;
@@ -210,7 +210,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
               return `${tooltipItems[0].label} Priority`;
             },
             afterBody: function (tooltipItems: any[]) {
-              if (tooltipItems.length > 0) {
+              if (tooltipItems && tooltipItems.length > 0) {
                 const priorityIndex = tooltipItems[0].dataIndex;
                 const priority = priorityBreakdown[priorityIndex];
                 if (!priority) return [];
@@ -267,7 +267,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
 
   // Handle chart clicks for drill-down
   const handleOverallClick = (event: any, elements: any[]) => {
-    if (onDrillDown && elements.length > 0) {
+    if (onDrillDown && elements && elements.length > 0) {
       const elementIndex = elements[0].index;
       const statuses = ["onTrack", "atRisk", "overdue"] as const;
       const status = statuses[elementIndex];
@@ -278,7 +278,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
   };
 
   const handlePriorityClick = (event: any, elements: any[]) => {
-    if (onDrillDown && elements.length > 0) {
+    if (onDrillDown && elements && elements.length > 0) {
       const elementIndex = elements[0].dataIndex;
       const datasetIndex = elements[0].datasetIndex;
       const priorityData = priorityBreakdown[elementIndex];
@@ -446,7 +446,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {priorityBreakdown.map((item) => {
+              {priorityBreakdown?.map((item: any) => {
                 const total = item.onTrack + item.atRisk + item.overdue;
                 const compliance =
                   total > 0 ? ((item.onTrack / total) * 100).toFixed(1) : "0";

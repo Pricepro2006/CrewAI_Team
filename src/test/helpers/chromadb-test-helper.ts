@@ -60,7 +60,7 @@ export class ChromaDBTestHelper {
         return null;
       }
       throw new Error(
-        `ChromaDB test server not available at ${chromaUrl}. Start with: docker-compose -f docker-compose.test.yml up -d`,
+        `ChromaDB test server not available at ${chromaUrl}. Start with: docker-compose -f docker-compose?.test?.yml up -d`,
       );
     }
 

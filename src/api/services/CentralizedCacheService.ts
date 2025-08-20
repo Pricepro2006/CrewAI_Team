@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { LRUCache } from 'lru-cache';
-import Redis from 'ioredis';
+import { Redis, type Redis as RedisType } from 'ioredis';
 import Database from 'better-sqlite3';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
@@ -82,22 +82,28 @@ interface CacheResult<T = any> {
 
 export class CentralizedCacheService extends EventEmitter {
   private config: CacheConfig;
-  private memoryCache: LRUCache<string, CacheEntry>;
-  private redisClient: Redis;
-  private sqliteDb: Database.Database;
-  private stats: CacheStats;
+  private memoryCache!: LRUCache<string, CacheEntry>;
+  private redisClient!: RedisType;
+  private sqliteDb!: Database.Database;
+  private stats!: CacheStats;
   private isInitialized = false;
   private cleanupInterval?: NodeJS.Timeout;
 
   constructor(config: Partial<CacheConfig> = {}) {
     super();
     
-    this.config = CacheConfigSchema.parse(config);
-    this.initializeStats();
-    this.initializeMemoryCache();
-    this.initializeRedis();
-    this.initializeSQLite();
-    this.setupCleanupTasks();
+    try {
+      this.config = CacheConfigSchema.parse(config);
+      this.initializeStats();
+      this.initializeMemoryCache();
+      this.initializeRedis();
+      this.initializeSQLite();
+      this.setupCleanupTasks();
+      this.isInitialized = true;
+    } catch (error) {
+      this.emit('initialization:error', error);
+      throw error;
+    }
   }
 
   private initializeStats(): void {
@@ -114,6 +120,10 @@ export class CentralizedCacheService extends EventEmitter {
   }
 
   private initializeMemoryCache(): void {
+    if (!this.config?.memory) {
+      throw new Error('Memory cache configuration is required');
+    }
+    
     this.memoryCache = new LRUCache<string, CacheEntry>({
       max: this.config.memory.maxSize,
       ttl: this.config.memory.ttl * 1000, // Convert to milliseconds
@@ -124,45 +134,48 @@ export class CentralizedCacheService extends EventEmitter {
       }
     });
 
-    this.stats.sizes[CacheTier.MEMORY] = 0;
+    if (this.stats) {
+      this.stats.sizes[CacheTier.MEMORY] = 0;
+    }
   }
 
   private initializeRedis(): void {
     this.redisClient = new Redis({
-      host: this.config.redis.host,
-      port: this.config.redis.port,
-      password: this.config.redis.password,
-      db: this.config.redis.db,
+      host: this?.config?.redis.host,
+      port: this?.config?.redis.port,
+      password: this?.config?.redis.password,
+      db: this?.config?.redis.db,
       lazyConnect: true,
       enableOfflineQueue: false,
-      maxRetriesPerRequest: this.config.redis.maxRetries,
-      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: this?.config?.redis.maxRetries,
       retryStrategy: (times: number) => {
-        if (times > this.config.redis.maxRetries) return null;
+        if (times > this?.config?.redis.maxRetries) return null;
         return Math.min(times * 100, 3000);
       }
     });
 
-    this.redisClient.on('connect', () => {
+    this?.redisClient?.on('connect', () => {
       this.emit('redis:connected');
     });
 
-    this.redisClient.on('error', (error: Error) => {
-      this.stats.errors[CacheTier.REDIS]++;
+    this?.redisClient?.on('error', (error: Error) => {
+      if (this.stats) {
+        this.stats.errors[CacheTier.REDIS]++;
+      }
       this.emit('redis:error', error);
     });
 
-    this.redisClient.on('ready', () => {
+    this?.redisClient?.on('ready', () => {
       this.emit('redis:ready');
     });
   }
 
   private initializeSQLite(): void {
-    this.sqliteDb = new Database(this.config.sqlite.path);
+    this.sqliteDb = new Database(this?.config?.sqlite.path);
     
     // Create cache table if it doesn't exist
-    this.sqliteDb.exec(`
-      CREATE TABLE IF NOT EXISTS ${this.config.sqlite.tableName} (
+    this?.sqliteDb?.exec(`
+      CREATE TABLE IF NOT EXISTS ${this?.config?.sqlite.tableName} (
         cache_key TEXT PRIMARY KEY,
         value TEXT NOT NULL,
         tags TEXT,
@@ -175,27 +188,27 @@ export class CentralizedCacheService extends EventEmitter {
       );
 
       CREATE INDEX IF NOT EXISTS idx_cache_expires 
-        ON ${this.config.sqlite.tableName}(expires_at);
+        ON ${this?.config?.sqlite.tableName}(expires_at);
         
       CREATE INDEX IF NOT EXISTS idx_cache_tags 
-        ON ${this.config.sqlite.tableName}(tags);
+        ON ${this?.config?.sqlite.tableName}(tags);
         
       CREATE INDEX IF NOT EXISTS idx_cache_last_accessed 
-        ON ${this.config.sqlite.tableName}(last_accessed);
+        ON ${this?.config?.sqlite.tableName}(last_accessed);
     `);
 
     // Set up automatic cleanup trigger
-    this.sqliteDb.exec(`
+    this?.sqliteDb?.exec(`
       CREATE TRIGGER IF NOT EXISTS cleanup_expired_cache
-      AFTER INSERT ON ${this.config.sqlite.tableName}
-      WHEN (SELECT COUNT(*) FROM ${this.config.sqlite.tableName}) > ${this.config.sqlite.maxEntries}
+      AFTER INSERT ON ${this?.config?.sqlite.tableName}
+      WHEN (SELECT COUNT(*) FROM ${this?.config?.sqlite.tableName}) > ${this?.config?.sqlite.maxEntries}
       BEGIN
-        DELETE FROM ${this.config.sqlite.tableName}
+        DELETE FROM ${this?.config?.sqlite.tableName}
         WHERE expires_at < strftime('%s', 'now')
         OR cache_key IN (
-          SELECT cache_key FROM ${this.config.sqlite.tableName}
+          SELECT cache_key FROM ${this?.config?.sqlite.tableName}
           ORDER BY last_accessed ASC
-          LIMIT (SELECT COUNT(*) FROM ${this.config.sqlite.tableName}) - ${this.config.sqlite.maxEntries}
+          LIMIT (SELECT COUNT(*) FROM ${this?.config?.sqlite.tableName}) - ${this?.config?.sqlite.maxEntries}
         );
       END;
     `);
@@ -207,7 +220,7 @@ export class CentralizedCacheService extends EventEmitter {
       this.cleanupExpiredEntries().catch(error => {
         this.emit('cleanup:error', error);
       });
-    }, this.config.sqlite.cleanupInterval);
+    }, this.config?.sqlite?.cleanupInterval || 3600000);
 
     // Update hit ratios periodically
     setInterval(() => {
@@ -220,8 +233,8 @@ export class CentralizedCacheService extends EventEmitter {
     
     try {
       // Clean up SQLite
-      const deleteStmt = this.sqliteDb.prepare(`
-        DELETE FROM ${this.config.sqlite.tableName}
+      const deleteStmt = this?.sqliteDb?.prepare(`
+        DELETE FROM ${this?.config?.sqlite.tableName}
         WHERE expires_at < ?
       `);
       const result = deleteStmt.run(now);
@@ -232,30 +245,38 @@ export class CentralizedCacheService extends EventEmitter {
 
       // Clean up Redis (Redis handles TTL automatically, but we can get stats)
       const redisSize = await this.getRedisSize();
-      this.stats.sizes[CacheTier.REDIS] = redisSize;
+      if (this.stats) {
+        this.stats.sizes[CacheTier.REDIS] = redisSize;
+      }
       
       // Memory cache is handled automatically by LRU
-      this.stats.sizes[CacheTier.MEMORY] = this.memoryCache.size;
+      if (this.stats && this.memoryCache) {
+        this.stats.sizes[CacheTier.MEMORY] = this.memoryCache.size;
+      }
 
     } catch (error) {
-      this.stats.errors[CacheTier.SQLITE]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.SQLITE]++;
+      }
       this.emit('cleanup:error', error);
     }
   }
 
   private updateHitRatios(): void {
     for (const tier of Object.values(CacheTier)) {
-      const hits = this.stats.hits[tier];
-      const misses = this.stats.misses[tier];
-      const total = hits + misses;
-      this.stats.hitRatio[tier] = total > 0 ? (hits / total) * 100 : 0;
+      if (this.stats) {
+        const hits = this.stats.hits[tier];
+        const misses = this.stats.misses[tier];
+        const total = hits + misses;
+        this.stats.hitRatio[tier] = total > 0 ? (hits / total) * 100 : 0;
+      }
     }
   }
 
   private async getRedisSize(): Promise<number> {
     try {
-      const keys = await this.redisClient.keys(`${this.config.redis.keyPrefix}*`);
-      return keys.length;
+      const keys = await this?.redisClient?.keys(`${this?.config?.redis.keyPrefix}*`);
+      return keys ? keys.length : 0;
     } catch (error) {
       return 0;
     }
@@ -301,16 +322,20 @@ export class CentralizedCacheService extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const entry = this.memoryCache.get(key);
+      const entry = this?.memoryCache?.get(key);
       const latency = Date.now() - startTime;
-      this.stats.latency[CacheTier.MEMORY].push(latency);
+      if (this.stats) {
+        this.stats.latency[CacheTier.MEMORY].push(latency);
+      }
 
       if (entry) {
         // Update access statistics
         entry.accessCount++;
         entry.lastAccessed = Date.now();
         
-        this.stats.hits[CacheTier.MEMORY]++;
+        if (this.stats) {
+          this.stats.hits[CacheTier.MEMORY]++;
+        }
         this.emit('cache:hit', { tier: CacheTier.MEMORY, key, latency });
         
         return {
@@ -320,7 +345,9 @@ export class CentralizedCacheService extends EventEmitter {
           latency
         };
       } else {
-        this.stats.misses[CacheTier.MEMORY]++;
+        if (this.stats) {
+          this.stats.misses[CacheTier.MEMORY]++;
+        }
         return {
           value: null,
           found: false,
@@ -329,7 +356,9 @@ export class CentralizedCacheService extends EventEmitter {
         };
       }
     } catch (error) {
-      this.stats.errors[CacheTier.MEMORY]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.MEMORY]++;
+      }
       this.emit('error', { tier: CacheTier.MEMORY, operation: CacheOperation.GET, error });
       return {
         value: null,
@@ -344,15 +373,19 @@ export class CentralizedCacheService extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const redisKey = `${this.config.redis.keyPrefix}${key}`;
-      const data = await this.redisClient.get(redisKey);
+      const redisKey = `${this?.config?.redis.keyPrefix}${key}`;
+      const data = await this?.redisClient?.get(redisKey);
       const latency = Date.now() - startTime;
-      this.stats.latency[CacheTier.REDIS].push(latency);
+      if (this.stats) {
+        this.stats.latency[CacheTier.REDIS].push(latency);
+      }
 
       if (data) {
         const entry: CacheEntry = JSON.parse(data);
         
-        this.stats.hits[CacheTier.REDIS]++;
+        if (this.stats) {
+          this.stats.hits[CacheTier.REDIS]++;
+        }
         this.emit('cache:hit', { tier: CacheTier.REDIS, key, latency });
         
         return {
@@ -362,7 +395,9 @@ export class CentralizedCacheService extends EventEmitter {
           latency
         };
       } else {
-        this.stats.misses[CacheTier.REDIS]++;
+        if (this.stats) {
+          this.stats.misses[CacheTier.REDIS]++;
+        }
         return {
           value: null,
           found: false,
@@ -371,7 +406,9 @@ export class CentralizedCacheService extends EventEmitter {
         };
       }
     } catch (error) {
-      this.stats.errors[CacheTier.REDIS]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.REDIS]++;
+      }
       this.emit('error', { tier: CacheTier.REDIS, operation: CacheOperation.GET, error });
       return {
         value: null,
@@ -387,26 +424,30 @@ export class CentralizedCacheService extends EventEmitter {
     
     try {
       const now = Math.floor(Date.now() / 1000);
-      const stmt = this.sqliteDb.prepare(`
+      const stmt = this?.sqliteDb?.prepare(`
         SELECT value, access_count, last_accessed
-        FROM ${this.config.sqlite.tableName}
+        FROM ${this?.config?.sqlite.tableName}
         WHERE cache_key = ? AND expires_at > ?
       `);
       
       const row = stmt.get(key, now) as any;
       const latency = Date.now() - startTime;
-      this.stats.latency[CacheTier.SQLITE].push(latency);
+      if (this.stats) {
+        this.stats.latency[CacheTier.SQLITE].push(latency);
+      }
 
       if (row) {
         // Update access statistics
-        const updateStmt = this.sqliteDb.prepare(`
-          UPDATE ${this.config.sqlite.tableName}
+        const updateStmt = this?.sqliteDb?.prepare(`
+          UPDATE ${this?.config?.sqlite.tableName}
           SET access_count = ?, last_accessed = ?
           WHERE cache_key = ?
         `);
         updateStmt.run(row.access_count + 1, Math.floor(Date.now() / 1000), key);
 
-        this.stats.hits[CacheTier.SQLITE]++;
+        if (this.stats) {
+          this.stats.hits[CacheTier.SQLITE]++;
+        }
         this.emit('cache:hit', { tier: CacheTier.SQLITE, key, latency });
         
         return {
@@ -416,7 +457,9 @@ export class CentralizedCacheService extends EventEmitter {
           latency
         };
       } else {
-        this.stats.misses[CacheTier.SQLITE]++;
+        if (this.stats) {
+          this.stats.misses[CacheTier.SQLITE]++;
+        }
         return {
           value: null,
           found: false,
@@ -425,7 +468,9 @@ export class CentralizedCacheService extends EventEmitter {
         };
       }
     } catch (error) {
-      this.stats.errors[CacheTier.SQLITE]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.SQLITE]++;
+      }
       this.emit('error', { tier: CacheTier.SQLITE, operation: CacheOperation.GET, error });
       return {
         value: null,
@@ -451,7 +496,7 @@ export class CentralizedCacheService extends EventEmitter {
     const entry: CacheEntry = {
       key,
       value,
-      ttl: ttl || this.config.memory.ttl,
+      ttl: ttl || this?.config?.memory.ttl,
       tags,
       metadata,
       createdAt: Date.now(),
@@ -483,7 +528,7 @@ export class CentralizedCacheService extends EventEmitter {
       const cacheEntry = entry.key ? entry : {
         key,
         value: entry,
-        ttl: this.config.memory.ttl,
+        ttl: this?.config?.memory.ttl,
         tags: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -491,22 +536,28 @@ export class CentralizedCacheService extends EventEmitter {
         lastAccessed: Date.now()
       };
 
-      this.memoryCache.set(key, cacheEntry);
-      this.stats.sets[CacheTier.MEMORY]++;
-      this.stats.sizes[CacheTier.MEMORY] = this.memoryCache.size;
+      this?.memoryCache?.set(key, cacheEntry);
+      if (this.stats) {
+        this.stats.sets[CacheTier.MEMORY]++;
+      }
+      if (this.stats && this.memoryCache) {
+        this.stats.sizes[CacheTier.MEMORY] = this.memoryCache.size;
+      }
     } catch (error) {
-      this.stats.errors[CacheTier.MEMORY]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.MEMORY]++;
+      }
       this.emit('error', { tier: CacheTier.MEMORY, operation: CacheOperation.SET, error });
     }
   }
 
   private async setInRedis(key: string, entry: CacheEntry | any): Promise<void> {
     try {
-      const redisKey = `${this.config.redis.keyPrefix}${key}`;
+      const redisKey = `${this?.config?.redis.keyPrefix}${key}`;
       const cacheEntry = entry.key ? entry : {
         key,
         value: entry,
-        ttl: this.config.redis.ttl,
+        ttl: this?.config?.redis.ttl,
         tags: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -514,15 +565,19 @@ export class CentralizedCacheService extends EventEmitter {
         lastAccessed: Date.now()
       };
 
-      await this.redisClient.setex(
+      await this?.redisClient?.setex(
         redisKey, 
-        entry.ttl || this.config.redis.ttl, 
+        entry.ttl || this?.config?.redis.ttl, 
         JSON.stringify(cacheEntry)
       );
       
-      this.stats.sets[CacheTier.REDIS]++;
+      if (this.stats) {
+        this.stats.sets[CacheTier.REDIS]++;
+      }
     } catch (error) {
-      this.stats.errors[CacheTier.REDIS]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.REDIS]++;
+      }
       this.emit('error', { tier: CacheTier.REDIS, operation: CacheOperation.SET, error });
     }
   }
@@ -530,10 +585,10 @@ export class CentralizedCacheService extends EventEmitter {
   private async setInSQLite(key: string, entry: CacheEntry): Promise<void> {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const expiresAt = now + (entry.ttl || this.config.sqlite.ttl);
+      const expiresAt = now + (entry.ttl || this?.config?.sqlite.ttl);
       
-      const stmt = this.sqliteDb.prepare(`
-        INSERT OR REPLACE INTO ${this.config.sqlite.tableName} (
+      const stmt = this?.sqliteDb?.prepare(`
+        INSERT OR REPLACE INTO ${this?.config?.sqlite.tableName} (
           cache_key, value, tags, metadata, created_at, 
           updated_at, expires_at, access_count, last_accessed
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -551,9 +606,13 @@ export class CentralizedCacheService extends EventEmitter {
         now
       );
 
-      this.stats.sets[CacheTier.SQLITE]++;
+      if (this.stats) {
+        this.stats.sets[CacheTier.SQLITE]++;
+      }
     } catch (error) {
-      this.stats.errors[CacheTier.SQLITE]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.SQLITE]++;
+      }
       this.emit('error', { tier: CacheTier.SQLITE, operation: CacheOperation.SET, error });
     }
   }
@@ -570,7 +629,10 @@ export class CentralizedCacheService extends EventEmitter {
 
     results.forEach((result, index) => {
       if (result.status === 'fulfilled' && result.value) {
-        deletedFrom.push([CacheTier.MEMORY, CacheTier.REDIS, CacheTier.SQLITE][index]);
+        const tier = [CacheTier.MEMORY, CacheTier.REDIS, CacheTier.SQLITE][index];
+        if (tier) {
+          deletedFrom.push(tier);
+        }
       }
     });
 
@@ -582,45 +644,59 @@ export class CentralizedCacheService extends EventEmitter {
 
   private async deleteFromMemory(key: string): Promise<boolean> {
     try {
-      const deleted = this.memoryCache.delete(key);
+      const deleted = this?.memoryCache?.delete(key) || false;
       if (deleted) {
-        this.stats.deletes[CacheTier.MEMORY]++;
+        if (this.stats) {
+          this.stats.deletes[CacheTier.MEMORY]++;
+        }
+        if (this.stats && this.memoryCache) {
         this.stats.sizes[CacheTier.MEMORY] = this.memoryCache.size;
+      }
       }
       return deleted;
     } catch (error) {
-      this.stats.errors[CacheTier.MEMORY]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.MEMORY]++;
+      }
       return false;
     }
   }
 
   private async deleteFromRedis(key: string): Promise<boolean> {
     try {
-      const redisKey = `${this.config.redis.keyPrefix}${key}`;
-      const deleted = await this.redisClient.del(redisKey);
+      const redisKey = `${this?.config?.redis.keyPrefix}${key}`;
+      const deleted = await this?.redisClient?.del(redisKey);
       if (deleted > 0) {
-        this.stats.deletes[CacheTier.REDIS]++;
+        if (this.stats) {
+          this.stats.deletes[CacheTier.REDIS]++;
+        }
       }
       return deleted > 0;
     } catch (error) {
-      this.stats.errors[CacheTier.REDIS]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.REDIS]++;
+      }
       return false;
     }
   }
 
   private async deleteFromSQLite(key: string): Promise<boolean> {
     try {
-      const stmt = this.sqliteDb.prepare(`
-        DELETE FROM ${this.config.sqlite.tableName}
+      const stmt = this?.sqliteDb?.prepare(`
+        DELETE FROM ${this?.config?.sqlite.tableName}
         WHERE cache_key = ?
       `);
       const result = stmt.run(key);
       if (result.changes > 0) {
-        this.stats.deletes[CacheTier.SQLITE]++;
+        if (this.stats) {
+          this.stats.deletes[CacheTier.SQLITE]++;
+        }
       }
       return result.changes > 0;
     } catch (error) {
-      this.stats.errors[CacheTier.SQLITE]++;
+      if (this.stats) {
+        this.stats.errors[CacheTier.SQLITE]++;
+      }
       return false;
     }
   }
@@ -632,11 +708,12 @@ export class CentralizedCacheService extends EventEmitter {
 
     // Invalidate from SQLite (has tag support)
     try {
-      const stmt = this.sqliteDb.prepare(`
-        DELETE FROM ${this.config.sqlite.tableName}
-        WHERE tags LIKE ANY (${tags.map(() => '?').join(', ')})
+      const conditions = tags?.map(() => 'tags LIKE ?').join(' OR ');
+      const stmt = this?.sqliteDb?.prepare(`
+        DELETE FROM ${this?.config?.sqlite.tableName}
+        WHERE ${conditions}
       `);
-      const result = stmt.run(...tags.map(tag => `%"${tag}"%`));
+      const result = stmt.run(...tags?.map(tag => `%"${tag}"%`));
       if (result.changes > 0) {
         totalInvalidated += result.changes;
         invalidatedFrom.push(CacheTier.SQLITE);
@@ -658,7 +735,7 @@ export class CentralizedCacheService extends EventEmitter {
     let warmed = 0;
     let errors = 0;
 
-    const promises = entries.map(async (entry) => {
+    const promises = entries?.map(async (entry: any) => {
       try {
         await this.set(entry.key, entry.value, {
           ttl: entry.ttl,
@@ -673,7 +750,7 @@ export class CentralizedCacheService extends EventEmitter {
 
     await Promise.allSettled(promises);
     
-    this.emit('cache:warm', { requested: entries.length, warmed, errors });
+    this.emit('cache:warm', { requested: entries?.length || 0, warmed, errors });
     return { warmed, errors };
   }
 
@@ -695,17 +772,21 @@ export class CentralizedCacheService extends EventEmitter {
   }
 
   private async clearMemory(): Promise<void> {
-    this.memoryCache.clear();
-    this.stats.sizes[CacheTier.MEMORY] = 0;
+    this?.memoryCache?.clear();
+    if (this.stats) {
+      this.stats.sizes[CacheTier.MEMORY] = 0;
+    }
   }
 
   private async clearRedis(): Promise<void> {
     try {
-      const keys = await this.redisClient.keys(`${this.config.redis.keyPrefix}*`);
-      if (keys.length > 0) {
-        await this.redisClient.del(...keys);
+      const keys = await this?.redisClient?.keys(`${this?.config?.redis.keyPrefix}*`);
+      if (keys && keys.length > 0) {
+        await this?.redisClient?.del(...keys);
       }
-      this.stats.sizes[CacheTier.REDIS] = 0;
+      if (this?.stats?.sizes) {
+        this.stats.sizes[CacheTier.REDIS] = 0;
+      }
     } catch (error) {
       this.emit('error', { tier: CacheTier.REDIS, operation: CacheOperation.CLEAR, error });
     }
@@ -713,8 +794,10 @@ export class CentralizedCacheService extends EventEmitter {
 
   private async clearSQLite(): Promise<void> {
     try {
-      this.sqliteDb.exec(`DELETE FROM ${this.config.sqlite.tableName}`);
-      this.stats.sizes[CacheTier.SQLITE] = 0;
+      this?.sqliteDb?.exec(`DELETE FROM ${this?.config?.sqlite.tableName}`);
+      if (this?.stats?.sizes) {
+        this.stats.sizes[CacheTier.SQLITE] = 0;
+      }
     } catch (error) {
       this.emit('error', { tier: CacheTier.SQLITE, operation: CacheOperation.CLEAR, error });
     }
@@ -728,14 +811,14 @@ export class CentralizedCacheService extends EventEmitter {
   } {
     const avgLatency = {} as Record<CacheTier, number>;
     for (const tier of Object.values(CacheTier)) {
-      const latencies = this.stats.latency[tier];
-      avgLatency[tier] = latencies.length > 0 
-        ? latencies.reduce((sum, lat) => sum + lat, 0) / latencies.length 
+      const latencies = this?.stats?.latency[tier];
+      avgLatency[tier] = latencies?.length || 0 > 0 
+        ? latencies.reduce((sum: any, lat: any) => sum + lat, 0) / latencies?.length || 0 
         : 0;
     }
 
-    const totalHits = Object.values(this.stats.hits).reduce((sum, hits) => sum + hits, 0);
-    const totalMisses = Object.values(this.stats.misses).reduce((sum, misses) => sum + misses, 0);
+    const totalHits = Object.values(this?.stats?.hits).reduce((sum: any, hits: any) => sum + hits, 0);
+    const totalMisses = Object.values(this?.stats?.misses).reduce((sum: any, misses: any) => sum + misses, 0);
     const totalOperations = totalHits + totalMisses;
     const overallHitRatio = totalOperations > 0 ? (totalHits / totalOperations) * 100 : 0;
 
@@ -765,7 +848,7 @@ export class CentralizedCacheService extends EventEmitter {
 
     // Check Redis
     try {
-      await this.redisClient.ping();
+      await this?.redisClient?.ping();
       tierHealth[CacheTier.REDIS] = 'healthy';
     } catch (error) {
       tierHealth[CacheTier.REDIS] = 'unhealthy';
@@ -773,7 +856,7 @@ export class CentralizedCacheService extends EventEmitter {
 
     // Check SQLite
     try {
-      this.sqliteDb.prepare('SELECT 1').get();
+      this?.sqliteDb?.prepare('SELECT 1').get();
       tierHealth[CacheTier.SQLITE] = 'healthy';
     } catch (error) {
       tierHealth[CacheTier.SQLITE] = 'unhealthy';
@@ -801,9 +884,9 @@ export class CentralizedCacheService extends EventEmitter {
     }
 
     await Promise.allSettled([
-      this.redisClient.quit(),
-      new Promise<void>((resolve) => {
-        this.sqliteDb.close();
+      this?.redisClient?.quit(),
+      new Promise<void>((resolve: any) => {
+        this?.sqliteDb?.close();
         resolve();
       })
     ]);

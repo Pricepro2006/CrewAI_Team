@@ -84,7 +84,7 @@ export const XSSEncoder = {
   css(text: string): string {
     if (!text || typeof text !== 'string') return '';
     
-    return text.replace(/[^a-zA-Z0-9 ]/g, (char) => {
+    return text.replace(/[^a-zA-Z0-9 ]/g, (char: any) => {
       const hex = char.charCodeAt(0).toString(16);
       return '\\' + ('000000' + hex).slice(-6);
     });
@@ -193,7 +193,7 @@ export class XSSProtection {
       if (this.containsDangerousPatterns(clean)) {
         logger.warn('Dangerous patterns detected after sanitization', 'XSS_PROTECTION', {
           level,
-          contentLength: content.length,
+          contentLength: content?.length || 0,
         });
         return this.stripAllHTML(clean);
       }
@@ -236,7 +236,7 @@ export class XSSProtection {
     const trimmed = url.trim();
     
     // Check for dangerous protocols
-    if (XSS_VECTORS.jsProtocols.test(trimmed)) {
+    if (XSS_VECTORS.jsProtocols?.test(trimmed)) {
       logger.warn('Dangerous URL protocol detected', 'XSS_PROTECTION', {
         protocol: trimmed.split(':')[0],
       });
@@ -303,7 +303,7 @@ export class XSSProtection {
     clean = clean.replace(/[\r\n\t]+/g, ' ').trim();
     
     // Check for template injection attempts
-    if (XSS_VECTORS.templateExpressions.test(clean)) {
+    if (XSS_VECTORS?.templateExpressions?.test(clean)) {
       clean = clean.replace(XSS_VECTORS.templateExpressions, '');
     }
     
@@ -315,7 +315,7 @@ export class XSSProtection {
    */
   private sanitizeObject(obj: any): any {
     if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitizeInput(item));
+      return obj?.map(item => this.sanitizeInput(item));
     }
     
     const sanitized: any = {};
@@ -325,7 +325,7 @@ export class XSSProtection {
       const cleanKey = this.sanitizeString(key);
       
       // Skip if key is dangerous (DOM clobbering)
-      if (XSS_VECTORS.idAndNameClobbering.test(cleanKey)) {
+      if (XSS_VECTORS?.idAndNameClobbering?.test(cleanKey)) {
         logger.warn('Dangerous object key detected', 'XSS_PROTECTION', { key });
         continue;
       }
@@ -342,10 +342,10 @@ export class XSSProtection {
    */
   private containsDangerousPatterns(content: string): boolean {
     return (
-      XSS_VECTORS.eventHandlers.test(content) ||
-      XSS_VECTORS.jsProtocols.test(content) ||
-      XSS_VECTORS.cssExpressions.test(content) ||
-      XSS_VECTORS.svgDangerous.test(content)
+      XSS_VECTORS?.eventHandlers?.test(content) ||
+      XSS_VECTORS.jsProtocols?.test(content) ||
+      XSS_VECTORS?.cssExpressions?.test(content) ||
+      XSS_VECTORS?.svgDangerous?.test(content)
     );
   }
   
@@ -394,25 +394,25 @@ export class XSSProtection {
  */
 export const XSSSchemas = {
   // Safe string with XSS protection
-  safeString: z.string().transform((str) => {
+  safeString: z.string().transform((str: any) => {
     const xss = XSSProtection.getInstance();
     return xss.sanitizeString(str);
   }),
   
   // HTML content with sanitization
-  htmlContent: z.string().transform((str) => {
+  htmlContent: z.string().transform((str: any) => {
     const xss = XSSProtection.getInstance();
     return xss.sanitizeHTML(str);
   }),
   
   // URL with validation
-  safeURL: z.string().transform((str) => {
+  safeURL: z.string().transform((str: any) => {
     const xss = XSSProtection.getInstance();
     return xss.sanitizeURL(str);
   }),
   
   // Email with XSS protection
-  safeEmail: z.string().email().transform((str) => {
+  safeEmail: z.string().email().transform((str: any) => {
     const xss = XSSProtection.getInstance();
     return xss.sanitizeString(str);
   }),

@@ -15,7 +15,7 @@ import type {
   QuickAnalysis,
   DeepWorkflowAnalysis,
   ProcessingMetadata,
-  // ActionItem, // Unused import
+  ActionItem,
 } from "../types/analysis-results.js";
 import { EmailPriority } from "../types/EmailTypes.js";
 
@@ -45,13 +45,13 @@ export class PipelineAnalysisAdapter
    * Transform raw database record to domain model
    */
   fromDatabase(row: PipelineEmailAnalysis): EmailAnalysisResult {
-    this.logger.debug(
+    this?.logger?.debug(
       `Transforming pipeline data to domain model - emailId: ${row.email_id}, stage: ${row.pipeline_stage}, model: ${row.final_model_used}`,
     );
 
     // Parse JSON data
-    const llamaData = this.parser.parseLlamaAnalysis(row.llama_analysis);
-    const phi4Data = this.parser.parsePhi4Analysis(row.phi4_analysis);
+    const llamaData = this?.parser?.parseLlamaAnalysis(row.llama_analysis);
+    const phi4Data = this?.parser?.parsePhi4Analysis(row.phi4_analysis);
 
     // Build the analysis result
     const result: EmailAnalysisResult = {
@@ -105,9 +105,9 @@ export class PipelineAnalysisAdapter
     llama?: Partial<LlamaAnalysisData>,
   ): QuickAnalysis {
     // Use Llama data if available, otherwise fall back to pattern-based data
-    const priority = this.parser.mapPriorityScore(row.pipeline_priority_score);
+    const priority = this?.parser?.mapPriorityScore(row.pipeline_priority_score);
     const workflow = llama?.workflow_state
-      ? this.parser.mapWorkflowState(llama.workflow_state)
+      ? this?.parser?.mapWorkflowState(llama.workflow_state)
       : this.mapStageToWorkflow(row.pipeline_stage);
 
     const urgency = this.mapUrgencyLevel(
@@ -117,7 +117,7 @@ export class PipelineAnalysisAdapter
 
     const intent = this.mapIntent(llama?.intent);
     const category = llama?.business_process
-      ? this.parser.mapBusinessProcess(llama.business_process)
+      ? this?.parser?.mapBusinessProcess(llama.business_process)
       : "General";
 
     return {
@@ -144,24 +144,24 @@ export class PipelineAnalysisAdapter
       "No detailed analysis available";
 
     const workflowState = llama?.workflow_state
-      ? this.parser.mapWorkflowState(llama.workflow_state)
+      ? this?.parser?.mapWorkflowState(llama.workflow_state)
       : "NEW";
 
     const businessProcess = llama?.business_process
-      ? this.parser.mapBusinessProcess(llama.business_process)
+      ? this?.parser?.mapBusinessProcess(llama.business_process)
       : "General";
 
     const actionItems = llama?.action_items
-      ? this.parser.parseActionItems(llama.action_items)
+      ? this?.parser?.parseActionItems(llama.action_items)
       : [];
 
     const slaStatus = phi4?.sla_assessment || llama?.sla_status || "Within SLA";
 
     const entities = llama
-      ? this.parser.extractEntities(llama)
+      ? this?.parser?.extractEntities(llama)
       : this.getEmptyEntities();
 
-    const businessImpact = this.parser.parseBusinessImpact(
+    const businessImpact = this?.parser?.parseBusinessImpact(
       llama?.business_impact,
       phi4?.business_impact,
     );
@@ -279,18 +279,18 @@ export class PipelineAnalysisAdapter
     const insights: string[] = [];
 
     // Add summary as first insight if substantial
-    if (summary && summary.length > 50) {
+    if (summary && typeof summary === 'string' && summary.length > 50) {
       insights.push(summary);
     }
 
     // Add deep insights
-    if (deepInsights && deepInsights.length > 0) {
-      insights.push(...deepInsights);
+    if (deepInsights && Array.isArray(deepInsights) && deepInsights.length > 0) {
+      insights.push(...deepInsights.filter(insight => typeof insight === 'string' && insight.trim().length > 0));
     }
 
     // Add strategic recommendations
-    if (recommendations && recommendations.length > 0) {
-      insights.push(...recommendations);
+    if (recommendations && Array.isArray(recommendations) && recommendations.length > 0) {
+      insights.push(...recommendations.filter(rec => typeof rec === 'string' && rec.trim().length > 0));
     }
 
     // Ensure we have at least one insight
@@ -308,7 +308,7 @@ export class PipelineAnalysisAdapter
   async batchFromDatabase(
     rows: PipelineEmailAnalysis[],
   ): Promise<EmailAnalysisResult[]> {
-    this.logger.info(`Batch transforming ${rows.length} pipeline records`);
+    this?.logger?.info(`Batch transforming ${rows.length} pipeline records`);
 
     const results: EmailAnalysisResult[] = [];
     const errors: Array<{ emailId: string; error: string }> = [];
@@ -321,14 +321,14 @@ export class PipelineAnalysisAdapter
         const errorMsg =
           error instanceof Error ? error.message : "Unknown error";
         errors.push({ emailId: row.email_id, error: errorMsg });
-        this.logger.error(
+        this?.logger?.error(
           `Failed to transform pipeline record - emailId: ${row.email_id}, error: ${errorMsg}`,
         );
       }
     }
 
     if (errors.length > 0) {
-      this.logger.warn(
+      this?.logger?.warn(
         `Batch transformation completed with ${errors.length} errors - totalProcessed: ${rows.length}, successCount: ${results.length}, errorCount: ${errors.length}`,
       );
     }

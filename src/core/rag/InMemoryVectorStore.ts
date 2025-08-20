@@ -44,7 +44,7 @@ export class InMemoryVectorStore implements IVectorStore {
       this.documents.set(doc.id, document);
 
       // Index by source ID for deletion
-      const sourceId = doc.metadata.sourceId || doc.id;
+      const sourceId = doc?.metadata?.sourceId || doc.id;
       if (!this.sourceIndex.has(sourceId)) {
         this.sourceIndex.set(sourceId, new Set());
       }
@@ -52,7 +52,7 @@ export class InMemoryVectorStore implements IVectorStore {
     }
 
     logger.info(
-      `Added ${documents.length} documents to in-memory store (total: ${this.documents.size})`,
+      `Added ${documents?.length ?? 0} documents to in-memory store (total: ${this.documents.size})`,
       "VECTOR_STORE"
     );
   }
@@ -66,15 +66,16 @@ export class InMemoryVectorStore implements IVectorStore {
     const queryLower = query.toLowerCase();
     const results: QueryResult[] = [];
 
-    for (const [id, doc] of this.documents) {
-      const contentLower = doc.content.toLowerCase();
+    for (const [id, doc] of Array.from(this.documents)) {
+      const contentLower = doc?.content?.toLowerCase() ?? '';
       
       // Simple relevance scoring based on keyword matches
       let score = 0;
       const queryWords = queryLower.split(/\s+/);
       
       for (const word of queryWords) {
-        if (word.length < 3) continue; // Skip very short words
+        const wordLength = word?.length ?? 0;
+        if (wordLength < 3) continue; // Skip very short words
         
         const wordCount = (contentLower.match(new RegExp(word, 'g')) || []).length;
         score += wordCount;
@@ -83,7 +84,8 @@ export class InMemoryVectorStore implements IVectorStore {
       // Add title/metadata boost
       const metadataText = JSON.stringify(doc.metadata).toLowerCase();
       for (const word of queryWords) {
-        if (word.length >= 3 && metadataText.includes(word)) {
+        const wordLength = word?.length ?? 0;
+        if (wordLength >= 3 && metadataText.includes(word)) {
           score += 2; // Boost for metadata matches
         }
       }
@@ -93,7 +95,7 @@ export class InMemoryVectorStore implements IVectorStore {
           id,
           content: doc.content,
           metadata: doc.metadata,
-          score: score / Math.max(queryWords.length, 1), // Normalize by query length
+          score: score / Math.max(queryWords?.length ?? 1, 1), // Normalize by query length
         });
       }
     }
@@ -117,7 +119,7 @@ export class InMemoryVectorStore implements IVectorStore {
     const allResults = await this.search(query, this.documents.size);
 
     // Apply filters
-    const filteredResults = allResults.filter((result) => {
+    const filteredResults = allResults?.filter((result: any) => {
       return this.matchesFilter(result.metadata, filter);
     });
 
@@ -139,7 +141,7 @@ export class InMemoryVectorStore implements IVectorStore {
 
     const documentIds = this.sourceIndex.get(sourceId);
     if (documentIds) {
-      for (const docId of documentIds) {
+      for (const docId of Array.from(documentIds)) {
         this.documents.delete(docId);
       }
       this.sourceIndex.delete(sourceId);

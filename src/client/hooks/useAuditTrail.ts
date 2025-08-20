@@ -138,7 +138,7 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
         // await auditAPI.logEvent(event);
 
         // For now, add to local state (simulating successful API call)
-        setEvents((prevEvents) => {
+        setEvents((prevEvents: any) => {
           const newEvents = [event, ...prevEvents];
           // Keep only the most recent events to prevent memory issues
           return newEvents.slice(0, maxCachedEvents);
@@ -264,65 +264,65 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
 
     // Apply filters
     if (filter.entityType?.length) {
-      filtered = filtered.filter((event) =>
+      filtered = filtered?.filter((event: any) =>
         filter.entityType!.includes(event.entityType),
       );
     }
 
     if (filter.action?.length) {
-      filtered = filtered.filter((event) =>
+      filtered = filtered?.filter((event: any) =>
         filter.action!.includes(event.action),
       );
     }
 
     if (filter.userId?.length) {
-      filtered = filtered.filter((event) =>
+      filtered = filtered?.filter((event: any) =>
         filter.userId!.includes(event.userId),
       );
     }
 
     if (filter.severity?.length) {
-      filtered = filtered.filter((event) =>
+      filtered = filtered?.filter((event: any) =>
         filter.severity!.includes(event.severity),
       );
     }
 
     if (filter.category?.length) {
-      filtered = filtered.filter((event) =>
+      filtered = filtered?.filter((event: any) =>
         filter.category!.includes(event.category),
       );
     }
 
     if (filter.source?.length) {
-      filtered = filtered.filter((event) =>
+      filtered = filtered?.filter((event: any) =>
         filter.source!.includes(event.source),
       );
     }
 
     if (filter.dateRange) {
-      const startDate = new Date(filter.dateRange.start);
-      const endDate = new Date(filter.dateRange.end);
-      filtered = filtered.filter((event) => {
+      const startDate = new Date(filter?.dateRange?.start);
+      const endDate = new Date(filter?.dateRange?.end);
+      filtered = filtered?.filter((event: any) => {
         const eventDate = new Date(event.timestamp);
         return eventDate >= startDate && eventDate <= endDate;
       });
     }
 
     if (filter.searchQuery) {
-      const query = filter.searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (event) =>
-          event.action.toLowerCase().includes(query) ||
-          event.userName.toLowerCase().includes(query) ||
-          event.entityId.toLowerCase().includes(query) ||
+      const query = filter?.searchQuery?.toLowerCase();
+      filtered = filtered?.filter(
+        (event: any) =>
+          event?.action?.toLowerCase().includes(query) ||
+          event?.userName?.toLowerCase().includes(query) ||
+          event?.entityId?.toLowerCase().includes(query) ||
           JSON.stringify(event.details).toLowerCase().includes(query) ||
-          event.tags?.some((tag) => tag.toLowerCase().includes(query)),
+          event.tags?.some((tag: any) => tag.toLowerCase().includes(query)),
       );
     }
 
     if (filter.tags?.length) {
-      filtered = filtered.filter((event) =>
-        event.tags?.some((tag) => filter.tags!.includes(tag)),
+      filtered = filtered?.filter((event: any) =>
+        event.tags?.some((tag: any) => filter.tags!.includes(tag)),
       );
     }
 
@@ -361,23 +361,23 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
       {} as Record<string, number>,
     );
 
-    const recentActivity = events.filter(
-      (event) => new Date(event.timestamp) >= last24h,
+    const recentActivity = events?.filter(
+      (event: any) => new Date(event.timestamp) >= last24h,
     ).length;
 
-    const securityEvents = events.filter(
-      (event) => event.category === "security" || event.severity === "critical",
+    const securityEvents = events?.filter(
+      (event: any) => event.category === "security" || event.severity === "critical",
     ).length;
 
-    const failedActions = events.filter(
-      (event) =>
+    const failedActions = events?.filter(
+      (event: any) =>
         (event.details as any)?.success === false ||
         event.tags?.includes("failure") ||
-        event.action.includes("failed"),
+        event?.action?.includes("failed"),
     ).length;
 
     return {
-      totalEvents: events.length,
+      totalEvents: events?.length || 0,
       eventsByCategory,
       eventsBySeverity,
       eventsByUser,
@@ -400,9 +400,9 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
         const link = document.createElement("a");
         link.href = url;
         link.download = `audit_log_${new Date().toISOString().split("T")[0]}.json`;
-        document.body.appendChild(link);
+        document?.body?.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        document?.body?.removeChild(link);
         URL.revokeObjectURL(url);
       } else if (format === "csv") {
         const headers = [
@@ -420,7 +420,7 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
         ];
         const csvData = [
           headers.join(","),
-          ...exportEvents.map((event) =>
+          ...exportEvents?.map((event: any) =>
             [
               event.id,
               event.timestamp,
@@ -434,7 +434,7 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
               event.source,
               JSON.stringify(event.details).replace(/"/g, '""'),
             ]
-              .map((field) => `"${field}"`)
+              .map((field: any) => `"${field}"`)
               .join(","),
           ),
         ].join("\n");
@@ -445,9 +445,9 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
         const link = document.createElement("a");
         link.href = url;
         link.download = `audit_log_${new Date().toISOString().split("T")[0]}.csv`;
-        document.body.appendChild(link);
+        document?.body?.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        document?.body?.removeChild(link);
         URL.revokeObjectURL(url);
       }
     },
@@ -487,7 +487,7 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
     (entityType: string, entityId: string) => {
       return events
         .filter(
-          (event) =>
+          (event: any) =>
             event.entityType === entityType && event.entityId === entityId,
         )
         .sort(
@@ -500,7 +500,7 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
 
   // Search events
   const searchEvents = useCallback((query: string) => {
-    setFilter((prev) => ({ ...prev, searchQuery: query }));
+    setFilter((prev: any) => ({ ...prev, searchQuery: query }));
   }, []);
 
   // Clear filter

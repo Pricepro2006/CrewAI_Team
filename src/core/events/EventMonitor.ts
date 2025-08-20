@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 import type { BaseEvent } from './EventBus.js';
+import type { EventContext, EventMetadata, AlertConfig } from '../../shared/types/core.types.js';
 
 // Monitoring schemas and types
 export const EventMetricsSchema = z.object({
@@ -41,7 +42,7 @@ export const AlertRuleSchema = z.object({
   }),
   actions: z.array(z.object({
     type: z.enum(['webhook', 'email', 'log', 'event']),
-    config: z.record(z.any())
+    config: z.record(z.unknown())
   })).default([]),
   cooldown: z.number().default(300000), // 5 minutes between alerts
   metadata: z.record(z.string()).default({})
@@ -58,7 +59,7 @@ export const TraceSchema = z.object({
   duration: z.number().optional(),
   status: z.enum(['pending', 'success', 'error']).default('pending'),
   error: z.string().optional(),
-  metadata: z.record(z.any()).default({}),
+  metadata: z.record(z.unknown()).default({}),
   spans: z.array(z.object({
     spanId: z.string(),
     operationName: z.string(),
@@ -107,7 +108,7 @@ export interface Alert {
   triggeredAt: number;
   resolvedAt?: number;
   status: 'active' | 'resolved';
-  metadata: Record<string, any>;
+  metadata: EventMetadata;
 }
 
 /**
@@ -174,6 +175,7 @@ export class EventMonitor extends EventEmitter {
     this.addAlertRule({
       id: 'high_error_rate',
       name: 'High Error Rate',
+      enabled: true,
       severity: 'critical',
       condition: {
         metric: 'health.errorRate',
@@ -183,14 +185,17 @@ export class EventMonitor extends EventEmitter {
       },
       actions: [
         { type: 'log', config: { level: 'error' } },
-        { type: 'event', config: { eventType: 'monitoring.alert.critical' } }
-      ]
+        { type: 'event', config: { eventType: 'monitoring?.alert?.critical' } }
+      ],
+      cooldown: 300000, // 5 minutes
+      metadata: { category: 'system_health', priority: 'high' }
     });
 
     // Low throughput alert
     this.addAlertRule({
       id: 'low_throughput',
       name: 'Low Throughput',
+      enabled: true,
       severity: 'warning',
       condition: {
         metric: 'throughput.current',
@@ -200,13 +205,16 @@ export class EventMonitor extends EventEmitter {
       },
       actions: [
         { type: 'log', config: { level: 'warn' } }
-      ]
+      ],
+      cooldown: 600000, // 10 minutes
+      metadata: { category: 'performance', priority: 'medium' }
     });
 
     // High latency alert
     this.addAlertRule({
       id: 'high_latency_p99',
       name: 'High P99 Latency',
+      enabled: true,
       severity: 'warning',
       condition: {
         metric: 'latency.p99',
@@ -216,7 +224,9 @@ export class EventMonitor extends EventEmitter {
       },
       actions: [
         { type: 'log', config: { level: 'warn' } }
-      ]
+      ],
+      cooldown: 300000, // 5 minutes
+      metadata: { category: 'performance', priority: 'medium' }
     });
   }
 
@@ -235,14 +245,18 @@ export class EventMonitor extends EventEmitter {
     this.metrics.totalEvents++;
     
     // Track by type
-    this.metrics.eventsByType[event.type] = (this.metrics.eventsByType[event.type] || 0) + 1;
+    if (event.type) {
+      this.metrics.eventsByType[event.type] = (this.metrics.eventsByType[event.type] || 0) + 1;
+    }
     
     // Track by source
     const source = context.source || event.source;
-    this.metrics.eventsBySource[source] = (this.metrics.eventsBySource[source] || 0) + 1;
+    if (source) {
+      this.metrics.eventsBySource[source] = (this.metrics.eventsBySource[source] || 0) + 1;
+    }
 
     // Track errors
-    if (context.error) {
+    if (context.error && event.type) {
       this.metrics.errorsByType[event.type] = (this.metrics.errorsByType[event.type] || 0) + 1;
     }
 
@@ -380,7 +394,7 @@ export class EventMonitor extends EventEmitter {
     const removed = this.alertRules.delete(ruleId);
     if (removed) {
       // Resolve any active alerts for this rule
-      for (const [alertId, alert] of this.activeAlerts) {
+      for (const [alertId, alert] of Array.from(this.activeAlerts)) {
         if (alert.ruleId === ruleId) {
           this.resolveAlert(alertId);
         }
@@ -438,7 +452,7 @@ export class EventMonitor extends EventEmitter {
     }
 
     // Sort by start time (newest first)
-    traces.sort((a, b) => b.startTime - a.startTime);
+    traces.sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
 
     if (filter.limit) {
       traces = traces.slice(0, filter.limit);
@@ -475,7 +489,7 @@ export class EventMonitor extends EventEmitter {
   }
 
   // Private utility methods
-  private recordTrace(event: BaseEvent, context: any): void {
+  private recordTrace(event: BaseEvent, context: EventContext): void {
     const traceId = context.traceId || this.startTrace(event, context.parentTraceId);
     
     if (context.processingEndTime) {
@@ -503,7 +517,7 @@ export class EventMonitor extends EventEmitter {
     
     // Calculate average throughput
     const totalTime = (now - this.startTime) / 1000; // in seconds
-    this.metrics.throughput.average = this.metrics.totalEvents / totalTime;
+    this.metrics.throughput.average = totalTime > 0 ? (this.metrics.totalEvents || 0) / totalTime : 0;
 
     // Reset counters
     this.lastThroughputCalculation = now;
@@ -519,8 +533,11 @@ export class EventMonitor extends EventEmitter {
     }
 
     // Calculate error rate
-    const totalErrors = Object.values(this.metrics.errorsByType).reduce((sum, count) => sum + count, 0);
-    this.metrics.health.errorRate = this.metrics.totalEvents > 0 ? totalErrors / this.metrics.totalEvents : 0;
+    const totalErrors = Object.values(this.metrics.errorsByType || {})
+      .filter((count): count is number => typeof count === 'number')
+      .reduce((sum: number, count: number) => sum + count, 0);
+    const totalEvents = this.metrics.totalEvents || 0;
+    this.metrics.health.errorRate = totalEvents > 0 ? totalErrors / totalEvents : 0;
     
     // Update health status
     this.metrics.health.uptime = now - this.startTime;
@@ -542,7 +559,7 @@ export class EventMonitor extends EventEmitter {
     
     if (criticalAlerts.length > 0) {
       this.metrics.health.status = 'unhealthy';
-    } else if (activeAlertsCount > 0 || this.metrics.health.errorRate > 0.01) {
+    } else if (activeAlertsCount > 0 || (this.metrics.health.errorRate || 0) > 0.01) {
       this.metrics.health.status = 'degraded';
     } else {
       this.metrics.health.status = 'healthy';
@@ -552,7 +569,7 @@ export class EventMonitor extends EventEmitter {
   private checkAlerts(): void {
     const now = Date.now();
 
-    for (const [ruleId, rule] of this.alertRules) {
+    for (const [ruleId, rule] of Array.from(this.alertRules)) {
       if (!rule.enabled) continue;
 
       // Check cooldown
@@ -572,7 +589,7 @@ export class EventMonitor extends EventEmitter {
 
   private getMetricValue(metricPath: string): number {
     const parts = metricPath.split('.');
-    let value: any = this.metrics;
+    let value: unknown = this.metrics;
     
     for (const part of parts) {
       value = value?.[part];
@@ -626,7 +643,10 @@ export class EventMonitor extends EventEmitter {
       switch (action.type) {
         case 'log':
           const level = action.config.level || 'warn';
-          console[level as keyof Console](`[ALERT] ${alert.message}`, alert.metadata);
+          const logFn = (console as { [key: string]: (...args: unknown[]) => void })[level];
+          if (typeof logFn === 'function') {
+            logFn(`[ALERT] ${alert.message}`, alert.metadata);
+          }
           break;
 
         case 'event':
@@ -698,13 +718,13 @@ export class EventMonitor extends EventEmitter {
   }
 
   private calculatePercentile(sortedArray: number[], percentile: number): number {
-    if (sortedArray.length === 0) return 0;
+    if (!sortedArray || sortedArray.length === 0) return 0;
     
     const index = Math.ceil(sortedArray.length * percentile) - 1;
-    return sortedArray[Math.max(0, Math.min(index, sortedArray.length - 1))];
+    return sortedArray[Math.max(0, Math.min(index, sortedArray.length - 1))] || 0;
   }
 
-  private logEvent(event: BaseEvent, context: any): void {
+  private logEvent(event: BaseEvent, context: EventContext): void {
     if (this.config.logging.structured) {
       console.log(JSON.stringify({
         timestamp: new Date().toISOString(),
@@ -728,7 +748,7 @@ export class EventMonitor extends EventEmitter {
     }
   }
 
-  private logError(error: Error, context: any): void {
+  private logError(error: Error, context: EventContext): void {
     if (this.config.logging.structured) {
       console.error(JSON.stringify({
         timestamp: new Date().toISOString(),
@@ -782,32 +802,53 @@ export class EventMonitor extends EventEmitter {
   }
 
   public createDashboard(): {
-    overview: any;
-    throughput: any;
-    latency: any;
-    errors: any;
-    alerts: any;
+    overview: {
+      totalEvents: number;
+      currentThroughput: number;
+      healthStatus: string;
+      activeAlerts: number;
+    };
+    throughput: {
+      current: number;
+      peak: number;
+      average: number;
+      history: Array<{ timestamp: number; value: number }>;
+    };
+    latency: {
+      p50: number;
+      p90: number;
+      p95: number;
+      p99: number;
+    };
+    errors: {
+      errorRate: number;
+      errorsByType: Record<string, number>;
+    };
+    alerts: {
+      active: Alert[];
+      rules: AlertRule[];
+    };
   } {
     return {
       overview: {
-        totalEvents: this.metrics.totalEvents,
-        currentThroughput: this.metrics.throughput.current,
-        healthStatus: this.metrics.health.status,
-        activeAlerts: this.getActiveAlerts().length
+      totalEvents: this.metrics.totalEvents || 0,
+      currentThroughput: this.metrics.throughput?.current || 0,
+      healthStatus: this.metrics.health?.status || 'healthy',
+      activeAlerts: this.getActiveAlerts().length
       },
       throughput: {
         current: this.metrics.throughput.current,
         peak: this.metrics.throughput.peak,
         average: this.metrics.throughput.average,
         history: this.metricsHistory.map(m => ({
-          timestamp: Date.now() - (this.metricsHistory.length - this.metricsHistory.indexOf(m)) * this.config.metrics.aggregationInterval,
-          value: m.throughput.current
+          timestamp: Date.now() - (this.metricsHistory.length - this.metricsHistory.indexOf(m)) * (this.config.metrics?.aggregationInterval || 60000),
+          value: m.throughput?.current || 0
         }))
       },
       latency: this.metrics.latency,
       errors: {
-        errorRate: this.metrics.health.errorRate,
-        errorsByType: this.metrics.errorsByType
+        errorRate: this.metrics.health?.errorRate || 0,
+        errorsByType: this.metrics.errorsByType || {}
       },
       alerts: {
         active: this.getActiveAlerts(),

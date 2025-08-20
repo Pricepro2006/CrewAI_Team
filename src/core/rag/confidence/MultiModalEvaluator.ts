@@ -9,10 +9,10 @@ import {
   type TokenConfidence,
   type EvaluationMetrics,
   ActionType,
-} from "./types.js";
-import { RelevanceScorer } from "./evaluators/RelevanceScorer.js";
-import { FactualityChecker } from "./evaluators/FactualityChecker.js";
-import { CoherenceAnalyzer } from "./evaluators/CoherenceAnalyzer.js";
+} from "./types";
+import { RelevanceScorer } from "./evaluators/RelevanceScorer";
+import { FactualityChecker } from "./evaluators/FactualityChecker";
+import { CoherenceAnalyzer } from "./evaluators/CoherenceAnalyzer";
 
 export class MultiModalEvaluator {
   private relevanceScorer: RelevanceScorer;
@@ -122,7 +122,7 @@ export class MultiModalEvaluator {
       };
 
       // Store in history
-      this.evaluationHistory.push(result);
+      this?.evaluationHistory?.push(result);
 
       return result;
     } catch (error) {
@@ -149,7 +149,7 @@ export class MultiModalEvaluator {
     const evaluationId = `quick-eval-${Date.now()}`;
 
     // Simple heuristic evaluation
-    const responseLength = response.length;
+    const responseLength = response?.length || 0;
     const hasUncertainty =
       /\b(maybe|perhaps|possibly|might|could|may|uncertain|unclear|unsure)\b/i.test(
         response,
@@ -216,7 +216,7 @@ export class MultiModalEvaluator {
     response: string,
     sources: ScoredDocument[],
   ): Promise<{ score: number; details: any }> {
-    const relevanceResult = this.relevanceScorer.calculateRelevance(
+    const relevanceResult = this?.relevanceScorer?.calculateRelevance(
       query,
       response,
       sources,
@@ -236,7 +236,7 @@ export class MultiModalEvaluator {
     response: string,
     sources: ScoredDocument[],
   ): Promise<{ score: number; details: any }> {
-    const factualityResult = this.factualityChecker.checkFactuality(
+    const factualityResult = this?.factualityChecker?.checkFactuality(
       response,
       sources,
     );
@@ -254,7 +254,7 @@ export class MultiModalEvaluator {
     response: string,
     tokenConfidence: TokenConfidence[],
   ): Promise<{ score: number; details: any }> {
-    const coherenceResult = this.coherenceAnalyzer.analyzeCoherence(
+    const coherenceResult = this?.coherenceAnalyzer?.analyzeCoherence(
       response,
       tokenConfidence,
     );
@@ -275,7 +275,7 @@ export class MultiModalEvaluator {
   ): number {
     // Extract query intentions
     const queryWords = query.toLowerCase().split(/\s+/);
-    const questionWords = queryWords.filter((word) =>
+    const questionWords = queryWords?.filter((word: any) =>
       ["what", "how", "why", "when", "where", "which", "who"].includes(word),
     );
 
@@ -313,8 +313,8 @@ export class MultiModalEvaluator {
     }
 
     // Check response length relative to query complexity
-    const queryComplexity = queryWords.length;
-    const responseLength = response.length;
+    const queryComplexity = queryWords?.length || 0;
+    const responseLength = response?.length || 0;
 
     if (queryComplexity > 10 && responseLength < 200) {
       completeness -= 0.2; // Potentially incomplete for complex query
@@ -330,7 +330,7 @@ export class MultiModalEvaluator {
     response: string,
     sources: ScoredDocument[],
   ): number {
-    if (sources.length === 0) return 0.5;
+    if (sources?.length || 0 === 0) return 0.5;
 
     let consistency = 0.8; // Base consistency
 
@@ -352,14 +352,14 @@ export class MultiModalEvaluator {
     }
 
     // Check consistency with sources
-    const sourceTexts = sources.map((s) => s.content.toLowerCase()).join(" ");
+    const sourceTexts = sources?.map((s: any) => s?.content?.toLowerCase()).join(" ");
     const responseWords = responseLower.split(/\s+/);
     const sourceWords = sourceTexts.split(/\s+/);
 
-    const overlap = responseWords.filter((word) =>
+    const overlap = responseWords?.filter((word: any) =>
       sourceWords.includes(word),
     ).length;
-    const overlapRatio = overlap / responseWords.length;
+    const overlapRatio = overlap / responseWords?.length || 0;
 
     if (overlapRatio < 0.3) {
       consistency -= 0.2; // Low overlap with sources
@@ -393,10 +393,10 @@ export class MultiModalEvaluator {
 
     // Factor in token-level confidence if available
     let tokenScore = 0.75; // Default
-    if (tokenConfidence.length > 0) {
+    if (tokenConfidence?.length || 0 > 0) {
       tokenScore =
-        tokenConfidence.reduce((sum, token) => sum + token.confidence, 0) /
-        tokenConfidence.length;
+        tokenConfidence.reduce((sum: any, token: any) => sum + token.confidence, 0) /
+        tokenConfidence?.length || 0;
     }
 
     // Combine metrics and token confidence
@@ -469,11 +469,11 @@ export class MultiModalEvaluator {
     }
 
     // Check token-level uncertainty
-    if (tokenConfidence.length > 0) {
-      const lowConfidenceTokens = tokenConfidence.filter(
-        (t) => t.confidence < 0.5,
+    if (tokenConfidence?.length || 0 > 0) {
+      const lowConfidenceTokens = tokenConfidence?.filter(
+        (t: any) => t.confidence < 0.5,
       );
-      if (lowConfidenceTokens.length > tokenConfidence.length * 0.3) {
+      if (lowConfidenceTokens?.length || 0 > tokenConfidence?.length || 0 * 0.3) {
         areas.push("token_level_uncertainty");
       }
     }
@@ -500,9 +500,9 @@ export class MultiModalEvaluator {
     }
 
     // Add high-confidence sources
-    const highConfidenceSources = sources.filter((s) => s.confidence > 0.8);
+    const highConfidenceSources = sources?.filter((s: any) => s.confidence > 0.8);
     evidence.push(
-      ...highConfidenceSources.map((s) => s.content.substring(0, 100) + "..."),
+      ...highConfidenceSources?.map((s: any) => s?.content?.substring(0, 100) + "..."),
     );
 
     return evidence.slice(0, 5); // Limit to top 5
@@ -583,7 +583,7 @@ export class MultiModalEvaluator {
     averageConfidence: number;
     actionDistribution: Record<ActionType, number>;
   } {
-    const total = this.evaluationHistory.length;
+    const total = this?.evaluationHistory?.length;
 
     if (total === 0) {
       return {
@@ -600,12 +600,12 @@ export class MultiModalEvaluator {
     }
 
     const averageConfidence =
-      this.evaluationHistory.reduce(
+      this?.evaluationHistory?.reduce(
         (sum, evaluation) => sum + evaluation.overallConfidence,
         0,
       ) / total;
 
-    const actionDistribution = this.evaluationHistory.reduce(
+    const actionDistribution = this?.evaluationHistory?.reduce(
       (dist, evaluation) => {
         dist[evaluation.recommendedAction] =
           (dist[evaluation.recommendedAction] || 0) + 1;

@@ -69,7 +69,7 @@ export class GuestUserService {
     const guestId = this.generateSecureGuestId(sanitizedIp, userAgent);
     
     // Check if guest user already exists in cache
-    const existingGuest = this.guestUserCache.get(guestId);
+    const existingGuest = this?.guestUserCache?.get(guestId);
     if (existingGuest) {
       logger.debug("Returning existing guest user from cache", "GUEST_USER", {
         guestId,
@@ -83,10 +83,11 @@ export class GuestUserService {
       id: guestId,
       email: "", // No email for guests
       username: "guest",
-      role: "guest", // Special guest role
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      role: "user", // Guest users get default user role
+      is_active: true,
+      is_verified: false, // Guest users are not verified
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       permissions: this.getGuestPermissions(),
       lastActivity: new Date(),
       // Additional metadata for security tracking
@@ -99,7 +100,7 @@ export class GuestUserService {
     };
     
     // Cache the guest user
-    this.guestUserCache.set(guestId, guestUser);
+    this?.guestUserCache?.set(guestId, guestUser);
     
     // Log guest user creation for security monitoring
     logger.info("Guest user created", "GUEST_USER", {
@@ -127,7 +128,7 @@ export class GuestUserService {
    * Check if IP has exceeded rate limit
    */
   private checkRateLimit(ip: string): boolean {
-    const currentCount = this.rateLimitCache.get(ip) || 0;
+    const currentCount = this?.rateLimitCache?.get(ip) || 0;
     
     if (currentCount >= this.MAX_GUEST_USERS_PER_IP) {
       // Log rate limit event
@@ -145,7 +146,7 @@ export class GuestUserService {
     }
     
     // Increment counter
-    this.rateLimitCache.set(ip, currentCount + 1);
+    this?.rateLimitCache?.set(ip, currentCount + 1);
     return true;
   }
   
@@ -162,7 +163,7 @@ export class GuestUserService {
       Date.now().toString(),
       ip,
       userAgent,
-      process.hrtime.bigint().toString(), // High-resolution time
+      process?.hrtime?.bigint().toString(), // High-resolution time
     ];
     
     const hash = crypto
@@ -180,7 +181,7 @@ export class GuestUserService {
   private getGuestPermissions(): string[] {
     return [
       "chat.read",          // Can read chat messages
-      "chat.create.limited", // Limited chat creation (rate limited)
+      "chat?.create?.limited", // Limited chat creation (rate limited)
       "health.read",        // Can check system health
       "public.read",        // Can access public resources
       // Explicitly NOT included:
@@ -231,15 +232,15 @@ export class GuestUserService {
    * Check if a user is a guest
    */
   isGuestUser(user: User): boolean {
-    return user.metadata?.isGuest === true || user.id.startsWith("guest-");
+    return user.metadata?.isGuest === true || user?.id?.startsWith("guest-");
   }
   
   /**
    * Revoke a guest session (for security incidents)
    */
   revokeGuestSession(guestId: string, reason?: string): void {
-    const user = this.guestUserCache.get(guestId);
-    this.guestUserCache.delete(guestId);
+    const user = this?.guestUserCache?.get(guestId);
+    this?.guestUserCache?.delete(guestId);
     
     logger.warn("Guest session revoked", "SECURITY", { guestId, reason });
     
@@ -263,8 +264,8 @@ export class GuestUserService {
    */
   getStats() {
     return {
-      activeSessions: this.guestUserCache.size,
-      rateLimitedIps: this.rateLimitCache.size,
+      activeSessions: this?.guestUserCache?.size,
+      rateLimitedIps: this?.rateLimitCache?.size,
       maxSessionsPerIp: this.MAX_GUEST_USERS_PER_IP,
       sessionTtlMinutes: this.GUEST_SESSION_TTL_MS / 60000,
     };
@@ -275,7 +276,7 @@ export class GuestUserService {
    */
   cleanup(): void {
     // LRU cache handles TTL automatically, but we can force cleanup
-    this.guestUserCache.forEach((user, key) => {
+    this?.guestUserCache?.forEach((user, key) => {
       // Additional cleanup logic if needed
     });
     

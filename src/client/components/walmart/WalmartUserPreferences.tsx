@@ -146,7 +146,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
     const dietaryFilter = dietId as DietaryFilter;
     const current = editedPreferences.dietaryRestrictions || [];
     const updated = current.includes(dietaryFilter)
-      ? current.filter(d => d !== dietaryFilter)
+      ? current?.filter(d => d !== dietaryFilter)
       : [...current, dietaryFilter];
     handlePreferenceChange('dietaryRestrictions', updated);
   };
@@ -155,7 +155,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
     const allergenType = allergen.toLowerCase().replace(' ', '_') as AllergenType;
     const current = editedPreferences.allergens || [];
     const updated = current.includes(allergenType)
-      ? current.filter(a => a !== allergenType)
+      ? current?.filter(a => a !== allergenType)
       : [...current, allergenType];
     handlePreferenceChange('allergens', updated);
   };
@@ -175,7 +175,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
   const handleRemoveBrand = (brand: string, type: 'preferred' | 'avoid') => {
     const key = type === 'preferred' ? 'preferredBrands' : 'avoidProducts';
     const current = editedPreferences[key] || [];
-    handlePreferenceChange(key, current.filter(b => b !== brand));
+    handlePreferenceChange(key, current?.filter(b => b !== brand));
   };
   
   const handleSave = () => {
@@ -206,7 +206,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
             <Label className="text-sm">Dietary Restrictions</Label>
             <div className="flex flex-wrap gap-1">
               {editedPreferences.dietaryRestrictions?.length ? (
-                editedPreferences.dietaryRestrictions.map(diet => (
+                editedPreferences?.dietaryRestrictions?.map(diet => (
                   <Badge key={diet} variant="secondary" className="text-xs">
                     {diet}
                   </Badge>
@@ -222,7 +222,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
             <Switch
               id="organic-compact"
               checked={editedPreferences.preferOrganic}
-              onCheckedChange={(checked) => handlePreferenceChange('preferOrganic', checked)}
+              onCheckedChange={(checked: any) => handlePreferenceChange('preferOrganic', checked)}
             />
           </div>
           
@@ -231,7 +231,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
             <Switch
               id="generic-compact"
               checked={editedPreferences.preferGeneric}
-              onCheckedChange={(checked) => handlePreferenceChange('preferGeneric', checked)}
+              onCheckedChange={(checked: any) => handlePreferenceChange('preferGeneric', checked)}
             />
           </div>
         </CardContent>
@@ -303,8 +303,8 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                 <div className="space-y-3">
                   <Label>Dietary Restrictions</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {dietaryOptions.map(option => {
-                      const Icon = option.icon;
+                    {dietaryOptions?.map(option => {
+                      const Icon = option?.icon;
                       const isSelected = editedPreferences.dietaryRestrictions?.includes(option.id);
                       
                       return (
@@ -340,7 +340,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                 <div className="space-y-3">
                   <Label>Allergens to Avoid</Label>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {allergenOptions.map(allergen => (
+                    {allergenOptions?.map(allergen => (
                       <div key={allergen} className="flex items-center space-x-2">
                         <Checkbox
                           id={allergen}
@@ -374,7 +374,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                       </div>
                       <Switch
                         checked={editedPreferences.preferOrganic}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked: any) => 
                           handlePreferenceChange('preferOrganic', checked)
                         }
                       />
@@ -392,7 +392,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                       </div>
                       <Switch
                         checked={editedPreferences.preferGeneric}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked: any) => 
                           handlePreferenceChange('preferGeneric', checked)
                         }
                       />
@@ -431,7 +431,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                   </div>
                   {editedPreferences.preferredBrands?.length ? (
                     <div className="flex flex-wrap gap-2">
-                      {editedPreferences.preferredBrands.map(brand => (
+                      {editedPreferences?.preferredBrands?.map(brand => (
                         <Badge
                           key={brand}
                           variant="secondary"
@@ -475,7 +475,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                   </div>
                   {editedPreferences.avoidProducts?.filter(p => p).length ? (
                     <div className="flex flex-wrap gap-2">
-                      {editedPreferences.avoidProducts.filter(p => p).map(brand => (
+                      {editedPreferences?.avoidProducts?.filter(p => p).map(brand => (
                         <Badge
                           key={brand}
                           variant="destructive"
@@ -553,7 +553,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {notificationSettings.map(setting => (
+                {notificationSettings?.map(setting => (
                   <div
                     key={setting.id}
                     className="flex items-center justify-between p-3 border rounded-lg"
@@ -566,9 +566,9 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                     </div>
                     <Switch
                       checked={setting.enabled}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={(checked: any) => {
                         setNotificationSettings(prev =>
-                          prev.map(s =>
+                          prev?.map(s =>
                             s.id === setting.id ? { ...s, enabled: checked } : s
                           )
                         );
@@ -649,9 +649,9 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
               <Label>Brand Name</Label>
               <Input
                 value={brandInput}
-                onChange={(e) => setBrandInput(e.target.value)}
+                onChange={(e: any) => setBrandInput(e?.target?.value)}
                 placeholder="e.g., Kellogg's, Nature Valley"
-                onKeyDown={(e) => {
+                onKeyDown={(e: any) => {
                   if (e.key === 'Enter') {
                     handleAddBrand();
                   }

@@ -140,7 +140,7 @@ class BrightDataMCPService {
           if (response.success && response.data) {
             const products = await this.fetchProductsFromSearchResults(response.data);
             this.addToCache(cacheKey, products);
-            logger.info('Search successful', 'BRIGHTDATA_MCP', { query, attempt, found: products.length });
+            logger.info('Search successful', 'BRIGHTDATA_MCP', { query, attempt, found: products?.length || 0 });
             return products;
           }
         } catch (error) {
@@ -174,7 +174,7 @@ class BrightDataMCPService {
       
       // Batch fetch with rate limiting
       for (const productId of productIds) {
-        const url = `https://www.walmart.com/ip/${productId}`;
+        const url = `https://www?.walmart.com/ip/${productId}`;
         const product = await this.fetchWalmartProduct(url);
         
         if (product && product.current_price) {
@@ -183,7 +183,7 @@ class BrightDataMCPService {
       }
       
       logger.info('Fetched bulk prices', 'BRIGHTDATA_MCP', { 
-        requested: productIds.length,
+        requested: productIds?.length || 0,
         fetched: prices.size 
       });
       
@@ -231,7 +231,7 @@ class BrightDataMCPService {
    */
   async saveProductToDatabase(product: WalmartProduct): Promise<boolean> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO walmart_products (
           id, product_id, name, brand, description, category_path,
           department, current_price, regular_price, unit_price, unit_measure,
@@ -296,7 +296,7 @@ class BrightDataMCPService {
     }
     
     logger.info('Batch import completed', 'BRIGHTDATA_MCP', {
-      total: products.length,
+      total: products?.length || 0,
       imported
     });
     
@@ -318,21 +318,21 @@ class BrightDataMCPService {
   }
 
   private getFromCache(key: string): any {
-    const cached = this.cache.get(key);
+    const cached = this?.cache?.get(key);
     
     if (cached) {
       const age = Date.now() - cached.timestamp;
       if (age < this.CACHE_TTL) {
         return cached.data;
       }
-      this.cache.delete(key);
+      this?.cache?.delete(key);
     }
     
     return null;
   }
 
   private addToCache(key: string, data: any): void {
-    this.cache.set(key, {
+    this?.cache?.set(key, {
       data,
       timestamp: Date.now()
     });
@@ -379,7 +379,7 @@ class BrightDataMCPService {
     if (tool === 'search_engine') {
       return {
         results: Array(5).fill(null).map(() => ({
-          url: `https://www.walmart.com/ip/product/${Math.random().toString(36).substr(2, 9)}`,
+          url: `https://www?.walmart.com/ip/product/${Math.random().toString(36).substr(2, 9)}`,
           title: 'Product Result',
           description: 'Product description'
         }))
@@ -418,8 +418,8 @@ class BrightDataMCPService {
     const products: WalmartProduct[] = [];
     
     if (searchData.results && Array.isArray(searchData.results)) {
-      for (const result of searchData.results.slice(0, 5)) {
-        if (result.url && result.url.includes('walmart.com')) {
+      for (const result of searchData?.results?.slice(0, 5)) {
+        if (result.url && result?.url?.includes('walmart.com')) {
           const product = await this.fetchWalmartProduct(result.url);
           if (product) {
             products.push(product);
@@ -442,8 +442,8 @@ class BrightDataMCPService {
   }
 
   close(): void {
-    this.db.close();
-    this.cache.clear();
+    this?.db?.close();
+    this?.cache?.clear();
     logger.info('BrightDataMCPService closed', 'BRIGHTDATA_MCP');
   }
 }

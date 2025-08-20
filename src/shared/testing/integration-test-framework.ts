@@ -255,9 +255,9 @@ export interface TestWebSocketClient {
   subscribe(channel: string): Promise<void>;
   unsubscribe(channel: string): Promise<void>;
   send(message: WebSocketMessage): Promise<void>;
-  on(event: string, handler: (message: any) => void): void;
-  once(event: string, handler: (message: any) => void): void;
-  off(event: string, handler?: (message: any) => void): void;
+  on(event: string, handler: (message: WebSocketMessage) => Promise<void>): void;
+  once(event: string, handler: (message: WebSocketMessage) => Promise<void>): void;
+  off(event: string, handler?: (message: WebSocketMessage) => Promise<void>): void;
   waitForMessage(event: string, timeout?: number): Promise<any>;
 }
 

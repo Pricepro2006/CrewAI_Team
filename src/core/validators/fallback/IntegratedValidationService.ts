@@ -46,8 +46,8 @@ export class IntegratedValidationService {
     };
 
     this.validator = new BusinessResponseValidator({
-      privacyMode: this.options.privacyMode,
-      minConfidenceThreshold: this.options.minConfidenceThreshold,
+      privacyMode: this?.options?.privacyMode,
+      minConfidenceThreshold: this?.options?.minConfidenceThreshold,
     });
 
     this.fallbackManager = new FallbackSearchManager();
@@ -68,21 +68,21 @@ export class IntegratedValidationService {
   ): Promise<IntegratedValidationResult> {
     // Check cache first
     const cacheKey = this.generateCacheKey(text, context);
-    if (this.options.cacheResults && this.validationCache.has(cacheKey)) {
-      return this.validationCache.get(cacheKey)!;
+    if (this?.options?.cacheResults && this?.validationCache?.has(cacheKey)) {
+      return this?.validationCache?.get(cacheKey)!;
     }
 
     // Initial validation
-    let result = this.validator.validateResponse(text);
+    let result = this?.validator?.validateResponse(text);
     let fallbackUsed = false;
     let fallbackSources: string[] = [];
 
     // If validation fails and fallback is enabled, try fallback search
     if (
-      this.options.enableFallback &&
+      this?.options?.enableFallback &&
       (!result.isValid || !result.hasActionableInfo) &&
       context?.query &&
-      (context.previousAttempts || 0) < this.options.maxFallbackAttempts
+      (context.previousAttempts || 0) < this?.options?.maxFallbackAttempts
     ) {
       const fallbackOptions: FallbackSearchOptions = {
         query: context.query,
@@ -93,7 +93,7 @@ export class IntegratedValidationService {
       };
 
       const fallbackResult =
-        await this.fallbackManager.performFallbackSearch(fallbackOptions);
+        await this?.fallbackManager?.performFallbackSearch(fallbackOptions);
 
       if (fallbackResult.success && fallbackResult.enhancedInfo) {
         // Merge fallback results with original
@@ -118,8 +118,8 @@ export class IntegratedValidationService {
     };
 
     // Cache the result
-    if (this.options.cacheResults) {
-      this.validationCache.set(cacheKey, integratedResult);
+    if (this?.options?.cacheResults) {
+      this?.validationCache?.set(cacheKey, integratedResult);
     }
 
     return integratedResult;
@@ -131,11 +131,11 @@ export class IntegratedValidationService {
   public submitFeedback(
     feedback: Omit<UserFeedback, "id" | "timestamp">,
   ): UserFeedback {
-    if (!this.options.enableFeedback) {
+    if (!this?.options?.enableFeedback) {
       throw new Error("Feedback collection is disabled");
     }
 
-    const submittedFeedback = this.feedbackCollector.collectFeedback(feedback);
+    const submittedFeedback = this?.feedbackCollector?.collectFeedback(feedback);
 
     // Learn from feedback to improve future validations
     this.applyFeedbackLearnings(submittedFeedback);
@@ -159,12 +159,12 @@ export class IntegratedValidationService {
       hitRate: number;
     };
   } {
-    const feedbackStats = this.options.enableFeedback
-      ? this.feedbackCollector.getStats(timeRange)
+    const feedbackStats = this?.options?.enableFeedback
+      ? this?.feedbackCollector?.getStats(timeRange)
       : null;
 
     const cacheStats = {
-      size: this.validationCache.size,
+      size: this?.validationCache?.size,
       hitRate: 0, // Would need to track hits/misses for real hit rate
     };
 
@@ -195,22 +195,22 @@ export class IntegratedValidationService {
       averageLatency: number;
     }>;
   } {
-    const feedbackInsights = this.options.enableFeedback
-      ? this.feedbackCollector.getInsights()
+    const feedbackInsights = this?.options?.enableFeedback
+      ? this?.feedbackCollector?.getInsights()
       : null;
 
     const recommendations: string[] = [];
 
     if (feedbackInsights) {
       if (
-        feedbackInsights.frequentlyIncorrectFields.includes("incorrectPhone")
+        feedbackInsights?.frequentlyIncorrectFields?.includes("incorrectPhone")
       ) {
         recommendations.push(
           "Consider improving phone number extraction patterns",
         );
       }
       if (
-        feedbackInsights.frequentlyIncorrectFields.includes("incorrectAddress")
+        feedbackInsights?.frequentlyIncorrectFields?.includes("incorrectAddress")
       ) {
         recommendations.push(
           "Address extraction needs improvement for better accuracy",
@@ -229,8 +229,8 @@ export class IntegratedValidationService {
    * Clear all caches
    */
   public clearCaches(): void {
-    this.validationCache.clear();
-    this.fallbackManager.clearCache();
+    this?.validationCache?.clear();
+    this?.fallbackManager?.clearCache();
   }
 
   /**
@@ -242,8 +242,8 @@ export class IntegratedValidationService {
     insights: any;
   } {
     return {
-      feedback: this.options.enableFeedback
-        ? this.feedbackCollector.exportFeedback(format)
+      feedback: this?.options?.enableFeedback
+        ? this?.feedbackCollector?.exportFeedback(format)
         : undefined,
       statistics: this.getStatistics(),
       insights: this.getInsights(),
@@ -262,9 +262,9 @@ export class IntegratedValidationService {
 
     // Merge phones
     const phoneMap = new Map(
-      original.contactInfo.phones.map((p) => [p.normalized, p]),
+      original?.contactInfo?.phones?.map((p: any) => [p.normalized, p]),
     );
-    enhanced.phones.forEach((p) => {
+    enhanced?.phones?.forEach((p: any) => {
       if (
         !phoneMap.has(p.normalized) ||
         p.confidence > phoneMap.get(p.normalized)!.confidence
@@ -272,7 +272,9 @@ export class IntegratedValidationService {
         phoneMap.set(p.normalized, p);
       }
     });
-    merged.contactInfo.phones = Array.from(phoneMap.values());
+    if (merged.contactInfo) {
+      merged.contactInfo.phones = Array.from(phoneMap.values());
+    }
 
     // Similar merging for other fields...
     // (Abbreviated for brevity)
@@ -281,7 +283,7 @@ export class IntegratedValidationService {
     merged.confidence = this.validator["calculateOverallConfidence"](
       merged.contactInfo,
     );
-    merged.isValid = merged.confidence >= this.options.minConfidenceThreshold;
+    merged.isValid = merged.confidence >= this?.options?.minConfidenceThreshold;
     merged.hasActionableInfo = this.validator["hasActionableContactInfo"](
       merged.contactInfo,
     );
@@ -310,7 +312,7 @@ export class IntegratedValidationService {
     if (context?.businessType) {
       if (
         context.businessType === "restaurant" &&
-        !result.contactInfo.hours.length
+        !result?.contactInfo?.hours?.length || 0
       ) {
         suggestions.push(
           "Restaurant hours are important - try searching for menu or hours page",
@@ -318,7 +320,7 @@ export class IntegratedValidationService {
       }
       if (
         context.businessType === "retail" &&
-        !result.contactInfo.addresses.length
+        !result?.contactInfo?.addresses?.length || 0
       ) {
         suggestions.push("Retail locations often have store locator pages");
       }
@@ -332,8 +334,8 @@ export class IntegratedValidationService {
     }
 
     if (
-      result.contactInfo.phones.length === 0 &&
-      result.contactInfo.websites.length > 0
+      result?.contactInfo?.phones?.length || 0 === 0 &&
+      result?.contactInfo?.websites?.length || 0 > 0
     ) {
       suggestions.push(
         "No phone found but website available - check contact page",

@@ -14,8 +14,8 @@ export const AgentView: React.FC<AgentViewProps> = ({
       <h3>Agent Management</h3>
 
       <div className="agent-list">
-        <h4>Active Agents ({agents.length})</h4>
-        {agents.map((agent, index) => (
+        <h4>Active Agents ({agents?.length || 0})</h4>
+        {agents?.map((agent, index) => (
           <div key={index} className="agent-item">
             <div className="agent-name">
               {agent.name || `Agent ${index + 1}`}

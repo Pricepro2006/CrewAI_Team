@@ -145,15 +145,15 @@ export class MonitoringService extends EventEmitter {
       unit
     };
 
-    if (!this.metrics.has(name)) {
-      this.metrics.set(name, []);
+    if (!this?.metrics?.has(name)) {
+      this?.metrics?.set(name, []);
     }
 
-    const metricHistory = this.metrics.get(name)!;
+    const metricHistory = this?.metrics?.get(name)!;
     metricHistory.push(metric);
 
     // Keep only recent metrics
-    if (metricHistory.length > this.config.maxMetricsHistory) {
+    if (metricHistory?.length || 0 > this?.config?.maxMetricsHistory) {
       metricHistory.shift();
     }
 
@@ -214,7 +214,7 @@ export class MonitoringService extends EventEmitter {
       metadata
     };
 
-    this.connections.set(id, connection);
+    this?.connections?.set(id, connection);
     this.emit('connection_change', connection);
     
     // Update metrics
@@ -223,7 +223,7 @@ export class MonitoringService extends EventEmitter {
   }
 
   updateConnectionActivity(id: string, metadata?: Record<string, any>): void {
-    const connection = this.connections.get(id);
+    const connection = this?.connections?.get(id);
     if (connection) {
       connection.lastActivity = new Date().toISOString();
       if (metadata) {
@@ -271,11 +271,11 @@ export class MonitoringService extends EventEmitter {
       error
     };
 
-    this.performanceLog.push(performance);
+    this?.performanceLog?.push(performance);
     
     // Keep only recent performance data
-    if (this.performanceLog.length > this.config.maxPerformanceHistory) {
-      this.performanceLog.shift();
+    if (this?.performanceLog?.length > this?.config?.maxPerformanceHistory) {
+      this?.performanceLog?.shift();
     }
 
     // Record metrics
@@ -289,7 +289,7 @@ export class MonitoringService extends EventEmitter {
     this.emit('performance', performance);
     
     // Check for slow responses
-    if (responseTime > this.config.alertThresholds.responseTime) {
+    if (responseTime > this?.config?.alertThresholds.responseTime) {
       this.createAlert('performance', 'medium', 
         `Slow API response: ${endpoint} took ${responseTime}ms`, 
         { endpoint, method, responseTime });
@@ -303,7 +303,7 @@ export class MonitoringService extends EventEmitter {
   recordDatabaseQuery(sql: string, database: string, executionTime: number, rowsAffected?: number, error?: string): void {
     const query: DatabaseQuery = {
       id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      sql: sql.length > 200 ? sql.substring(0, 200) + '...' : sql,
+      sql: sql?.length || 0 > 200 ? sql.substring(0, 200) + '...' : sql,
       database,
       executionTime,
       timestamp: new Date().toISOString(),
@@ -311,11 +311,11 @@ export class MonitoringService extends EventEmitter {
       rowsAffected
     };
 
-    this.queryLog.push(query);
+    this?.queryLog?.push(query);
     
     // Keep only recent query data
-    if (this.queryLog.length > this.config.maxQueryHistory) {
-      this.queryLog.shift();
+    if (this?.queryLog?.length > this?.config?.maxQueryHistory) {
+      this?.queryLog?.shift();
     }
 
     // Record metrics
@@ -329,7 +329,7 @@ export class MonitoringService extends EventEmitter {
     this.emit('database_query', query);
     
     // Check for slow queries
-    if (executionTime > this.config.alertThresholds.queryTime) {
+    if (executionTime > this?.config?.alertThresholds.queryTime) {
       this.createAlert('performance', 'low', 
         `Slow database query: ${executionTime}ms in ${database}`, 
         { database, executionTime, sql: query.sql });
@@ -337,7 +337,7 @@ export class MonitoringService extends EventEmitter {
   }
 
   getSlowQueries(threshold: number = 100): DatabaseQuery[] {
-    return this.queryLog.filter(q => q.executionTime > threshold);
+    return this?.queryLog?.filter(q => q.executionTime > threshold);
   }
 
   getQueryStats(database?: string): {
@@ -347,14 +347,14 @@ export class MonitoringService extends EventEmitter {
     errorCount: number;
   } {
     const queries = database ? 
-      this.queryLog.filter(q => q.database === database) : 
+      this?.queryLog?.filter(q => q.database === database) : 
       this.queryLog;
 
-    const totalQueries = queries.length;
+    const totalQueries = queries?.length || 0;
     const averageTime = totalQueries > 0 ? 
-      queries.reduce((sum, q) => sum + q.executionTime, 0) / totalQueries : 0;
-    const slowQueries = queries.filter(q => q.executionTime > this.config.alertThresholds.queryTime).length;
-    const errorCount = queries.filter(q => q.error).length;
+      queries.reduce((sum: any, q: any) => sum + q.executionTime, 0) / totalQueries : 0;
+    const slowQueries = queries?.filter(q => q.executionTime > this?.config?.alertThresholds.queryTime).length;
+    const errorCount = queries?.filter(q => q.error).length;
 
     return {
       totalQueries,
@@ -369,7 +369,7 @@ export class MonitoringService extends EventEmitter {
   // =====================================================
 
   registerHealthCheck(name: string, check: () => Promise<ServiceHealth>): void {
-    this.healthChecks.set(name, check);
+    this?.healthChecks?.set(name, check);
   }
 
   async runHealthChecks(): Promise<SystemHealth> {
@@ -392,7 +392,7 @@ export class MonitoringService extends EventEmitter {
     // Get system metrics
     const memoryUsage = process.memoryUsage();
     const activeConnections = this.getActiveConnections().length;
-    const recentErrors = this.alerts.filter(a => 
+    const recentErrors = this?.alerts?.filter(a => 
       a.type === 'error' && 
       new Date(a.timestamp) > new Date(Date.now() - 300000) // Last 5 minutes
     ).length;
@@ -403,7 +403,7 @@ export class MonitoringService extends EventEmitter {
     
     if (serviceStatuses.includes('critical')) {
       overallStatus = 'critical';
-    } else if (serviceStatuses.includes('degraded') || memoryUsage.heapUsed > this.config.alertThresholds.memoryUsage) {
+    } else if (serviceStatuses.includes('degraded') || memoryUsage.heapUsed > this?.config?.alertThresholds.memoryUsage) {
       overallStatus = 'degraded';
     }
 
@@ -438,7 +438,7 @@ export class MonitoringService extends EventEmitter {
       metadata
     };
 
-    this.alerts.push(alert);
+    this?.alerts?.push(alert);
     this.emit('alert', alert);
 
     // Log alert
@@ -447,7 +447,7 @@ export class MonitoringService extends EventEmitter {
   }
 
   acknowledgeAlert(alertId: string): boolean {
-    const alert = this.alerts.find(a => a.id === alertId);
+    const alert = this?.alerts?.find(a => a.id === alertId);
     if (alert) {
       alert.acknowledged = true;
       this.emit('alert_acknowledged', alert);
@@ -457,7 +457,7 @@ export class MonitoringService extends EventEmitter {
   }
 
   getActiveAlerts(): MonitoringAlert[] {
-    return this.alerts.filter(a => !a.acknowledged);
+    return this?.alerts?.filter(a => !a.acknowledged);
   }
 
   // =====================================================
@@ -466,11 +466,11 @@ export class MonitoringService extends EventEmitter {
 
   getMetrics(name?: string, limit: number = 100): MonitoringMetric[] {
     if (name) {
-      return this.metrics.get(name)?.slice(-limit) || [];
+      return this?.metrics?.get(name)?.slice(-limit) || [];
     }
     
     const allMetrics: MonitoringMetric[] = [];
-    for (const metrics of this.metrics.values()) {
+    for (const metrics of this?.metrics?.values()) {
       allMetrics.push(...metrics);
     }
     
@@ -480,11 +480,11 @@ export class MonitoringService extends EventEmitter {
   }
 
   getPerformanceMetrics(limit: number = 100): PerformanceMetric[] {
-    return this.performanceLog.slice(-limit);
+    return this?.performanceLog?.slice(-limit);
   }
 
   getDatabaseQueries(limit: number = 100): DatabaseQuery[] {
-    return this.queryLog.slice(-limit);
+    return this?.queryLog?.slice(-limit);
   }
 
   getDashboardData(): {
@@ -504,20 +504,20 @@ export class MonitoringService extends EventEmitter {
     const fiveMinutesAgo = now - 300000;
 
     return {
-      connections: Array.from(this.connections.values()),
+      connections: Array.from(this?.connections?.values()),
       recentMetrics: this.getMetrics(undefined, 50),
-      recentPerformance: this.performanceLog.filter(p => 
+      recentPerformance: this?.performanceLog?.filter(p => 
         new Date(p.timestamp).getTime() > fiveMinutesAgo
       ),
-      recentQueries: this.queryLog.filter(q => 
+      recentQueries: this?.queryLog?.filter(q => 
         new Date(q.timestamp).getTime() > fiveMinutesAgo
       ),
       alerts: this.getActiveAlerts(),
       systemStats: {
-        totalConnections: this.connections.size,
+        totalConnections: this?.connections?.size,
         activeConnections: this.getActiveConnections().length,
-        totalMetrics: Array.from(this.metrics.values()).reduce((sum, metrics) => sum + metrics.length, 0),
-        recentErrors: this.alerts.filter(a => 
+        totalMetrics: Array.from(this?.metrics?.values()).reduce((sum: any, metrics: any) => sum + metrics?.length || 0, 0),
+        recentErrors: this?.alerts?.filter(a => 
           a.type === 'error' && 
           new Date(a.timestamp).getTime() > fiveMinutesAgo
         ).length
@@ -531,17 +531,17 @@ export class MonitoringService extends EventEmitter {
 
   private checkAlertThresholds(metric: MonitoringMetric): void {
     // Check for high memory usage
-    if (metric.name === 'system.memory' && metric.value > this.config.alertThresholds.memoryUsage) {
+    if (metric.name === 'system.memory' && metric.value > this?.config?.alertThresholds.memoryUsage) {
       this.createAlert('health', 'high', 
         `High memory usage: ${Math.round(metric.value / 1024 / 1024)}MB`, 
         { memory: metric.value });
     }
     
     // Check error rates
-    if (metric.name.includes('error') && metric.type === 'counter') {
+    if (metric?.name?.includes('error') && metric.type === 'counter') {
       // Simple error rate check - could be made more sophisticated
       const recentErrors = this.getMetrics(metric.name, 10);
-      const errorCount = recentErrors.reduce((sum, m) => sum + m.value, 0);
+      const errorCount = recentErrors.reduce((sum: any, m: any) => sum + m.value, 0);
       
       if (errorCount > 10) { // More than 10 errors in recent history
         this.createAlert('error', 'medium', 
@@ -580,7 +580,7 @@ export class MonitoringService extends EventEmitter {
     // Memory health check
     this.registerHealthCheck('memory', async () => {
       const memoryUsage = process.memoryUsage();
-      const threshold = this.config.alertThresholds.memoryUsage;
+      const threshold = this?.config?.alertThresholds.memoryUsage;
       
       let status: ServiceHealth['status'] = 'healthy';
       if (memoryUsage.heapUsed > threshold) {
@@ -601,13 +601,13 @@ export class MonitoringService extends EventEmitter {
     // WebSocket health check
     this.registerHealthCheck('websocket', async () => {
       const wsConnections = this.getConnectionsByType('websocket');
-      const activeWS = wsConnections.filter(c => c.status === 'connected');
+      const activeWS = wsConnections?.filter(c => c.status === 'connected');
       
       return {
         name: 'websocket',
-        status: wsConnections.length > 0 ? 'healthy' : 'degraded',
+        status: wsConnections?.length || 0 > 0 ? 'healthy' : 'degraded',
         lastCheck: new Date().toISOString(),
-        responseTime: activeWS.length
+        responseTime: activeWS?.length || 0
       };
     });
   }
@@ -640,26 +640,26 @@ export class MonitoringService extends EventEmitter {
     const cutoff = new Date(Date.now() - 3600000); // 1 hour ago
     
     // Clean performance log
-    this.performanceLog = this.performanceLog.filter(p => 
+    this.performanceLog = this?.performanceLog?.filter(p => 
       new Date(p.timestamp) > cutoff
     );
     
     // Clean query log
-    this.queryLog = this.queryLog.filter(q => 
+    this.queryLog = this?.queryLog?.filter(q => 
       new Date(q.timestamp) > cutoff
     );
     
     // Clean old alerts (keep acknowledged ones for 24 hours)
     const alertCutoff = new Date(Date.now() - 86400000); // 24 hours ago
-    this.alerts = this.alerts.filter(a => 
+    this.alerts = this?.alerts?.filter(a => 
       !a.acknowledged || new Date(a.timestamp) > alertCutoff
     );
 
     // Clean old connections
     const connectionCutoff = new Date(Date.now() - 600000); // 10 minutes ago
-    for (const [id, conn] of this.connections.entries()) {
+    for (const [id, conn] of this?.connections?.entries()) {
       if (conn.status !== 'connected' && new Date(conn.lastActivity) < connectionCutoff) {
-        this.connections.delete(id);
+        this?.connections?.delete(id);
       }
     }
   }

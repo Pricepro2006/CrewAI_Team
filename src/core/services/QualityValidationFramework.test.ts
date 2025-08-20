@@ -5,8 +5,9 @@
  * from replacing high-quality fallbacks.
  */
 
-import { EmailThreePhaseAnalysisService } from "./EmailThreePhaseAnalysisService.js";
-import { Logger } from "../../utils/logger.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmailThreePhaseAnalysisService } from './EmailThreePhaseAnalysisService';
+import { Logger } from '../../utils/logger';
 
 const logger = new Logger("QualityValidationTest");
 
@@ -55,7 +56,7 @@ class QualityValidationTester {
     logger.info(`\n=== Test Results ===`);
     logger.info(`Passed: ${passed}`);
     logger.info(`Failed: ${failed}`);
-    logger.info(`Total: ${scenarios.length}`);
+    logger.info(`Total: ${scenarios?.length || 0}`);
 
     if (failed > 0) {
       throw new Error(`${failed} tests failed`);
@@ -372,10 +373,10 @@ class QualityValidationTester {
     logger.debug(`Quality Score: ${qualityAssessment.score}/10`);
     logger.debug(`Use Fallback: ${qualityAssessment.useFallback}`);
     logger.debug(`Use Hybrid: ${qualityAssessment.useHybrid}`);
-    logger.debug(`Reasons: ${qualityAssessment.reasons.join(", ")}`);
+    logger.debug(`Reasons: ${qualityAssessment?.reasons?.join(", ")}`);
 
     // Validate score range
-    const [minScore, maxScore] = scenario.expectedQuality.scoreRange;
+    const [minScore, maxScore] = scenario?.expectedQuality?.scoreRange;
     if (
       qualityAssessment.score < minScore ||
       qualityAssessment.score > maxScore
@@ -388,19 +389,19 @@ class QualityValidationTester {
     // Validate fallback decision
     if (
       qualityAssessment.useFallback !==
-      scenario.expectedQuality.shouldUseFallback
+      scenario?.expectedQuality?.shouldUseFallback
     ) {
       throw new Error(
-        `Expected useFallback: ${scenario.expectedQuality.shouldUseFallback}, got: ${qualityAssessment.useFallback}`,
+        `Expected useFallback: ${scenario?.expectedQuality?.shouldUseFallback}, got: ${qualityAssessment.useFallback}`,
       );
     }
 
     // Validate hybrid decision
     if (
-      qualityAssessment.useHybrid !== scenario.expectedQuality.shouldUseHybrid
+      qualityAssessment.useHybrid !== scenario?.expectedQuality?.shouldUseHybrid
     ) {
       throw new Error(
-        `Expected useHybrid: ${scenario.expectedQuality.shouldUseHybrid}, got: ${qualityAssessment.useHybrid}`,
+        `Expected useHybrid: ${scenario?.expectedQuality?.shouldUseHybrid}, got: ${qualityAssessment.useHybrid}`,
       );
     }
 
@@ -418,7 +419,7 @@ class QualityValidationTester {
       // Validate hybrid response has better quality than pure LLM
       if (
         !hybridResponse.workflow_validation ||
-        hybridResponse.workflow_validation.length < 10
+        hybridResponse?.workflow_validation?.length < 10
       ) {
         throw new Error(
           "Hybrid response should have better workflow validation",
@@ -436,7 +437,7 @@ class QualityValidationTester {
     logger.info("\n--- Testing Quality Metrics ---");
 
     // Get initial metrics
-    const initialMetrics = this.service.getQualityMetrics();
+    const initialMetrics = this?.service?.getQualityMetrics();
     logger.debug("Initial metrics:", initialMetrics);
 
     // The metrics should be tracked through actual usage
@@ -464,7 +465,7 @@ class QualityValidationTester {
     logger.info("\n--- Testing Configuration Updates ---");
 
     // Test quality threshold update
-    this.service.updateQualityConfig({
+    this?.service?.updateQualityConfig({
       minimumQualityThreshold: 7.0,
       enableHybridByDefault: false,
     });
@@ -529,7 +530,7 @@ class QualityValidationTester {
    * Cleanup after tests
    */
   async cleanup(): Promise<void> {
-    await this.service.shutdown();
+    await this?.service?.shutdown();
   }
 }
 
@@ -587,8 +588,8 @@ describe('Quality Validation Framework', () => {
 
 // Run tests if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  runQualityValidationTests().catch((error) => {
-    logger.error("Quality validation tests failed:", error);
+  runQualityValidationTests().catch((error: any) => {
+    logger.error("Quality validation tests failed:", error as string);
     process.exit(1);
   });
 }

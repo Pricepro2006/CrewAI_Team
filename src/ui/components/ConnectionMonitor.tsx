@@ -3,9 +3,38 @@
  * Displays real-time connection status, quality, and metrics
  */
 
-import React, { useState, useEffect } from 'react';
-import { useConnectionWithFallback } from '../hooks/useConnectionWithFallback.js';
-import type { ConnectionMode, ConnectionQuality } from '../hooks/useConnectionWithFallback.js';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useConnectionWithFallback } from '../hooks/useConnectionWithFallback';
+
+// Define local types to avoid import issues
+type ConnectionMode = 'websocket' | 'polling' | 'hybrid' | 'offline';
+type ConnectionQuality = 'excellent' | 'good' | 'fair' | 'poor' | 'offline';
+
+interface ConnectionMetrics {
+  latency: number;
+  uptime: number;
+  dataUpdates: number;
+  modeChanges: number;
+}
+
+interface WebSocketConnection {
+  isConnected: boolean;
+  isConnecting: boolean;
+  sessionId?: string;
+}
+
+interface Connection {
+  mode: ConnectionMode;
+  quality: ConnectionQuality;
+  isConnected: boolean;
+  isTransitioning: boolean;
+  dataVersion: number;
+  lastUpdate: number | null;
+  metrics: ConnectionMetrics;
+  websocket?: WebSocketConnection;
+  forceMode: (mode: ConnectionMode) => void;
+  refresh: () => void;
+};
 import { 
   WifiIcon,
   SignalIcon,
@@ -43,7 +72,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
     autoFallback: true,
     hybridMode: false,
     onModeChange
-  });
+  }) as Connection;
 
   // Position classes
   const positionClasses = {
@@ -53,8 +82,8 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
     'bottom-right': 'bottom-4 right-4'
   };
 
-  // Mode colors and icons
-  const getModeConfig = (mode: ConnectionMode) => {
+  // Mode colors and icons - memoized for performance
+  const getModeConfig = useCallback((mode: ConnectionMode) => {
     switch (mode) {
       case 'websocket':
         return {
@@ -97,10 +126,10 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
           label: 'Unknown'
         };
     }
-  };
+  }, []);
 
-  // Quality indicators
-  const getQualityConfig = (quality: ConnectionQuality) => {
+  // Quality indicators - memoized for performance
+  const getQualityConfig = useCallback((quality: ConnectionQuality) => {
     switch (quality) {
       case 'excellent':
         return { bars: 4, color: 'bg-green-500', label: 'Excellent' };
@@ -115,14 +144,15 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
       default:
         return { bars: 0, color: 'bg-gray-400', label: 'Unknown' };
     }
-  };
+  }, []);
 
-  const modeConfig = getModeConfig(connection.mode);
-  const qualityConfig = getQualityConfig(connection.quality);
-  const ModeIcon = modeConfig.icon;
+  // Memoize configurations to prevent unnecessary re-calculations
+  const modeConfig = useMemo(() => getModeConfig(connection.mode), [connection.mode, getModeConfig]);
+  const qualityConfig = useMemo(() => getQualityConfig(connection.quality), [connection.quality, getQualityConfig]);
+  const ModeIcon = modeConfig?.icon;
 
-  // Format uptime
-  const formatUptime = (ms: number) => {
+  // Format uptime - memoized for performance
+  const formatUptime = useCallback((ms: number): string => {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -134,7 +164,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
     } else {
       return `${seconds}s`;
     }
-  };
+  }, []);
 
   // Auto-collapse after mode change
   useEffect(() => {
@@ -145,6 +175,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
       }, 3000);
       return () => clearTimeout(timer);
     }
+    return undefined; // Explicit return for when not transitioning
   }, [connection.isTransitioning]);
 
   return (
@@ -170,7 +201,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
         
         {/* Quality Bars */}
         <div className="flex gap-0.5">
-          {[1, 2, 3, 4].map((bar) => (
+          {[1, 2, 3, 4].map((bar: number) => (
             <div
               key={bar}
               className={clsx(
@@ -191,9 +222,9 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
         </span>
 
         {/* Latency Badge */}
-        {connection.metrics.latency > 0 && (
+        {connection?.metrics?.latency > 0 && (
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            {connection.metrics.latency}ms
+            {connection?.metrics?.latency}ms
           </span>
         )}
 
@@ -221,7 +252,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{qualityConfig.label}</span>
                 <div className="flex gap-0.5">
-                  {[1, 2, 3, 4].map((bar) => (
+                  {[1, 2, 3, 4].map((bar: number) => (
                     <div
                       key={bar}
                       className={clsx(
@@ -238,7 +269,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Latency</span>
               <span className="text-sm font-medium">
-                {connection.metrics.latency}ms
+                {connection?.metrics?.latency}ms
               </span>
             </div>
 
@@ -246,7 +277,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Uptime</span>
               <span className="text-sm font-medium">
-                {formatUptime(connection.metrics.uptime)}
+                {formatUptime(connection?.metrics?.uptime)}
               </span>
             </div>
 
@@ -254,7 +285,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Updates</span>
               <span className="text-sm font-medium">
-                {connection.metrics.dataUpdates}
+                {connection?.metrics?.dataUpdates}
               </span>
             </div>
 
@@ -262,16 +293,16 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Mode Changes</span>
               <span className="text-sm font-medium">
-                {connection.metrics.modeChanges}
+                {connection?.metrics?.modeChanges}
               </span>
             </div>
 
             {/* WebSocket Status */}
-            {connection.websocket.isConnected && (
+            {connection?.websocket?.isConnected && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Session</span>
                 <span className="text-xs font-mono">
-                  {connection.websocket.sessionId?.substring(0, 8)}...
+                  {connection?.websocket?.sessionId?.substring(0, 8)}...
                 </span>
               </div>
             )}
@@ -353,8 +384,8 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
                   dataVersion: connection.dataVersion,
                   metrics: connection.metrics,
                   websocket: {
-                    connected: connection.websocket.isConnected,
-                    connecting: connection.websocket.isConnecting
+                    connected: connection?.websocket?.isConnected,
+                    connecting: connection?.websocket?.isConnecting
                   }
                 }, null, 2)}
               </pre>

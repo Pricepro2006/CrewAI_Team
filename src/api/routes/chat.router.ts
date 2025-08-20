@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   router,
   publicProcedure,
@@ -11,6 +12,23 @@ import { EventEmitter } from "events";
 // Security schemas available via enhanced-router
 import { logger } from "../../utils/logger.js";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout.js";
+
+// Type definitions for better type safety
+interface ChatObserver {
+  next: (data: unknown) => void;
+  error?: (error: Error) => void;
+  complete?: () => void;
+}
+
+interface MasterOrchestrator {
+  llm?: {
+    generate: (prompt: string) => Promise<string | { response: string }>;
+  };
+}
+
+interface LLMResponse {
+  response?: string;
+}
 
 // Event emitter for real-time updates
 const chatEvents = new EventEmitter();
@@ -43,25 +61,25 @@ export const chatRouter = createFeatureRouter(
       .mutation(async ({ input, ctx }) => {
         logger.info("Creating new chat conversation", "CHAT", {
           userId: ctx.user?.id,
-          messageLength: input.message.length,
+          messageLength: input?.message?.length,
           priority: input.priority,
           requestId: ctx.requestId,
         });
-        const conversation = await ctx.conversationService.create();
+        const conversation = await ctx?.conversationService?.create();
 
         // Process the initial message
-        const result = await ctx.masterOrchestrator.processQuery({
+        const result = await ctx?.masterOrchestrator?.processQuery({
           text: input.message,
           conversationId: conversation.id,
         });
 
         // Add messages to conversation
-        await ctx.conversationService.addMessage(conversation.id, {
+        await ctx?.conversationService?.addMessage(conversation.id, {
           role: "user",
           content: input.message,
         });
 
-        await ctx.conversationService.addMessage(conversation.id, {
+        await ctx?.conversationService?.addMessage(conversation.id, {
           role: "assistant",
           content: result.summary,
         });
@@ -78,7 +96,7 @@ export const chatRouter = createFeatureRouter(
         logger.info("Chat conversation created successfully", "CHAT", {
           conversationId: conversation.id,
           userId: ctx.user?.id,
-          responseLength: result.summary.length,
+          responseLength: result?.summary?.length,
         });
 
         return {
@@ -104,10 +122,10 @@ export const chatRouter = createFeatureRouter(
         logger.info("Processing chat message", "CHAT", {
           conversationId: input.conversationId,
           userId: ctx.user?.id,
-          messageLength: input.message.length,
+          messageLength: input?.message?.length,
           requestId: ctx.requestId,
         });
-        const conversation = await ctx.conversationService.get(
+        const conversation = await ctx?.conversationService?.get(
           input.conversationId,
         );
 
@@ -116,20 +134,20 @@ export const chatRouter = createFeatureRouter(
         }
 
         // Add user message
-        await ctx.conversationService.addMessage(input.conversationId, {
+        await ctx?.conversationService?.addMessage(input.conversationId, {
           role: "user",
           content: input.message,
         });
 
         // Process with context
-        const result = await ctx.masterOrchestrator.processQuery({
+        const result = await ctx?.masterOrchestrator?.processQuery({
           text: input.message,
           conversationId: input.conversationId,
           history: conversation.messages,
         });
 
         // Add assistant response
-        await ctx.conversationService.addMessage(input.conversationId, {
+        await ctx?.conversationService?.addMessage(input.conversationId, {
           role: "assistant",
           content: result.summary,
         });
@@ -157,7 +175,7 @@ export const chatRouter = createFeatureRouter(
         }),
       )
       .query(async ({ input, ctx }) => {
-        const conversation = await ctx.conversationService.get(
+        const conversation = await ctx?.conversationService?.get(
           input.conversationId,
         );
 
@@ -177,7 +195,7 @@ export const chatRouter = createFeatureRouter(
         }),
       )
       .query(async ({ input, ctx }) => {
-        return await ctx.conversationService.list(input.limit, input.offset);
+        return await ctx?.conversationService?.list(input.limit, input.offset);
       }),
 
     // Delete a conversation
@@ -188,7 +206,7 @@ export const chatRouter = createFeatureRouter(
         }),
       )
       .mutation(async ({ input, ctx }) => {
-        await ctx.conversationService.delete(input.conversationId);
+        await ctx?.conversationService?.delete(input.conversationId);
         return { success: true };
       }),
 
@@ -200,7 +218,7 @@ export const chatRouter = createFeatureRouter(
         }),
       )
       .subscription(({ input }) => {
-        return observable((observer) => {
+        return observable((observer: ChatObserver) => {
           const handler = (data: {
             conversationId: string;
             message: unknown;
@@ -226,7 +244,7 @@ export const chatRouter = createFeatureRouter(
         }),
       )
       .mutation(async ({ input, ctx }) => {
-        const conversation = await ctx.conversationService.get(
+        const conversation = await ctx?.conversationService?.get(
           input.conversationId,
         );
 
@@ -235,7 +253,7 @@ export const chatRouter = createFeatureRouter(
         }
 
         // Use first few messages to generate title
-        const messages = conversation.messages.slice(0, 4);
+        const messages = conversation?.messages?.slice(0, 4);
         const context = messages
           .map(
             (m: { role: string; content: string }) => `${m.role}: ${m.content}`,
@@ -250,13 +268,30 @@ export const chatRouter = createFeatureRouter(
         Return only the title, no quotes or explanation.
       `;
 
-        const title = await withTimeout(
-          ctx.masterOrchestrator["llm"].generate(prompt),
+        // Type-safe LLM access with proper error handling
+        const orchestrator = ctx.masterOrchestrator as MasterOrchestrator | undefined;
+        if (!orchestrator?.llm?.generate) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "LLM service not available",
+          });
+        }
+        
+        const response = await withTimeout(
+          orchestrator.llm.generate(prompt),
           DEFAULT_TIMEOUTS.LLM_GENERATION,
           "Title generation timed out",
-        );
+        ).catch((error) => {
+          logger.error("LLM title generation failed", "CHAT", { error });
+          return "Untitled Chat";
+        });
 
-        await ctx.conversationService.updateTitle(
+        // Extract string from LLM response with validation
+        const title = typeof response === 'string' 
+          ? response.substring(0, 50).trim() 
+          : (response as LLMResponse)?.response?.substring(0, 50).trim() || 'Untitled Chat';
+
+        await ctx?.conversationService?.updateTitle(
           input.conversationId,
           title.trim(),
         );
@@ -279,14 +314,14 @@ export const chatRouter = createFeatureRouter(
           userId: ctx.user?.id,
         });
 
-        const results = await ctx.conversationService.search(
+        const results = await ctx?.conversationService?.search(
           input.query,
           input.limit,
         );
 
         logger.info("Search completed", "CHAT", {
           query: input.query,
-          resultsCount: results.length,
+          resultsCount: results?.length || 0,
         });
 
         return results;
@@ -301,7 +336,7 @@ export const chatRouter = createFeatureRouter(
         }),
       )
       .query(async ({ input, ctx }) => {
-        return await ctx.conversationService.getRecentConversations(
+        return await ctx?.conversationService?.getRecentConversations(
           input.days,
           input.limit,
         );
@@ -309,7 +344,7 @@ export const chatRouter = createFeatureRouter(
 
     // Get conversation statistics
     stats: publicProcedure.query(async ({ ctx }) => {
-      return await ctx.conversationService.getConversationStats();
+      return await ctx?.conversationService?.getConversationStats();
     }),
 
     // Export a single conversation
@@ -327,7 +362,7 @@ export const chatRouter = createFeatureRouter(
           userId: ctx.user?.id,
         });
 
-        const data = await ctx.conversationService.exportConversation(
+        const data = await ctx?.conversationService?.exportConversation(
           input.conversationId,
           input.format,
         );
@@ -353,7 +388,7 @@ export const chatRouter = createFeatureRouter(
           userId: ctx.user?.id,
         });
 
-        const data = await ctx.conversationService.exportAllConversations(
+        const data = await ctx?.conversationService?.exportAllConversations(
           input.format,
         );
 

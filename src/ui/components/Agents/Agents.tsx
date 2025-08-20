@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../../lib/trpc.js";
+import { trpc as api } from "../../utils/trpc";
 import "./Agents.css";
 
 interface AgentData {
@@ -44,7 +44,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <polyline
           points="16 18 22 12 16 6"
@@ -77,7 +77,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <path
           d="M18 20V10M12 20V4M6 20V14"
@@ -94,7 +94,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <path
           d="M14 2L18 6L7 17L3 17L3 13L14 2Z"
@@ -118,7 +118,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <path
           d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
@@ -158,11 +158,11 @@ const formatAgentName = (type: string): string => {
     .trim();
 };
 
-const mapCapabilitiesToExpertise = (capabilities: string[]): string[] => {
-  return capabilities.map((cap) =>
+const mapCapabilitiesToExpertise = (capabilities: string[] = []): string[] => {
+  return capabilities.map((cap: string) =>
     cap
       .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" "),
   );
 };
@@ -170,36 +170,42 @@ const mapCapabilitiesToExpertise = (capabilities: string[]): string[] => {
 export const Agents: React.FC = () => {
   const navigate = useNavigate();
 
-  // Fetch agents data from API
+  // Fetch agents data from API with proper null checking
+  const agentListQuery = (api as any).agent?.list?.useQuery?.();
   const {
     data: agentsData,
     isLoading,
     error,
-  } = (api.agent as any).list.useQuery();
+  } = agentListQuery || { data: undefined, isLoading: false, error: null };
 
   // Poll agent status every 5 seconds for real-time updates
-  const { data: agentStatus } = (api.agent as any).status.useQuery(undefined, {
+  const agentStatusQuery = (api as any).agent?.status?.useQuery?.(undefined, {
     refetchInterval: 5000, // Refresh every 5 seconds
     refetchIntervalInBackground: true,
   });
+  const { data: agentStatus } = agentStatusQuery || { data: undefined };
 
   // Transform API data to match our UI interface
   const agents: Agent[] = React.useMemo(() => {
     if (!agentsData) return [];
 
-    return agentsData.map((agent: AgentData) => {
+    // Handle the response structure - it contains an agents array
+    const agentsList = Array.isArray(agentsData) ? agentsData : agentsData?.agents || [];
+
+    return agentsList.map((agent: AgentData) => {
       // Check if this agent is currently active/busy
-      const isActive = agentStatus?.some(
-        (status: any) => status.type === agent.type && status.status === "busy",
+      const isActive = Array.isArray(agentStatus) && agentStatus.some(
+        (status: { type: string; status: string }) => 
+          status.type === agent.type && status.status === "busy",
       );
 
       return {
-        id: agent.type.toLowerCase().replace("agent", "-agent"),
-        name: formatAgentName(agent.type),
-        description: agent.description,
+        id: agent?.type?.toLowerCase().replace("agent", "-agent") || 'unknown-agent',
+        name: formatAgentName(agent.type || 'Unknown Agent'),
+        description: agent.description || 'No description available',
         expertise: mapCapabilitiesToExpertise(agent.capabilities),
-        icon: getAgentIcon(agent.type),
-        status: isActive ? "busy" : agent.available ? "online" : "offline",
+        icon: getAgentIcon(agent.type || ''),
+        status: isActive ? "busy" as const : agent.available ? "online" as const : "offline" as const,
       };
     });
   }, [agentsData, agentStatus]);
@@ -208,7 +214,7 @@ export const Agents: React.FC = () => {
     navigate("/chat");
   };
 
-  const getStatusColor = (status: Agent["status"]) => {
+  const getStatusColor = (status: Agent["status"]): string => {
     switch (status) {
       case "online":
         return "#10b981";
@@ -231,7 +237,7 @@ export const Agents: React.FC = () => {
         </div>
         <div className="agents-grid">
           {/* Loading skeleton */}
-          {[1, 2, 3, 4, 5].map((i) => (
+          {[1, 2, 3, 4, 5].map((i: number) => (
             <div key={i} className="agent-card" style={{ opacity: 0.5 }}>
               <div className="agent-card-header">
                 <div className="agent-icon">
@@ -290,7 +296,7 @@ export const Agents: React.FC = () => {
           </p>
           <button
             className="chat-with-all-button"
-            onClick={() => window.location.reload()}
+            onClick={() => window?.location?.reload()}
           >
             Retry
           </button>
@@ -329,7 +335,7 @@ export const Agents: React.FC = () => {
       </div>
 
       <div className="agents-grid">
-        {agents.map((agent) => (
+        {agents?.map((agent: Agent) => (
           <div key={agent.id} className="agent-card">
             <div className="agent-card-header">
               <div className="agent-icon">{agent.icon}</div>
@@ -343,7 +349,7 @@ export const Agents: React.FC = () => {
             <div className="agent-expertise">
               <h4 className="expertise-title">Expertise:</h4>
               <div className="expertise-tags">
-                {agent.expertise.map((skill, index) => (
+                {agent?.expertise?.map((skill: string, index: number) => (
                   <span key={index} className="expertise-tag">
                     {skill}
                   </span>

@@ -30,6 +30,13 @@ interface CSRFValidationResponse {
   error?: string;
 }
 
+interface HealthCheckResponse {
+  status: string;
+  responseTime: number;
+  timestamp?: string;
+  services?: Record<string, unknown>;
+}
+
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -45,15 +52,15 @@ async function testCSRFTokenFetch(): Promise<{ token: string; cookies: string[] 
     }
     
     const data = await response.json() as CSRFTokenResponse;
-    const cookies = response.headers.get('set-cookie')?.split(', ') || [];
+    const cookies = response?.headers?.get('set-cookie')?.split(', ') || [];
     
     console.log(`✅ CSRF token fetched successfully`);
-    console.log(`   Token length: ${data.token.length} characters`);
+    console.log(`   Token length: ${data?.token?.length} characters`);
     console.log(`   Expires in: ${data.expiresIn}ms`);
-    console.log(`   Cookies set: ${cookies.length}`);
+    console.log(`   Cookies set: ${cookies?.length || 0}`);
     
-    if (data.token.length !== 64) {
-      throw new Error(`Invalid token length: expected 64, got ${data.token.length}`);
+    if (data?.token?.length !== 64) {
+      throw new Error(`Invalid token length: expected 64, got ${data?.token?.length}`);
     }
     
     if (!cookies.some(cookie => cookie.includes('csrf-token'))) {
@@ -297,7 +304,7 @@ async function checkServerHealth(): Promise<void> {
       throw new Error(`Server health check failed: ${response.status}`);
     }
     
-    const health = await response.json();
+    const health = await response.json() as HealthCheckResponse;
     console.log('✅ Server is healthy');
     console.log(`   Status: ${health.status}`);
     console.log(`   Response time: ${health.responseTime}ms\n`);
@@ -322,7 +329,7 @@ async function main(): Promise<void> {
 
 // Run the tests if this script is executed directly
 if (require.main === module) {
-  main().catch((error) => {
+  main().catch((error: any) => {
     console.error('Fatal error:', error);
     process.exit(1);
   });

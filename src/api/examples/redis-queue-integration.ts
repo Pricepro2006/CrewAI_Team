@@ -58,22 +58,34 @@ export async function setupRedisQueueSystem(app?: Express): Promise<{
     cache: {
       memory: {
         maxSize: 75000, // Increased for grocery data
-        ttl: 300
+        ttl: 300,
+        checkInterval: 60000 // Check for expired items every minute
       },
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
-        ttl: 3600
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_CACHE_DB || '2'), // Separate DB for cache
+        ttl: 3600,
+        keyPrefix: 'grocery:',
+        maxRetries: 3
       },
       sqlite: {
         path: './data/grocery_cache.db',
-        ttl: 86400
+        ttl: 86400,
+        tableName: 'grocery_cache',
+        maxEntries: 2000000, // 2M entries for grocery data
+        cleanupInterval: 3600000 // Clean up every hour
       }
     },
     integration: {
       enablePricingCache: true,
       enableListCache: true,
+      pricingCacheTtl: 3600, // 1 hour for pricing
+      listCacheTtl: 1800, // 30 minutes for lists
+      enableCacheWarm: true,
       warmOnStartup: false,
+      cacheKeyPrefix: 'grocery:',
       invalidationStrategy: 'immediate'
     },
     monitoring: {
@@ -154,23 +166,23 @@ function setupEventMonitoring(
     console.log('🔗 Redis message queue connected');
   });
 
-  messageQueue.on('message:enqueued', (data) => {
+  messageQueue.on('message:enqueued', (data: any) => {
     console.log(`📤 Job enqueued: ${data.messageId} [${data.type}] in ${data.queueName}`);
   });
 
-  messageQueue.on('message:completed', (data) => {
+  messageQueue.on('message:completed', (data: any) => {
     console.log(`✅ Job completed: ${data.messageId} (${data.processingTime}ms)`);
   });
 
-  messageQueue.on('message:error', (data) => {
+  messageQueue.on('message:error', (data: any) => {
     console.error(`❌ Job error: ${data.messageId} - ${data.error?.message || 'Unknown error'}`);
   });
 
-  messageQueue.on('message:retry', (data) => {
+  messageQueue.on('message:retry', (data: any) => {
     console.warn(`🔄 Job retry: ${data.messageId} (attempt ${data.retryCount})`);
   });
 
-  messageQueue.on('message:dead_letter', (data) => {
+  messageQueue.on('message:dead_letter', (data: any) => {
     console.error(`💀 Job moved to dead letter queue: ${data.messageId} - ${data.error}`);
   });
 
@@ -183,44 +195,44 @@ function setupEventMonitoring(
     console.log('🛑 Grocery processing pipeline stopped');
   });
 
-  groceryPipeline.on('price:updated', (data) => {
-    console.log(`💰 Price updated: ${data.result.productId} in ${data.result.storeId} (${data.result.priceChange})`);
+  groceryPipeline.on('price:updated', (data: any) => {
+    console.log(`💰 Price updated: ${data?.result?.productId} in ${data?.result?.storeId} (${data?.result?.priceChange})`);
   });
 
-  groceryPipeline.on('inventory:updated', (data) => {
-    console.log(`📦 Inventory updated: ${data.result.productId} - ${data.result.inStock ? 'In Stock' : 'Out of Stock'}`);
+  groceryPipeline.on('inventory:updated', (data: any) => {
+    console.log(`📦 Inventory updated: ${data?.result?.productId} - ${data?.result?.inStock ? 'In Stock' : 'Out of Stock'}`);
   });
 
-  groceryPipeline.on('product:matched', (data) => {
-    console.log(`🔗 Product matched: confidence ${(data.result.confidence * 100).toFixed(1)}%`);
+  groceryPipeline.on('product:matched', (data: any) => {
+    console.log(`🔗 Product matched: confidence ${(data?.result?.confidence * 100).toFixed(1)}%`);
   });
 
-  groceryPipeline.on('deal:analyzed', (data) => {
-    console.log(`🎯 Deal analyzed: quality ${(data.result.quality * 100).toFixed(1)}%`);
+  groceryPipeline.on('deal:analyzed', (data: any) => {
+    console.log(`🎯 Deal analyzed: quality ${(data?.result?.quality * 100).toFixed(1)}%`);
   });
 
-  groceryPipeline.on('nutrition:fetched', (data) => {
-    console.log(`🥗 Nutrition data fetched: ${data.result.productId}`);
+  groceryPipeline.on('nutrition:fetched', (data: any) => {
+    console.log(`🥗 Nutrition data fetched: ${data?.result?.productId}`);
   });
 
-  groceryPipeline.on('reviews:analyzed', (data) => {
-    console.log(`⭐ Reviews analyzed: ${data.result.overallSentiment} sentiment`);
+  groceryPipeline.on('reviews:analyzed', (data: any) => {
+    console.log(`⭐ Reviews analyzed: ${data?.result?.overallSentiment} sentiment`);
   });
 
-  groceryPipeline.on('recommendations:generated', (data) => {
-    console.log(`🎁 Recommendations generated: ${data.result.recommendations.length} items for user ${data.result.userId}`);
+  groceryPipeline.on('recommendations:generated', (data: any) => {
+    console.log(`🎁 Recommendations generated: ${data?.result?.recommendations?.length || 0} items for user ${data?.result?.userId}`);
   });
 
   // Cache Manager Events
-  cacheManager.on('cache:hit', (data) => {
+  cacheManager.on('cache:hit', (data: any) => {
     console.log(`🎯 Cache hit: ${data.source} - ${data.tier} (${data.latency}ms)`);
   });
 
-  cacheManager.on('service:registered', (data) => {
+  cacheManager.on('service:registered', (data: any) => {
     console.log(`📋 Cache service registered: ${data.type}`);
   });
 
-  cacheManager.on('health:alert', (status) => {
+  cacheManager.on('health:alert', (status: any) => {
     console.warn(`⚠️  Cache health alert: ${status.status}`);
   });
 }
@@ -325,7 +337,7 @@ export async function demonstrateQueueOperations(
     const queueStats = await groceryPipeline.getQueueStats();
     for (const queue of queueStats) {
       console.log(`  ${queue.name}:`);
-      console.log(`    📋 Length: ${queue.length}`);
+      console.log(`    📋 Length: ${queue?.length || 0}`);
       console.log(`    🔄 Processing: ${queue.processing}`);
       console.log(`    ✅ Completed: ${queue.completed}`);
       console.log(`    ❌ Failed: ${queue.failed}`);
@@ -397,8 +409,8 @@ export async function performLoadTest(
   const jobIds = await Promise.all(promises);
   const submissionTime = Date.now() - startTime;
 
-  console.log(`📤 Submitted ${jobIds.length} jobs in ${submissionTime}ms`);
-  console.log(`⚡ Submission rate: ${(jobIds.length / (submissionTime / 1000)).toFixed(1)} jobs/sec`);
+  console.log(`📤 Submitted ${jobIds?.length || 0} jobs in ${submissionTime}ms`);
+  console.log(`⚡ Submission rate: ${(jobIds?.length || 0 / (submissionTime / 1000)).toFixed(1)} jobs/sec`);
 
   // Wait for processing
   console.log('⏳ Waiting for processing to complete...');
@@ -435,17 +447,17 @@ export async function setupProductionQueueSystem(): Promise<{
   const { messageQueue, groceryPipeline, cacheManager } = await setupRedisQueueSystem();
 
   // Production-specific event handlers
-  messageQueue.on('error', (error) => {
+  messageQueue.on('error', (error: any) => {
     console.error('[PROD] Queue error:', error);
     // Send to monitoring system
   });
 
-  groceryPipeline.on('job:failed', (data) => {
+  groceryPipeline.on('job:failed', (data: any) => {
     console.error('[PROD] Job failed:', data);
     // Send alert to operations team
   });
 
-  cacheManager.on('health:alert', (status) => {
+  cacheManager.on('health:alert', (status: any) => {
     console.warn('[PROD] Cache health issue:', status);
     // Send to monitoring system
   });

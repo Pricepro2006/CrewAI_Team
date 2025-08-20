@@ -14,7 +14,7 @@ export type GroceryWebSocketEventType =
 
 export interface GroceryWebSocketEvent {
   type: GroceryWebSocketEventType;
-  data: any;
+  data: unknown;
   timestamp: number;
   conversationId?: string;
   userId?: string;
@@ -46,11 +46,11 @@ export interface UseGroceryWebSocketReturn extends GroceryWebSocketState {
   subscribe: (events: GroceryWebSocketEventType[]) => void;
   unsubscribe: (events: GroceryWebSocketEventType[]) => void;
   clearEventHistory: () => void;
-  send: (message: any) => void;
+  send: (message: unknown) => void;
 }
 
 const WS_URL = process.env.NODE_ENV === 'production' 
-  ? `wss://${window.location.hostname}:8080/ws/walmart`
+  ? `wss://${window?.location?.hostname}:8080/ws/walmart`
   : `ws://localhost:8080/ws/walmart`;
 const MAX_EVENT_HISTORY = 50;
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
@@ -87,7 +87,7 @@ export function useGroceryWebSocket(
   const isMountedRef = useRef(true);
 
   // Log helper
-  const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: any) => {
+  const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: unknown) => {
     if (enableLogging) {
       logger[level](message, "GROCERY_WS", data);
     }
@@ -114,9 +114,9 @@ export function useGroceryWebSocket(
   }, [onEvent, log]);
 
   // Send message through WebSocket
-  const send = useCallback((message: any) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+  const send = useCallback((message: unknown) => {
+    if (wsRef.current && wsRef?.current?.readyState === WebSocket.OPEN) {
+      wsRef?.current?.send(JSON.stringify(message));
       log("Sent message", 'info', message);
     } else {
       log("WebSocket not connected, cannot send message", 'warn');
@@ -129,7 +129,7 @@ export function useGroceryWebSocket(
       return;
     }
 
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    if (wsRef.current && wsRef?.current?.readyState === WebSocket.OPEN) {
       log("WebSocket already connected", 'warn');
       return;
     }
@@ -162,14 +162,14 @@ export function useGroceryWebSocket(
             channels: [
               `grocery.conversation.${conversationId}`,
               `grocery.user.${userId || 'anonymous'}`,
-              "grocery.global.deals",
-              "grocery.global.prices"
+              "grocery?.global?.deals",
+              "grocery?.global?.prices"
             ]
           });
         }
       };
 
-      ws.onclose = (event) => {
+      ws.onclose = (event: unknown) => {
         if (!isMountedRef.current) return;
 
         log("WebSocket disconnected", 'warn', { code: event.code, reason: event.reason });
@@ -191,7 +191,7 @@ export function useGroceryWebSocket(
           isReconnectingRef.current = true;
           reconnectTimeoutRef.current = setTimeout(() => {
             if (isMountedRef.current) {
-              updateState(prev => ({ reconnectAttempts: prev.reconnectAttempts + 1 }));
+              setState(prev => ({ ...prev, reconnectAttempts: prev.reconnectAttempts + 1 }));
               connect();
             }
           }, delay);
@@ -203,17 +203,17 @@ export function useGroceryWebSocket(
         }
       };
 
-      ws.onerror = (event) => {
+      ws.onerror = (event: unknown) => {
         log("WebSocket error", 'error', event);
         const error = new Error("WebSocket connection error");
         updateState({ error });
         onError?.(error);
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: unknown) => {
         try {
           const parsed = JSON.parse(event.data);
-          if (parsed.type && (subscriptionsRef.current.size === 0 || subscriptionsRef.current.has(parsed.type))) {
+          if (parsed.type && (subscriptionsRef?.current?.size === 0 || subscriptionsRef?.current?.has(parsed.type))) {
             handleEvent({
               type: parsed.type,
               data: parsed.data,
@@ -260,7 +260,7 @@ export function useGroceryWebSocket(
     }
     
     if (wsRef.current) {
-      wsRef.current.close();
+      wsRef?.current?.close();
       wsRef.current = null;
     }
     
@@ -273,13 +273,13 @@ export function useGroceryWebSocket(
 
   // Subscribe to events
   const subscribe = useCallback((events: GroceryWebSocketEventType[]) => {
-    events.forEach(event => subscriptionsRef.current.add(event));
+    events.forEach(event => subscriptionsRef?.current?.add(event));
     log("Subscribed to events", 'info', events);
   }, [log]);
 
   // Unsubscribe from events
   const unsubscribe = useCallback((events: GroceryWebSocketEventType[]) => {
-    events.forEach(event => subscriptionsRef.current.delete(event));
+    events.forEach(event => subscriptionsRef?.current?.delete(event));
     log("Unsubscribed from events", 'info', events);
   }, [log]);
 

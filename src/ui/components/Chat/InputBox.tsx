@@ -33,7 +33,7 @@ export const InputBox: React.FC<InputBoxProps> = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
+    setMessage(e?.target?.value);
 
     // Auto-resize textarea
     if (textareaRef.current) {

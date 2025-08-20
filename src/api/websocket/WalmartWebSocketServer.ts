@@ -57,7 +57,7 @@ export class WalmartWebSocketServer extends EventEmitter {
       }
     });
 
-    this.wss.on("connection", (ws: WebSocket, req) => {
+    this?.wss?.on("connection", (ws: WebSocket, req) => {
       this.handleConnection(ws, req);
     });
 
@@ -78,7 +78,7 @@ export class WalmartWebSocketServer extends EventEmitter {
       isAlive: true
     };
 
-    this.clients.set(clientId, client);
+    this?.clients?.set(clientId, client);
     logger.info(`New WebSocket client connected: ${clientId}`, "WS_SERVER");
 
     // Send welcome message
@@ -111,12 +111,12 @@ export class WalmartWebSocketServer extends EventEmitter {
     // Handle client disconnect
     ws.on("close", () => {
       logger.info(`Client disconnected: ${clientId}`, "WS_SERVER");
-      this.clients.delete(clientId);
+      this?.clients?.delete(clientId);
     });
 
-    ws.on("error", (error) => {
+    ws.on("error", (error: any) => {
       logger.error(`WebSocket error for client ${clientId}: ${error}`, "WS_SERVER");
-      this.clients.delete(clientId);
+      this?.clients?.delete(clientId);
     });
   }
 
@@ -126,7 +126,7 @@ export class WalmartWebSocketServer extends EventEmitter {
   private handleClientMessage(client: WSClient, message: any) {
     switch (message.type) {
       case "auth":
-        client.userId = message.userId;
+        client.userId = message.userId || "";
         client.sessionId = message.sessionId;
         logger.info(`Client ${client.id} authenticated as user ${client.userId}`, "WS_SERVER");
         break;
@@ -161,8 +161,8 @@ export class WalmartWebSocketServer extends EventEmitter {
    * Send message to specific client
    */
   private sendToClient(client: WSClient, message: WSMessage) {
-    if (client.ws.readyState === WebSocket.OPEN) {
-      client.ws.send(JSON.stringify(message));
+    if (client?.ws?.readyState === WebSocket.OPEN) {
+      client?.ws?.send(JSON.stringify(message));
     }
   }
 
@@ -181,7 +181,7 @@ export class WalmartWebSocketServer extends EventEmitter {
    * Broadcast message to all connected clients
    */
   broadcast(message: WSMessage) {
-    this.clients.forEach(client => {
+    this?.clients?.forEach(client => {
       this.sendToClient(client, message);
     });
   }
@@ -190,7 +190,7 @@ export class WalmartWebSocketServer extends EventEmitter {
    * Send message to specific user
    */
   sendToUser(userId: string, message: WSMessage) {
-    this.clients.forEach(client => {
+    this?.clients?.forEach(client => {
       if (client.userId === userId) {
         this.sendToClient(client, message);
       }
@@ -201,7 +201,7 @@ export class WalmartWebSocketServer extends EventEmitter {
    * Send message to specific session
    */
   sendToSession(sessionId: string, message: WSMessage) {
-    this.clients.forEach(client => {
+    this?.clients?.forEach(client => {
       if (client.sessionId === sessionId) {
         this.sendToClient(client, message);
       }
@@ -244,7 +244,7 @@ export class WalmartWebSocketServer extends EventEmitter {
       type: "product_match",
       data: {
         products,
-        count: products.length
+        count: products?.length || 0
       },
       timestamp: new Date().toISOString(),
       sessionId
@@ -285,16 +285,16 @@ export class WalmartWebSocketServer extends EventEmitter {
    */
   private startHeartbeat() {
     this.heartbeatInterval = setInterval(() => {
-      this.clients.forEach((client, id) => {
+      this?.clients?.forEach((client, id) => {
         if (!client.isAlive) {
           logger.info(`Terminating inactive client: ${id}`, "WS_SERVER");
-          client.ws.terminate();
-          this.clients.delete(id);
+          client?.ws?.terminate();
+          this?.clients?.delete(id);
           return;
         }
 
         client.isAlive = false;
-        client.ws.ping();
+        client?.ws?.ping();
       });
     }, 30000); // 30 second heartbeat
   }
@@ -310,6 +310,36 @@ export class WalmartWebSocketServer extends EventEmitter {
   }
 
   /**
+   * Handle upgrade for WebSocket connections
+   */
+  handleUpgrade(request: any, socket: any, head: Buffer, callback?: (ws: WebSocket) => void): void {
+    logger.info('Handling WebSocket upgrade request', 'WS_SERVER', { 
+      url: request.url,
+      origin: request.headers.origin 
+    });
+
+    if (!this.wss) {
+      logger.error('WebSocket server not initialized', 'WS_SERVER');
+      socket.destroy();
+      return;
+    }
+
+    try {
+      this.wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
+        logger.info('WebSocket upgrade successful', 'WS_SERVER');
+        this.wss?.emit('connection', ws, request);
+        
+        if (callback) {
+          callback(ws);
+        }
+      });
+    } catch (error) {
+      logger.error('WebSocket upgrade failed', 'WS_SERVER', { error });
+      socket.destroy();
+    }
+  }
+
+  /**
    * Generate unique client ID
    */
   private generateClientId(): string {
@@ -320,7 +350,7 @@ export class WalmartWebSocketServer extends EventEmitter {
    * Get connected clients count
    */
   getClientCount(): number {
-    return this.clients.size;
+    return this?.clients?.size;
   }
 
   /**
@@ -332,14 +362,14 @@ export class WalmartWebSocketServer extends EventEmitter {
     this.stopHeartbeat();
     
     // Close all client connections
-    this.clients.forEach(client => {
-      client.ws.close(1000, "Server shutting down");
+    this?.clients?.forEach(client => {
+      client?.ws?.close(1000, "Server shutting down");
     });
     
-    this.clients.clear();
+    this?.clients?.clear();
     
     if (this.wss) {
-      this.wss.close();
+      this?.wss?.close();
       this.wss = null;
     }
   }

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
+    "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "strict": true,
@@ -10,7 +10,7 @@
     "downlevelIteration": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -26,7 +26,10 @@
       "@api/*": ["api/*"],
       "@ui/*": ["ui/*"],
       "@utils/*": ["utils/*"],
-      "@config/*": ["config/*"]
+      "@config/*": ["config/*"],
+      "@components/*": ["components/*"],
+      "@client/*": ["client/*"],
+      "@lib/*": ["lib/*"]
     },
     "types": ["node", "vite/client", "vitest/globals"],
     "allowJs": true,
@@ -41,7 +44,7 @@
     "exactOptionalPropertyTypes": false,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     "moduleDetection": "force",
     "allowImportingTsExtensions": false
   },

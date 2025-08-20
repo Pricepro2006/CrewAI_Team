@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { TRPCError } from "@trpc/server";
-import { jwtManager, JWTError } from "../utils/jwt.js";
+import { jwtManager, JWTError } from "../../utils/jwt.js";
 import { UserService } from "../services/UserService.js";
 import type { PublicUser } from "../../database/models/User.js";
 
@@ -32,15 +32,16 @@ export function authenticateJWT(
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
-): Response | void {
+): void {
   try {
     const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
 
     if (!token) {
-      return res.status(401).json({
+      res.status(401).json({
         error: "Access token required",
         code: "NO_TOKEN",
       });
+      return;
     }
 
     const decoded = jwtManager.verifyAccessToken(token);
@@ -50,17 +51,19 @@ export function authenticateJWT(
       const user = userService.getUserById(decoded.sub);
 
       if (!user) {
-        return res.status(401).json({
+        res.status(401).json({
           error: "User not found",
           code: "USER_NOT_FOUND",
         });
+        return;
       }
 
       if (!user.is_active) {
-        return res.status(401).json({
+        res.status(401).json({
           error: "Account deactivated",
           code: "ACCOUNT_DEACTIVATED",
         });
+        return;
       }
 
       // Remove sensitive data
@@ -68,20 +71,21 @@ export function authenticateJWT(
       req.user = publicUser;
       req.token = token;
 
-      return next();
+      next();
     } finally {
       userService.close();
     }
   } catch (error) {
     if (error instanceof JWTError) {
-      return res.status(401).json({
+      res.status(401).json({
         error: error.message,
         code: error.code,
       });
+      return;
     }
 
     console.error("Authentication error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       error: "Internal server error",
       code: "INTERNAL_ERROR",
     });
@@ -102,7 +106,8 @@ export function optionalAuthenticateJWT(
 
     if (!token) {
       req.user = undefined;
-      return next();
+      next();
+      return;
     }
 
     const decoded = jwtManager.verifyAccessToken(token);
@@ -117,14 +122,14 @@ export function optionalAuthenticateJWT(
         req.token = token;
       }
 
-      return next();
+      next();
     } finally {
       userService.close();
     }
   } catch (error) {
     // For optional auth, continue even if token is invalid
     req.user = undefined;
-    return next();
+    next();
   }
 }
 
@@ -136,24 +141,26 @@ export function requireRole(...roles: ("user" | "admin" | "moderator")[]) {
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction,
-  ): Response | void => {
+  ): void => {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         error: "Authentication required",
         code: "AUTH_REQUIRED",
       });
+      return;
     }
 
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
+    if (!roles.includes(req?.user?.role)) {
+      res.status(403).json({
         error: "Insufficient permissions",
         code: "INSUFFICIENT_PERMISSIONS",
         required: roles,
-        current: req.user.role,
+        current: req?.user?.role,
       });
+      return;
     }
 
-    return next();
+    next();
   };
 }
 
@@ -239,13 +246,13 @@ export function createTRPCRoleMiddleware(
       });
     }
 
-    if (!roles.includes(ctx.user.role)) {
+    if (!roles.includes(ctx?.user?.role)) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Insufficient permissions",
         cause: {
           required: roles,
-          current: ctx.user.role,
+          current: ctx?.user?.role,
         },
       });
     }
@@ -269,7 +276,7 @@ export function getUserIdFromContext(ctx: { user?: { id?: string } }): string {
       message: "User ID not found in context",
     });
   }
-  return ctx.user.id;
+  return ctx?.user?.id;
 }
 
 /**
@@ -294,7 +301,7 @@ export function createAuthRateLimit() {
   const maxAttempts = 5;
   const windowMs = 15 * 60 * 1000; // 15 minutes
 
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const key = req.ip || "unknown";
     const now = Date.now();
 
@@ -302,18 +309,19 @@ export function createAuthRateLimit() {
 
     if (current && now < current.resetAt) {
       if (current.count >= maxAttempts) {
-        return res.status(429).json({
+        res.status(429).json({
           error: "Too many authentication attempts",
           code: "RATE_LIMITED",
           retryAfter: Math.ceil((current.resetAt - now) / 1000),
         });
+        return;
       }
       current.count++;
     } else {
       attempts.set(key, { count: 1, resetAt: now + windowMs });
     }
 
-    return next();
+    next();
   };
 }
 

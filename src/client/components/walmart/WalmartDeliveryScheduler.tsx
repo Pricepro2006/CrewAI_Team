@@ -143,7 +143,7 @@ const DaySchedule: React.FC<{
           {dayName}, {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {slots.map(slot => (
+          {slots?.map(slot => (
             <Button
               key={slot.id}
               variant={selectedSlot === slot.id ? 'default' : 'outline'}
@@ -187,8 +187,8 @@ const DaySchedule: React.FC<{
       </div>
       
       <div className="grid gap-2">
-        {slots.map(slot => {
-          const Icon = slot.icon;
+        {slots?.map(slot => {
+          const Icon = slot?.icon;
           
           return (
             <button
@@ -308,7 +308,7 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
   
   const selectedTimeSlot = useMemo(() => {
     for (const day of weekSlots) {
-      const slot = day.slots.find(s => s.id === selectedSlot);
+      const slot = day?.slots?.find(s => s.id === selectedSlot);
       if (slot) return { date: day.date, slot };
     }
     return null;
@@ -323,9 +323,9 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
     if (selectedTimeSlot && onScheduleDelivery) {
       const deliverySlot: DeliverySlot = {
         id: `slot-${Date.now()}`,
-        date: selectedTimeSlot.date.toISOString().split('T')[0] || '', // Convert Date to string
-        start_time: selectedTimeSlot.slot.startTime,
-        end_time: selectedTimeSlot.slot.endTime,
+        date: selectedTimeSlot?.date?.toISOString().split('T')[0] || '', // Convert Date to string
+        start_time: selectedTimeSlot?.slot?.startTime,
+        end_time: selectedTimeSlot?.slot?.endTime,
         available: true,
         price: finalDeliveryFee,
         capacity: 100,
@@ -390,15 +390,15 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
           {selectedTimeSlot && (
             <div className="p-3 bg-primary/5 rounded-lg">
               <p className="text-sm font-medium">
-                {selectedTimeSlot.date.toLocaleDateString('en-US', { 
+                {selectedTimeSlot?.date?.toLocaleDateString('en-US', { 
                   weekday: 'short', 
                   month: 'short', 
                   day: 'numeric' 
                 })}
               </p>
               <p className="text-sm text-muted-foreground">
-                {selectedTimeSlot.slot.startTime}
-                {selectedTimeSlot.slot.endTime && ` - ${selectedTimeSlot.slot.endTime}`}
+                {selectedTimeSlot?.slot?.startTime}
+                {selectedTimeSlot?.slot?.endTime && ` - ${selectedTimeSlot?.slot?.endTime}`}
               </p>
               <p className="text-sm font-medium mt-1">
                 {finalDeliveryFee === 0 ? 'FREE' : formatPrice(finalDeliveryFee)}
@@ -529,7 +529,7 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
           
           {/* Time Slots Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {weekSlots.map(({ date, slots }) => (
+            {weekSlots?.map(({ date, slots }) => (
               <DaySchedule
                 key={date.toISOString()}
                 date={date}
@@ -576,15 +576,15 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">
-                    {selectedTimeSlot.date.toLocaleDateString('en-US', { 
+                    {selectedTimeSlot?.date?.toLocaleDateString('en-US', { 
                       weekday: 'long', 
                       month: 'long', 
                       day: 'numeric' 
                     })}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {selectedTimeSlot.slot.startTime}
-                    {selectedTimeSlot.slot.endTime && ` - ${selectedTimeSlot.slot.endTime}`}
+                    {selectedTimeSlot?.slot?.startTime}
+                    {selectedTimeSlot?.slot?.endTime && ` - ${selectedTimeSlot?.slot?.endTime}`}
                   </p>
                 </div>
                 <div className="text-right">
@@ -638,7 +638,7 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
           <div className="space-y-3">
             <RadioGroup 
               value={typeof selectedAddress === 'string' ? selectedAddress : JSON.stringify(selectedAddress)} 
-              onValueChange={(value) => {
+              onValueChange={(value: any) => {
                 try {
                   const parsed = JSON.parse(value);
                   setSelectedAddress(parsed);

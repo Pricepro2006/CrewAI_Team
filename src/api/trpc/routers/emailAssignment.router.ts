@@ -23,7 +23,7 @@ export const emailAssignmentRouter = router({
    * Get all team members
    */
   getTeamMembers: publicProcedure.query(async () => {
-    return TEAM_MEMBERS.map((member) => ({
+    return TEAM_MEMBERS?.map((member: any) => ({
       id: member.id,
       name: member.name,
       email: member.email,
@@ -172,10 +172,10 @@ export const emailAssignmentRouter = router({
           action: "bulk_assigned",
           userId: ctx.user?.id || "system",
           details: {
-            emailCount: updatedEmails.length,
+            emailCount: updatedEmails?.length || 0,
             assignedTo: assignedTo || null,
             assigneeName,
-            errors: errors.length > 0 ? errors : undefined,
+            errors: errors?.length || 0 > 0 ? errors : undefined,
           },
           timestamp: new Date().toISOString(),
         });
@@ -207,7 +207,7 @@ export const emailAssignmentRouter = router({
       return {
         emailId,
         emailAlias: email.email_alias,
-        suggestions: suggestions.map((member) => ({
+        suggestions: suggestions?.map((member: any) => ({
           id: member.id,
           name: member.name,
           email: member.email,

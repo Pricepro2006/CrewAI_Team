@@ -29,7 +29,7 @@ async function testSimpleQuery() {
         }
       });
       
-      console.log(`Response: ${response.data.response}\n`);
+      console.log(`Response: ${response?.data?.response}\n`);
     } catch (error: any) {
       console.error(`Error: ${error.message}\n`);
     }

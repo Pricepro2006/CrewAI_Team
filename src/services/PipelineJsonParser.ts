@@ -26,7 +26,7 @@ export class PipelineJsonParser {
    */
   parseLlamaAnalysis(jsonStr: string | null): Partial<LlamaAnalysisData> {
     if (!jsonStr) {
-      this.logger.debug("No Llama analysis JSON provided, returning defaults");
+      this?.logger?.debug("No Llama analysis JSON provided, returning defaults");
       return this.getDefaultLlamaAnalysis();
     }
 
@@ -34,15 +34,15 @@ export class PipelineJsonParser {
       const parsed = JSON.parse(jsonStr);
       const validated = this.validateLlamaAnalysis(parsed);
 
-      if (validated.errors.length > 0) {
-        this.logger.warn(
-          `Llama analysis validation warnings - warnings: ${validated.warnings.join(", ")}, errors: ${validated.errors.join(", ")}`,
+      if (validated?.errors?.length > 0) {
+        this?.logger?.warn(
+          `Llama analysis validation warnings - warnings: ${validated?.warnings?.join(", ")}, errors: ${validated?.errors?.join(", ")}`,
         );
       }
 
       return this.normalizeLlamaAnalysis(parsed);
     } catch (error) {
-      this.logger.error(
+      this?.logger?.error(
         `Failed to parse Llama analysis JSON - error: ${error instanceof Error ? error.message : "Unknown error"}, jsonPreview: ${jsonStr.substring(0, 100)}`,
       );
       return this.getDefaultLlamaAnalysis();
@@ -54,7 +54,7 @@ export class PipelineJsonParser {
    */
   parsePhi4Analysis(jsonStr: string | null): Partial<Phi4AnalysisData> {
     if (!jsonStr) {
-      this.logger.debug("No Phi4 analysis JSON provided, returning defaults");
+      this?.logger?.debug("No Phi4 analysis JSON provided, returning defaults");
       return this.getDefaultPhi4Analysis();
     }
 
@@ -62,15 +62,15 @@ export class PipelineJsonParser {
       const parsed = JSON.parse(jsonStr);
       const validated = this.validatePhi4Analysis(parsed);
 
-      if (validated.errors.length > 0) {
-        this.logger.warn(
-          `Phi4 analysis validation warnings - warnings: ${validated.warnings.join(", ")}, errors: ${validated.errors.join(", ")}`,
+      if (validated?.errors?.length > 0) {
+        this?.logger?.warn(
+          `Phi4 analysis validation warnings - warnings: ${validated?.warnings?.join(", ")}, errors: ${validated?.errors?.join(", ")}`,
         );
       }
 
       return this.normalizePhi4Analysis(parsed);
     } catch (error) {
-      this.logger.error(
+      this?.logger?.error(
         `Failed to parse Phi4 analysis JSON - error: ${error instanceof Error ? error.message : "Unknown error"}, jsonPreview: ${jsonStr.substring(0, 100)}`,
       );
       return this.getDefaultPhi4Analysis();
@@ -100,7 +100,7 @@ export class PipelineJsonParser {
   /**
    * Map workflow state string to enum
    */
-  mapWorkflowState(state: string | undefined): WorkflowState {
+  mapWorkflowState(state: string): WorkflowState {
     const stateMap: Record<string, WorkflowState> = {
       new: "NEW",
       start_point: "NEW",
@@ -130,7 +130,7 @@ export class PipelineJsonParser {
   /**
    * Map business process string to enum
    */
-  mapBusinessProcess(process: string | undefined): BusinessProcess {
+  mapBusinessProcess(process: string): BusinessProcess {
     const processMap: Record<string, BusinessProcess> = {
       "order management": "Order Management",
       order: "Order Management",
@@ -156,8 +156,8 @@ export class PipelineJsonParser {
     if (!Array.isArray(items)) return [];
 
     return items
-      .filter((item) => item !== null && item !== undefined && typeof item === "object")
-      .map((item) => {
+      .filter((item: any) => item !== null && item !== undefined && typeof item === "object")
+      .map((item: any) => {
         const itemObj = item as any;
         return {
           task: String(itemObj.task || itemObj.description || ""),
@@ -167,7 +167,7 @@ export class PipelineJsonParser {
           status: "Pending" as const,
         };
       })
-      .filter((item) => item.task.length > 0);
+      .filter((item: any) => item?.task?.length > 0);
   }
 
   /**
@@ -319,13 +319,13 @@ export class PipelineJsonParser {
     if (!Array.isArray(items)) return [];
 
     return items
-      .map((item) => ({
+      .map((item: any) => ({
         task: String(item.task || item.description || ""),
         priority: String(item.priority || "Medium"),
         deadline: item.deadline,
         owner: item.owner,
       }))
-      .filter((item) => item.task.length > 0);
+      .filter((item: any) => item?.task?.length > 0);
   }
 
   private normalizeBusinessImpact(
@@ -349,7 +349,7 @@ export class PipelineJsonParser {
   private normalizeArray(arr: unknown): string[] {
     if (!arr) return [];
     if (!Array.isArray(arr)) return [String(arr)];
-    return arr.map((item) => String(item)).filter((item) => item.length > 0);
+    return arr?.map((item: any) => String(item)).filter((item: any) => item?.length || 0 > 0);
   }
 
   private normalizeQualityScore(score: unknown): number {
@@ -393,7 +393,7 @@ export class PipelineJsonParser {
 
     // Return as string if valid
     const str = String(deadline).trim();
-    return str.length > 0 ? str : undefined;
+    return str?.length || 0 > 0 ? str : undefined;
   }
 
   private parseCustomerSatisfaction(

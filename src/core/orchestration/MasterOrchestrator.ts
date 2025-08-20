@@ -63,19 +63,19 @@ export class MasterOrchestrator {
     const startTime = Date.now();
 
     // Check cache first
-    if (this.config.enableCaching) {
+    if (this.config?.enableCaching) {
       const cacheKey = this.getCacheKey(query);
-      const cached = this.cache.get(cacheKey);
+      const cached = this.cache?.get(cacheKey);
       if (cached) {
         logger.info("Returning cached result", "ORCHESTRATOR", {
-          query: query.text.substring(0, 50),
+          query: query?.text?.substring(0, 50),
         });
         return cached;
       }
     }
 
     logger.info("Processing query", "ORCHESTRATOR", {
-      text: query.text.substring(0, 100),
+      text: query?.text?.substring(0, 100),
       metadata: query.metadata,
       priority: query.priority,
     });
@@ -92,16 +92,21 @@ export class MasterOrchestrator {
       const result = await this.executeQuery(query);
 
       // Cache the result
-      if (this.config.enableCaching) {
+      if (this.config?.enableCaching) {
         const cacheKey = this.getCacheKey(query);
         this.cache.set(cacheKey, result);
 
-        // Limit cache size
-        if (this.cache.size > 1000) {
-          const firstKey = this.cache.keys().next().value;
-          if (firstKey) {
-            this.cache.delete(firstKey);
+        // Limit cache size with error handling
+        try {
+          if (this.cache.size > 1000) {
+            const firstKey = this.cache.keys().next().value;
+            if (firstKey) {
+              this.cache.delete(firstKey);
+            }
           }
+        } catch (cacheError) {
+          logger.warn("Cache size limiting failed", "ORCHESTRATOR", { error: cacheError });
+          // Continue execution - cache management failure shouldn't break processing
         }
       }
 
@@ -144,7 +149,7 @@ export class MasterOrchestrator {
    */
   private async generateEmbedding(query: Query): Promise<QueryResult> {
     // Simulate embedding generation
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve: any) => setTimeout(resolve, 100));
 
     const dimension = query.metadata?.dimension || 384;
     const embedding = Array.from(
@@ -165,7 +170,7 @@ export class MasterOrchestrator {
    */
   private async generateRecommendation(query: Query): Promise<QueryResult> {
     // Simulate recommendation generation
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve: any) => setTimeout(resolve, 200));
 
     const context = query.metadata?.context || {};
     const recommendations = [
@@ -180,7 +185,7 @@ export class MasterOrchestrator {
       confidence: 0.85,
       processingTime: 0,
       metadata: {
-        recommendationCount: recommendations.length,
+        recommendationCount: recommendations?.length ?? 0,
         context,
       },
     };
@@ -191,11 +196,11 @@ export class MasterOrchestrator {
    */
   private async performAnalysis(query: Query): Promise<QueryResult> {
     // Simulate analysis
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve: any) => setTimeout(resolve, 300));
 
     const searchResults = query.metadata?.searchResults || [];
     const analysis = {
-      totalProducts: searchResults.length,
+      totalProducts: searchResults?.length || 0,
       priceRange: this.analyzePriceRange(searchResults),
       topBrands: this.analyzeTopBrands(searchResults),
       recommendations: "Consider filtering by price range for better results",
@@ -203,7 +208,7 @@ export class MasterOrchestrator {
 
     return {
       response: JSON.stringify(analysis),
-      summary: `Analyzed ${searchResults.length} products with price range ${analysis.priceRange}`,
+      summary: `Analyzed ${searchResults?.length || 0} products with price range ${analysis.priceRange}`,
       confidence: 0.9,
       processingTime: 0,
       metadata: analysis,
@@ -215,7 +220,7 @@ export class MasterOrchestrator {
    */
   private async generalProcessing(query: Query): Promise<QueryResult> {
     // Simulate general processing
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await new Promise((resolve: any) => setTimeout(resolve, 150));
 
     return {
       response: `Processed query: ${query.text}`,
@@ -230,13 +235,13 @@ export class MasterOrchestrator {
    * Helper: Analyze price range
    */
   private analyzePriceRange(products: any[]): string {
-    if (!products.length) return "N/A";
+    if (!products?.length) return "N/A";
 
     const prices = products
-      .map((p) => p.price || p.current_price || 0)
-      .filter((price) => price > 0);
+      .map((p: any) => p.price || p.current_price || 0)
+      .filter((price: any) => price > 0);
 
-    if (!prices.length) return "N/A";
+    if (!prices?.length) return "N/A";
 
     const min = Math.min(...prices);
     const max = Math.max(...prices);
@@ -250,7 +255,7 @@ export class MasterOrchestrator {
   private analyzeTopBrands(products: any[]): string[] {
     const brandCounts = new Map<string, number>();
 
-    products.forEach((product) => {
+    products.forEach((product: any) => {
       const brand = product.brand || "Unknown";
       brandCounts.set(brand, (brandCounts.get(brand) || 0) + 1);
     });

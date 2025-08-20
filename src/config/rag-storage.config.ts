@@ -36,7 +36,7 @@ export const ragStorageConfig = {
       ragStorageConfig.scrapedContent,
       ragStorageConfig.capturedKnowledge,
       ragStorageConfig.learnedPatterns,
-      ragStorageConfig.databases.chromadb
+      ragStorageConfig?.databases?.chromadb
     ];
     
     // This will be validated at runtime

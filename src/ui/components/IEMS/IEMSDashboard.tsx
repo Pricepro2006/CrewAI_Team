@@ -69,7 +69,7 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
   // Manual refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    setRefreshKey((prev) => prev + 1);
+    setRefreshKey((prev: any) => prev + 1);
     await refetch();
     setTimeout(() => setIsRefreshing(false), 500);
   };

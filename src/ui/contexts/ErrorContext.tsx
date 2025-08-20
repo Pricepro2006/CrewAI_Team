@@ -6,9 +6,9 @@ import React, {
   useRef,
 } from "react";
 import type { ReactNode } from "react";
-import { toast } from "../components/Toast/useToast";
-import { errorLogger } from "../utils/errorLogger";
-import { translateError } from "../utils/errorTranslator";
+import { toast } from "../components/Toast/useToast.js";
+import { errorLogger } from "../utils/errorLogger.js";
+import { translateError } from "../utils/errorTranslator.js";
 
 export interface ErrorInfo {
   id: string;
@@ -76,10 +76,10 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
 
     const interval = setInterval(() => {
       const now = new Date();
-      setErrors((prev) =>
-        prev.filter(
-          (error) =>
-            now.getTime() - error.timestamp.getTime() < cleanupInterval
+      setErrors((prev: ErrorInfo[]) =>
+        prev?.filter(
+          (error: ErrorInfo[]) =>
+            now.getTime() - error?.timestamp?.getTime() < cleanupInterval
         )
       );
     }, cleanupInterval);
@@ -105,11 +105,11 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
 
       // Store retry action if provided
       if (options.retryAction) {
-        retryActionsRef.current.set(errorInfo.id, options.retryAction);
+        retryActionsRef?.current?.set(errorInfo.id, options.retryAction);
       }
 
       // Add to state (limit max errors)
-      setErrors((prev) => {
+      setErrors((prev: ErrorInfo[]) => {
         const newErrors = [errorInfo, ...prev].slice(0, maxErrors);
         return newErrors;
       });
@@ -151,21 +151,21 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
   );
 
   const removeError = useCallback((id: string) => {
-    setErrors((prev) => prev.filter((error) => error.id !== id));
-    retryActionsRef.current.delete(id);
+    setErrors((prev: ErrorInfo[]) => prev?.filter((error: ErrorInfo[]) => error.id !== id));
+    retryActionsRef?.current?.delete(id);
   }, []);
 
   const clearErrors = useCallback(() => {
     setErrors([]);
-    retryActionsRef.current.clear();
+    retryActionsRef?.current?.clear();
   }, []);
 
   const retryError = useCallback(
     async (id: string) => {
-      const errorInfo = errors.find((e) => e.id === id);
+      const errorInfo = errors.find((e: ErrorInfo[]) => e.id === id);
       if (!errorInfo) return;
 
-      const retryAction = retryActionsRef.current.get(id);
+      const retryAction = retryActionsRef?.current?.get(id);
       if (!retryAction) {
         console.warn(`No retry action found for error ${id}`);
         return;
@@ -173,8 +173,8 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
 
       try {
         // Update retry count
-        setErrors((prev) =>
-          prev.map((e) =>
+        setErrors((prev: ErrorInfo[]) =>
+          prev?.map((e: ErrorInfo[]) =>
             e.id === id ? { ...e, retryCount: (e.retryCount || 0) + 1 } : e
           )
         );
@@ -188,8 +188,8 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
         // Update error with new failure
         const newError = retryError instanceof Error ? retryError : new Error(String(retryError));
         
-        setErrors((prev) =>
-          prev.map((e) =>
+        setErrors((prev: ErrorInfo[]) =>
+          prev?.map((e: ErrorInfo[]) =>
             e.id === id
               ? {
                   ...e,
@@ -208,11 +208,11 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
   );
 
   const getErrorById = useCallback(
-    (id: string) => errors.find((e) => e.id === id),
+    (id: string) => errors.find((e: ErrorInfo[]) => e.id === id),
     [errors]
   );
 
-  const criticalError = errors.find((e) => e.severity === "critical") || null;
+  const criticalError = errors.find((e: ErrorInfo[]) => e.severity === "critical") || null;
 
   const value: ErrorContextValue = {
     errors,
@@ -221,7 +221,7 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
     clearErrors,
     retryError,
     getErrorById,
-    hasErrors: errors.length > 0,
+    hasErrors: (errors?.length || 0) > 0,
     criticalError,
   };
 

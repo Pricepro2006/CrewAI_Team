@@ -127,7 +127,8 @@ async function startOllamaService(): Promise<void> {
 
       let isResolved = false;
 
-      ollamaProcess.stdout?.on('data', (data) => {
+      ollamaProcess.stdout?.on('data', (data: any) => {
+        if (!data) return;
         const output = data.toString();
         logger.debug('Ollama stdout:', output);
         
@@ -140,24 +141,25 @@ async function startOllamaService(): Promise<void> {
         }
       });
 
-      ollamaProcess.stderr?.on('data', (data) => {
+      ollamaProcess.stderr?.on('data', (data: any) => {
+        if (!data) return;
         const error = data.toString();
         logger.debug('Ollama stderr:', error);
         
         // Don't treat all stderr as errors, some are just info logs
         if (error.includes('error') || error.includes('failed')) {
-          logger.warn('Ollama error output:', error);
+          logger.warn('Ollama error output:', error as string);
         }
       });
 
-      ollamaProcess.on('error', (error) => {
+      ollamaProcess.on('error', (error: any) => {
         if (!isResolved) {
           isResolved = true;
           reject(new Error(`Failed to start Ollama: ${error.message}`));
         }
       });
 
-      ollamaProcess.on('exit', (code) => {
+      ollamaProcess.on('exit', (code: any) => {
         if (!isResolved && code !== 0) {
           isResolved = true;
           reject(new Error(`Ollama exited with code ${code}`));
@@ -213,14 +215,15 @@ async function ensureTestModelsAvailable(): Promise<void> {
     // Check available models
     const response = await fetch(`${ollamaUrl}/api/tags`);
     const data = await response.json() as { models?: Array<{ name: string }> };
-    const availableModels = data.models?.map((m) => m.name) || [];
+    const availableModels = data.models?.map((m: any) => m.name) || [];
     
-    logger.info('Available models:', availableModels);
+    logger.info('Available models:', availableModels.join(', '));
     
     // Check if primary test model is available
-    const primaryModelAvailable = availableModels.some((name: string) => 
-      name.includes(TEST_MODELS.primary.split(':')[0])
-    );
+    const primaryModelAvailable = availableModels.some((name: string) => {
+      const modelBase = TEST_MODELS.primary.split(':')[0] || TEST_MODELS.primary;
+      return name.includes(modelBase);
+    });
     
     if (!primaryModelAvailable) {
       logger.warn(`Primary test model ${TEST_MODELS.primary} not available`);
@@ -235,7 +238,8 @@ async function ensureTestModelsAvailable(): Promise<void> {
       
       let foundModel = null;
       for (const model of alternativeModels) {
-        if (availableModels.some((name: string) => name.includes(model.split(':')[0]))) {
+        const modelBase = model.split(':')[0] || model;
+        if (availableModels.some((name: string) => name.includes(modelBase))) {
           foundModel = model;
           break;
         }
@@ -265,11 +269,12 @@ export async function ensureModelAvailable(modelName: string): Promise<boolean> 
     // Check if model is already available
     const response = await fetch(`${ollamaUrl}/api/tags`);
     const data = await response.json() as { models?: Array<{ name: string }> };
-    const availableModels = data.models?.map((m) => m.name) || [];
+    const availableModels = data.models?.map((m: any) => m.name) || [];
     
-    const isAvailable = availableModels.some((name: string) => 
-      name === modelName || name.startsWith((modelName || '').split(':')[0])
-    );
+    const isAvailable = availableModels.some((name: string) => {
+      const modelBase = modelName.split(':')[0] || modelName;
+      return name === modelName || name.startsWith(modelBase);
+    });
     
     if (isAvailable) {
       return true;
@@ -298,6 +303,8 @@ export async function ensureModelAvailable(modelName: string): Promise<boolean> 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        
+        if (!value) continue;
         
         const chunk = new TextDecoder().decode(value);
         try {
