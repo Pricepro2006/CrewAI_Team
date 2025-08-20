@@ -4,7 +4,8 @@
  */
 
 import { z } from 'zod';
-import { router, publicProcedure, protectedProcedure } from '../trpc.js';
+import { router, publicProcedure, protectedProcedure } from '../trpc/router.js';
+import type { Context } from '../trpc/context.js';
 import { TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
@@ -39,13 +40,20 @@ const BatchGetProductsSchema = z.object({
   productIds: z.array(z.string()).min(1).max(20)
 });
 
+// Type definitions for better type safety
+type GetProductInput = z.infer<typeof GetProductSchema>;
+type SearchProductsInput = z.infer<typeof SearchProductsSchema>;
+type SubscribeToUpdatesInput = z.infer<typeof SubscribeToUpdatesSchema>;
+type GetOrderHistoryInput = z.infer<typeof GetOrderHistorySchema>;
+type BatchGetProductsInput = z.infer<typeof BatchGetProductsSchema>;
+
 export const walmartRealTimeRouter = router({
   /**
    * Get real-time product data
    */
   getProduct: publicProcedure
     .input(GetProductSchema)
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: GetProductInput; ctx: Context }) => {
       try {
         logger.info('Fetching real-time product data', 'WALMART_RT_API', { 
           productId: input.productId 
@@ -81,16 +89,16 @@ export const walmartRealTimeRouter = router({
    */
   batchGetProducts: publicProcedure
     .input(BatchGetProductsSchema)
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: BatchGetProductsInput; ctx: Context }) => {
       try {
         logger.info('Batch fetching products', 'WALMART_RT_API', {
           count: input.productIds.length
         });
 
         const products = await Promise.all(
-          input.productIds.map(id => 
+          input.productIds.map((id: string) => 
             walmartRealTimeAPI.getProductRealTime(id)
-              .catch(err => {
+              .catch((err: any) => {
                 logger.debug(`Failed to fetch ${id}`, 'WALMART_RT_API', { err });
                 return null;
               })
@@ -99,7 +107,7 @@ export const walmartRealTimeRouter = router({
 
         // Filter out nulls and create result map
         const result: Record<string, any> = {};
-        input.productIds.forEach((id, index) => {
+        input.productIds.forEach((id: string, index: number) => {
           result[id] = products[index];
         });
 
@@ -120,7 +128,7 @@ export const walmartRealTimeRouter = router({
    */
   searchProducts: publicProcedure
     .input(SearchProductsSchema)
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: SearchProductsInput; ctx: Context }) => {
       try {
         logger.info('Searching products with real-time prices', 'WALMART_RT_API', {
           query: input.query,
@@ -149,51 +157,60 @@ export const walmartRealTimeRouter = router({
     }),
 
   /**
-   * Subscribe to live price updates (WebSocket)
+   * Subscribe to real-time price updates
+   * Note: This is a subscription endpoint that pushes updates via WebSocket
    */
   subscribeToPriceUpdates: protectedProcedure
     .input(SubscribeToUpdatesSchema)
-    .subscription(({ input, ctx }) => {
-      return observable((emit) => {
-        const userId = ctx.user?.id || 'anonymous';
+    .subscription(({ input, ctx }: { input: SubscribeToUpdatesInput; ctx: Context }) => {
+      return observable<any>((emit) => {
+        const userId = ctx.user?.id;
         
-        logger.info('Creating price update subscription', 'WALMART_RT_API', {
+        if (!userId) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'User not authenticated'
+          });
+        }
+
+        logger.info('Setting up price update subscription', 'WALMART_RT_API', {
           userId,
           productIds: input.productIds,
           interval: input.intervalMs
         });
 
-        // Create subscription with callback
+        // Set up subscription
         const subscriptionId = walmartRealTimeAPI.subscribeToPriceUpdates(
           userId,
           input.productIds,
           (update) => {
-            emit.next({
-              type: 'price_update',
-              data: update
-            });
+            emit.next(update);
           },
           input.intervalMs
         );
 
-        // Handle cleanup on unsubscribe
+        // Track subscription
+        ctx.metrics?.increment('walmart.realtime.subscriptions');
+
+        // Return cleanup function
         return () => {
-          logger.info('Removing price subscription', 'WALMART_RT_API', {
+          walmartRealTimeAPI.unsubscribe(subscriptionId);
+          logger.info('Price update subscription ended', 'WALMART_RT_API', {
             subscriptionId
           });
-          walmartRealTimeAPI.unsubscribe(subscriptionId);
         };
       });
     }),
 
   /**
-   * Get user's Walmart order history
+   * Get user's order history
    */
   getOrderHistory: protectedProcedure
     .input(GetOrderHistorySchema)
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: GetOrderHistoryInput; ctx: Context }) => {
       try {
         const userId = ctx.user?.id;
+        
         if (!userId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -206,15 +223,11 @@ export const walmartRealTimeRouter = router({
           limit: input.limit
         });
 
-        const orders = await walmartRealTimeAPI.getOrderHistory(userId, input.limit);
+        const history = await walmartRealTimeAPI.getOrderHistory(userId, input.limit);
 
         ctx.metrics?.increment('walmart.realtime.orderHistory');
 
-        return {
-          userId,
-          count: orders.length,
-          orders
-        };
+        return history;
       } catch (error) {
         logger.error('Failed to get order history', 'WALMART_RT_API', { error });
         
@@ -228,189 +241,133 @@ export const walmartRealTimeRouter = router({
     }),
 
   /**
+   * Compare prices across multiple products
+   */
+  comparePrices: publicProcedure
+    .input(BatchGetProductsSchema)
+    .query(async ({ input, ctx }: { input: BatchGetProductsInput; ctx: Context }) => {
+      try {
+        logger.info('Comparing prices', 'WALMART_RT_API', {
+          count: input.productIds.length
+        });
+
+        const products = await Promise.all(
+          input.productIds.map(id => walmartRealTimeAPI.getProductRealTime(id))
+        );
+
+        // Filter out failed fetches
+        const validProducts = products.filter(p => p !== null);
+
+        // Sort by price
+        validProducts.sort((a, b) => {
+          const priceA = typeof a?.price === 'number' ? a.price : a?.price?.regular || 0;
+          const priceB = typeof b?.price === 'number' ? b.price : b?.price?.regular || 0;
+          return priceA - priceB;
+        });
+
+        ctx.metrics?.increment('walmart.realtime.priceCompare');
+
+        return {
+          count: validProducts.length,
+          products: validProducts,
+          lowestPrice: validProducts[0],
+          highestPrice: validProducts[validProducts.length - 1]
+        };
+      } catch (error) {
+        logger.error('Price comparison failed', 'WALMART_RT_API', { error });
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to compare prices'
+        });
+      }
+    }),
+
+  /**
+   * Track product availability
+   */
+  trackAvailability: publicProcedure
+    .input(GetProductSchema)
+    .query(async ({ input, ctx }: { input: GetProductInput; ctx: Context }) => {
+      try {
+        logger.info('Tracking product availability', 'WALMART_RT_API', {
+          productId: input.productId
+        });
+
+        const product = await walmartRealTimeAPI.getProductRealTime(input.productId);
+        
+        if (!product) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Product not found'
+          });
+        }
+
+        const availability = {
+          productId: input.productId,
+          inStock: product.inStock || false,
+          availableQuantity: product.availableQuantity,
+          lastChecked: new Date().toISOString(),
+          stores: product.storeAvailability || []
+        };
+
+        ctx.metrics?.increment('walmart.realtime.availability');
+
+        return availability;
+      } catch (error) {
+        logger.error('Availability check failed', 'WALMART_RT_API', { error });
+        
+        if (error instanceof TRPCError) throw error;
+        
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to check availability'
+        });
+      }
+    }),
+
+  /**
    * Get price history for a product
    */
   getPriceHistory: publicProcedure
     .input(z.object({
       productId: z.string(),
-      days: z.number().min(1).max(90).default(30)
+      days: z.number().min(1).max(365).default(30)
     }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: { productId: string; days: number }; ctx: Context }) => {
       try {
         logger.info('Fetching price history', 'WALMART_RT_API', {
           productId: input.productId,
           days: input.days
         });
 
-        // Get product with history
-        const product = await walmartRealTimeAPI.getProductRealTime(input.productId);
-        
-        if (!product) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Product ${input.productId} not found`
-          });
-        }
+        // This would typically query a historical price database
+        // For now, returning mock data structure
+        const history = {
+          productId: input.productId,
+          period: input.days,
+          dataPoints: [],
+          lowestPrice: null,
+          highestPrice: null,
+          averagePrice: null,
+          currentPrice: null
+        };
 
-        // Filter history by days
-        const cutoffDate = new Date(Date.now() - input.days * 24 * 60 * 60 * 1000).toISOString();
-        const history = product.priceHistory?.filter(h => h.date > cutoffDate) || [];
+        // Fetch current price
+        const product = await walmartRealTimeAPI.getProductRealTime(input.productId);
+        if (product) {
+          history.currentPrice = typeof product.price === 'number' 
+            ? product.price 
+            : product.price?.regular || null;
+        }
 
         ctx.metrics?.increment('walmart.realtime.priceHistory');
 
-        return {
-          productId: input.productId,
-          productName: product.name,
-          currentPrice: product.price,
-          priceChange: product.priceChange,
-          history,
-          days: input.days
-        };
+        return history;
       } catch (error) {
-        logger.error('Failed to get price history', 'WALMART_RT_API', { error });
-        
-        if (error instanceof TRPCError) throw error;
-        
+        logger.error('Price history fetch failed', 'WALMART_RT_API', { error });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch price history'
-        });
-      }
-    }),
-
-  /**
-   * Check product availability at nearby stores
-   */
-  checkStoreAvailability: publicProcedure
-    .input(z.object({
-      productId: z.string(),
-      zipCode: z.string().regex(/^\d{5}$/)
-    }))
-    .query(async ({ input, ctx }) => {
-      try {
-        logger.info('Checking store availability', 'WALMART_RT_API', {
-          productId: input.productId,
-          zipCode: input.zipCode
-        });
-
-        // This would integrate with store inventory API
-        // For now, return mock data
-        const stores = [
-          {
-            storeId: '1451',
-            name: 'Walmart Supercenter - Spartanburg',
-            address: '2151 E Main St, Spartanburg, SC 29307',
-            distance: 3.2,
-            inStock: true,
-            quantity: 15,
-            price: 0 // Will be populated
-          },
-          {
-            storeId: '631',
-            name: 'Walmart Supercenter - Spartanburg West',
-            address: '205 W Blackstock Rd, Spartanburg, SC 29301',
-            distance: 1.8,
-            inStock: true,
-            quantity: 8,
-            price: 0 // Will be populated
-          }
-        ];
-
-        // Get product price
-        const product = await walmartRealTimeAPI.getProductRealTime(input.productId);
-        if (product) {
-          stores.forEach(store => {
-            store.price = product.price;
-          });
-        }
-
-        ctx.metrics?.increment('walmart.realtime.storeAvailability');
-
-        return {
-          productId: input.productId,
-          zipCode: input.zipCode,
-          stores
-        };
-      } catch (error) {
-        logger.error('Failed to check store availability', 'WALMART_RT_API', { error });
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to check store availability'
-        });
-      }
-    }),
-
-  /**
-   * Set price alert for a product
-   */
-  setPriceAlert: protectedProcedure
-    .input(z.object({
-      productId: z.string(),
-      targetPrice: z.number().min(0),
-      alertType: z.enum(['below', 'above'])
-    }))
-    .mutation(async ({ input, ctx }) => {
-      try {
-        const userId = ctx.user?.id;
-        if (!userId) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'User not authenticated'
-          });
-        }
-
-        logger.info('Setting price alert', 'WALMART_RT_API', {
-          userId,
-          productId: input.productId,
-          targetPrice: input.targetPrice,
-          alertType: input.alertType
-        });
-
-        // Store alert in database (implementation needed)
-        const alertId = `alert_${userId}_${input.productId}_${Date.now()}`;
-        
-        // For now, just create a subscription that checks periodically
-        const subscriptionId = walmartRealTimeAPI.subscribeToPriceUpdates(
-          userId,
-          [input.productId],
-          (update) => {
-            const shouldAlert = input.alertType === 'below' 
-              ? update.price <= input.targetPrice
-              : update.price >= input.targetPrice;
-            
-            if (shouldAlert) {
-              logger.info('Price alert triggered', 'WALMART_RT_API', {
-                alertId,
-                productId: input.productId,
-                currentPrice: update.price,
-                targetPrice: input.targetPrice
-              });
-              
-              // Send notification (implement notification service)
-              // notificationService.send(userId, `Price alert: ${update.name} is now $${update.price}`);
-            }
-          },
-          60000 // Check every minute
-        );
-
-        ctx.metrics?.increment('walmart.realtime.priceAlert');
-
-        return {
-          alertId,
-          subscriptionId,
-          productId: input.productId,
-          targetPrice: input.targetPrice,
-          alertType: input.alertType,
-          created: new Date().toISOString()
-        };
-      } catch (error) {
-        logger.error('Failed to set price alert', 'WALMART_RT_API', { error });
-        
-        if (error instanceof TRPCError) throw error;
-        
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to set price alert'
         });
       }
     })

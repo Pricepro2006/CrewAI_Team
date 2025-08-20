@@ -127,21 +127,21 @@ const appConfig: AppConfig = {
   database: {
     path: process.env.DATABASE_PATH || './data/crewai_enhanced.db',
     pool: {
-      maxConnections: parseInt(process.env.DB_POOL_SIZE || '10', 10),
+      maxConnections: parseInt(process.env.DB_POOL_SIZE || (process.env.NODE_ENV === 'production' ? '30' : '10'), 10),
       idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '300000', 10), // 5 minutes
-      acquireTimeout: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '30000', 10), // 30 seconds
+      acquireTimeout: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '5000', 10), // 5 seconds (reduced from 30s)
       enableWAL: process.env.DB_ENABLE_WAL !== 'false',
       enableForeignKeys: process.env.DB_ENABLE_FOREIGN_KEYS !== 'false',
       cacheSize: parseInt(process.env.DB_CACHE_SIZE || '10000', 10), // 10MB
       memoryMap: parseInt(process.env.DB_MEMORY_MAP || '268435456', 10), // 256MB
-      busyTimeout: parseInt(process.env.DB_BUSY_TIMEOUT || '30000', 10), // 30 seconds
+      busyTimeout: parseInt(process.env.DB_BUSY_TIMEOUT || '5000', 10), // 5 seconds (reduced from 30s)
       checkpointInterval: parseInt(process.env.DB_CHECKPOINT_INTERVAL || '60000', 10), // 1 minute
       enableMonitoring: process.env.DB_ENABLE_MONITORING !== 'false',
     },
     walmart: {
       path: process.env.WALMART_DATABASE_PATH || './data/walmart_grocery.db',
       pool: {
-        maxConnections: parseInt(process.env.WALMART_DB_POOL_SIZE || '5', 10),
+        maxConnections: parseInt(process.env.WALMART_DB_POOL_SIZE || (process.env.NODE_ENV === 'production' ? '15' : '5'), 10),
         idleTimeout: parseInt(process.env.WALMART_DB_IDLE_TIMEOUT || '300000', 10),
         acquireTimeout: parseInt(process.env.WALMART_DB_ACQUIRE_TIMEOUT || '30000', 10),
         enableWAL: process.env.WALMART_DB_ENABLE_WAL !== 'false',
