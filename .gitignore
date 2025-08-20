@@ -480,3 +480,6 @@ public/
 systemd/
 tests/
 videos/
+
+# Security - never commit cookies
+cookies.txt
