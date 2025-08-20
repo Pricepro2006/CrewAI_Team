@@ -45,7 +45,7 @@
     "test:ui": "NODE_OPTIONS='--max-old-space-size=2048 --gc-interval=100' vitest run --config vitest.ui.config.ts",
     "test:setup": "docker-compose -f docker-compose.test.yml up -d",
     "test:teardown": "docker-compose -f docker-compose.test.yml down -v",
-    "test:wait": "timeout 60 bash -c 'until curl -f http://localhost:8001/api/v2/version 2>/dev/null; do sleep 2; done' || echo 'ChromaDB not available - some tests will be skipped'",
+    "test:wait": "timeout 60 bash -c 'until curl -f http://localhost:8000/api/v2/version 2>/dev/null; do sleep 2; done' || echo 'ChromaDB not available - some tests will be skipped'",
     "test:full": "npm run test:setup && npm run test:wait && npm run test && npm run test:teardown",
     "start:llama": "bash scripts/start-llama.sh",
     "populate-kb": "tsx src/scripts/populate-knowledge-base.ts",

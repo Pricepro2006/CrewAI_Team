@@ -53,8 +53,8 @@ export interface UseGroceryWebSocketReturn extends GroceryWebSocketState {
 }
 
 const WS_URL = process.env.NODE_ENV === 'production' 
-  ? `wss://${window?.location?.hostname}:3002/trpc-ws`
-  : `ws://localhost:3002/trpc-ws`;
+  ? `wss://${window?.location?.hostname}:3001/ws/walmart`
+  : `ws://localhost:3001/ws/walmart`;
 const MAX_EVENT_HISTORY = 50;
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
 

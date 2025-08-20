@@ -132,7 +132,7 @@ class KnowledgeEnhancedEmailAgent extends BaseAgent {
     this.ragSystem = new RAGSystem({
       vectorStore: {
         type: 'adaptive',
-        baseUrl: process.env.CHROMADB_URL || 'http://localhost:8001',
+        baseUrl: process.env.CHROMADB_URL || 'http://localhost:8000',
         collectionName: 'email-knowledge-base',
       },
       chunking: {

@@ -10,7 +10,7 @@
 
 import { EventEmitter } from 'events';
 import { config } from 'dotenv';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../utils/logger.js';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 

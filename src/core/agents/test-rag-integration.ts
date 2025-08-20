@@ -21,7 +21,7 @@ async function testRAGIntegration() {
   const ragConfig = {
     vectorStore: {
       type: "chromadb" as const,  // Changed from "adaptive" to match MasterOrchestratorConfig
-      path: "http://localhost:8001",  // Changed from baseUrl to path
+      path: "http://localhost:8000",  // Changed from baseUrl to path
       collectionName: "test-rag-collection",
       dimension: 4096,
     },
