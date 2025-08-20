@@ -17,6 +17,7 @@ export * from "./email.js";
 export * from "./orchestration.js";
 export * from "./rag.js";
 export * from "./auth.js";
+export * from "./client.types.js";
 // Export error types with renamed ErrorContext
 export {
   type BaseError,
@@ -42,6 +43,7 @@ export {
   type GlobalErrorHandler
 } from "./errors.js";
 export * from "./events.js";
+export * from "./ui.types.js";
 
 // Re-export common utility types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

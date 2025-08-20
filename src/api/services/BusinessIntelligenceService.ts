@@ -2,6 +2,11 @@ import { getDatabase, OptimizedQueryExecutor } from "../../database/index.js";
 import Database from 'better-sqlite3';
 import { logger } from '../../utils/logger.js';
 import type { EmailRow, EmailWithAnalysis } from '../../types/unified-email.types.js';
+import type { 
+  DatabaseRow, 
+  DatabaseStatement,
+  EmailDatabaseRow
+} from '../../shared/types/api.types.js';
 
 export interface BusinessIntelligenceSummary {
   totalEmailsAnalyzed: number;
@@ -40,16 +45,18 @@ export interface CustomerInsight {
   lastInteraction: string;
 }
 
+export interface HighValueItem {
+  type: string;
+  value: number;
+  customer: string;
+  date: string;
+  emailId: string;
+}
+
 export interface EntityExtracts {
   poNumbers: string[];
   quoteNumbers: string[];
-  recentHighValueItems: Array<{
-    type: string;
-    value: number;
-    customer: string;
-    date: string;
-    emailId: string;
-  }>;
+  recentHighValueItems: HighValueItem[];
 }
 
 export interface ProcessingMetrics {
@@ -73,13 +80,105 @@ export interface BusinessIntelligenceData {
   generatedAt: string;
 }
 
+// Query Options for BI data retrieval
+export interface BusinessIntelligenceOptions {
+  timeRange?: {
+    start: Date;
+    end: Date;
+  };
+  customerFilter?: string[];
+  workflowFilter?: string[];
+  useCache?: boolean;
+  limit?: number;
+}
+
+// Cache entry structure
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+// Database query result rows
+interface SummaryRow extends DatabaseRow {
+  totalEmails: number;
+  emailsWithPO: number;
+  emailsWithQuotes: number;
+  avgConfidence: number;
+  firstProcessed: string;
+  lastProcessed: string;
+}
+
+interface MetricsRow extends DatabaseRow {
+  totalProcessed: number;
+  avgConfidence: number;
+  avgProcessingTime: number;
+  successCount: number;
+  firstProcessed: string;
+  lastProcessed: string;
+}
+
+interface WorkflowRow extends DatabaseRow {
+  workflow_state: string;
+  count: number;
+}
+
+interface EmailEnhancedRow extends EmailDatabaseRow {
+  extracted_entities: string;
+  workflow_state: string;
+  phase2_result: string;
+  analyzed_at: string;
+}
+
+// Parsed JSON structures from database
+interface ParsedEntities {
+  po_numbers?: string[];
+  quote_numbers?: string[];
+  customers?: CustomerData[] | CustomerInfo | undefined;
+}
+
+interface CustomerData {
+  name?: string;
+  [key: string]: unknown;
+}
+
+interface CustomerInfo {
+  name?: string;
+  [key: string]: unknown;
+}
+
+interface ParsedWorkflow {
+  type?: string;
+  priority?: string;
+  business_intelligence?: {
+    estimated_value?: number;
+  };
+  [key: string]: unknown;
+}
+
+interface ParsedPhase2Result {
+  confidence?: number;
+  processing_time?: number;
+  business_intelligence?: {
+    estimated_value?: number;
+  };
+  [key: string]: unknown;
+}
+
+interface CustomerMapData {
+  emailCount: number;
+  totalValue: number;
+  workflowTypes: Set<string>;
+  processingTimes: number[];
+  lastInteraction: string;
+}
+
 export class BusinessIntelligenceService {
   private db: OptimizedQueryExecutor | Database.Database;
-  private cache: Map<string, { data: any; timestamp: number }> = new Map();
+  private cache: Map<string, CacheEntry<BusinessIntelligenceData>> = new Map();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
   constructor(dbPath: string = './data/crewai_enhanced.db') {
-    this.db = getDatabase(dbPath) as any;
+    this.db = getDatabase(dbPath) as OptimizedQueryExecutor | Database.Database;
     logger.info('BusinessIntelligenceService initialized with OptimizedQueryExecutor', 'BI_SERVICE');
   }
 
@@ -87,12 +186,7 @@ export class BusinessIntelligenceService {
    * Get comprehensive business intelligence data
    */
   async getBusinessIntelligence(
-    options: {
-      timeRange?: { start: Date; end: Date };
-      customerFilter?: string[];
-      workflowFilter?: string[];
-      useCache?: boolean;
-    } = {}
+    options: BusinessIntelligenceOptions = {}
   ): Promise<BusinessIntelligenceData> {
     const cacheKey = JSON.stringify(options);
     
@@ -142,7 +236,7 @@ export class BusinessIntelligenceService {
   /**
    * Get business intelligence summary
    */
-  private async getBusinessSummary(options: any): Promise<BusinessIntelligenceSummary> {
+  private async getBusinessSummary(options: BusinessIntelligenceOptions): Promise<BusinessIntelligenceSummary> {
     let query = `
       SELECT 
         COUNT(DISTINCT id) as totalEmails,
@@ -159,18 +253,18 @@ export class BusinessIntelligenceService {
       WHERE phase2_result LIKE '%llama_3_2%'
     `;
 
-    const params: any[] = [];
+    const params: (string | number | boolean | null)[] = [];
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
       params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const stmt = (this.db as any).prepare(query);
+    const stmt = (this.db as Database.Database).prepare(query);
     if (!stmt) {
       throw new Error('Failed to prepare summary query');
     }
-    const summaryRow = stmt.get(...params) as any;
+    const summaryRow = stmt.get(...params) as SummaryRow;
 
     // Get unique entities
     const entitiesQuery = `
@@ -183,11 +277,11 @@ export class BusinessIntelligenceService {
       ${options.timeRange ? 'AND analyzed_at BETWEEN ? AND ?' : ''}
     `;
 
-    const entitiesStmt = (this.db as any).prepare(entitiesQuery);
+    const entitiesStmt = (this.db as Database.Database).prepare(entitiesQuery);
     if (!entitiesStmt) {
       throw new Error('Failed to prepare entities query');
     }
-    const emails = entitiesStmt.all(...params) as any[];
+    const emails = entitiesStmt.all(...params) as EmailEnhancedRow[];
 
     const uniquePOs = new Set<string>();
     const uniqueQuotes = new Set<string>();
@@ -217,7 +311,7 @@ export class BusinessIntelligenceService {
         // Customers
         if (entities.customers) {
           if (Array.isArray(entities.customers)) {
-            entities.customers.forEach((customer: any) => {
+            entities.customers.forEach((customer: CustomerData) => {
               const name = typeof customer === 'string' ? customer : customer?.name;
               if (name) uniqueCustomers.add(name);
             });
@@ -261,7 +355,7 @@ export class BusinessIntelligenceService {
   /**
    * Get workflow distribution analysis
    */
-  private async getWorkflowDistribution(options: any): Promise<WorkflowDistribution[]> {
+  private async getWorkflowDistribution(options: BusinessIntelligenceOptions): Promise<WorkflowDistribution[]> {
     let query = `
       SELECT 
         workflow_state,
@@ -270,7 +364,7 @@ export class BusinessIntelligenceService {
       WHERE phase2_result LIKE '%llama_3_2%'
     `;
 
-    const params: any[] = [];
+    const params: (string | number | boolean | null)[] = [];
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
@@ -279,11 +373,11 @@ export class BusinessIntelligenceService {
 
     query += ' GROUP BY workflow_state';
 
-    const stmt = (this.db as any).prepare(query);
+    const stmt = (this.db as Database.Database).prepare(query);
     if (!stmt) {
       return [];
     }
-    const rows = stmt.all(...params) as any[];
+    const rows = stmt.all(...params) as WorkflowRow[];
     
     const workflowMap = new Map<string, { count: number; totalValue: number }>();
     let totalCount = 0;
@@ -330,7 +424,7 @@ export class BusinessIntelligenceService {
   /**
    * Get priority distribution
    */
-  private async getPriorityDistribution(options: any): Promise<PriorityDistribution[]> {
+  private async getPriorityDistribution(options: BusinessIntelligenceOptions): Promise<PriorityDistribution[]> {
     let query = `
       SELECT 
         workflow_state,
@@ -339,18 +433,18 @@ export class BusinessIntelligenceService {
       WHERE phase2_result LIKE '%llama_3_2%'
     `;
 
-    const params: any[] = [];
+    const params: (string | number | boolean | null)[] = [];
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
       params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const stmt = (this.db as any).prepare(query);
+    const stmt = (this.db as Database.Database).prepare(query);
     if (!stmt) {
       return [];
     }
-    const rows = stmt.all(...params) as any[];
+    const rows = stmt.all(...params) as WorkflowRow[];
     
     const priorityMap = new Map<string, number>([
       ['Critical', 0],
@@ -381,7 +475,7 @@ export class BusinessIntelligenceService {
 
     const priorityOrder = ['Critical', 'High', 'Medium', 'Low', 'Unknown'];
     return priorityOrder?.map(level => ({
-      level: level as any,
+      level: level as PriorityDistribution['level'],
       count: priorityMap.get(level) || 0,
       percentage: totalCount > 0 ? ((priorityMap.get(level) || 0) / totalCount) * 100 : 0,
     }));
@@ -390,7 +484,7 @@ export class BusinessIntelligenceService {
   /**
    * Get top customers by email volume and value
    */
-  private async getTopCustomers(options: any): Promise<CustomerInsight[]> {
+  private async getTopCustomers(options: BusinessIntelligenceOptions): Promise<CustomerInsight[]> {
     let query = `
       SELECT 
         id,
@@ -403,18 +497,18 @@ export class BusinessIntelligenceService {
       WHERE phase2_result LIKE '%llama_3_2%'
     `;
 
-    const params: any[] = [];
+    const params: (string | number | boolean | null)[] = [];
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
       params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const stmt = (this.db as any).prepare(query);
+    const stmt = (this.db as Database.Database).prepare(query);
     if (!stmt) {
       return [];
     }
-    const emails = stmt.all(...params) as any[];
+    const emails = stmt.all(...params) as EmailEnhancedRow[];
     
     const customerMap = new Map<string, {
       emailCount: number;
@@ -434,7 +528,7 @@ export class BusinessIntelligenceService {
         const customers: string[] = [];
         if (entities.customers) {
           if (Array.isArray(entities.customers)) {
-            entities?.customers?.forEach((c: any) => {
+            entities?.customers?.forEach((c: CustomerData) => {
               const name = typeof c === 'string' ? c : c?.name;
               if (name) customers.push(name);
             });
@@ -486,7 +580,7 @@ export class BusinessIntelligenceService {
         emailCount: data.emailCount,
         totalValue: data.totalValue,
         avgResponseTime: data?.processingTimes?.length > 0
-          ? data?.processingTimes?.reduce((a: any, b: any) => a + b, 0) / data?.processingTimes?.length
+          ? data?.processingTimes?.reduce((a: number, b: number) => a + b, 0) / data?.processingTimes?.length
           : 0,
         workflowTypes: Array.from(data.workflowTypes),
         lastInteraction: data.lastInteraction,
@@ -498,7 +592,7 @@ export class BusinessIntelligenceService {
   /**
    * Get extracted entities summary
    */
-  private async getEntityExtracts(options: any): Promise<EntityExtracts> {
+  private async getEntityExtracts(options: BusinessIntelligenceOptions): Promise<EntityExtracts> {
     let query = `
       SELECT 
         id,
@@ -511,7 +605,7 @@ export class BusinessIntelligenceService {
       WHERE phase2_result LIKE '%llama_3_2%'
     `;
 
-    const params: any[] = [];
+    const params: (string | number | boolean | null)[] = [];
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
@@ -520,7 +614,7 @@ export class BusinessIntelligenceService {
 
     query += ' ORDER BY analyzed_at DESC LIMIT 500';
 
-    const stmt = (this.db as any).prepare(query);
+    const stmt = (this.db as Database.Database).prepare(query);
     if (!stmt) {
       return {
         poNumbers: [],
@@ -528,11 +622,11 @@ export class BusinessIntelligenceService {
         recentHighValueItems: []
       };
     }
-    const emails = stmt.all(...params) as any[];
+    const emails = stmt.all(...params) as EmailEnhancedRow[];
     
     const poNumbers = new Set<string>();
     const quoteNumbers = new Set<string>();
-    const highValueItems: any[] = [];
+    const highValueItems: HighValueItem[] = [];
 
     for (const email of emails) {
       try {
@@ -567,7 +661,7 @@ export class BusinessIntelligenceService {
           highValueItems.push({
             type: workflow.type || 'Unknown',
             value: phase2?.business_intelligence?.estimated_value,
-            customer: typeof customer === 'string' ? customer : customer?.name || 'Unknown',
+            customer: typeof customer === 'string' ? customer : (customer as CustomerData)?.name || 'Unknown',
             date: email.analyzed_at,
             emailId: email.id,
           });
@@ -589,7 +683,7 @@ export class BusinessIntelligenceService {
   /**
    * Get processing metrics
    */
-  private async getProcessingMetrics(options: any): Promise<ProcessingMetrics> {
+  private async getProcessingMetrics(options: BusinessIntelligenceOptions): Promise<ProcessingMetrics> {
     let query = `
       SELECT 
         COUNT(*) as totalProcessed,
@@ -610,14 +704,14 @@ export class BusinessIntelligenceService {
       WHERE phase2_result LIKE '%llama_3_2%'
     `;
 
-    const params: any[] = [];
+    const params: (string | number | boolean | null)[] = [];
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
       params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const stmt = (this.db as any).prepare(query);
+    const stmt = (this.db as Database.Database).prepare(query);
     if (!stmt) {
       return {
         avgConfidence: 0,
@@ -630,7 +724,7 @@ export class BusinessIntelligenceService {
         },
       };
     }
-    const metrics = stmt.get(...params) as any;
+    const metrics = stmt.get(...params) as MetricsRow;
 
     return {
       avgConfidence: metrics.avgConfidence || 0,
@@ -649,7 +743,7 @@ export class BusinessIntelligenceService {
   /**
    * Get cached data if not expired
    */
-  private getCached(key: string): any | null {
+  private getCached(key: string): BusinessIntelligenceData | null {
     const cached = this?.cache?.get(key);
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
       logger.debug('Returning cached BI data', 'BI_SERVICE', { key });
@@ -661,7 +755,7 @@ export class BusinessIntelligenceService {
   /**
    * Set cache data
    */
-  private setCache(key: string, data: any): void {
+  private setCache(key: string, data: BusinessIntelligenceData): void {
     this.cache.set(key, { data, timestamp: Date.now() });
     
     // Clean old cache entries

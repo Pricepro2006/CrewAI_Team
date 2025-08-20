@@ -5,6 +5,8 @@ import { EmailStorageService } from '../services/EmailStorageService';
 import Database from "better-sqlite3";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { MockRequest, MockResponse } from '../../shared/types/test.types';
+import { JSONObject } from '../../shared/types/utility.types';
 
 describe("Email Router", () => {
   let testDb: InstanceType<typeof Database>;
@@ -31,8 +33,8 @@ describe("Email Router", () => {
       session: null,
       ip: "127.0.0.1",
       userAgent: "test-agent",
-      req: {} as any,
-      res: {} as any,
+      req: {} as MockRequest,
+      res: {} as MockResponse,
       requestId: "test-request",
       timestamp: new Date(),
       traceId: "test-trace",
@@ -59,16 +61,16 @@ describe("Email Router", () => {
       featureFlags: {},
       batchId: "test-batch",
       validatedInput: {},
-      masterOrchestrator: {} as any,
-      conversationService: {} as any,
-      emailStorageService: {} as any,
-      businessIntelligenceService: {} as any,
-      healthCheckService: {} as any,
-      databaseManager: {} as any,
+      masterOrchestrator: {} as JSONObject,
+      conversationService: {} as JSONObject,
+      emailStorageService: {} as JSONObject,
+      businessIntelligenceService: {} as JSONObject,
+      healthCheckService: {} as JSONObject,
+      databaseManager: {} as JSONObject,
       cache: new Map(),
-      redisClient: {} as any,
-      monitoring: {} as any,
-      llmService: {} as any
+      redisClient: {} as JSONObject,
+      monitoring: {} as JSONObject,
+      llmService: {} as JSONObject
     } as unknown as Context;
   });
 
@@ -185,9 +187,12 @@ describe("Email Router", () => {
       expect(Array.isArray(result.data)).toBe(true);
       expect(result.data.length).toBeGreaterThanOrEqual(1);
       
-      const orderEmail = result.data.find((email: any) => 
-        email.analysis?.quick?.workflow?.primary === "Order Management"
-      );
+      const orderEmail = result.data.find((email: JSONObject) => {
+        const analysis = email.analysis as JSONObject;
+        const quick = analysis?.quick as JSONObject;
+        const workflow = quick?.workflow as JSONObject;
+        return workflow?.primary === "Order Management";
+      });
       expect(orderEmail).toBeDefined();
       expect(orderEmail.subject).toContain("Order Update");
     });
@@ -299,7 +304,7 @@ describe("Email Router", () => {
       expect(Array.isArray(result.data)).toBe(true);
       expect(result.data.length).toBeGreaterThanOrEqual(1);
       
-      const orderPattern = result.data.find((pattern: any) => 
+      const orderPattern = result.data.find((pattern: JSONObject) => 
         pattern.pattern_name === "Order Processing"
       );
       expect(orderPattern).toBeDefined();

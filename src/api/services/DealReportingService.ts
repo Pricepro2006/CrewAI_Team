@@ -8,6 +8,7 @@ import { getDatabaseManager } from "../../database/DatabaseManager.js";
 import { DealPipelineMonitor } from "./DealPipelineMonitor.js";
 import { DealWebSocketService } from "./DealWebSocketService.js";
 import type Database from "better-sqlite3";
+import type { DatabaseRow } from "../../shared/types/api.types.js";
 
 export interface DealReport {
   id: string;
@@ -171,6 +172,133 @@ export interface DealAnalytics {
       resourceUtilization: number;
     };
   };
+}
+
+// Database Result Types
+interface DealsSummaryRow extends DatabaseRow {
+  total_deals: number;
+  total_savings: number;
+  avg_score: number;
+  avg_savings_pct: number;
+  unique_products: number;
+}
+
+interface CategoryCountRow extends DatabaseRow {
+  category: string;
+  count: number;
+}
+
+interface EngagementDataRow extends DatabaseRow {
+  active_users: number;
+  total_interactions: number;
+}
+
+interface TotalUsersRow extends DatabaseRow {
+  total: number;
+}
+
+interface DealTypeCountRow extends DatabaseRow {
+  deal_type: string;
+  count: number;
+}
+
+interface PriceStatsRow extends DatabaseRow {
+  products_tracked: number;
+  prices_updated: number;
+}
+
+interface DetectedDealRow extends DatabaseRow {
+  product_id: string;
+  product_name: string;
+  category: string;
+  deal_type: string;
+  current_price: number;
+  savings_amount: number;
+  savings_percentage: number;
+  deal_score: number;
+}
+
+interface ReportDataRow extends DatabaseRow {
+  id: string;
+  report_data: string;
+}
+
+interface MetricsDataRow extends DatabaseRow {
+  timestamp: string;
+  metrics_data: string;
+}
+
+interface BestProductRow extends DatabaseRow {
+  product_id: string;
+  product_name: string;
+  total_savings: number;
+  user_interactions: number;
+  conversion_rate: number;
+}
+
+interface CategoryPerformanceRow extends DatabaseRow {
+  category: string;
+  deal_count: number;
+  average_savings: number;
+  user_engagement: number;
+}
+
+interface DealTypeEffectivenessRow extends DatabaseRow {
+  deal_type: string;
+  count: number;
+  average_score: number;
+  user_satisfaction: number;
+}
+
+interface EngagementPatternRow extends DatabaseRow {
+  hour: number;
+  active_users: number;
+  deal_views: number;
+  click_through_rate: number;
+}
+
+interface PreferenceRow extends DatabaseRow {
+  category: string;
+  user_count: number;
+}
+
+interface UserCountRow extends DatabaseRow {
+  count: number;
+}
+
+interface NotificationCountRow extends DatabaseRow {
+  count: number;
+}
+
+interface SignupsRow extends DatabaseRow {
+  signups: number;
+}
+
+interface HealthCheckRow extends DatabaseRow {
+  total_checks: number;
+  up_checks: number;
+}
+
+interface UserInterestRow extends DatabaseRow {
+  unique_users: number;
+  total_interactions: number;
+  clicks: number;
+  views: number;
+  purchases: number;
+}
+
+interface PeakUsersRow extends DatabaseRow {
+  peak: number;
+}
+
+interface MaxDealsRow extends DatabaseRow {
+  hour: string;
+  deals_count: number;
+}
+
+interface ResourceUsageRow extends DatabaseRow {
+  avg_cpu: number;
+  avg_memory: number;
 }
 
 export class DealReportingService {
@@ -449,7 +577,7 @@ export class DealReportingService {
         ORDER BY timestamp ASC
       `);
       
-      const rows = stmt.all(startDate, endDate) as Array<{ timestamp: string; metrics_data: string }>;
+      const rows = stmt.all(startDate, endDate) as MetricsDataRow[];
       
       const metrics = rows?.map(row => JSON.parse(row.metrics_data) as PerformanceMetrics);
       
@@ -516,7 +644,7 @@ export class DealReportingService {
         LIMIT 20
       `);
       
-      const rows = stmt.all() as Array<{ id: string; report_data: string }>;
+      const rows = stmt.all() as ReportDataRow[];
       
       for (const row of rows) {
         const report = JSON.parse(row.report_data) as DealReport;
@@ -573,7 +701,7 @@ export class DealReportingService {
         WHERE detected_at BETWEEN ? AND ?
       `);
       
-      const dealsData = dealsStmt.get(dateRange.startDate, dateRange.endDate) as any;
+      const dealsData = dealsStmt.get(dateRange.startDate, dateRange.endDate) as DealsSummaryRow | undefined;
       
       // Top performing category
       const categoryStmt = this?.db?.prepare(`
@@ -585,7 +713,7 @@ export class DealReportingService {
         LIMIT 1
       `);
       
-      const topCategory = categoryStmt.get(dateRange.startDate, dateRange.endDate) as any;
+      const topCategory = categoryStmt.get(dateRange.startDate, dateRange.endDate) as CategoryCountRow | undefined;
       
       // User engagement rate - calculate from actual user interaction data
       const engagementStmt = this?.db?.prepare(`
@@ -596,9 +724,9 @@ export class DealReportingService {
         WHERE created_at BETWEEN ? AND ?
       `);
       
-      const engagementData = engagementStmt.get(dateRange.startDate, dateRange.endDate) as any;
+      const engagementData = engagementStmt.get(dateRange.startDate, dateRange.endDate) as EngagementDataRow | undefined;
       const totalUsersStmt = this?.db?.prepare(`SELECT COUNT(DISTINCT id) as total FROM users`);
-      const totalUsers = (totalUsersStmt.get() as any)?.total || 1;
+      const totalUsers = (totalUsersStmt.get() as TotalUsersRow | undefined)?.total || 1;
       const engagementRate = engagementData?.active_users 
         ? (engagementData.active_users / totalUsers) * 100 
         : 0;
@@ -629,7 +757,7 @@ export class DealReportingService {
         GROUP BY deal_type
       `);
       
-      const dealTypeRows = dealTypesStmt.all(dateRange.startDate, dateRange.endDate) as any[];
+      const dealTypeRows = dealTypesStmt.all(dateRange.startDate, dateRange.endDate) as DealTypeCountRow[];
       const dealsByType: Record<string, number> = {};
       for (const row of dealTypeRows) {
         dealsByType[row.deal_type] = row.count;
@@ -643,7 +771,7 @@ export class DealReportingService {
         GROUP BY category
       `);
       
-      const categoryRows = categoriesStmt.all(dateRange.startDate, dateRange.endDate) as any[];
+      const categoryRows = categoriesStmt.all(dateRange.startDate, dateRange.endDate) as CategoryCountRow[];
       const dealsByCategory: Record<string, number> = {};
       for (const row of categoryRows) {
         dealsByCategory[row.category] = row.count;
@@ -658,7 +786,7 @@ export class DealReportingService {
         WHERE recorded_at BETWEEN ? AND ?
       `);
       
-      const priceStats = priceStatsStmt.get(dateRange.startDate, dateRange.endDate) as any;
+      const priceStats = priceStatsStmt.get(dateRange.startDate, dateRange.endDate) as PriceStatsRow | undefined;
       
       // Get current system metrics
       const currentMetrics = this?.monitor?.getCurrentMetrics();
@@ -705,11 +833,11 @@ export class DealReportingService {
         LIMIT ?
       `);
       
-      const rows = stmt.all(dateRange.startDate, dateRange.endDate, limit) as any[];
+      const rows = stmt.all(dateRange.startDate, dateRange.endDate, limit) as DetectedDealRow[];
       
       // Get user interest scores for all products in parallel
       const topDealsWithInterest = await Promise.all(
-        rows?.map(async (row: any) => ({
+        rows?.map(async (row) => ({
           productId: row.product_id,
           productName: row.product_name,
           category: row.category || 'Unknown',
@@ -779,7 +907,7 @@ export class DealReportingService {
     // Recommendations
     const categoryKeys = Object.keys(metrics.dealsByCategory);
     const topCategory = categoryKeys?.length || 0 > 0 
-      ? categoryKeys.reduce((a: any, b: any) => 
+      ? categoryKeys.reduce((a, b) => 
           (metrics.dealsByCategory[a] ?? 0) > (metrics.dealsByCategory[b] ?? 0) ? a : b, categoryKeys[0] ?? '')
       : '';
     
@@ -991,7 +1119,7 @@ export class DealReportingService {
         ORDER BY total_savings DESC
         LIMIT 10
       `);
-      const bestProducts = bestProductsStmt.all(startDate, endDate) as any[];
+      const bestProducts = bestProductsStmt.all(startDate, endDate) as BestProductRow[];
       
       // Get category performance
       const categoryStmt = this?.db?.prepare(`
@@ -1007,7 +1135,7 @@ export class DealReportingService {
         GROUP BY dd.category
         ORDER BY deal_count DESC
       `);
-      const categoryPerf = categoryStmt.all(startDate, endDate) as any[];
+      const categoryPerf = categoryStmt.all(startDate, endDate) as CategoryPerformanceRow[];
       
       // Get deal type effectiveness
       const dealTypeStmt = this?.db?.prepare(`
@@ -1027,7 +1155,7 @@ export class DealReportingService {
         GROUP BY dd.deal_type
         ORDER BY average_score DESC
       `);
-      const dealTypes = dealTypeStmt.all(startDate, endDate) as any[];
+      const dealTypes = dealTypeStmt.all(startDate, endDate) as DealTypeEffectivenessRow[];
       
       return {
         bestPerformingProducts: bestProducts?.map(p => ({
@@ -1075,7 +1203,7 @@ export class DealReportingService {
         GROUP BY hour
         ORDER BY hour
       `);
-      const patterns = engagementStmt.all(startDate, endDate) as any[];
+      const patterns = engagementStmt.all(startDate, endDate) as EngagementPatternRow[];
       
       // Get preference distribution
       const prefsStmt = this?.db?.prepare(`
@@ -1088,7 +1216,7 @@ export class DealReportingService {
         AND dd.category IS NOT NULL
         GROUP BY dd.category
       `);
-      const prefs = prefsStmt.all(startDate, endDate) as any[];
+      const prefs = prefsStmt.all(startDate, endDate) as PreferenceRow[];
       const preferenceDistribution: Record<string, number> = {};
       for (const pref of prefs) {
         preferenceDistribution[pref.category] = pref.user_count;
@@ -1105,14 +1233,14 @@ export class DealReportingService {
         FROM user_sessions
         WHERE created_at >= ?
       `);
-      const dauResult = dauStmt.get(dayAgo.toISOString()) as any;
+      const dauResult = dauStmt.get(dayAgo.toISOString()) as UserCountRow | undefined;
       
-      const wauResult = dauStmt.get(weekAgo.toISOString()) as any;
-      const mauResult = dauStmt.get(monthAgo.toISOString()) as any;
+      const wauResult = dauStmt.get(weekAgo.toISOString()) as UserCountRow | undefined;
+      const mauResult = dauStmt.get(monthAgo.toISOString()) as UserCountRow | undefined;
       
       // Calculate churn rate
       const prevMonthStart = new Date(monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const prevMonthUsers = dauStmt.get(prevMonthStart.toISOString()) as any;
+      const prevMonthUsers = dauStmt.get(prevMonthStart.toISOString()) as UserCountRow | undefined;
       const churnRate = prevMonthUsers?.count > 0 
         ? ((prevMonthUsers.count - mauResult?.count) / prevMonthUsers.count) * 100
         : 0;
@@ -1159,7 +1287,7 @@ export class DealReportingService {
       FROM system_metrics
       WHERE recorded_at BETWEEN ? AND ?
     `);
-    const peakUsersResult = peakUsersStmt.get(startDate, endDate) as any;
+    const peakUsersResult = peakUsersStmt.get(startDate, endDate) as PeakUsersRow | undefined;
     
     // Get max deals processed per hour
     const maxDealsStmt = this?.db?.prepare(`
@@ -1172,7 +1300,7 @@ export class DealReportingService {
       ORDER BY deals_count DESC
       LIMIT 1
     `);
-    const maxDealsResult = maxDealsStmt.get(startDate, endDate) as any;
+    const maxDealsResult = maxDealsStmt.get(startDate, endDate) as MaxDealsRow | undefined;
     
     // Get average resource utilization
     const resourceStmt = this?.db?.prepare(`
@@ -1182,7 +1310,7 @@ export class DealReportingService {
       FROM system_metrics
       WHERE recorded_at BETWEEN ? AND ?
     `);
-    const resourceResult = resourceStmt.get(startDate, endDate) as any;
+    const resourceResult = resourceStmt.get(startDate, endDate) as ResourceUsageRow | undefined;
     
     return {
       uptimePercentage,
@@ -1216,9 +1344,9 @@ export class DealReportingService {
       aggregated.timestamp = `${date}T00:00:00.000Z`;
       
       // Calculate averages and sums
-      aggregated.dealsDetectedCount = dayMetrics.reduce((sum: any, m: any) => sum + m.dealsDetectedCount, 0);
-      aggregated.totalSavingsOffered = dayMetrics.reduce((sum: any, m: any) => sum + m.totalSavingsOffered, 0);
-      aggregated.averageDealScore = dayMetrics.reduce((sum: any, m: any) => sum + m.averageDealScore, 0) / dayMetrics?.length || 0;
+      aggregated.dealsDetectedCount = dayMetrics.reduce((sum, m) => sum + m.dealsDetectedCount, 0);
+      aggregated.totalSavingsOffered = dayMetrics.reduce((sum, m) => sum + m.totalSavingsOffered, 0);
+      aggregated.averageDealScore = dayMetrics.reduce((sum, m) => sum + m.averageDealScore, 0) / dayMetrics?.length || 0;
       
       return aggregated;
     });
@@ -1245,7 +1373,7 @@ export class DealReportingService {
         dateRange.endDate,
         dateRange.startDate,
         dateRange.endDate
-      ) as any;
+      ) as UserCountRow | undefined;
       
       return result?.active_count || 0;
     } catch (error) {
@@ -1269,7 +1397,7 @@ export class DealReportingService {
         WHERE ${column} BETWEEN ? AND ?
       `);
       
-      const result = stmt.get(dateRange.startDate, dateRange.endDate) as any;
+      const result = stmt.get(dateRange.startDate, dateRange.endDate) as NotificationCountRow | undefined;
       return result?.count || 0;
     } catch (error) {
       logger.warn(`Failed to get ${type} notification count`, "DEAL_REPORTING", { error });
@@ -1288,7 +1416,7 @@ export class DealReportingService {
         WHERE created_at BETWEEN ? AND ?
       `);
       
-      const result = stmt.get(dateRange.startDate, dateRange.endDate) as any;
+      const result = stmt.get(dateRange.startDate, dateRange.endDate) as SignupsRow | undefined;
       return result?.signups || 0;
     } catch (error) {
       logger.warn("Failed to get new user signups", "DEAL_REPORTING", { error });
@@ -1309,9 +1437,9 @@ export class DealReportingService {
         WHERE checked_at BETWEEN ? AND ?
       `);
       
-      const result = stmt.get(dateRange.startDate, dateRange.endDate) as any;
+      const result = stmt.get(dateRange.startDate, dateRange.endDate) as HealthCheckRow | undefined;
       
-      if (result?.total_checks > 0) {
+      if (result?.total_checks && result.total_checks > 0) {
         return (result.up_checks / result.total_checks) * 100;
       }
       
@@ -1344,7 +1472,7 @@ export class DealReportingService {
         AND created_at BETWEEN ? AND ?
       `);
       
-      const result = stmt.get(productId, dateRange.startDate, dateRange.endDate) as any;
+      const result = stmt.get(productId, dateRange.startDate, dateRange.endDate) as UserInterestRow | undefined;
       
       if (!result || result.total_interactions === 0) {
         return 0;

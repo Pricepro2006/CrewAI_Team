@@ -6,52 +6,59 @@
  */
 
 import { circuitBreakerService } from './CircuitBreakerService.js';
-import { OllamaProvider, OllamaGenerateOptions } from '../llm/OllamaProvider.js';
+import { LlamaCppHttpProvider, LlamaCppGenerateOptions } from '../llm/LlamaCppHttpProvider.js';
 import { cacheManager } from '../cache/RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import axios from 'axios';
 
 /**
- * Enhanced Ollama Provider with Circuit Breaker
+ * Enhanced Llama.cpp Provider with Circuit Breaker
  */
-export class CircuitBreakerOllamaProvider extends OllamaProvider {
-  override async generate(prompt: string, options?: OllamaGenerateOptions): Promise<string> {
-    return circuitBreakerService.executeOllamaRequest(
+export class CircuitBreakerLlamaCppProvider extends LlamaCppHttpProvider {
+  override async generate(prompt: string, options?: LlamaCppGenerateOptions): Promise<any> {
+    return circuitBreakerService.executeLlamaRequest(
       'generate',
       () => super.generate(prompt, options),
       async () => {
-        // Fallback: return a simple response when Ollama is down
-        logger.warn('Ollama circuit breaker activated, using fallback', 'OLLAMA_CIRCUIT_BREAKER');
-        return "I apologize, but I'm experiencing technical difficulties with the AI model. Please try again in a moment.";
-      }
-    );
-  }
-
-  override async generateWithLogProbs(
-    prompt: string, 
-    options?: OllamaGenerateOptions
-  ): Promise<any> {
-    return circuitBreakerService.executeOllamaRequest(
-      'generateWithLogProbs',
-      () => super.generateWithLogProbs(prompt, options),
-      async () => {
-        // Fallback: return basic response structure
+        // Fallback: return a simple response when llama-server is down
+        logger.warn('Llama.cpp circuit breaker activated, using fallback', 'LLAMA_CIRCUIT_BREAKER');
         return {
-          text: "I apologize, but I'm experiencing technical difficulties with confidence scoring. Please try again in a moment.",
-          tokens: undefined,
-          logProbs: undefined,
+          text: "I apologize, but I'm experiencing technical difficulties with the AI model. Please try again in a moment.",
           metadata: {
             model: 'fallback',
-            duration: 0,
-            tokenCount: 0,
-          },
+            tokensPerSecond: 0,
+            totalTokens: 0,
+            promptTokens: 0,
+            completionTokens: 0,
+          }
         };
       }
     );
   }
 
+  override async generateStreaming(
+    prompt: string, 
+    options?: LlamaCppGenerateOptions
+  ): AsyncGenerator<string, void, unknown> {
+    const fallbackGenerator = async function* () {
+      yield "I apologize, but I'm experiencing technical difficulties with streaming. Please try again in a moment.";
+    };
+
+    try {
+      const generator = await circuitBreakerService.executeLlamaRequest(
+        'generateStreaming',
+        () => super.generateStreaming(prompt, options),
+        async () => fallbackGenerator()
+      );
+      return generator;
+    } catch (error) {
+      logger.error('Circuit breaker streaming error', 'LLAMA_CIRCUIT_BREAKER', { error });
+      return fallbackGenerator();
+    }
+  }
+
   override async embed(text: string): Promise<number[]> {
-    return circuitBreakerService.executeOllamaRequest(
+    return circuitBreakerService.executeLlamaRequest(
       'embed',
       () => super.embed(text),
       async () => {
@@ -63,7 +70,7 @@ export class CircuitBreakerOllamaProvider extends OllamaProvider {
   }
 
   override async listModels(): Promise<any[]> {
-    return circuitBreakerService.executeOllamaRequest(
+    return circuitBreakerService.executeLlamaRequest(
       'listModels',
       () => super.listModels(),
       async () => {
@@ -374,10 +381,11 @@ export class CircuitBreakerIntegrationExamples {
       );
 
       // Step 2: Cache the parsed result (with circuit breaker)
-      await this.cacheService.set(`grocery_list_${userId}`, parsedList, { ttl: 3600 });
+      const parsedResult = typeof parsedList === 'string' ? parsedList : parsedList.response;
+      await this.cacheService.set(`grocery_list_${userId}`, parsedResult, { ttl: 3600 });
 
       // Step 3: Get pricing information (with circuit breaker)
-      const products = JSON.parse(parsedList).items || [];
+      const products = JSON.parse(parsedResult).items || [];
       const pricePromises = products.map((product: any) => 
         this.walmartAPI.getProductPrice(product.id)
       );
@@ -394,7 +402,7 @@ export class CircuitBreakerIntegrationExamples {
 
       return {
         success: true,
-        parsedList: JSON.parse(parsedList),
+        parsedList: JSON.parse(parsedResult),
         prices,
         inventory,
         timestamp: new Date().toISOString(),

@@ -9,6 +9,11 @@ import {
   Loader,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import type {
+  ExportFormat,
+  ExportConfig,
+  FormErrors
+} from "../../../shared/types/client.types.js";
 
 /**
  * Data Export Manager Component
@@ -21,7 +26,7 @@ export interface ExportColumn {
   label: string;
   field: string;
   type: "text" | "number" | "date" | "boolean" | "currency" | "status";
-  format?: (value: any) => string;
+  format?: (value: unknown) => string;
   width?: number;
   included: boolean;
 }
@@ -37,7 +42,7 @@ export interface ExportFilter {
     | "lessThan"
     | "between"
     | "in";
-  value: any;
+  value: unknown;
   enabled: boolean;
 }
 
@@ -62,14 +67,14 @@ export interface ExportTemplate {
 }
 
 interface DataExportManagerProps {
-  data: any[];
+  data: Record<string, unknown>[];
   columns: ExportColumn[];
   onExport: (exportData: {
-    data: any[];
+    data: Record<string, unknown>[];
     columns: ExportColumn[];
     format: "csv" | "xlsx" | "pdf";
     filename: string;
-    options: any;
+    options: Record<string, unknown>;
   }) => Promise<void>;
   templates?: ExportTemplate[];
   onTemplateSave?: (
@@ -124,9 +129,9 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
     let filtered = [...data];
 
     filters
-      .filter((filter: any) => filter.enabled)
-      .forEach((filter: any) => {
-        filtered = filtered?.filter((item: any) => {
+      .filter((filter: ExportFilter) => filter.enabled)
+      .forEach((filter: ExportFilter) => {
+        filtered = filtered?.filter((item: Record<string, unknown>) => {
           const value = item[filter.field];
           const filterValue = filter?.value;
 
@@ -165,7 +170,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
   // Get included columns
   const includedColumns = useMemo(() => {
-    return columns?.filter((col: any) => col.included);
+    return columns?.filter((col: ExportColumn) => col.included);
   }, [columns]);
 
   // Generate filename with timestamp
@@ -179,7 +184,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
   );
 
   // Format cell value based on column type
-  const formatCellValue = useCallback((value: any, column: ExportColumn) => {
+  const formatCellValue = useCallback((value: unknown, column: ExportColumn) => {
     if (value === null || value === undefined) return "";
 
     if (column.format) {
@@ -207,9 +212,9 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
   // Prepare export data
   const prepareExportData = useCallback(() => {
-    const exportData = filteredData?.map((item: any) => {
-      const row: Record<string, any> = {};
-      includedColumns.forEach((column: any) => {
+    const exportData = filteredData?.map((item: Record<string, unknown>) => {
+      const row: Record<string, unknown> = {};
+      includedColumns.forEach((column: ExportColumn) => {
         row[column.label] = formatCellValue(item[column.field], column);
       });
       return row;
@@ -229,12 +234,12 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
     try {
       // Create CSV content
-      const headers = includedColumns?.map((col: any) => col.label);
+      const headers = includedColumns?.map((col: ExportColumn) => col.label);
       const csvContent = [
         exportOptions.includeHeaders ? headers.join(",") : null,
-        ...exportData?.map((row: any) =>
+        ...exportData?.map((row: Record<string, unknown>) =>
           headers
-            .map((header: any) => {
+            .map((header: string) => {
               const value = row[header];
               // Escape commas and quotes in CSV
               if (
@@ -299,7 +304,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
       const worksheet = XLSX?.utils.json_to_sheet(exportData);
 
       // Set column widths
-      const columnWidths = includedColumns?.map((col: any) => ({
+      const columnWidths = includedColumns?.map((col: ExportColumn) => ({
         wch: col.width || Math.max(col?.label?.length, 15),
       }));
       worksheet["!cols"] = columnWidths;
@@ -312,15 +317,15 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
           { Property: "Columns Exported", Value: includedColumns?.length || 0 },
           {
             Property: "Filters Applied",
-            Value: filters?.filter((f: any) => f.enabled).length,
+            Value: filters?.filter((f: ExportFilter) => f.enabled).length,
           },
         ];
 
-        if (filters?.filter((f: any) => f.enabled).length > 0) {
+        if (filters?.filter((f: ExportFilter) => f.enabled).length > 0) {
           metadata.push({ Property: "Active Filters", Value: "" });
           filters
-            .filter((f: any) => f.enabled)
-            .forEach((filter: any) => {
+            .filter((f: ExportFilter) => f.enabled)
+            .forEach((filter: ExportFilter) => {
               metadata.push({
                 Property: `${filter.label}`,
                 Value: `${filter.operator}: ${filter.value}`,
@@ -395,8 +400,8 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
   // Toggle column inclusion
   const toggleColumn = useCallback((columnId: string) => {
-    setColumns((prev: any) =>
-      prev?.map((col: any) =>
+    setColumns((prev: ExportColumn[]) =>
+      prev?.map((col: ExportColumn) =>
         col.id === columnId ? { ...col, included: !col.included } : col,
       ),
     );
@@ -412,14 +417,14 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
       value: "",
       enabled: true,
     };
-    setFilters((prev: any) => [...prev, newFilter]);
+    setFilters((prev: ExportFilter[]) => [...prev, newFilter]);
   }, [columns]);
 
   // Update filter
   const updateFilter = useCallback(
     (filterId: string, updates: Partial<ExportFilter>) => {
-      setFilters((prev: any) =>
-        prev?.map((filter: any) =>
+      setFilters((prev: ExportFilter[]) =>
+        prev?.map((filter: ExportFilter) =>
           filter.id === filterId ? { ...filter, ...updates } : filter,
         ),
       );
@@ -429,7 +434,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
   // Remove filter
   const removeFilter = useCallback((filterId: string) => {
-    setFilters((prev: any) => prev?.filter((filter: any) => filter.id !== filterId));
+    setFilters((prev: ExportFilter[]) => prev?.filter((filter: ExportFilter) => filter.id !== filterId));
   }, []);
 
   // Save template
@@ -537,7 +542,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                     Export Format
                   </label>
                   <div className="grid grid-cols-3 gap-3">
-                    {(["csv", "xlsx", "pdf"] as const).map((format: any) => {
+                    {(["csv", "xlsx", "pdf"] as const).map((format: "csv" | "xlsx" | "pdf") => {
                       const Icon = getFormatIcon(format);
                       return (
                         <button
@@ -567,7 +572,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                   <input
                     type="text"
                     value={filename}
-                    onChange={(e: any) => setFilename(e?.target?.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilename(e?.target?.value)}
                     placeholder="Enter filename..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -587,7 +592,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-3">
-                    {columns?.map((column: any) => (
+                    {columns?.map((column: ExportColumn) => (
                       <label
                         key={column.id}
                         className="flex items-center space-x-2"
@@ -625,8 +630,8 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                         <input
                           type="checkbox"
                           checked={exportOptions.includeHeaders}
-                          onChange={(e: any) =>
-                            setExportOptions((prev: any) => ({
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setExportOptions((prev: typeof exportOptions) => ({
                               ...prev,
                               includeHeaders: e?.target?.checked,
                             }))
@@ -641,8 +646,8 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                         <input
                           type="checkbox"
                           checked={exportOptions.includeMetadata}
-                          onChange={(e: any) =>
-                            setExportOptions((prev: any) => ({
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setExportOptions((prev: typeof exportOptions) => ({
                               ...prev,
                               includeMetadata: e?.target?.checked,
                             }))
@@ -663,8 +668,8 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                         <input
                           type="text"
                           value={exportOptions.sheetName}
-                          onChange={(e: any) =>
-                            setExportOptions((prev: any) => ({
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setExportOptions((prev: typeof exportOptions) => ({
                               ...prev,
                               sheetName: e?.target?.value,
                             }))
@@ -758,7 +763,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
                     {showTemplates && (
                       <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-                        {templates?.map((template: any) => (
+                        {templates?.map((template: ExportTemplate) => (
                           <div
                             key={template.id}
                             className="flex items-center justify-between p-2 bg-gray-50 rounded"
@@ -851,7 +856,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                 <input
                   type="text"
                   value={newTemplateName}
-                  onChange={(e: any) => setNewTemplateName(e?.target?.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTemplateName(e?.target?.value)}
                   placeholder="Enter template name..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 />
@@ -862,7 +867,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                 </label>
                 <textarea
                   value={newTemplateDescription}
-                  onChange={(e: any) => setNewTemplateDescription(e?.target?.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewTemplateDescription(e?.target?.value)}
                   placeholder="Enter description..."
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"

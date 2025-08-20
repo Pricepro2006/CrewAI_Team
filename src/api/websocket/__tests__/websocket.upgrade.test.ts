@@ -3,26 +3,52 @@
  * Tests WebSocket protocol upgrade, handshake validation, and security aspects
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi, Mock } from 'vitest';
 import { createServer, Server, IncomingMessage } from 'http';
 import { Socket } from 'net';
 import { WalmartWebSocketServer } from '../WalmartWebSocketServer';
 import { WebSocketServer } from 'ws';
 import { createHash } from 'crypto';
 
+// Mock interfaces for testing
+interface MockSocket extends Partial<Socket> {
+  destroy: Mock;
+  write?: Mock;
+  end?: Mock;
+  on?: Mock;
+  removeListener?: Mock;
+  setTimeout?: Mock;
+}
+
+interface MockIncomingMessage extends Partial<IncomingMessage> {
+  url: string;
+  method?: string;
+  headers: Record<string, string | string[] | undefined>;
+}
+
+interface UpgradeTestParams {
+  mockRequest: MockIncomingMessage;
+  mockSocket: MockSocket;
+  mockHead: Buffer;
+}
+
 describe('WebSocket Upgrade Handshake Tests', () => {
   let server: Server;
   let walmartWS: WalmartWebSocketServer;
   let port: number;
   
-  beforeAll((done) => {
+  beforeAll(async () => {
     port = 3000 + Math.floor(Math.random() * 1000);
     server = createServer();
-    server.listen(port, done);
+    await new Promise<void>((resolve) => {
+      server.listen(port, () => resolve());
+    });
   });
   
-  afterAll((done) => {
-    server.close(done);
+  afterAll(async () => {
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+    });
   });
   
   beforeEach(() => {
@@ -37,7 +63,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should handle valid upgrade requests', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         method: 'GET',
         headers: {
@@ -47,18 +73,18 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ==',
           'origin': 'http://localhost:3000'
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn(),
         end: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
       
       // Should not destroy socket for valid upgrade
@@ -68,22 +94,22 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should reject upgrade when server not initialized', () => {
       const uninitializedWS = new WalmartWebSocketServer();
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
           'upgrade': 'websocket'
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
-      uninitializedWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+      uninitializedWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       
       expect(mockSocket.destroy).toHaveBeenCalled();
     });
@@ -91,7 +117,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should handle upgrade with callback', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -99,40 +125,41 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
-        destroy: vi.fn()
-      } as any as Socket;
+      const mockSocket: MockSocket = {
+        destroy: vi.fn(),
+        write: vi.fn()
+      };
       
       const mockHead = Buffer.from('');
       const callback = vi.fn();
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead, callback);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead, callback);
       }).not.toThrow();
     });
 
     it('should handle malformed upgrade requests gracefully', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           // Missing required WebSocket headers
           'connection': 'keep-alive'
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
   });
@@ -141,7 +168,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should validate WebSocket version', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -149,24 +176,24 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '8', // Older version
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
     it('should validate WebSocket key format', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -174,46 +201,46 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'invalid-key-format'
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
     it('should handle missing required headers', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           // Missing all WebSocket headers
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
     it('should validate origin headers when present', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -222,17 +249,17 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ==',
           'origin': 'https://trusted-domain.com'
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
   });
@@ -241,7 +268,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should handle requests to correct path', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -249,16 +276,17 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
-        destroy: vi.fn()
-      } as any as Socket;
+      const mockSocket: MockSocket = {
+        destroy: vi.fn(),
+        write: vi.fn()
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
       
       expect(mockSocket.destroy).not.toHaveBeenCalled();
@@ -267,7 +295,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should handle requests with query parameters', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart?token=abc123&session=xyz789',
         headers: {
           'connection': 'upgrade',
@@ -275,23 +303,24 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
-        destroy: vi.fn()
-      } as any as Socket;
+      const mockSocket: MockSocket = {
+        destroy: vi.fn(),
+        write: vi.fn()
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
     it('should handle requests to different paths', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/different-service',
         headers: {
           'connection': 'upgrade',
@@ -299,16 +328,17 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
-        destroy: vi.fn()
-      } as any as Socket;
+      const mockSocket: MockSocket = {
+        destroy: vi.fn(),
+        write: vi.fn()
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
   });
@@ -318,7 +348,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
       // Mock a scenario where upgrade fails
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -326,27 +356,27 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn(),
         on: vi.fn(),
         removeListener: vi.fn(),
         setTimeout: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('some data');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
     it('should handle socket errors during upgrade', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -354,30 +384,30 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn(),
-        on: vi.fn((event, callback) => {
+        on: vi.fn((event: string, callback: (error?: Error) => void) => {
           if (event === 'error') {
             // Simulate socket error
             setTimeout(() => callback(new Error('Socket error')), 10);
           }
-        })
-      } as any as Socket;
+        }) as Mock
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
     it('should validate request method', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         method: 'POST', // Wrong method for WebSocket upgrade
         headers: {
@@ -386,25 +416,25 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
     it('should handle concurrent upgrade requests', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const createMockUpgrade = (id: number) => {
-        const mockRequest = {
+      const createMockUpgrade = (id: number): UpgradeTestParams => {
+        const mockRequest: MockIncomingMessage = {
           url: `/ws/walmart?client=${id}`,
           headers: {
             'connection': 'upgrade',
@@ -412,12 +442,12 @@ describe('WebSocket Upgrade Handshake Tests', () => {
             'sec-websocket-version': '13',
             'sec-websocket-key': `dGhlIHNhbXBsZSBub25jZSR7aWR9`
           }
-        } as IncomingMessage;
+        };
         
-        const mockSocket = {
+        const mockSocket: MockSocket = {
           destroy: vi.fn(),
           write: vi.fn()
-        } as any as Socket;
+        };
         
         const mockHead = Buffer.from('');
         
@@ -429,7 +459,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
       
       expect(() => {
         upgrades.forEach(({ mockRequest, mockSocket, mockHead }) => {
-          walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+          walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
         });
       }).not.toThrow();
     });
@@ -439,7 +469,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should handle WebSocket subprotocol negotiation', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -448,24 +478,24 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ==',
           'sec-websocket-protocol': 'chat, superchat'
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
     it('should handle WebSocket extensions', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -474,17 +504,17 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ==',
           'sec-websocket-extensions': 'permessage-deflate; client_max_window_bits'
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
 
@@ -502,7 +532,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should handle case-insensitive headers', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'CONNECTION': 'upgrade',
@@ -510,17 +540,17 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'SEC-WEBSOCKET-VERSION': '13',
           'SEC-WEBSOCKET-KEY': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as any as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       expect(() => {
-        walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+        walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       }).not.toThrow();
     });
   });
@@ -531,10 +561,10 @@ describe('WebSocket Upgrade Handshake Tests', () => {
       
       // Create many upgrade requests to test limits
       const maxRequests = 100;
-      const requests = [];
+      const requests: UpgradeTestParams[] = [];
       
       for (let i = 0; i < maxRequests; i++) {
-        const mockRequest = {
+        const mockRequest: MockIncomingMessage = {
           url: `/ws/walmart?id=${i}`,
           headers: {
             'connection': 'upgrade',
@@ -542,12 +572,12 @@ describe('WebSocket Upgrade Handshake Tests', () => {
             'sec-websocket-version': '13',
             'sec-websocket-key': `dGhlIHNhbXBsZSBub25jZSR7aWR9${i}`
           }
-        } as IncomingMessage;
+        };
         
-        const mockSocket = {
+        const mockSocket: MockSocket = {
           destroy: vi.fn(),
           write: vi.fn()
-        } as any as Socket;
+        };
         
         const mockHead = Buffer.from('');
         
@@ -556,7 +586,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
       
       expect(() => {
         requests.forEach(({ mockRequest, mockSocket, mockHead }) => {
-          walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+          walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
         });
       }).not.toThrow();
     });
@@ -564,7 +594,7 @@ describe('WebSocket Upgrade Handshake Tests', () => {
     it('should clean up resources after failed upgrades', () => {
       walmartWS.initialize(server, '/ws/walmart');
       
-      const mockRequest = {
+      const mockRequest: MockIncomingMessage = {
         url: '/ws/walmart',
         headers: {
           'connection': 'upgrade',
@@ -572,19 +602,19 @@ describe('WebSocket Upgrade Handshake Tests', () => {
           'sec-websocket-version': '13',
           'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ=='
         }
-      } as IncomingMessage;
+      };
       
-      const mockSocket = {
+      const mockSocket: MockSocket = {
         destroy: vi.fn(),
         write: vi.fn(),
         on: vi.fn(),
         removeListener: vi.fn()
-      } as any as Socket;
+      };
       
       const mockHead = Buffer.from('');
       
       // Simulate upgrade failure
-      walmartWS.handleUpgrade(mockRequest, mockSocket, mockHead);
+      walmartWS.handleUpgrade(mockRequest as IncomingMessage, mockSocket as Socket, mockHead);
       
       // Should handle cleanup gracefully
       expect(() => {

@@ -34,7 +34,7 @@ export interface UseRealtimePricesOptions {
   conversationId?: string;
   userId?: string;
   onPriceChange?: (update: PriceUpdate) => void;
-  onDealDetected?: (dealInfo: any) => void;
+  onDealDetected?: (dealInfo: unknown) => void;
   onTotalRecalculated?: (newTotal: number, savings: number) => void;
   enableAnimations?: boolean;
   maxPriceHistory?: number;
@@ -212,7 +212,7 @@ export function useRealtimePrices(
       case 'cart_updated':
         const { items } = event.data;
         if (items && Array.isArray(items)) {
-          const newProductIds = items?.map((item: any) => item.productId).filter(Boolean);
+          const newProductIds = items?.map((item: unknown) => item.productId).filter(Boolean);
           subscribeToPrices(newProductIds);
         }
         break;

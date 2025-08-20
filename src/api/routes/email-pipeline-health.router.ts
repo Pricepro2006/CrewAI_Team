@@ -22,6 +22,7 @@ import {
   isServiceName,
   isTimeWindow,
 } from "../../types/email-pipeline-health.types.js";
+import type { AuthenticatedRequest } from "../../shared/types/api.types.js";
 
 const router = express.Router();
 const healthChecker = EmailPipelineHealthChecker.getInstance();
@@ -176,7 +177,7 @@ router.get("/email-pipeline/detailed", requireAuth, async (req, res) => {
         status: healthStatus.status,
         forced: query.force,
         responseTime: Date.now() - startTime,
-        userId: (req as any).user?.id,
+        userId: (req as AuthenticatedRequest).user?.id,
       },
     );
 
@@ -274,7 +275,7 @@ router.post("/email-pipeline/check", requireAuth, async (req, res) => {
       "Forced email pipeline health check initiated",
       "EMAIL_PIPELINE_HEALTH",
       {
-        userId: (req as any).user?.id,
+        userId: (req as AuthenticatedRequest).user?.id,
       },
     );
 
@@ -299,7 +300,7 @@ router.post("/email-pipeline/check", requireAuth, async (req, res) => {
       {
         status: healthStatus.status,
         responseTime: Date.now() - startTime,
-        userId: (req as any).user?.id,
+        userId: (req as AuthenticatedRequest).user?.id,
       },
     );
 
@@ -374,7 +375,7 @@ router.get(
           service,
           status: serviceHealth.status,
           responseTime: Date.now() - startTime,
-          userId: (req as any).user?.id,
+          userId: (req as AuthenticatedRequest).user?.id,
         },
       );
 
@@ -429,7 +430,7 @@ router.get("/email-pipeline/history", requireAuth, async (req, res) => {
         limit,
         offset,
         responseTime: Date.now() - startTime,
-        userId: (req as any).user?.id,
+        userId: (req as AuthenticatedRequest).user?.id,
       },
     );
 
@@ -462,7 +463,7 @@ router.delete("/email-pipeline/cache", requireAuth, async (req, res) => {
       "Email pipeline health cache cleared",
       "EMAIL_PIPELINE_HEALTH",
       {
-        userId: (req as any).user?.id,
+        userId: (req as AuthenticatedRequest).user?.id,
       },
     );
 

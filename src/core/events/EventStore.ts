@@ -3,6 +3,7 @@ import Redis from 'ioredis';
 import { z } from 'zod';
 import { BaseEventSchema } from './EventBus.js';
 import type { BaseEvent } from './EventBus.js';
+import type { EventData, EventMetadata, AggregateData } from '../../shared/types/core.types.js';
 
 // Event store schemas and types
 export const EventStreamSchema = z.object({
@@ -21,7 +22,7 @@ export const SnapshotSchema = z.object({
   aggregateType: z.string(),
   aggregateId: z.string(),
   version: z.number(),
-  data: z.record(z.any()),
+  data: z.record(z.unknown()),
   timestamp: z.number(),
   metadata: z.record(z.string()).default({})
 });
@@ -351,7 +352,7 @@ export class EventStore extends EventEmitter {
 
   public async createSnapshot(
     streamId: string,
-    aggregateData: Record<string, any>,
+    aggregateData: AggregateData,
     version: number,
     metadata: Record<string, string> = {}
   ): Promise<string> {
@@ -464,7 +465,7 @@ export class EventStore extends EventEmitter {
         return null;
       }
 
-      let data: Record<string, any> = {};
+      let data: EventData = {};
       let metadata: Record<string, string> = {};
       
       try {
@@ -576,8 +577,8 @@ export class EventStore extends EventEmitter {
       const eventData = await this.client.hgetall(eventKey);
       
       if (Object.keys(eventData).length > 0) {
-        let metadata: Record<string, any> = {};
-        let payload: Record<string, any> = {};
+        let metadata: EventMetadata = {};
+        let payload: EventData = {};
         
         try {
           const metadataStr = eventData.metadata;

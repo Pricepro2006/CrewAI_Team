@@ -56,7 +56,7 @@ interface CacheStats {
 }
 
 class WalmartCacheService {
-  private memoryCache = new Map<string, CacheEntry<any>>();
+  private memoryCache = new Map<string, CacheEntry<unknown>>();
   private indexedDB: IDBDatabase | null = null;
   private stats: CacheStats;
   private config: CacheConfig;
@@ -148,7 +148,7 @@ class WalmartCacheService {
   /**
    * Generate cache key from parameters
    */
-  private getCacheKey(type: string, params: any): string {
+  private getCacheKey(type: string, params: unknown): string {
     const sortedParams = JSON.stringify(params, Object.keys(params).sort());
     return `${type}:${btoa(sortedParams).replace(/[+/=]/g, '')}`;
   }
@@ -156,14 +156,14 @@ class WalmartCacheService {
   /**
    * Estimate data size in bytes
    */
-  private estimateSize(data: any): number {
+  private estimateSize(data: unknown): number {
     return new Blob([JSON.stringify(data)]).size;
   }
   
   /**
    * Check if cache entry is expired
    */
-  private isExpired(entry: CacheEntry<any>): boolean {
+  private isExpired(entry: CacheEntry<unknown>): boolean {
     return Date.now() - entry.timestamp > entry.ttl;
   }
   
@@ -512,7 +512,7 @@ class WalmartCacheService {
     await this.ensureInitialized();
     if (!this.indexedDB) return;
     
-    return new Promise((resolve: any) => {
+    return new Promise((resolve: unknown) => {
       const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');
       const store = transaction.objectStore('cache');
       const request = store.clear();
@@ -541,7 +541,7 @@ class WalmartCacheService {
     await this.ensureInitialized();
     if (!this.indexedDB) return;
     
-    return new Promise((resolve: any) => {
+    return new Promise((resolve: unknown) => {
       const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');
       const store = transaction.objectStore('cache');
       const request = store.openCursor();

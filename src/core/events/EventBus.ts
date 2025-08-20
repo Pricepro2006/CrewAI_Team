@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import Redis from 'ioredis';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
+import type { EventData, EventMetadata } from '../../shared/types/core.types.js';
 
 // Event schemas and types
 export const BaseEventSchema = z.object({
@@ -12,8 +13,8 @@ export const BaseEventSchema = z.object({
   timestamp: z.number(),
   correlationId: z.string().optional(),
   causationId: z.string().optional(), // ID of the command that caused this event
-  metadata: z.record(z.any()).default({}),
-  payload: z.record(z.any())
+  metadata: z.record(z.unknown()).default({}),
+  payload: z.record(z.unknown())
 });
 
 export const EventEnvelopeSchema = z.object({
@@ -56,7 +57,7 @@ const isValidStreamResult = (result: unknown): result is RedisStreamResult => {
 };
 
 // Event handler interface
-export interface EventHandler<T = any> {
+export interface EventHandler<T = unknown> {
   eventType: string;
   version?: number;
   handle(event: BaseEvent & { payload: T }): Promise<void>;
@@ -226,14 +227,14 @@ export class EventBus extends EventEmitter {
     }
   }
 
-  public async publish<T = any>(
+  public async publish<T = unknown>(
     eventType: string,
     payload: T,
     options: {
       routingKey?: string;
       correlationId?: string;
       causationId?: string;
-      metadata?: Record<string, any>;
+      metadata?: EventMetadata;
       ttl?: number;
       priority?: number;
     } = {}
@@ -258,7 +259,7 @@ export class EventBus extends EventEmitter {
         serviceVersion: this.config.service.version,
         instanceId: this.config.service.instanceId
       },
-      payload: (payload as any) || {}
+      payload: (payload as EventData) || {}
     };
 
     const envelope: EventEnvelope = {
@@ -321,7 +322,7 @@ export class EventBus extends EventEmitter {
     }
   }
 
-  public async subscribe<T = any>(
+  public async subscribe<T = unknown>(
     eventType: string | string[],
     handler: EventHandler<T>,
     options: {
@@ -524,7 +525,7 @@ export class EventBus extends EventEmitter {
       const startTime = Date.now();
       
       try {
-      await handler.handle(event as BaseEvent & { payload: any });
+      await handler.handle(event as BaseEvent & { payload: T });
         
         this.emit('event:handler_success', {
           eventId: event.id,
@@ -554,7 +555,7 @@ export class EventBus extends EventEmitter {
         // Call error handler if available
         if (handler.onError && isError(error)) {
           try {
-            await handler.onError(event as BaseEvent & { payload: any }, error);
+            await handler.onError(event as BaseEvent & { payload: T }, error);
           } catch (errorHandlerError) {
             this.emit('event:error_handler_failed', {
               eventId: event.id,

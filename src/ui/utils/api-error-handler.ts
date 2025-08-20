@@ -12,7 +12,7 @@ export interface APIError {
 }
 
 export interface ErrorHandlerOptions {
-  fallbackData?: any;
+  fallbackData?: unknown;
   logLevel?: 'error' | 'warn' | 'info';
   showToUser?: boolean;
   retryable?: boolean;
@@ -21,7 +21,7 @@ export interface ErrorHandlerOptions {
 /**
  * Categorizes API errors and provides appropriate handling
  */
-export function categorizeAPIError(error: any): {
+export function categorizeAPIError(error: unknown): {
   category: 'missing_endpoint' | 'permission_denied' | 'network_error' | 'server_error' | 'unknown';
   severity: 'low' | 'medium' | 'high' | 'critical';
   retryable: boolean;
@@ -83,7 +83,7 @@ export function categorizeAPIError(error: any): {
 /**
  * Provides user-friendly error messages
  */
-export function getUserFriendlyErrorMessage(error: any, endpoint?: string): string {
+export function getUserFriendlyErrorMessage(error: unknown, endpoint?: string): string {
   const { category } = categorizeAPIError(error);
 
   switch (category) {
@@ -107,7 +107,7 @@ export function getUserFriendlyErrorMessage(error: any, endpoint?: string): stri
 /**
  * Creates appropriate fallback data based on the endpoint
  */
-export function createFallbackData(endpoint: string): any {
+export function createFallbackData(endpoint: string): unknown {
   const endpointLower = endpoint.toLowerCase();
 
   if (endpointLower.includes('health') || endpointLower.includes('status')) {
@@ -193,17 +193,17 @@ export function createFallbackData(endpoint: string): any {
  * Main error handler function
  */
 export function handleAPIError(
-  error: any, 
+  error: unknown, 
   endpoint: string, 
   options: ErrorHandlerOptions = {}
 ): {
   shouldShowError: boolean;
   userMessage: string;
-  fallbackData: any;
+  fallbackData: unknown;
   logEntry: {
     level: 'error' | 'warn' | 'info';
     message: string;
-    context: any;
+    context: unknown;
   };
 } {
   const {
@@ -250,7 +250,7 @@ export function handleAPIError(
  * Hook-friendly error handler that can be used in React Query error callbacks
  */
 export function createQueryErrorHandler(endpoint: string, options?: ErrorHandlerOptions) {
-  return (error: any) => {
+  return (error: unknown) => {
     return handleAPIError(error, endpoint, options);
   };
 }
@@ -260,7 +260,7 @@ export function createQueryErrorHandler(endpoint: string, options?: ErrorHandler
  */
 export function createSafeQueryConfig(endpoint: string, options?: ErrorHandlerOptions) {
   return {
-    retry: (failureCount: number, error: any) => {
+    retry: (failureCount: number, error: unknown) => {
       const errorInfo = categorizeAPIError(error);
       
       // Don't retry if not retryable or if we've already tried multiple times
@@ -273,7 +273,7 @@ export function createSafeQueryConfig(endpoint: string, options?: ErrorHandlerOp
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 30000, // 30 seconds
     cacheTime: 300000, // 5 minutes
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const result = handleAPIError(error, endpoint, options);
       
       // You could dispatch to a global error state here if needed

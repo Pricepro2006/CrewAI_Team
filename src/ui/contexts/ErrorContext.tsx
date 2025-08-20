@@ -76,9 +76,9 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
 
     const interval = setInterval(() => {
       const now = new Date();
-      setErrors((prev: any) =>
+      setErrors((prev: ErrorInfo[]) =>
         prev?.filter(
-          (error: any) =>
+          (error: ErrorInfo[]) =>
             now.getTime() - error?.timestamp?.getTime() < cleanupInterval
         )
       );
@@ -109,7 +109,7 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
       }
 
       // Add to state (limit max errors)
-      setErrors((prev: any) => {
+      setErrors((prev: ErrorInfo[]) => {
         const newErrors = [errorInfo, ...prev].slice(0, maxErrors);
         return newErrors;
       });
@@ -151,7 +151,7 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
   );
 
   const removeError = useCallback((id: string) => {
-    setErrors((prev: any) => prev?.filter((error: any) => error.id !== id));
+    setErrors((prev: ErrorInfo[]) => prev?.filter((error: ErrorInfo[]) => error.id !== id));
     retryActionsRef?.current?.delete(id);
   }, []);
 
@@ -162,7 +162,7 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
 
   const retryError = useCallback(
     async (id: string) => {
-      const errorInfo = errors.find((e: any) => e.id === id);
+      const errorInfo = errors.find((e: ErrorInfo[]) => e.id === id);
       if (!errorInfo) return;
 
       const retryAction = retryActionsRef?.current?.get(id);
@@ -173,8 +173,8 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
 
       try {
         // Update retry count
-        setErrors((prev: any) =>
-          prev?.map((e: any) =>
+        setErrors((prev: ErrorInfo[]) =>
+          prev?.map((e: ErrorInfo[]) =>
             e.id === id ? { ...e, retryCount: (e.retryCount || 0) + 1 } : e
           )
         );
@@ -188,8 +188,8 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
         // Update error with new failure
         const newError = retryError instanceof Error ? retryError : new Error(String(retryError));
         
-        setErrors((prev: any) =>
-          prev?.map((e: any) =>
+        setErrors((prev: ErrorInfo[]) =>
+          prev?.map((e: ErrorInfo[]) =>
             e.id === id
               ? {
                   ...e,
@@ -208,11 +208,11 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
   );
 
   const getErrorById = useCallback(
-    (id: string) => errors.find((e: any) => e.id === id),
+    (id: string) => errors.find((e: ErrorInfo[]) => e.id === id),
     [errors]
   );
 
-  const criticalError = errors.find((e: any) => e.severity === "critical") || null;
+  const criticalError = errors.find((e: ErrorInfo[]) => e.severity === "critical") || null;
 
   const value: ErrorContextValue = {
     errors,

@@ -50,7 +50,7 @@ const t = initTRPC.context<Context>().create({
         // Only include stack traces in development
         stack: isDev ? error.stack : undefined,
         // Add request ID for tracking if available
-        requestId: (shape.data as any)?.requestId,
+        requestId: (shape.data as Record<string, unknown>)?.requestId as string | undefined,
       },
     };
   },
@@ -71,7 +71,7 @@ const csrfProtection = t.middleware(async ({ ctx, next }) => {
   const csrfFn = createCSRFProtection({
     enableAutoRotation: true,
     skipPaths: [
-      // Add any paths that should skip CSRF protection here
+      // Add paths that should skip CSRF protection here
     ],
   });
   return csrfFn({ ctx, next });
@@ -158,13 +158,10 @@ const createRateLimitMiddleware = (
 
     // Get existing rate limit data from context or create new
     if (!ctx.rateLimits) {
-      (ctx as any).rateLimits = new Map();
+      (ctx as unknown as { rateLimits: Map<string, { count: number; resetTime: number }> }).rateLimits = new Map();
     }
 
-    const rateLimits = (ctx as any).rateLimits as Map<
-      string,
-      { count: number; resetTime: number }
-    >;
+    const rateLimits = (ctx as unknown as { rateLimits: Map<string, { count: number; resetTime: number }> }).rateLimits;
 
     // Clean old entries
     for (const [key, value] of rateLimits.entries()) {
@@ -445,7 +442,7 @@ export const databaseProcedure = t.procedure.use(securityAudit).use(authRequired
 export const safeDatabaseProcedure = t.procedure.use(securityAudit);
 
 // Utility function for creating feature-specific routers
-export function createFeatureRouter<T extends Record<string, any>>(
+export function createFeatureRouter<T extends Record<string, unknown>>(
   name: string,
   procedures: T,
 ): T {
@@ -456,7 +453,7 @@ export function createFeatureRouter<T extends Record<string, any>>(
 }
 
 // Router builder with security defaults
-export function createSecureRouter<T extends Record<string, any>>(
+export function createSecureRouter<T extends Record<string, unknown>>(
   routes: T,
   options?: {
     requireAuth?: boolean;

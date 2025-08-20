@@ -5,10 +5,11 @@
 import { SafeLlamaCppProvider, LlamaCppResponse, LlamaCppGenerateOptions } from "./SafeLlamaCppProvider.js";
 import { SimpleLLMProvider } from "./SimpleLLMProvider.js";
 import { HttpLlamaProvider } from "./HttpLlamaProvider.js";
+import type { LlamaCppRequestContext } from "./LlamaCppHttpProvider.js";
 import { logger } from "../../utils/logger.js";
 
 export interface LLMProvider {
-  generate(prompt: string, options?: LlamaCppGenerateOptions): Promise<LlamaCppResponse>;
+  generate(prompt: string, options?: LlamaCppGenerateOptions & { context?: LlamaCppRequestContext }): Promise<LlamaCppResponse>;
   initialize(): Promise<void>;
   isReady(): boolean;
   cleanup(): Promise<void>;
@@ -41,17 +42,17 @@ export class LLMProviderManager implements LLMProvider {
     this.initializationAttempted = true;
 
     try {
-      // First try HTTP connection to running llama-server
-      const llamaServerUrl = process.env.LLAMA_SERVER_URL || "http://localhost:11434";
+      // First try HTTP connection to running llama-server (port 8081 to avoid WebSocket conflict on 8080)
+      const llamaServerUrl = process.env.LLAMA_SERVER_URL || "http://localhost:8081";
       this.primaryProvider = new HttpLlamaProvider(llamaServerUrl);
       
       try {
         await this.primaryProvider.initialize();
-        logger.info("Primary LLM provider (HTTP llama-server) initialized successfully", "LLM_MANAGER");
+        logger.info("Primary LLM provider (llama-server) initialized successfully", "LLM_MANAGER");
         this.useFallback = false;
         return; // Success, exit early
       } catch (httpError) {
-        logger.warn("HTTP llama-server not available, trying direct llama.cpp", "LLM_MANAGER");
+        logger.warn("llama-server not available on port 8081, trying direct llama.cpp", "LLM_MANAGER");
         this.primaryProvider = null;
       }
       
@@ -91,7 +92,7 @@ export class LLMProviderManager implements LLMProvider {
    */
   public async generate(
     prompt: string,
-    options: LlamaCppGenerateOptions = {}
+    options: LlamaCppGenerateOptions & { context?: LlamaCppRequestContext } = {}
   ): Promise<LlamaCppResponse> {
     // Ensure initialization
     if (!this.initializationAttempted) {

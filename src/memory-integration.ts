@@ -3,6 +3,55 @@
  * Demonstrates how to use the memory MCP tool for context persistence
  */
 
+// Type definitions for memory integration
+export interface ExecutionPlan {
+  id?: string;
+  steps?: Array<{
+    agent: string;
+    task: string;
+    dependencies?: string[];
+  }>;
+  metadata?: Record<string, unknown>;
+  success?: boolean;
+  tokensUsed?: number;
+  executionTime?: number;
+  confidence?: number;
+}
+
+export interface AgentResult {
+  success: boolean;
+  output?: string;
+  metadata?: Record<string, unknown>;
+  tokensUsed?: number;
+  confidence?: number;
+}
+
+export interface MemoryEntity {
+  name: string;
+  entityType: string;
+  observations: string[];
+}
+
+export interface MemoryNode {
+  name: string;
+  entityType: string;
+  observations?: string[];
+}
+
+export interface ExecutionPattern {
+  pattern: string;
+  frequency: number;
+  success_rate: number;
+  average_tokens: number;
+}
+
+export interface ExecutionAnalytics {
+  agent_usage: Record<string, number>;
+  average_confidence: number;
+  common_patterns: ExecutionPattern[];
+  recommendations: string[];
+}
+
 export class MemoryIntegrationManager {
   /**
    * Initialize memory graph for the AI Agent Team System
@@ -141,7 +190,7 @@ export class MemoryIntegrationManager {
   /**
    * Store execution plan in memory
    */
-  async storeExecutionPlan(plan: any, queryId: string) {
+  async storeExecutionPlan(plan: ExecutionPlan, queryId: string) {
     console.log("Executing: memory:create_entities for execution plan");
 
     const planEntity = {
@@ -152,7 +201,7 @@ export class MemoryIntegrationManager {
         `Steps: ${JSON.stringify(plan.steps)}`,
         `Created: ${new Date().toISOString()}`,
         `Estimated time: ${plan.estimatedTime}`,
-        `Required agents: ${plan?.steps?.map((s: any) => s.agent).join(", ")}`,
+        `Required agents: ${plan?.steps?.map((s) => s.agent).join(", ")}`,
       ],
     };
 
@@ -175,7 +224,7 @@ export class MemoryIntegrationManager {
   /**
    * Store agent execution results
    */
-  async storeAgentResult(agentName: string, taskId: string, result: any) {
+  async storeAgentResult(agentName: string, taskId: string, result: AgentResult) {
     console.log("Executing: memory:add_observations for agent result");
 
     const observation = `Task ${taskId}: ${JSON.stringify({
@@ -260,10 +309,10 @@ export class MemoryIntegrationManager {
 
     // Analyze execution patterns
     const executionPlans = graph?.entities?.filter(
-      (e: any) => e.entityType === "Plan",
+      (e: MemoryNode) => e.entityType === "Plan",
     );
     const conversations = graph?.entities?.filter(
-      (e: any) => e.entityType === "Conversation",
+      (e: MemoryNode) => e.entityType === "Conversation",
     );
 
     const metrics = {
@@ -327,7 +376,7 @@ export class MemoryIntegrationManager {
     return agentMap[agentType] || agentType;
   }
 
-  private buildContextWindow(agent: any, history: any[]): string {
+  private buildContextWindow(agent: MemoryNode, history: MemoryNode[]): string {
     // Build a context window from agent history
     const recentObservations = agent.observations?.slice(-5) || [];
     const relevantHistory = history.slice(0, 3);
@@ -335,22 +384,22 @@ export class MemoryIntegrationManager {
     return `
 Agent: ${agent.name}
 Recent Activity: ${recentObservations.join("\n")}
-Relevant History: ${relevantHistory?.map((h: any) => h.name).join(", ")}
+Relevant History: ${relevantHistory?.map((h) => h.name).join(", ")}
     `.trim();
   }
 
   // Missing method implementations to fix TypeScript errors
-  private async createEntities(entities: any[]): Promise<void> {
+  private async createEntities(entities: MemoryEntity[]): Promise<void> {
     // Mock implementation for legacy file
-    console.log("Creating entities:", entities?.map((e: any) => e.name).join(", "));
+    console.log("Creating entities:", entities?.map((e) => e.name).join(", "));
   }
 
-  private async createRelations(relations: any[]): Promise<void> {
+  private async createRelations(relations: Array<{from: string, to: string, relationType: string}>): Promise<void> {
     // Mock implementation for legacy file
     console.log("Creating relations:", relations?.length || 0);
   }
 
-  private async readGraph(): Promise<any> {
+  private async readGraph(): Promise<unknown> {
     // Mock implementation for legacy file
     return {
       entities: [
@@ -362,57 +411,57 @@ Relevant History: ${relevantHistory?.map((h: any) => h.name).join(", ")}
     };
   }
 
-  private async searchNodes(query: string): Promise<any[]> {
+  private async searchNodes(query: string): Promise<MemoryNode[]> {
     // Mock implementation for legacy file
     return [{ name: "MockNode", query }];
   }
 
-  private calculateAgentUsage(graph: any): any {
+  private calculateAgentUsage(graph: unknown): Record<string, number> {
     // Mock implementation for legacy file
     return { research: 10, code: 15, data: 8, writer: 12 };
   }
 
-  private calculateAverageConfidence(graph: any): number {
+  private calculateAverageConfidence(graph: unknown): number {
     // Mock implementation for legacy file
     return 0.87;
   }
 
-  private identifyCommonPatterns(executionPlans: any[]): any[] {
+  private identifyCommonPatterns(executionPlans: ExecutionPlan[]): ExecutionPattern[] {
     // Mock implementation for legacy file
     return ["research_then_code", "analysis_then_report"];
   }
 
-  private extractPatterns(executions: any[], isSuccess: boolean): any[] {
+  private extractPatterns(executions: ExecutionPlan[], isSuccess: boolean): ExecutionPattern[] {
     // Mock implementation for legacy file
     return [`pattern_${isSuccess ? "success" : "failure"}`];
   }
 
-  private generateRecommendations(successful: any[], failed: any[]): any[] {
+  private generateRecommendations(successful: ExecutionPlan[], failed: ExecutionPlan[]): string[] {
     // Mock implementation for legacy file
     return ["Use more research before coding", "Add more validation steps"];
   }
 
-  private getCommonAgents(executions: any[]): string[] {
+  private getCommonAgents(executions: ExecutionPlan[]): string[] {
     // Extract common agents from executions
     return ["research", "code"];
   }
 
-  private getAverageTokens(executions: any[]): number {
+  private getAverageTokens(executions: ExecutionPlan[]): number {
     // Calculate average tokens used
     return 2500;
   }
 
-  private getTimePatterns(executions: any[]): any {
+  private getTimePatterns(executions: ExecutionPlan[]): Record<string, number> {
     // Analyze time patterns
     return { peak: "14:00-16:00", averageDuration: "45s" };
   }
 
-  private async addObservations(observations: any[]): Promise<any> {
+  private async addObservations(observations: Array<{entityName: string, contents: string[]}>): Promise<unknown> {
     // memory:add_observations
     return { success: true };
   }
 
-  private async openNodes(names: string[]): Promise<any> {
+  private async openNodes(names: string[]): Promise<MemoryNode[]> {
     // memory:open_nodes
     return {};
   }
@@ -429,7 +478,7 @@ export const memoryUsageExamples = {
   },
 
   // Track execution
-  trackExecution: async (plan: any, queryId: string) => {
+  trackExecution: async (plan: ExecutionPlan, queryId: string) => {
     const planId = await memoryManager.storeExecutionPlan(plan, queryId);
 
     // Track each agent result
@@ -452,7 +501,7 @@ export const memoryUsageExamples = {
 };
 
 // Placeholder for agent execution
-async function executeAgent(step: any): Promise<any> {
+async function executeAgent(step: {agent: string, task: string}): Promise<AgentResult> {
   return {
     success: true,
     data: { summary: "Agent execution completed" },

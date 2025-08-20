@@ -12,6 +12,53 @@ import {
 } from "@heroicons/react/24/outline";
 import "./BusinessIntelligenceDashboard.css";
 
+// Business Intelligence Types
+interface PriorityDistribution {
+  level: string;
+  count: number;
+}
+
+interface WorkflowDistribution {
+  type: string;
+  count: number;
+  percentage: number;
+  totalValue: number;
+}
+
+interface TopCustomer {
+  name: string;
+  emailCount: number;
+  totalValue: number;
+  workflowTypes: string[];
+  lastInteraction: string;
+}
+
+interface HighValueItem {
+  type: string;
+  value: number;
+  customer: string;
+  date: string;
+}
+
+interface EntityExtracts {
+  poNumbers: string[];
+  quoteNumbers: string[];
+  recentHighValueItems: HighValueItem[];
+}
+
+interface ChartContext {
+  raw: number;
+  label: string;
+}
+
+interface ChartElement {
+  index: number;
+}
+
+interface ErrorWithMessage {
+  message: string;
+}
+
 // Import Chart.js components for real charts
 import {
   Chart as ChartJS,
@@ -44,7 +91,7 @@ interface StatusDistributionChartProps {
   title: string;
   showPercentages?: boolean;
   chartType?: 'doughnut' | 'pie' | 'bar';
-  onClick?: (status?: any, count?: any) => void;
+  onClick?: (status?: string, count?: number) => void;
   refreshKey?: number;
   className?: string;
 }
@@ -100,7 +147,7 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({
         borderColor: "#374151",
         borderWidth: 1,
         callbacks: {
-          label: (context: any) => {
+          label: (context: ChartContext) => {
             const percentage = showPercentages && totalEmails > 0 
               ? ` (${((context.raw / totalEmails) * 100).toFixed(1)}%)`
               : '';
@@ -109,11 +156,11 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({
         },
       },
     },
-    onClick: (event: any, elements: any) => {
+    onClick: (event: unknown, elements: ChartElement[]) => {
       if ((elements?.length || 0) > 0 && onClick) {
         const index = elements[0].index;
-        const label = chartData?.labels?.[index];
-        const value = chartData?.datasets?.[0]?.data?.[index];
+        const label = chartData?.labels?.[index] as string;
+        const value = chartData?.datasets?.[0]?.data?.[index] as number;
         onClick(label, value);
       }
     },
@@ -142,18 +189,18 @@ interface WorkflowTimelineChartProps {
   title: string;
   showProcessingTime?: boolean;
   chartType?: "line" | "bar";
-  onClick?: (dataPoint?: any) => void;
+  onClick?: (dataPoint?: { timestamp: string; totalEmails: number; completedEmails: number; criticalEmails: number }) => void;
   refreshKey?: number;
   className?: string;
 }
 
 const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({ data, timeRange, title, showProcessingTime, chartType, onClick, refreshKey, className }) => {
   const chartData = {
-    labels: data?.map((d: any) => new Date(d.timestamp).toLocaleDateString('en-US', { weekday: 'short' })),
+    labels: data?.map((d: unknown) => new Date(d.timestamp).toLocaleDateString('en-US', { weekday: 'short' })),
     datasets: [
       {
         label: 'Total Emails',
-        data: data?.map((d: any) => d.totalEmails),
+        data: data?.map((d: unknown) => d.totalEmails),
         borderColor: 'rgba(59, 130, 246, 1)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
@@ -161,7 +208,7 @@ const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({ data, tim
       },
       {
         label: 'Completed',
-        data: data?.map((d: any) => d.completedEmails),
+        data: data?.map((d: unknown) => d.completedEmails),
         borderColor: 'rgba(34, 197, 94, 1)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         fill: true,
@@ -169,7 +216,7 @@ const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({ data, tim
       },
       {
         label: 'Critical',
-        data: data?.map((d: any) => d.criticalEmails),
+        data: data?.map((d: unknown) => d.criticalEmails),
         borderColor: 'rgba(239, 68, 68, 1)',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         fill: false,
@@ -217,7 +264,7 @@ const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({ data, tim
         },
       },
     },
-    onClick: (event: any, elements: any) => {
+    onClick: (event: unknown, elements: ChartElement[]) => {
       if ((elements?.length || 0) > 0 && onClick) {
         const index = elements[0].index;
         onClick(data[index]);
@@ -255,7 +302,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
   }, {
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    onError: (err: any) => {
+    onError: (err: ErrorWithMessage) => {
       console.warn('Business Intelligence API error:', err.message);
     },
     // Add graceful fallback for missing endpoints
@@ -283,11 +330,11 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
     
     const dist = biData?.data?.priorityDistribution;
     return {
-      red: (dist.find((d: any) => d.level === "Critical")?.count || 0) + 
-           (dist.find((d: any) => d.level === "High")?.count || 0),
-      yellow: dist.find((d: any) => d.level === "Medium")?.count || 0,
-      green: (dist.find((d: any) => d.level === "Low")?.count || 0) +
-             (dist.find((d: any) => d.level === "Unknown")?.count || 0),
+      red: (dist.find((d: PriorityDistribution) => d.level === "Critical")?.count || 0) + 
+           (dist.find((d: PriorityDistribution) => d.level === "High")?.count || 0),
+      yellow: dist.find((d: PriorityDistribution) => d.level === "Medium")?.count || 0,
+      green: (dist.find((d: PriorityDistribution) => d.level === "Low")?.count || 0) +
+             (dist.find((d: PriorityDistribution) => d.level === "Unknown")?.count || 0),
     };
   }, [biData]);
 
@@ -445,7 +492,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
       <div className="bi-section">
         <h4 className="bi-section-title">Workflow Distribution</h4>
         <div className="bi-workflow-grid">
-          {workflowDistribution.slice(0, 6).map((workflow: any) => (
+          {workflowDistribution.slice(0, 6).map((workflow: WorkflowDistribution) => (
             <div key={workflow.type} className="bi-workflow-card">
               <div className="bi-workflow-header">
                 <span className="bi-workflow-type">{workflow.type}</span>
@@ -480,7 +527,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
             title="Priority Distribution"
             showPercentages={true}
             chartType={chartType}
-            onClick={(status: any, count: any) => {
+            onClick={(status: string, count: number) => {
               console.log(`Clicked ${status}: ${count} emails`);
             }}
             refreshKey={refreshKey}
@@ -516,7 +563,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
             title="Processing Timeline"
             showProcessingTime={true}
             chartType="line"
-            onClick={(dataPoint: any) => {
+            onClick={(dataPoint: unknown) => {
               console.log("Clicked timeline point:", dataPoint);
             }}
             refreshKey={refreshKey}
@@ -536,7 +583,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
             <div className="bi-table-cell">Workflows</div>
             <div className="bi-table-cell">Last Activity</div>
           </div>
-          {topCustomers.slice(0, 10).map((customer: any, index: number) => (
+          {topCustomers.slice(0, 10).map((customer: TopCustomer, index: number) => (
             <div key={index} className="bi-table-row">
               <div className="bi-table-cell bi-customer-name">
                 <BuildingOfficeIcon className="bi-customer-icon" />
@@ -548,7 +595,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
               </div>
               <div className="bi-table-cell">
                 <div className="bi-workflow-tags">
-                  {customer?.workflowTypes?.slice(0, 2).map((type: any) => (
+                  {customer?.workflowTypes?.slice(0, 2).map((type: string) => (
                     <span key={type} className="bi-workflow-tag">
                       {type}
                     </span>
@@ -573,7 +620,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
         <div className="bi-section">
           <h4 className="bi-section-title">Recent High-Value Transactions</h4>
           <div className="bi-transactions-grid">
-            {entityExtracts?.recentHighValueItems?.slice(0, 6).map((item: any, index: number) => (
+            {entityExtracts?.recentHighValueItems?.slice(0, 6).map((item: HighValueItem, index: number) => (
               <div key={index} className="bi-transaction-card">
                 <div className="bi-transaction-header">
                   <ShoppingCartIcon className="bi-transaction-icon" />
@@ -598,7 +645,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
           <h5>Purchase Orders</h5>
           <div className="bi-entity-count">{entityExtracts?.poNumbers?.length}</div>
           <div className="bi-entity-samples">
-            {entityExtracts?.poNumbers?.slice(0, 3).map((po: any) => (
+            {entityExtracts?.poNumbers?.slice(0, 3).map((po: string) => (
               <span key={po} className="bi-entity-tag">{po}</span>
             ))}
             {entityExtracts?.poNumbers?.length > 3 && (
@@ -613,7 +660,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
           <h5>Quote Numbers</h5>
           <div className="bi-entity-count">{entityExtracts?.quoteNumbers?.length}</div>
           <div className="bi-entity-samples">
-            {entityExtracts?.quoteNumbers?.slice(0, 3).map((quote: any) => (
+            {entityExtracts?.quoteNumbers?.slice(0, 3).map((quote: string) => (
               <span key={quote} className="bi-entity-tag">{quote}</span>
             ))}
             {entityExtracts?.quoteNumbers?.length > 3 && (
@@ -639,7 +686,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
           )}
         </div>
         <button
-          onClick={() => setRefreshKey((prev: any) => prev + 1)}
+          onClick={() => setRefreshKey((prev: number) => prev + 1)}
           className="bi-refresh-btn"
         >
           🔄 Refresh Dashboard

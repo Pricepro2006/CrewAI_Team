@@ -8,23 +8,40 @@ import {
   useSystemHealth, 
   useRAGOperations 
 } from '../useWebSocket';
+import { MockFunction } from '../../../shared/types/test.types';
+import { JSONObject } from '../../../shared/types/utility.types';
+
+// Mock tRPC interfaces
+interface MockWSClient {
+  close: MockFunction<() => void>;
+  subscribe: MockFunction<(filter: JSONObject, callbacks: JSONObject) => { unsubscribe: () => void }>;
+  onOpen: MockFunction<() => void>;
+  onClose: MockFunction<() => void>;
+}
+
+interface MockTRPCClient {
+  ws: MockWSClient;
+  subscription: MockFunction<(...args: unknown[]) => unknown>;
+  mutation: MockFunction<(...args: unknown[]) => unknown>;
+  query: MockFunction<(...args: unknown[]) => unknown>;
+}
 
 // Mock tRPC
-const mockWSClient = {
+const mockWSClient: MockWSClient = {
   close: vi.fn(),
-  subscribe: vi.fn(),
+  subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
   onOpen: vi.fn(),
   onClose: vi.fn(),
 };
 
-const mockTRPCClient = {
+const mockTRPCClient: MockTRPCClient = {
   ws: mockWSClient,
   subscription: vi.fn(),
   mutation: vi.fn(),
   query: vi.fn(),
 };
 
-const mockCreateWSClientFn = vi.fn(() => mockWSClient);
+const mockCreateWSClientFn = vi.fn<[JSONObject], MockWSClient>(() => mockWSClient);
 
 vi.mock('@trpc/client', () => ({
   createTRPCProxyClient: vi.fn(() => mockTRPCClient),
@@ -59,11 +76,19 @@ vi.spyOn(console, 'log').mockImplementation(() => {});
 vi.spyOn(console, 'warn').mockImplementation(() => {});
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
+// WebSocket config interface
+interface WSConfig {
+  url?: string;
+  onOpen?: () => void;
+  onClose?: (event: { code: number; reason: string }) => void;
+  onError?: (error: Error) => void;
+}
+
 describe('useWebSocket', () => {
-  let mockCreateWSClient: any;
-  let mockOnConnect: ReturnType<typeof vi.fn>;
-  let mockOnDisconnect: ReturnType<typeof vi.fn>;
-  let mockOnError: ReturnType<typeof vi.fn>;
+  let mockCreateWSClient: MockFunction<[WSConfig], MockWSClient>;
+  let mockOnConnect: MockFunction<() => void>;
+  let mockOnDisconnect: MockFunction<() => void>;
+  let mockOnError: MockFunction<(error: Error) => void>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -74,7 +99,7 @@ describe('useWebSocket', () => {
     mockCreateWSClient = mockCreateWSClientFn;
 
     // Reset mock implementation
-    mockCreateWSClient.mockImplementation((config: any) => {
+    mockCreateWSClient.mockImplementation((config: WSConfig) => {
       const client = {
         ...mockWSClient,
         close: vi.fn(),
@@ -145,9 +170,9 @@ describe('useWebSocket', () => {
 
   describe('Disconnection Handling', () => {
     it('handles disconnection events', async () => {
-      let onCloseCallback: ((event: any) => void) | undefined;
+      let onCloseCallback: ((event: { code: number; reason: string }) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config: any) => {
+      mockCreateWSClient.mockImplementation((config: WSConfig) => {
         onCloseCallback = config.onClose;
         setTimeout(() => config.onOpen?.(), 10);
         return mockWSClient;
@@ -197,9 +222,9 @@ describe('useWebSocket', () => {
     });
 
     it('attempts reconnection after unexpected disconnection', async () => {
-      let onCloseCallback: ((event: any) => void) | undefined;
+      let onCloseCallback: ((event: { code: number; reason: string }) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config: any) => {
+      mockCreateWSClient.mockImplementation((config: WSConfig) => {
         onCloseCallback = config.onClose;
         setTimeout(() => config.onOpen?.(), 10);
         return mockWSClient;
@@ -238,9 +263,9 @@ describe('useWebSocket', () => {
     });
 
     it('uses exponential backoff for reconnection delays', async () => {
-      let onCloseCallback: ((event: any) => void) | undefined;
+      let onCloseCallback: ((event: { code: number; reason: string }) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config: any) => {
+      mockCreateWSClient.mockImplementation((config: WSConfig) => {
         onCloseCallback = config.onClose;
         // Don't auto-connect to test retry logic
         return mockWSClient;
@@ -277,9 +302,9 @@ describe('useWebSocket', () => {
     });
 
     it('stops reconnecting after max attempts', async () => {
-      let onCloseCallback: ((event: any) => void) | undefined;
+      let onCloseCallback: ((event: { code: number; reason: string }) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config: any) => {
+      mockCreateWSClient.mockImplementation((config: WSConfig) => {
         onCloseCallback = config.onClose;
         return mockWSClient;
       });
@@ -313,9 +338,9 @@ describe('useWebSocket', () => {
     });
 
     it('does not reconnect on normal closure (code 1000)', async () => {
-      let onCloseCallback: ((event: any) => void) | undefined;
+      let onCloseCallback: ((event: { code: number; reason: string }) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config: any) => {
+      mockCreateWSClient.mockImplementation((config: WSConfig) => {
         onCloseCallback = config.onClose;
         setTimeout(() => config.onOpen?.(), 10);
         return mockWSClient;
@@ -417,9 +442,9 @@ describe('useWebSocket', () => {
     });
 
     it('prevents operations after unmount', async () => {
-      let onCloseCallback: ((event: any) => void) | undefined;
+      let onCloseCallback: ((event: { code: number; reason: string }) => void) | undefined;
 
-      mockCreateWSClient.mockImplementation((config: any) => {
+      mockCreateWSClient.mockImplementation((config: WSConfig) => {
         onCloseCallback = config.onClose;
         setTimeout(() => config.onOpen?.(), 10);
         return mockWSClient;
@@ -484,7 +509,7 @@ describe('useWebSocket', () => {
 });
 
 describe('useAgentStatus', () => {
-  let mockSubscribe: ReturnType<typeof vi.fn>;
+  let mockSubscribe: MockFunction<[JSONObject, JSONObject], { unsubscribe: () => void }>;
 
   beforeEach(() => {
     mockSubscribe = vi.fn();
@@ -510,18 +535,18 @@ describe('useAgentStatus', () => {
     const mockUnsubscribe = vi.fn();
     mockSubscribe.mockReturnValue({ unsubscribe: mockUnsubscribe });
 
-    let onDataCallback: (data: any) => void;
+    let onDataCallback: (data: JSONObject) => void;
     mockSubscribe.mockImplementation((filter, callbacks) => {
-      onDataCallback = callbacks.onData;
+      onDataCallback = (callbacks as { onData: (data: JSONObject) => void }).onData;
       return { unsubscribe: mockUnsubscribe };
     });
 
     const { result } = renderHook(() => useAgentStatus('agent-123'));
 
-    const statusData = {
+    const statusData: JSONObject = {
       agentId: 'agent-123',
       status: 'busy',
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     act(() => {
@@ -532,9 +557,9 @@ describe('useAgentStatus', () => {
   });
 
   it('handles subscription errors', () => {
-    let onErrorCallback: (error: any) => void;
+    let onErrorCallback: (error: Error) => void;
     mockSubscribe.mockImplementation((filter, callbacks) => {
-      onErrorCallback = callbacks.onError;
+      onErrorCallback = (callbacks as { onError: (error: Error) => void }).onError;
       return { unsubscribe: vi.fn() };
     });
 
@@ -575,7 +600,7 @@ describe('useAgentStatus', () => {
 });
 
 describe('usePlanProgress', () => {
-  let mockSubscribe: ReturnType<typeof vi.fn>;
+  let mockSubscribe: MockFunction<[JSONObject, JSONObject], { unsubscribe: () => void }>;
 
   beforeEach(() => {
     mockSubscribe = vi.fn();
@@ -598,22 +623,22 @@ describe('usePlanProgress', () => {
   });
 
   it('updates progress when data is received', async () => {
-    let onDataCallback: (data: any) => void;
+    let onDataCallback: (data: JSONObject) => void;
     mockSubscribe.mockImplementation((filter, callbacks) => {
-      onDataCallback = callbacks.onData;
+      onDataCallback = (callbacks as { onData: (data: JSONObject) => void }).onData;
       return { unsubscribe: vi.fn() };
     });
 
     const { result } = renderHook(() => usePlanProgress('plan-456'));
 
-    const progressData = {
+    const progressData: JSONObject = {
       status: 'in_progress',
       progress: {
         completed: 3,
         total: 10,
         currentStep: 'Analysis',
       },
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     act(() => {
@@ -631,7 +656,7 @@ describe('usePlanProgress', () => {
 });
 
 describe('useTaskQueue', () => {
-  let mockSubscribe: ReturnType<typeof vi.fn>;
+  let mockSubscribe: MockFunction<[JSONObject, JSONObject], { unsubscribe: () => void }>;
 
   beforeEach(() => {
     mockSubscribe = vi.fn();
@@ -653,26 +678,26 @@ describe('useTaskQueue', () => {
   });
 
   it('maintains task queue with updates', async () => {
-    let onDataCallback: (data: any) => void;
+    let onDataCallback: (data: JSONObject) => void;
     mockSubscribe.mockImplementation((filter, callbacks) => {
-      onDataCallback = callbacks.onData;
+      onDataCallback = (callbacks as { onData: (data: JSONObject) => void }).onData;
       return { unsubscribe: vi.fn() };
     });
 
     const { result } = renderHook(() => useTaskQueue());
 
-    const task1 = {
+    const task1: JSONObject = {
       taskId: 'task-1',
       status: 'running',
       progress: 50,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
-    const task2 = {
+    const task2: JSONObject = {
       taskId: 'task-2',
       status: 'pending',
       progress: 0,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     act(() => {
@@ -689,9 +714,9 @@ describe('useTaskQueue', () => {
   });
 
   it('limits task queue size to prevent memory leaks', async () => {
-    let onDataCallback: (data: any) => void;
+    let onDataCallback: (data: JSONObject) => void;
     mockSubscribe.mockImplementation((filter, callbacks) => {
-      onDataCallback = callbacks.onData;
+      onDataCallback = (callbacks as { onData: (data: JSONObject) => void }).onData;
       return { unsubscribe: vi.fn() };
     });
 
@@ -703,7 +728,7 @@ describe('useTaskQueue', () => {
         onDataCallback({
           taskId: `task-${i}`,
           status: 'completed',
-          timestamp: new Date(Date.now() - (105 - i) * 1000), // Older tasks first
+          timestamp: new Date(Date.now() - (105 - i) * 1000).toISOString(), // Older tasks first
         });
       });
     }
@@ -725,7 +750,7 @@ describe('useTaskQueue', () => {
 });
 
 describe('useSystemHealth', () => {
-  let mockSubscribe: ReturnType<typeof vi.fn>;
+  let mockSubscribe: MockFunction<[JSONObject, JSONObject], { unsubscribe: () => void }>;
 
   beforeEach(() => {
     mockSubscribe = vi.fn();
@@ -747,15 +772,15 @@ describe('useSystemHealth', () => {
   });
 
   it('updates health data when received', async () => {
-    let onDataCallback: (data: any) => void;
+    let onDataCallback: (data: JSONObject) => void;
     mockSubscribe.mockImplementation((filter, callbacks) => {
-      onDataCallback = callbacks.onData;
+      onDataCallback = (callbacks as { onData: (data: JSONObject) => void }).onData;
       return { unsubscribe: vi.fn() };
     });
 
     const { result } = renderHook(() => useSystemHealth());
 
-    const healthData = {
+    const healthData: JSONObject = {
       services: {
         api: 'healthy',
         database: 'healthy',
@@ -767,7 +792,7 @@ describe('useSystemHealth', () => {
         activeAgents: 3,
         queueLength: 12,
       },
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     act(() => {
@@ -779,7 +804,7 @@ describe('useSystemHealth', () => {
 });
 
 describe('useRAGOperations', () => {
-  let mockSubscribe: ReturnType<typeof vi.fn>;
+  let mockSubscribe: MockFunction<[JSONObject, JSONObject], { unsubscribe: () => void }>;
 
   beforeEach(() => {
     mockSubscribe = vi.fn();
@@ -801,9 +826,9 @@ describe('useRAGOperations', () => {
   });
 
   it('maintains operation history with limit', async () => {
-    let onDataCallback: (data: any) => void;
+    let onDataCallback: (data: JSONObject) => void;
     mockSubscribe.mockImplementation((filter, callbacks) => {
-      onDataCallback = callbacks.onData;
+      onDataCallback = (callbacks as { onData: (data: JSONObject) => void }).onData;
       return { unsubscribe: vi.fn() };
     });
 
@@ -816,7 +841,7 @@ describe('useRAGOperations', () => {
           operation: 'indexing',
           status: 'completed',
           details: { documentCount: i + 1 },
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
         });
       });
     }

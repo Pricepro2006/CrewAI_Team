@@ -15,7 +15,7 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
   component?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   stack?: string;
 }
 
@@ -97,7 +97,7 @@ export class Logger {
     level: LogLevel,
     message: string,
     component?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     error?: Error,
   ): void {
     if (level < this.logLevel) return;
@@ -123,7 +123,7 @@ export class Logger {
   debug(
     message: string,
     component?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): void {
     this.log(LogLevel.DEBUG, message, component, metadata);
   }
@@ -131,7 +131,7 @@ export class Logger {
   info(
     message: string,
     component?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): void {
     this.log(LogLevel.INFO, message, component, metadata);
   }
@@ -139,7 +139,7 @@ export class Logger {
   warn(
     message: string,
     component?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): void {
     this.log(LogLevel.WARN, message, component, metadata);
   }
@@ -147,7 +147,7 @@ export class Logger {
   error(
     message: string,
     component?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     error?: Error,
   ): void {
     this.log(LogLevel.ERROR, message, component, metadata, error);
@@ -156,7 +156,7 @@ export class Logger {
   fatal(
     message: string,
     component?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     error?: Error,
   ): void {
     this.log(LogLevel.FATAL, message, component, metadata, error);
@@ -165,7 +165,7 @@ export class Logger {
   // Get stored logs
   getLogs(level?: LogLevel): LogEntry[] {
     if (level !== undefined) {
-      return this?.logs?.filter((log: any) => log.level >= level);
+      return this?.logs?.filter((log: unknown) => log.level >= level);
     }
     return [...this.logs];
   }
@@ -186,7 +186,7 @@ export const logger = Logger.getInstance();
 
 // Error handling for UI
 export function createErrorHandler(component: string) {
-  return (error: Error, context?: Record<string, any>) => {
+  return (error: Error, context?: Record<string, unknown>) => {
     logger.error(`Unhandled error in ${component}`, component, context, error);
   };
 }
@@ -198,7 +198,7 @@ export function createPerformanceMonitor(component: string) {
       const startTime = Date.now();
 
       return {
-        end: (metadata?: Record<string, any>) => {
+        end: (metadata?: Record<string, unknown>) => {
           const duration = Date.now() - startTime;
           logger.debug(
             `Performance: ${operation} took ${duration}ms`,
@@ -222,7 +222,7 @@ export function createPerformanceMonitor(component: string) {
 }
 
 // Async error wrapper for UI
-export function withErrorHandling<T extends any[], R>(
+export function withErrorHandling<T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
   component: string,
   operation: string,

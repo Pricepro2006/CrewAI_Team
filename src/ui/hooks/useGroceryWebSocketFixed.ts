@@ -14,7 +14,7 @@ export type GroceryWebSocketEventType =
 
 export interface GroceryWebSocketEvent {
   type: GroceryWebSocketEventType;
-  data: any;
+  data: unknown;
   timestamp: number;
   conversationId?: string;
   userId?: string;
@@ -46,7 +46,7 @@ export interface UseGroceryWebSocketReturn extends GroceryWebSocketState {
   subscribe: (events: GroceryWebSocketEventType[]) => void;
   unsubscribe: (events: GroceryWebSocketEventType[]) => void;
   clearEventHistory: () => void;
-  send: (message: any) => void;
+  send: (message: unknown) => void;
 }
 
 const WS_URL = process.env.NODE_ENV === 'production' 
@@ -87,7 +87,7 @@ export function useGroceryWebSocket(
   const isMountedRef = useRef(true);
 
   // Log helper
-  const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: any) => {
+  const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: unknown) => {
     if (enableLogging) {
       logger[level](message, "GROCERY_WS", data);
     }
@@ -114,7 +114,7 @@ export function useGroceryWebSocket(
   }, [onEvent, log]);
 
   // Send message through WebSocket
-  const send = useCallback((message: any) => {
+  const send = useCallback((message: unknown) => {
     if (wsRef.current && wsRef?.current?.readyState === WebSocket.OPEN) {
       wsRef?.current?.send(JSON.stringify(message));
       log("Sent message", 'info', message);
@@ -169,7 +169,7 @@ export function useGroceryWebSocket(
         }
       };
 
-      ws.onclose = (event: any) => {
+      ws.onclose = (event: unknown) => {
         if (!isMountedRef.current) return;
 
         log("WebSocket disconnected", 'warn', { code: event.code, reason: event.reason });
@@ -203,14 +203,14 @@ export function useGroceryWebSocket(
         }
       };
 
-      ws.onerror = (event: any) => {
+      ws.onerror = (event: unknown) => {
         log("WebSocket error", 'error', event);
         const error = new Error("WebSocket connection error");
         updateState({ error });
         onError?.(error);
       };
 
-      ws.onmessage = (event: any) => {
+      ws.onmessage = (event: unknown) => {
         try {
           const parsed = JSON.parse(event.data);
           if (parsed.type && (subscriptionsRef?.current?.size === 0 || subscriptionsRef?.current?.has(parsed.type))) {

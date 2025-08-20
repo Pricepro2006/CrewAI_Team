@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 import type { BaseEvent } from './EventBus.js';
+import type { EventContext, EventMetadata, AlertConfig } from '../../shared/types/core.types.js';
 
 // Monitoring schemas and types
 export const EventMetricsSchema = z.object({
@@ -41,7 +42,7 @@ export const AlertRuleSchema = z.object({
   }),
   actions: z.array(z.object({
     type: z.enum(['webhook', 'email', 'log', 'event']),
-    config: z.record(z.any())
+    config: z.record(z.unknown())
   })).default([]),
   cooldown: z.number().default(300000), // 5 minutes between alerts
   metadata: z.record(z.string()).default({})
@@ -58,7 +59,7 @@ export const TraceSchema = z.object({
   duration: z.number().optional(),
   status: z.enum(['pending', 'success', 'error']).default('pending'),
   error: z.string().optional(),
-  metadata: z.record(z.any()).default({}),
+  metadata: z.record(z.unknown()).default({}),
   spans: z.array(z.object({
     spanId: z.string(),
     operationName: z.string(),
@@ -107,7 +108,7 @@ export interface Alert {
   triggeredAt: number;
   resolvedAt?: number;
   status: 'active' | 'resolved';
-  metadata: Record<string, any>;
+  metadata: EventMetadata;
 }
 
 /**
@@ -488,7 +489,7 @@ export class EventMonitor extends EventEmitter {
   }
 
   // Private utility methods
-  private recordTrace(event: BaseEvent, context: any): void {
+  private recordTrace(event: BaseEvent, context: EventContext): void {
     const traceId = context.traceId || this.startTrace(event, context.parentTraceId);
     
     if (context.processingEndTime) {
@@ -588,7 +589,7 @@ export class EventMonitor extends EventEmitter {
 
   private getMetricValue(metricPath: string): number {
     const parts = metricPath.split('.');
-    let value: any = this.metrics;
+    let value: unknown = this.metrics;
     
     for (const part of parts) {
       value = value?.[part];
@@ -642,7 +643,7 @@ export class EventMonitor extends EventEmitter {
       switch (action.type) {
         case 'log':
           const level = action.config.level || 'warn';
-          const logFn = (console as any)[level];
+          const logFn = (console as { [key: string]: (...args: unknown[]) => void })[level];
           if (typeof logFn === 'function') {
             logFn(`[ALERT] ${alert.message}`, alert.metadata);
           }
@@ -723,7 +724,7 @@ export class EventMonitor extends EventEmitter {
     return sortedArray[Math.max(0, Math.min(index, sortedArray.length - 1))] || 0;
   }
 
-  private logEvent(event: BaseEvent, context: any): void {
+  private logEvent(event: BaseEvent, context: EventContext): void {
     if (this.config.logging.structured) {
       console.log(JSON.stringify({
         timestamp: new Date().toISOString(),
@@ -747,7 +748,7 @@ export class EventMonitor extends EventEmitter {
     }
   }
 
-  private logError(error: Error, context: any): void {
+  private logError(error: Error, context: EventContext): void {
     if (this.config.logging.structured) {
       console.error(JSON.stringify({
         timestamp: new Date().toISOString(),
@@ -801,11 +802,32 @@ export class EventMonitor extends EventEmitter {
   }
 
   public createDashboard(): {
-    overview: any;
-    throughput: any;
-    latency: any;
-    errors: any;
-    alerts: any;
+    overview: {
+      totalEvents: number;
+      currentThroughput: number;
+      healthStatus: string;
+      activeAlerts: number;
+    };
+    throughput: {
+      current: number;
+      peak: number;
+      average: number;
+      history: Array<{ timestamp: number; value: number }>;
+    };
+    latency: {
+      p50: number;
+      p90: number;
+      p95: number;
+      p99: number;
+    };
+    errors: {
+      errorRate: number;
+      errorsByType: Record<string, number>;
+    };
+    alerts: {
+      active: Alert[];
+      rules: AlertRule[];
+    };
   } {
     return {
       overview: {

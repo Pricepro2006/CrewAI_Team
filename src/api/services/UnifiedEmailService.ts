@@ -18,7 +18,71 @@ import type {
   WorkflowTypeStats,
   BottleneckInfo,
   Alert,
+  Recommendation,
+  AgentInfo,
+  AgentPerformance,
+  TrendData,
+  EmailPriority,
+  EmailStatus,
 } from "../../types/unified-email.types.js";
+import type {
+  EmailDatabaseRow,
+} from "../../shared/types/api.types.js";
+
+// Internal type definitions
+interface EmailQueryParameters {
+  search?: string;
+  emailAliases?: string[];
+  statuses?: string[];
+  workflowStates?: string[];
+  priorities?: string[];
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+interface BaseAnalyticsResponse {
+  workflowCompletion: number;
+  avgResponseTime: number;
+  criticalAlerts: Alert[];
+  agentUtilization: number;
+  statusCounts: {
+    critical: number;
+    inProgress: number;
+    completed: number;
+  };
+}
+
+interface RecommendationInput {
+  completePercentage: number;
+  bottlenecks: BottleneckInfo[];
+  workflowTypes: WorkflowTypeStats[];
+}
+
+interface EmailEntity {
+  type: string;
+  value: string;
+}
+
+interface EnrichedEmail {
+  id: string;
+  priority: string;
+  workflow?: {
+    state: WorkflowState;
+    type: string;
+    confidence: number;
+    chainId?: string;
+    isComplete: boolean;
+  };
+  entities?: {
+    people: string[];
+    organizations: string[];
+    products: string[];
+    orderNumbers: string[];
+    trackingNumbers: string[];
+  };
+}
 
 interface GraphEmailData {
   id: string;
@@ -116,7 +180,7 @@ export class UnifiedEmailService {
             : undefined,
         senderEmail: emailData?.from?.emailAddress.address,
         senderName: emailData?.from?.emailAddress.name,
-        recipients: emailData?.toRecipients?.map((r: any) => ({
+        recipients: emailData?.toRecipients?.map((r) => ({
           address: r?.emailAddress?.address,
           name: r?.emailAddress?.name,
         })),
@@ -135,7 +199,7 @@ export class UnifiedEmailService {
       const enrichedEmail = await this.analysisPipeline.process({
         id: emailId,
         from: emailData?.from?.emailAddress.address,
-        to: emailData?.toRecipients?.map((r: any) => r?.emailAddress?.address),
+        to: emailData?.toRecipients?.map((r) => r?.emailAddress?.address),
         subject: emailData.subject,
         body: emailData?.body?.content,
         receivedDateTime: emailData.receivedDateTime,
@@ -162,23 +226,23 @@ export class UnifiedEmailService {
       // 4. Store entities
       if (enrichedEmail.entities) {
         const entityList = [
-          ...enrichedEmail?.entities?.people?.map((e: any) => ({
+          ...enrichedEmail?.entities?.people?.map((e: string) => ({
             type: "person",
             value: e,
           })),
-          ...enrichedEmail?.entities?.organizations?.map((e: any) => ({
+          ...enrichedEmail?.entities?.organizations?.map((e: string) => ({
             type: "organization",
             value: e,
           })),
-          ...enrichedEmail?.entities?.products?.map((e: any) => ({
+          ...enrichedEmail?.entities?.products?.map((e: string) => ({
             type: "product",
             value: e,
           })),
-          ...enrichedEmail?.entities?.orderNumbers?.map((e: any) => ({
+          ...enrichedEmail?.entities?.orderNumbers?.map((e: string) => ({
             type: "order",
             value: e,
           })),
-          ...enrichedEmail?.entities?.trackingNumbers?.map((e: any) => ({
+          ...enrichedEmail?.entities?.trackingNumbers?.map((e: string) => ({
             type: "tracking",
             value: e,
           })),
@@ -294,7 +358,7 @@ export class UnifiedEmailService {
       const analytics = this.emailRepository ? await this.emailRepository.getAnalytics() : { todaysCount: 0, urgentCount: 0, unassignedCount: 0 };
 
       // Transform to unified format
-      const unifiedEmails = (emails || []).map((email: any) =>
+      const unifiedEmails = (emails || []).map((email) =>
         this.transformToUnifiedFormat(email, {
           includeAnalysis,
           includeWorkflowState,
@@ -529,7 +593,7 @@ export class UnifiedEmailService {
 
   // Private helper methods
 
-  private async storeRawEmail(emailData: GraphEmailData): Promise<any> {
+  private async storeRawEmail(emailData: GraphEmailData): Promise<string> {
     const email = {
       id: emailData.id,
       graphId: emailData.id,
@@ -542,7 +606,7 @@ export class UnifiedEmailService {
           address: emailData?.from?.emailAddress.address,
         },
       },
-      to: emailData?.toRecipients?.map((r: any) => ({
+      to: emailData?.toRecipients?.map((r) => ({
         emailAddress: {
           name: r?.emailAddress?.name || r?.emailAddress?.address,
           address: r?.emailAddress?.address,
@@ -614,10 +678,11 @@ export class UnifiedEmailService {
       },
     };
 
-    return await this?.emailStorage?.storeEmail(email, analysisResult);
+    const result = await this?.emailStorage?.storeEmail(email, analysisResult);
+    return result ?? '';
   }
 
-  private async storeProcessedEmail(email: any): Promise<UnifiedEmailData> {
+  private async storeProcessedEmail(email: EnrichedEmail): Promise<UnifiedEmailData> {
     // Store enriched email data
     if (!this.emailRepository) {
       throw new Error('EmailRepository not available for storing processed email');
@@ -639,61 +704,77 @@ export class UnifiedEmailService {
   }
 
   private transformToUnifiedFormat(
-    email: any,
-    options: any = {},
+    email: EmailDatabaseRow | Record<string, unknown>,
+    options: {
+      includeAnalysis?: boolean;
+      includeWorkflowState?: boolean;
+      includeAgentInfo?: boolean;
+    } = {},
   ): UnifiedEmailData {
     // Parse JSON fields if needed
     const recipients =
       typeof email.recipients === "string"
-        ? JSON.parse(email.recipients)
+        ? JSON.parse(email.recipients as string)
         : email.recipients;
     const ccRecipients = email.cc_recipients
       ? typeof email.cc_recipients === "string"
-        ? JSON.parse(email.cc_recipients)
+        ? JSON.parse(email.cc_recipients as string)
         : email.cc_recipients
       : [];
     const categories = email.categories
       ? typeof email.categories === "string"
-        ? JSON.parse(email.categories)
+        ? JSON.parse(email.categories as string)
         : email.categories
       : [];
 
     return {
-      id: email.id,
-      messageId: email.internet_message_id || email.message_id || email.messageId,  // Check correct DB column first
-      graphResourceId: email.graph_id || email.graphId,
-      subject: email.subject,
-      bodyText: email.body_text || email.bodyText,
-      bodyHtml: email.body_html || email.bodyHtml,
-      from: email.sender_email || email.from,
-      to: recipients?.map((r: any) => r.address || r),
-      cc: ccRecipients?.map((r: any) => r.address || r),
-      receivedAt: email.received_at || email.receivedAt,
-      analysis: options.includeAnalysis !== false ? email.analysis : undefined,
+      id: String(email.id),
+      messageId: String(email.internet_message_id || email.message_id || email.messageId || ''),  // Check correct DB column first
+      graphResourceId: email.graph_id ? String(email.graph_id) : email.graphId ? String(email.graphId) : undefined,
+      subject: String(email.subject || ''),
+      bodyText: String(email.body_text || email.bodyText || ''),
+      bodyHtml: email.body_html ? String(email.body_html) : email.bodyHtml ? String(email.bodyHtml) : undefined,
+      from: String(email.sender_email || email.from || ''),
+      to: recipients?.map((r: { address?: string; name?: string } | string) => 
+        typeof r === 'string' ? r : (r.address || '')),
+      cc: ccRecipients?.map((r: { address?: string; name?: string } | string) => 
+        typeof r === 'string' ? r : (r.address || '')),
+      receivedAt: String(email.received_at || email.receivedAt || new Date().toISOString()),
+      analysis: options.includeAnalysis !== false && typeof email.analysis === 'object' ? 
+        email.analysis as { summary: string; sentiment: string; intent: string; topics: string[] } : undefined,
       workflowState:
-        email.workflow_state || email.workflowState || "START_POINT",
-      workflowType: email.workflow_type || email.workflowType,
-      workflowChainId: email.workflow_chain_id || email.workflowChainId,
+        (email.workflow_state || email.workflowState || "START_POINT") as WorkflowState,
+      workflowType: email.workflow_type ? String(email.workflow_type) : email.workflowType ? String(email.workflowType) : undefined,
+      workflowChainId: email.workflow_chain_id ? String(email.workflow_chain_id) : email.workflowChainId ? String(email.workflowChainId) : undefined,
       isWorkflowComplete:
-        email.is_workflow_complete || email.isWorkflowComplete || false,
-      entities: email.entities || [],
-      priority: email.priority || "medium",
-      status: email.status || "unread",
-      category: categories[0] || email.category,
-      tags: categories || email.tags || [],
+        Boolean(email.is_workflow_complete || email.isWorkflowComplete || false),
+      entities: Array.isArray(email.entities) && typeof email.entities === 'object' ? 
+        (email.entities as unknown as {
+          people: string[];
+          organizations: string[];
+          products: string[];
+          orderNumbers: string[];
+          trackingNumbers: string[];
+          dates: string[];
+          amounts: string[];
+        }) : undefined,
+      priority: (email.priority || "medium") as EmailPriority,
+      status: (email.status || "unread") as EmailStatus,
+      category: categories[0] ? String(categories[0]) : email.category ? String(email.category) : undefined,
+      tags: Array.isArray(categories) ? categories.map(String) : Array.isArray(email.tags) ? email.tags.map(String) : [],
       agentAssignment:
         options.includeAgentInfo !== false &&
         (email.assigned_to || email.assignedTo)
           ? {
-              agentId: email.assigned_to || email.assignedTo,
+              agentId: String(email.assigned_to || email.assignedTo),
               agentName:
-                email.agent_name || email.assignedTo || "Unknown Agent",
+                String(email.agent_name || email.assignedTo || "Unknown Agent"),
               assignedAt:
-                email.assigned_at ||
+                String(email.assigned_at ||
                 email.assignedAt ||
-                new Date().toISOString(),
-              status: email.assignment_status || "assigned",
-              progress: email.assignment_progress,
+                new Date().toISOString()),
+              status: (email.assignment_status || "assigned") as "assigned" | "processing" | "completed",
+              progress: typeof email.assignment_progress === 'number' ? email.assignment_progress : undefined,
             }
           : undefined,
       hasAttachments: Boolean(
@@ -704,14 +785,14 @@ export class UnifiedEmailService {
       isRead: Boolean(
         email.is_read !== undefined ? email.is_read : email.isRead,
       ),
-      conversationId: email.conversation_id_ref || email.conversationId,
-      processingDuration: email.processing_duration || email.processingDuration,
-      responseTime: email.response_time || email.responseTime,
+      conversationId: email.conversation_id_ref ? String(email.conversation_id_ref) : email.conversationId ? String(email.conversationId) : undefined,
+      processingDuration: typeof email.processing_duration === 'number' ? email.processing_duration : typeof email.processingDuration === 'number' ? email.processingDuration : undefined,
+      responseTime: typeof email.response_time === 'number' ? email.response_time : typeof email.responseTime === 'number' ? email.responseTime : undefined,
     };
   }
 
-  private buildEmailQuery(filters: Partial<FilterConfig>): any {
-    const query: any = {};
+  private buildEmailQuery(filters: Partial<FilterConfig>): EmailQueryParameters {
+    const query: EmailQueryParameters = {};
 
     if (filters.search) {
       query.search = filters.search;
@@ -743,7 +824,7 @@ export class UnifiedEmailService {
   private async getBaseAnalytics(dateRange?: {
     start: Date;
     end: Date;
-  }): Promise<any> {
+  }): Promise<BaseAnalyticsResponse> {
     // Get analytics from repository
     if (!this.emailRepository) {
       return {
@@ -846,7 +927,7 @@ export class UnifiedEmailService {
     }
   }
 
-  private generateRecommendations(data: any): any[] {
+  private generateRecommendations(data: RecommendationInput): Recommendation[] {
     const recommendations = [];
 
     // Critical recommendation for low workflow completion
@@ -933,24 +1014,29 @@ export class UnifiedEmailService {
     });
   }
 
-  private async getWorkflowTypeStats(dateRange?: any): Promise<any[]> {
+  private async getWorkflowTypeStats(dateRange?: { start: Date; end: Date }): Promise<WorkflowTypeStats[]> {
     // Implementation would query database for workflow type statistics
     return [];
   }
 
-  private async identifyBottlenecks(dateRange?: any): Promise<any[]> {
+  private async identifyBottlenecks(dateRange?: { start: Date; end: Date }): Promise<BottleneckInfo[]> {
     // Implementation would analyze where workflows get stuck
     return [];
   }
 
-  private async getAgentAnalytics(): Promise<any> {
+  private async getAgentAnalytics(): Promise<{ agents: AgentInfo[]; performance: Record<string, AgentPerformance> }> {
     // Implementation would get agent performance data
     return { agents: [], performance: {} };
   }
 
-  private async getTrendData(dateRange?: any): Promise<any> {
+  private async getTrendData(dateRange?: { start: Date; end: Date }): Promise<TrendData> {
     // Implementation would calculate trend data over time
-    return {};
+    return {
+      emailVolume: [],
+      responseTime: [],
+      workflowCompletion: [],
+      agentUtilization: [],
+    };
   }
 
   private async getAgentUtilization(): Promise<number> {

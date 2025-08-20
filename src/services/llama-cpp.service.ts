@@ -11,13 +11,14 @@ import {
   benchmarkModel,
   LlamaCppOptimizedConfig
 } from '../config/llama-cpp-optimized.config';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { z } from 'zod';
 import path from 'path';
 import fs from 'fs/promises';
 import { logger } from '../utils/logger.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface EmailAnalysisRequest {
   emailId: string;
@@ -52,7 +53,7 @@ export interface EmailAnalysisResponse {
 export class LlamaCppService {
   private config: LlamaCppOptimizedConfig | null = null;
   private serverProcess: any = null;
-  private serverPort: number = 8080;
+  private serverPort: number = 8081;
   
   constructor() {
     this.initialize();
@@ -81,7 +82,8 @@ export class LlamaCppService {
    */
   private async verifyInstallation(): Promise<void> {
     try {
-      const { stdout } = await execAsync(`${this.config!.executablePath} --version`);
+      // SECURITY: Use execFile to prevent command injection
+      const { stdout } = await execFileAsync(this.config!.executablePath, ['--version']);
       console.log('Llama.cpp version:', stdout.trim());
     } catch (error) {
       throw new Error('Llama.cpp not found. Please install it first: https://github.com/ggml-org/llama.cpp');
@@ -92,13 +94,9 @@ export class LlamaCppService {
    * Set CPU performance mode for optimal inference
    */
   private async setPerformanceMode(): Promise<void> {
-    try {
-      // Try to set performance governor (may require sudo)
-      await execAsync('sudo cpupower frequency-set -g performance 2>/dev/null || true');
-      console.log('CPU governor set to performance mode');
-    } catch {
-      console.log('Could not set CPU governor (requires sudo)');
-    }
+    // SECURITY: Removed sudo command execution
+    // Performance governor should be set externally if needed
+    console.log('Performance mode should be configured externally');
   }
   
   /**
@@ -280,10 +278,20 @@ export class LlamaCppService {
    * Build Stage 2 analysis prompt
    */
   private buildStage2Prompt(request: EmailAnalysisRequest): string {
+    // SECURITY: Sanitize input to prevent prompt injection
+    const sanitizeText = (text: string): string => {
+      return text
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+        .substring(0, 5000); // Limit length
+    };
+    
+    const sanitizedSubject = sanitizeText(request.subject);
+    const sanitizedBody = sanitizeText(request.body);
+    
     return `Analyze this business email and extract structured information.
 
-Email Subject: ${request.subject}
-Email Body: ${request.body}
+Email Subject: ${sanitizedSubject}
+Email Body: ${sanitizedBody}
 
 Extract the following in JSON format:
 1. Entities: SPAs, POs, Quotes, EDI references, Customer names, Product IDs
@@ -310,10 +318,20 @@ Response format:
    * Build Stage 3 critical analysis prompt
    */
   private buildStage3Prompt(request: EmailAnalysisRequest): string {
+    // SECURITY: Sanitize input to prevent prompt injection
+    const sanitizeText = (text: string): string => {
+      return text
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+        .substring(0, 5000); // Limit length
+    };
+    
+    const sanitizedSubject = sanitizeText(request.subject);
+    const sanitizedBody = sanitizeText(request.body);
+    
     return `Perform critical business analysis on this email.
 
-Email Subject: ${request.subject}
-Email Body: ${request.body}
+Email Subject: ${sanitizedSubject}
+Email Body: ${sanitizedBody}
 
 Provide comprehensive analysis including:
 1. All entities and references (SPAs, POs, Quotes, EDI, Customers, Products)
@@ -384,7 +402,7 @@ Format as structured JSON with all findings.`;
   /**
    * Start llama.cpp server for API access
    */
-  async startServer(modelName: string = 'llama-3.2-3b', port: number = 8080): Promise<void> {
+  async startServer(modelName: string = 'llama-3.2-3b', port: number = 8081): Promise<void> {
     if (this.serverProcess) {
       console.log('Server already running');
       return;

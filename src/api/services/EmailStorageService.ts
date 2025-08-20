@@ -2,9 +2,24 @@ import { v4 as uuidv4 } from "uuid";
 // Use optimized database from centralized module
 import { getDatabase, executeSecure, OptimizedQueryExecutor } from "../../database/index.js";
 import Database from "better-sqlite3";
+
+// Import enhanced API types
+import type {
+  DatabaseConnection,
+  DatabaseStatement,
+  DatabaseRow,
+  DatabaseRunResult,
+  EmailDatabaseRow,
+  WorkflowPatternRow,
+  ChainAnalysisRow,
+  ProcessingError,
+  isDatabaseRow,
+  isEmailRecord
+} from "../../shared/types/api.types.js";
+
 // Type definitions for database operations
 type DatabaseQueryParams = string | number | boolean | null | undefined;
-type DatabaseInstance = any; // Use any to avoid namespace issues
+type DatabaseInstance = DatabaseConnection; // Type-safe database instance
 import appConfig from "../../config/app.config.js";
 import { Logger } from "../../utils/logger.js";
 const logger = Logger.getInstance();
@@ -170,7 +185,7 @@ export interface EmailStorageServiceInterface {
     slaCompliance: Record<string, number>;
     averageProcessingTime: number;
   }>;
-  getWorkflowPatterns(): Promise<any[]>;
+  getWorkflowPatterns(): Promise<WorkflowPatternRow[]>;
   startSLAMonitoring(intervalMs?: number): void;
   stopSLAMonitoring(): void;
   getDashboardStats(): Promise<{
@@ -234,7 +249,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   private db: DatabaseInstance;
   private connectionPool?: ConnectionPool;
   private slaMonitoringInterval: NodeJS.Timeout | null = null;
-  private lazyLoader: LazyLoader<any>;
+  private lazyLoader: LazyLoader<DatabaseConnection>;
   private useConnectionPool: boolean;
   private masterOrchestrator?: MasterOrchestrator;
 
@@ -253,7 +268,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     } else {
       // Use optimized database with caching and performance monitoring
       const databasePath = dbPath || appConfig?.database?.path;
-      this.db = getDatabase(databasePath) as any;
+      this.db = getDatabase(databasePath) as DatabaseConnection;
       logger.info(
         "EmailStorageService initialized with OptimizedQueryExecutor",
         "EMAIL_STORAGE",
@@ -279,21 +294,21 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           return (sql: string) => {
             // Return a statement-like object that uses the DatabaseManager
             return {
-              run: (...params: any[]) => {
+              run: (...params: DatabaseQueryParams[]) => {
                 const connection = databaseManager.getConnection('main');
-                return connection.execute((db: any) => db.prepare(sql).run(...params));
+                return connection.execute((db: DatabaseConnection) => db.prepare(sql).run(...params));
               },
-              get: (...params: any[]) => {
+              get: (...params: DatabaseQueryParams[]) => {
                 const connection = databaseManager.getConnection('main');
-                return connection.execute((db: any) => db.prepare(sql).get(...params));
+                return connection.execute((db: DatabaseConnection) => db.prepare(sql).get(...params));
               },
-              all: (...params: any[]) => {
+              all: (...params: DatabaseQueryParams[]) => {
                 const connection = databaseManager.getConnection('main');
-                return connection.execute((db: any) => db.prepare(sql).all(...params));
+                return connection.execute((db: DatabaseConnection) => db.prepare(sql).all(...params));
               },
-              iterate: (...params: any[]) => {
+              iterate: (...params: DatabaseQueryParams[]) => {
                 const connection = databaseManager.getConnection('main');
-                return connection.execute((db: any) => db.prepare(sql).iterate(...params));
+                return connection.execute((db: DatabaseConnection) => db.prepare(sql).iterate(...params));
               },
             };
           };
@@ -301,7 +316,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
         // For transaction method
         if (prop === "transaction") {
-          return <T>(fn: any) => {
+          return <T>(fn: (db: DatabaseConnection) => unknown) => {
             const connection = databaseManager.getConnection('main');
             return connection.transaction(fn);
           };
@@ -309,9 +324,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
         // For pragma method
         if (prop === "pragma") {
-          return (pragma: string, options?: any) => {
+          return (pragma: string, options?: DatabaseQueryParams) => {
             const connection = databaseManager.getConnection('main');
-            return connection.execute((db: any) => db.pragma(pragma, options));
+            return connection.execute((db: DatabaseConnection) => db.pragma(pragma, options));
           };
         }
 
@@ -319,7 +334,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         if (prop === "exec") {
           return (sql: string) => {
             const connection = databaseManager.getConnection('main');
-            return connection.execute((db: any) => db.exec(sql));
+            return connection.execute((db: DatabaseConnection) => db.exec(sql));
           };
         }
 
@@ -331,12 +346,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         }
 
         // For other methods, delegate to DatabaseManager
-        return (...args: any[]) => {
+        return (...args: DatabaseQueryParams[]) => {
           const connection = databaseManager.getConnection('main');
           if (!connection || typeof connection.execute !== 'function') {
             throw new Error(`DatabaseManager connection does not support method: ${String(prop)}`);
           }
-          return connection.execute((db: any) => (db as any)[prop](...args));
+          return connection.execute((db: DatabaseConnection) => (db as Database.Database)[prop as keyof Database.Database](...args));
         };
       }
     };
@@ -359,18 +374,18 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           return (sql: string) => {
             // Return a statement-like object that uses the pool
             return {
-              run: (...params: any[]) => {
-                return pool.execute((db: any) => db.prepare(sql).run(...params));
+              run: (...params: DatabaseQueryParams[]) => {
+                return pool.execute((db: DatabaseConnection) => db.prepare(sql).run(...params));
               },
-              get: (...params: any[]) => {
-                return pool.execute((db: any) => db.prepare(sql).get(...params));
+              get: (...params: DatabaseQueryParams[]) => {
+                return pool.execute((db: DatabaseConnection) => db.prepare(sql).get(...params));
               },
-              all: (...params: any[]) => {
-                return pool.execute((db: any) => db.prepare(sql).all(...params));
+              all: (...params: DatabaseQueryParams[]) => {
+                return pool.execute((db: DatabaseConnection) => db.prepare(sql).all(...params));
               },
-              iterate: (...params: any[]) => {
+              iterate: (...params: DatabaseQueryParams[]) => {
                 // For iterate, we need special handling as it returns an iterator
-                return pool.execute((db: any) => db.prepare(sql).iterate(...params));
+                return pool.execute((db: DatabaseConnection) => db.prepare(sql).iterate(...params));
               },
             };
           };
@@ -380,8 +395,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         if (prop === "transaction") {
           return <T>(fn: (trx: DatabaseInstance) => T) => {
             return (): T => {
-              return pool.execute((db: any) => {
-                const transaction = db.transaction((trx: any) => fn(trx));
+              return pool.execute((db: DatabaseConnection) => {
+                const transaction = db.transaction((trx: DatabaseConnection) => fn(trx));
                 return transaction(db);
               }) as T;
             };
@@ -391,14 +406,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         // For pragma method
         if (prop === "pragma") {
           return (pragma: string) => {
-            return pool.execute((db: any) => db.pragma(pragma));
+            return pool.execute((db: DatabaseConnection) => db.pragma(pragma));
           };
         }
 
         // For exec method
         if (prop === "exec") {
           return (sql: string) => {
-            return pool.execute((db: any) => db.exec(sql));
+            return pool.execute((db: DatabaseConnection) => db.exec(sql));
           };
         }
 
@@ -413,12 +428,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         }
 
         // Default: return property as-is
-        return (target as any)[prop];
+        return (target as Record<string, unknown>)[prop];
       },
     };
 
     // Create and return the proxy
-    return new Proxy({} as any, handler) as DatabaseInstance;
+    return new Proxy({} as DatabaseInstance, handler) as DatabaseInstance;
   }
 
   /**
@@ -461,7 +476,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Process email through agent system
    */
-  async processEmailThroughAgents(email: any): Promise<EmailAnalysisResult> {
+  async processEmailThroughAgents(email: EmailDatabaseRow): Promise<EmailAnalysisResult> {
     if (!this.masterOrchestrator) {
       throw new Error("MasterOrchestrator not initialized");
     }
@@ -501,10 +516,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async processBatchThroughAgents(
     emailIds: string[],
     batchSize: number = 10
-  ): Promise<{ processed: number; failed: number; errors: any[] }> {
+  ): Promise<{ processed: number; failed: number; errors: ProcessingError[] }> {
     let processed = 0;
     let failed = 0;
-    const errors: any[] = [];
+    const errors: ProcessingError[] = [];
 
     logger.info(
       `Starting batch processing of ${emailIds.length} emails through agent system`,
@@ -583,8 +598,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         LIMIT 1000
       `;
       
-      const unprocessedEmails = this.db.prepare(unprocessedQuery).all() as any[];
-      const emailIds = unprocessedEmails.map((row: any) => row.id);
+      const unprocessedEmails = this.db.prepare(unprocessedQuery).all() as EmailDatabaseRow[];
+      const emailIds = unprocessedEmails.map((row: EmailDatabaseRow) => row.id);
 
       if (emailIds.length === 0) {
         logger.info("No unprocessed emails found for agent processing", "EMAIL_STORAGE");
@@ -649,7 +664,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   private async executeOptimizedQuery<T>(
     queryDescription: string,
     query: string,
-    params: any[] = [],
+    params: DatabaseQueryParams[] = [],
     method: "get" | "all" = "all",
   ): Promise<T> {
     const startTime = Date.now();
@@ -696,7 +711,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             `Database query failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms: ${error}`,
             "EMAIL_STORAGE",
           );
-          await new Promise((resolve: any) => setTimeout(resolve, delay));
+          await new Promise((resolve: (value: void) => void) => setTimeout(resolve, delay));
           continue;
         }
 
@@ -715,8 +730,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         const enhancedError = new Error(
           `Database operation failed: ${queryDescription}. ${error}`,
         );
-        (enhancedError as any).originalError = queryError;
-        (enhancedError as any).retryCount = retryCount;
+        (enhancedError as Error & Record<string, unknown>).originalError = queryError;
+        (enhancedError as Error & Record<string, unknown>).retryCount = retryCount;
         throw enhancedError;
       } finally {
         // Record performance metrics
@@ -746,7 +761,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     cacheKey: string,
     queryDescription: string,
     query: string,
-    params: any[] = [],
+    params: DatabaseQueryParams[] = [],
     method: "get" | "all" = "all",
   ): Promise<T> {
     return performanceOptimizer.cacheQuery(cacheKey, async () => {
@@ -1031,7 +1046,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             email.subject,
             email?.from?.emailAddress.address,
             email?.from?.emailAddress.name,
-            JSON.stringify(email.to?.map((t: any) => t.emailAddress) || []),
+            JSON.stringify(email.to?.map((t: EmailRecipient) => t.emailAddress) || []),
             email.receivedDateTime,
             email.isRead ? 1 : 0,
             email.hasAttachments ? 1 : 0,
@@ -1171,8 +1186,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           const enhancedError = new Error(
             `Failed to store email analysis for "${email.subject}": ${errorMessage}`,
           );
-          (enhancedError as any).emailId = email.id;
-          (enhancedError as any).attempts = attempt;
+          (enhancedError as Error & Record<string, unknown>).emailId = email.id;
+          (enhancedError as Error & Record<string, unknown>).attempts = attempt;
           throw enhancedError;
         }
 
@@ -1182,7 +1197,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           `Email storage failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms: ${errorMessage}`,
           "EMAIL_STORAGE",
         );
-        await new Promise((resolve: any) => setTimeout(resolve, delay));
+        await new Promise((resolve: (value: void) => void) => setTimeout(resolve, delay));
       }
     }
   }
@@ -1293,7 +1308,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       WHERE e.id = ?
     `);
 
-    const result = stmt.get(emailId) as any;
+    const result = stmt.get(emailId) as DatabaseConnection;
 
     if (!result) {
       return null;
@@ -1427,10 +1442,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       LIMIT ? OFFSET ?
     `);
 
-    const results = stmt.all(workflow, limit, offset) as any[];
+    const results = stmt.all($1) as DatabaseRow[];
 
     // Process all results in memory without additional queries
-    const emails: EmailWithAnalysis[] = results?.map((result: any) => ({
+    const emails: EmailWithAnalysis[] = results?.map((result: EmailDatabaseRow) => ({
       id: result.id,
       graphId: result.graph_id,
       subject: result.subject,
@@ -1543,7 +1558,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       SELECT COUNT(*) as count FROM emails
     `,
         )
-        .get() as any
+        .get($1) as EmailDatabaseRow | undefined
     ).count;
 
     const workflowDistribution = this.db
@@ -1557,7 +1572,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       GROUP BY deep_workflow_primary
     `,
       )
-      .all() as any[];
+      .all() as EmailDatabaseRow[];
 
     const slaCompliance = this.db
       .prepare(
@@ -1570,7 +1585,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       GROUP BY action_sla_status
     `,
       )
-      .all() as any[];
+      .all() as EmailDatabaseRow[];
 
     const avgProcessingTime =
       (
@@ -1582,17 +1597,17 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       WHERE total_processing_time IS NOT NULL
     `,
           )
-          .get() as any
+          .get($1) as EmailDatabaseRow | undefined
       ).avg_time || 0;
 
     return {
       totalEmails,
-      workflowDistribution: workflowDistribution.reduce((acc: any, item: any) => {
-        acc[item.workflow] = item.count;
+      workflowDistribution: workflowDistribution.reduce((acc: Record<string, number>, item: DatabaseRow) => {
+        acc[item.workflow as string] = item.count as number;
         return acc;
       }, {}),
-      slaCompliance: slaCompliance.reduce((acc: any, item: any) => {
-        acc[item.status] = item.count;
+      slaCompliance: slaCompliance.reduce((acc: Record<string, number>, item: DatabaseRow) => {
+        acc[item.status as string] = item.count as number;
         return acc;
       }, {}),
       averageProcessingTime: Math.round(avgProcessingTime),
@@ -1608,7 +1623,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     const currentStateStmt = this?.db?.prepare(`
       SELECT workflow_state FROM email_analysis WHERE email_id = ?
     `);
-    const currentResult = currentStateStmt.get(emailId) as any;
+    const currentResult = currentStateStmt.get(emailId) as DatabaseConnection;
     const oldState = currentResult?.workflow_state || "unknown";
 
     // Update the state
@@ -1646,7 +1661,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
   }
 
-  async getWorkflowPatterns(): Promise<any[]> {
+  async getWorkflowPatterns(): Promise<WorkflowPatternRow[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM workflow_patterns
       ORDER BY success_rate DESC
@@ -1804,7 +1819,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
 
     this.slaMonitoringInterval = setInterval(() => {
-      this.checkSLAStatus().catch((error: any) => {
+      this.checkSLAStatus().catch((error: unknown) => {
         logger.error(`SLA monitoring failed: ${error}`, "EMAIL_STORAGE");
       });
     }, intervalMs);
@@ -1936,7 +1951,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       // Get current status
       const currentEmail = this.db
         .prepare("SELECT * FROM email_analysis WHERE email_id = ?")
-        .get(emailId) as any;
+        .get(emailId) as DatabaseConnection;
 
       if (!currentEmail) {
         throw new Error(`Email not found: ${emailId}`);
@@ -1998,7 +2013,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async getRecentEmailsForUser(
     userId: string,
     daysBack: number = 7,
-  ): Promise<any[]> {
+  ): Promise<WorkflowPatternRow[]> {
     try {
       const stmt = this.db.prepare(`
         SELECT 
@@ -2026,9 +2041,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       if (!stmt) {
         return [];
       }
-      const results = stmt.all(userPattern, userPattern) as any[];
+      const results = stmt.all($1) as DatabaseRow[];
 
-      return results?.map((row: any) => ({
+      return results?.map((row: EmailDatabaseRow) => ({
         id: row.id,
         subject: row.subject,
         sender: row.sender,
@@ -2057,8 +2072,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     entityType: string;
     entityId: string;
     action: string;
-    oldValues: Record<string, any>;
-    newValues: Record<string, any>;
+    oldValues: Record<string, unknown>;
+    newValues: Record<string, unknown>;
     performedBy: string;
   }): Promise<void> {
     try {
@@ -2139,7 +2154,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     if (!stmt) {
       return new Map();
     }
-    const results = stmt.all(...emailIds) as any[];
+    const results = stmt.all($1) as DatabaseRow[];
     const emailMap = new Map<string, EmailWithAnalysis>();
 
     for (const result of results) {
@@ -2313,8 +2328,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           .join(",");
         whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
         params.push(
-          ...options?.filters?.status?.map((s: any) =>
-            this.mapStatusToWorkflowState(s as any),
+          ...options?.filters?.status?.map((s: string) =>
+            this.mapStatusToWorkflowState(s),
           ),
         );
       }
@@ -2402,13 +2417,13 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       });
 
       const [emailsResult, countResult] = await Promise.all([
-        this.executeCachedQuery<any[]>(
+        this.executeCachedQuery<EmailDatabaseRow[]>(
           `${cacheKey}_data`,
           "email_table_view_data",
           dataQuery,
           dataParams,
         ),
-        this.executeCachedQuery<any>(
+        this.executeCachedQuery<{ count: number }>(
           `${cacheKey}_count`,
           "email_table_view_count",
           countQuery,
@@ -2443,7 +2458,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       const totalPages = Math.ceil(totalCount / pageSize);
 
       // Transform emails to include proper status mapping
-      const transformedEmails = emails?.map((email: any) => ({
+      const transformedEmails = emails?.map((email: EmailDatabaseRow) => ({
         ...email,
         status: this.mapWorkflowToStatus(email.workflow_state),
         status_text: this.getStatusText(email.workflow_state),
@@ -2532,8 +2547,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             .join(",");
           whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
           params.push(
-            ...options?.filters?.status?.map((s: any) =>
-              this.mapStatusToWorkflowState(s as any),
+            ...options?.filters?.status?.map((s: string) =>
+              this.mapStatusToWorkflowState(s),
             ),
           );
         }
@@ -2593,14 +2608,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         // Add pagination params
         params.push(limit, offset);
 
-        const emails = await this.executeOptimizedQuery<any[]>(
+        const emails = await this.executeOptimizedQuery<EmailDatabaseRow[]>(
           "email_table_lazy_load",
           query,
           params,
         );
 
         // Transform emails
-        return emails?.map((email: any) => ({
+        return emails?.map((email: EmailDatabaseRow) => ({
           ...email,
           status: this.mapWorkflowToStatus(email.workflow_state),
           status_text: this.getStatusText(email.workflow_state),
@@ -2643,7 +2658,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         LEFT JOIN email_analysis ea ON e.id = ea.email_id
       `;
 
-      const stats = this?.db?.prepare(statsQuery).get() as any;
+      const stats = this?.db?.prepare(statsQuery).get() as DatabaseConnection;
 
       return {
         totalEmails: stats.total,
@@ -2788,8 +2803,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }
 
   private extractEntitiesOfType(entities: EmailEntity[] = [], type: string): string {
-    const filtered = entities?.filter((e: any) => e.type === type);
-    return JSON.stringify(filtered?.map((e: any) => e.value));
+    const filtered = entities?.filter((e: EmailEntity) => e.type === type);
+    return JSON.stringify(filtered?.map((e: EmailEntity) => e.value));
   }
 
   // =====================================================
@@ -2800,8 +2815,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    * Get comprehensive performance statistics
    */
   async getPerformanceMetrics(): Promise<{
-    database: any[];
-    cache: any[];
+    database: DatabaseRow[];
+    cache: DatabaseRow[];
     lazyLoader: Record<string, unknown>;
     recommendations: string[];
   }> {
@@ -2816,10 +2831,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       return {
         database: Array.isArray(dbMetrics) ? dbMetrics : [dbMetrics],
         cache: Array.isArray(cacheMetrics) ? cacheMetrics : [cacheMetrics],
-        lazyLoader: lazyLoaderStats as any as Record<string, unknown>,
+        lazyLoader: lazyLoaderStats as Record<string, unknown>,
         recommendations: [
           ...(cacheMetrics.recommendations || []),
-          ...(Array.isArray(dbMetrics) ? [] : (dbMetrics.alerts?.map((alert: any) => alert.message) || [])),
+          ...(Array.isArray(dbMetrics) ? [] : ((dbMetrics as { alerts?: Array<{ message: string }> }).alerts?.map((alert) => alert.message) || [])),
         ],
       };
     } catch (error) {
@@ -2834,7 +2849,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Get detailed performance report
    */
-  async getDetailedPerformanceReport(): Promise<any> {
+  async getDetailedPerformanceReport(): Promise<unknown> {
     try {
       return await queryPerformanceMonitor.getDetailedReport();
     } catch (error) {
@@ -2883,7 +2898,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           startIndex: offset,
           chunkSize: limit,
           ...options,
-        }).then((result: any) => result.data);
+        }).then((result: { data: EmailDatabaseRow[] }) => result.data);
       };
 
       await this?.lazyLoader?.preloadAdjacentChunks(currentIndex, loadFn);
@@ -3042,7 +3057,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       if (!stmt) {
         return null;
       }
-      const email = stmt.get(emailId) as any;
+      const email = stmt.get(emailId) as DatabaseConnection;
       return email ? email as EmailRecord : null;
     } catch (error) {
       logger.error(`Failed to get email ${emailId}: ${error}`, "EMAIL_STORAGE");
@@ -3053,11 +3068,11 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Update an email record
    */
-  async updateEmail(emailId: string, updates: Partial<any>): Promise<void> {
+  async updateEmail(emailId: string, updates: Partial<EmailDatabaseRow>): Promise<void> {
     try {
       const updateFields = Object.keys(updates)
-        .filter((key: any) => key !== "id")
-        .map((key: any) => `${key} = @${key}`)
+        .filter((key: string) => key !== "id")
+        .map((key: string) => `${key} = @${key}`)
         .join(", ");
 
       const stmt = this.db.prepare(`
@@ -3137,7 +3152,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       }>;
       const workload: Record<string, number> = {};
 
-      results.forEach((row: any) => {
+      results.forEach((row: DatabaseRow) => {
         workload[row.assignedTo] = row.count;
       });
 
@@ -3245,7 +3260,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       validated.totalTime = minTotalTime;
     }
 
-    // Log summary if any issues were found
+    // Log summary if issues were found
     if (issues?.length || 0 > 0) {
       logger.error(
         "Processing time validation issues detected",
@@ -3262,15 +3277,15 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         this.trackProcessingTimeAnomaly({
           type: "negative_values",
           issues,
-          originalValues: metadata as any,
-          correctedValues: validated as any,
+          originalValues: metadata as Record<string, unknown>,
+          correctedValues: validated as Record<string, unknown>,
           timestamp: new Date().toISOString(),
         });
       } catch (trackingError) {
         logger.error(
           "Failed to track processing time anomaly",
           "EMAIL_STORAGE",
-          trackingError as Record<string, any>,
+          trackingError as Record<string, unknown>,
         );
       }
     }
@@ -3323,7 +3338,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       logger.error(
         "Failed to track processing time anomaly",
         "EMAIL_STORAGE",
-        error as Record<string, any>,
+        error as Record<string, unknown>,
       );
     }
   }

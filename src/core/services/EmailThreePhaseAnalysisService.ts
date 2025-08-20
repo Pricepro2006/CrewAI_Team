@@ -25,6 +25,20 @@ import {
 } from "../prompts/ThreePhasePrompts.js";
 import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
 import { executeQuery } from "../../database/ConnectionPool.js";
+import type {
+  EmailWithChainAnalysis,
+  Phase2DataWithFallback,
+  RegexPattern,
+  AxiosValidateStatus,
+  ActionItem,
+  EntityExtractionResult,
+  DatabaseCallback,
+  DatabaseRecord,
+  FieldValidationFunction,
+  ParsingMetrics,
+  isEmailWithChainAnalysis,
+  isPhase2DataWithFallback
+} from "../../shared/types/core.types.js";
 
 const logger = Logger.getInstance();
 const COMPONENT = "EmailThreePhaseAnalysisService";
@@ -473,8 +487,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     let chainAnalysis;
     
     // Check if email already has chain analysis (from fixed script)
-    if ((email as any).chainAnalysis) {
-      chainAnalysis = (email as any).chainAnalysis;
+    if (isEmailWithChainAnalysis(email) ? email.chainAnalysis : undefined) {
+      chainAnalysis = isEmailWithChainAnalysis(email) ? email.chainAnalysis : undefined;
       logger.debug(`Using provided chain analysis for ${email.id}`, COMPONENT);
     } else {
       // Fall back to analyzing chain if not provided
@@ -587,10 +601,10 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         );
 
         // Check if this is a direct fallback that should skip quality assessment
-        if ((phase2Data as any).__directFallback) {
+        if (isPhase2DataWithFallback(phase2Data) && phase2Data.__directFallback) {
           logger.info("Direct fallback detected, skipping quality assessment", COMPONENT);
           // Remove the marker and merge with Phase 1 results
-          delete (phase2Data as any).__directFallback;
+          delete isPhase2DataWithFallback(phase2Data) && phase2Data.__directFallback;
           // Merge Phase 1 results to ensure we have all required fields
           const mergedResults = {
             ...phase1Results,
@@ -670,7 +684,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         }
 
         // Brief delay before retry
-        await new Promise((resolve: any) => setTimeout(resolve, 1000));
+        await new Promise((resolve: () => void) => setTimeout(resolve, 1000));
       }
     }
 
@@ -813,7 +827,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           },
           {
             timeout,
-            validateStatus: (status: any) => status < 500,
+            validateStatus: (status: number) => status < 500,
           },
         );
 
@@ -1037,7 +1051,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
             },
             {
               timeout: options.timeout || 60000, // Reduced from 180000 (3 min to 1 min)
-              validateStatus: (status: any) => status < 500,
+              validateStatus: (status: number) => status < 500,
             },
           );
 
@@ -1157,9 +1171,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m: any) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m: RegExpMatchArray) => { if (m[1]) results.add(m[1]); });
     });
 
     return Array.from(results);
@@ -1173,9 +1187,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m: any) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m: RegExpMatchArray) => { if (m[1]) results.add(m[1]); });
     });
 
     return Array.from(results);
@@ -1190,9 +1204,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m: any) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m: RegExpMatchArray) => { if (m[1]) results.add(m[1]); });
     });
 
     return Array.from(results);
@@ -1208,9 +1222,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const results = new Set<string>();
     const upperText = text.toUpperCase();
 
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = upperText.match(pattern) || [];
-      matches.forEach((m: any) => {
+      matches.forEach((m: RegExpMatchArray) => {
         // Filter out common false positives
         if (
           !m.match(
@@ -1239,9 +1253,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = text.match(pattern) || [];
-      matches.forEach((m: any) => results.add(m));
+      matches.forEach((m: RegExpMatchArray) => results.add(m));
     });
 
     return Array.from(results);
@@ -1254,9 +1268,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = text.match(pattern) || [];
-      matches.forEach((m: any) => results.add(m));
+      matches.forEach((m: RegExpMatchArray) => results.add(m));
     });
 
     return Array.from(results).slice(0, 10);
@@ -1340,7 +1354,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       urgencyScore >= 3 ||
       entities?.po_numbers?.length > 0 ||
       (entities.dollar_amounts &&
-        entities?.dollar_amounts?.some((amt: any) => {
+        entities?.dollar_amounts?.some((amt: string | number) => {
           if (!amt || typeof amt !== "string") return false;
           const value = parseFloat(amt.replace(/[$,]/g, ""));
           return value > 10000;
@@ -1375,7 +1389,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       /waiting\s+for\s+\w+/gi,
     ];
 
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = content.match(pattern) || [];
       phrases.push(...matches);
     });
@@ -1398,12 +1412,12 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       "executive@",
     ];
 
-    if (keyCustomers.some((key: any) => email.includes(key))) {
+    if (keyCustomers.some((key: string) => email.includes(key))) {
       return "key_customer";
     }
 
     const internalDomains = ["@tdsynnex.com", "@synnex.com", "@techdata.com"];
-    if (internalDomains.some((domain: any) => email.includes(domain))) {
+    if (internalDomains.some((domain: string) => email.includes(domain))) {
       return "internal";
     }
 
@@ -1413,7 +1427,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       "@microsoft.com",
       "@cisco.com",
     ];
-    if (partnerDomains.some((domain: any) => email.includes(domain))) {
+    if (partnerDomains.some((domain: string) => email.includes(domain))) {
       return "partner";
     }
 
@@ -1426,10 +1440,10 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     }
 
     return dollarAmounts
-      .filter((amt: any) => amt && typeof amt === "string")
-      .map((amt: any) => parseFloat(amt.replace(/[$,]/g, "")))
-      .filter((amt: any) => !isNaN(amt))
-      .reduce((sum: any, amt: any) => sum + amt, 0);
+      .filter((amt: string | number) => amt && typeof amt === "string")
+      .map((amt: string | number) => parseFloat(amt.replace(/[$,]/g, "")))
+      .filter((amt: string | number) => !isNaN(amt))
+      .reduce((sum: number, amt: number) => sum + amt, 0);
   }
 
   private detectPatterns(
@@ -1539,7 +1553,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         logger.warn("Unstructured response - using structured fallback response");
         const fallback = this.getStructuredFallback();
         // Mark this as a direct fallback to skip quality assessment
-        (fallback as any).__directFallback = true;
+        if (typeof fallback === "object" && fallback) (fallback as Phase2DataWithFallback).__directFallback = true;
         return fallback;
       }
     }
@@ -1912,7 +1926,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       "business_process",
     ];
 
-    return requiredFields.every((field: any) =>
+    return requiredFields.every((field: unknown) =>
       Object?.prototype?.hasOwnProperty.call(response, field),
     );
   }
@@ -1929,7 +1943,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       results.phase2_processing_time +
       results.phase3_processing_time;
 
-    await executeQuery((db: any) => {
+    await executeQuery((db: DatabaseConnection) => {
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO email_analysis (
           id, email_id,
@@ -1965,7 +1979,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         results?.entities?.part_numbers.join(",") || null,
         results?.entities?.dollar_amounts.join(",") || null,
         JSON.stringify(results?.entities?.contacts),
-        results?.action_items?.map((a: any) => a.task).join("; ") || null,
+        results?.action_items?.map((a: ActionItem) => a.task).join("; ") || null,
         JSON.stringify(results.action_items),
         results.escalation_needed ? "ESCALATED" : "ON_TRACK",
         results.revenue_impact,
@@ -2002,7 +2016,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
   private initializeTables(): void {
     // Ensure email_analysis table exists with all required columns
-    executeQuery((db: any) => {
+    executeQuery((db: DatabaseConnection) => {
       db.exec(`
       CREATE TABLE IF NOT EXISTS email_analysis (
         id TEXT PRIMARY KEY,
@@ -2059,7 +2073,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     for (let i = 0; i < (emails?.length ?? 0); i += batchSize) {
       const batch = emails.slice(i, i + batchSize);
       const batchResults = await Promise.all(
-        batch.map((email: any) => this.analyzeEmail(email, options)),
+        batch.map((email: DatabaseRecord) => this.analyzeEmail(email, options)),
       );
       results.push(...(batchResults as Phase3Results[]));
 
@@ -2081,13 +2095,13 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
   async getAnalysisStats(
     startDate?: Date,
     endDate?: Date,
-  ): Promise<AnalysisStats & { parsingMetrics: any }> {
+  ): Promise<AnalysisStats & { parsingMetrics: ParsingMetrics }> {
     const dateFilter =
       startDate && endDate
         ? `WHERE created_at BETWEEN '${startDate.toISOString()}' AND '${endDate.toISOString()}'`
         : "";
 
-    const stats = (await executeQuery((db: any) => {
+    const stats = (await executeQuery((db: DatabaseConnection) => {
       return db
         .prepare(
           `
@@ -2229,7 +2243,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // 2. Entity extraction completeness (0-2 points)
     const totalMissedEntities = Object.values(
       llmResponse.missed_entities,
-    ).reduce((sum: any, arr: any) => sum + (Array.isArray(arr) ? arr?.length || 0 : 0), 0);
+    ).reduce((sum: number, arr: unknown[]) => sum + (Array.isArray(arr) ? arr?.length || 0 : 0), 0);
     const totalPhase1Entities = Object.values(phase1Results.entities).reduce(
       (sum, arr) => sum + (Array.isArray(arr) ? arr?.length || 0 : 0),
       0,
@@ -2290,7 +2304,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     } else {
       // Check action item quality
       const hasValidActionItems = llmResponse?.action_items?.some(
-        (item: any) =>
+        (item: ActionItem) =>
           item.task && item?.task?.length > 10 && item.owner && item.deadline,
       );
       if (!hasValidActionItems) {
@@ -2357,7 +2371,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       workflow_validation: this.selectBestField(
         llmResponse.workflow_validation,
         fallback.workflow_validation,
-        (field: any) => field?.length || 0 > 20 && !field.includes("unable to"),
+        (field: unknown) => field?.length || 0 > 20 && !field.includes("unable to"),
       ),
 
       missed_entities: {
@@ -2375,20 +2389,20 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
       action_items:
         llmResponse?.action_items?.length > 0 &&
-        llmResponse?.action_items?.every((item: any) => item.task && item.owner)
+        llmResponse?.action_items?.every((item: ActionItem) => item.task && item.owner)
           ? llmResponse.action_items
           : fallback.action_items,
 
       risk_assessment: this.selectBestField(
         llmResponse.risk_assessment,
         fallback.risk_assessment,
-        (field: any) => field?.length || 0 > 15 && !field.includes("Unable to assess"),
+        (field: unknown) => field?.length || 0 > 15 && !field.includes("Unable to assess"),
       ),
 
       initial_response: this.selectBestField(
         llmResponse.initial_response,
         fallback.initial_response,
-        (field: any) =>
+        (field: unknown) =>
           field?.length || 0 > 30 && !field.includes("reviewing your request"),
       ),
 
@@ -2404,7 +2418,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       extracted_requirements: [
         ...fallback.extracted_requirements,
         ...llmResponse?.extracted_requirements?.filter(
-          (req: any) =>
+          (req: string) =>
             req?.length || 0 > 5 && !fallback?.extracted_requirements?.includes(req),
         ),
       ],

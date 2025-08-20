@@ -9,6 +9,33 @@ import { useWebSocketConnection } from '../hooks/useWebSocketConnection';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates';
 import { getWebSocketDebugInfo, getWebSocketEndpoints } from '../../config/websocket.config';
+import { WebSocketMessage } from '../../shared/types/websocket';
+
+// WebSocket message types
+interface WebSocketTestMessage {
+  type: string;
+  data: Record<string, unknown>;
+  timestamp: string;
+}
+
+interface AgentStatus {
+  agentId: string;
+  status: 'idle' | 'busy' | 'error' | string;
+}
+
+interface RAGOperation {
+  operation: string;
+  status: 'completed' | 'failed' | 'running' | string;
+}
+
+interface SystemHealth {
+  services: Record<string, string>;
+}
+
+interface PlanUpdate {
+  status: string;
+  progress?: number;
+}
 
 interface TestResult {
   test: string;
@@ -22,25 +49,25 @@ interface WebSocketConnectionReturn {
   connect: () => Promise<void> | void;
   disconnect: () => void;
   reconnect?: () => void;
-  sendMessage: (message: any) => boolean;
+  sendMessage: (message: WebSocketTestMessage) => boolean;
   isConnected: boolean;
   isConnecting?: boolean;
   reconnectAttempts: number;
   connected: boolean;
   connecting?: boolean;
   error?: string | null;
-  lastMessage?: any;
+  lastMessage?: WebSocketMessage;
   connectionCount?: number;
 }
 
 interface TRPCWebSocketReturn {
-  client?: any;
+  client?: Record<string, unknown>;
   isConnected: boolean;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
   reconnectAttempts: number;
   connect: () => void;
   disconnect: () => void;
-  sendMessage?: (message: any) => void;
+  sendMessage?: (message: WebSocketTestMessage) => void;
 }
 
 interface RealTimeUpdatesReturn {
@@ -48,20 +75,20 @@ interface RealTimeUpdatesReturn {
   connectionStatus: string;
   reconnectAttempts: number;
   lastUpdate?: string | null;
-  agentStatuses?: any[];
-  agentTasks?: any[];
-  planUpdates?: any[];
-  ragOperations?: any[];
-  systemHealth?: any;
+  agentStatuses?: AgentStatus[];
+  agentTasks?: unknown[];
+  planUpdates?: PlanUpdate[];
+  ragOperations?: RAGOperation[];
+  systemHealth?: SystemHealth;
   connect: () => Promise<void> | void;
   disconnect: () => void;
-  subscribe?: (eventTypes: any[]) => void;
-  unsubscribe?: (eventTypes: any[]) => void;
-  getAgentStatus?: (agentId: string) => any;
-  getPlanStatus?: (planId: string) => any;
-  getActiveAgents?: () => any[];
-  getActivePlans?: () => any[];
-  rawState?: any;
+  subscribe?: (eventTypes: string[]) => void;
+  unsubscribe?: (eventTypes: string[]) => void;
+  getAgentStatus?: (agentId: string) => AgentStatus | null;
+  getPlanStatus?: (planId: string) => PlanUpdate | null;
+  getActiveAgents?: () => AgentStatus[];
+  getActivePlans?: () => PlanUpdate[];
+  rawState?: Record<string, unknown>;
 }
 
 export const WebSocketTestPanel: React.FC = () => {
@@ -72,26 +99,26 @@ export const WebSocketTestPanel: React.FC = () => {
   const nativeWebSocket = useWebSocketConnection({
     onConnect: () => addTestResult('Native WebSocket Connection', 'success', 'Connected successfully'),
     onDisconnect: () => addTestResult('Native WebSocket Connection', 'error', 'Disconnected'),
-    onError: (error) => addTestResult('Native WebSocket Connection', 'error', `Error: ${(error as any)?.message || 'Unknown error'}`),
-    onMessage: (message) => addTestResult('Native WebSocket Message', 'success', `Received: ${(message as any)?.type || 'unknown'}`)
+    onError: (error) => addTestResult('Native WebSocket Connection', 'error', `Error: ${(error as Error)?.message || 'Unknown error'}`),
+    onMessage: (message) => addTestResult('Native WebSocket Message', 'success', `Received: ${(message as WebSocketMessage)?.type || 'unknown'}`)
   }) as WebSocketConnectionReturn;
 
   // tRPC WebSocket connection with safe casting
   const trpcWebSocket = useWebSocket({
     onConnect: () => addTestResult('tRPC WebSocket Connection', 'success', 'Connected successfully'),
     onDisconnect: () => addTestResult('tRPC WebSocket Connection', 'error', 'Disconnected'),
-    onError: (error) => addTestResult('tRPC WebSocket Connection', 'error', `Error: ${(error as any)?.message || 'Unknown error'}`)
+    onError: (error) => addTestResult('tRPC WebSocket Connection', 'error', `Error: ${(error as Error)?.message || 'Unknown error'}`)
   }) as TRPCWebSocketReturn;
 
   // Real-time updates hook with safe casting
   const realTimeUpdates = useRealTimeUpdates({
-    onAgentStatusChange: (agentId: string, status: any) => 
+    onAgentStatusChange: (agentId: string, status: AgentStatus) => 
       addTestResult('Agent Status Update', 'success', `Agent ${agentId}: ${status?.status || 'unknown'}`),
-    onPlanProgress: (planId: string, update: any) => 
+    onPlanProgress: (planId: string, update: PlanUpdate) => 
       addTestResult('Plan Progress Update', 'success', `Plan ${planId}: ${update?.status || 'unknown'}`),
-    onRAGOperation: (operation: any) => 
+    onRAGOperation: (operation: RAGOperation) => 
       addTestResult('RAG Operation', 'success', `${operation?.operation || 'unknown'}: ${operation?.status || 'unknown'}`),
-    onSystemHealthChange: (health: any) => 
+    onSystemHealthChange: (health: SystemHealth) => 
       addTestResult('System Health Update', 'success', `Services: ${health?.services ? Object.keys(health.services).length : 0}`)
   }) as RealTimeUpdatesReturn;
 
@@ -294,7 +321,7 @@ export const WebSocketTestPanel: React.FC = () => {
             <div className="p-3 border rounded-lg">
               <h4 className="font-medium text-gray-900 mb-2">Agent Statuses ({(realTimeUpdates.agentStatuses?.length || 0)})</h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
-                {(realTimeUpdates.agentStatuses || []).map((agent: { agentId: string; status: string }, index: number) => (
+                {(realTimeUpdates.agentStatuses || []).map((agent: AgentStatus, index: number) => (
                   <div key={index} className="text-xs flex justify-between">
                     <span>{agent.agentId}</span>
                     <span className={`font-medium ${
@@ -310,7 +337,7 @@ export const WebSocketTestPanel: React.FC = () => {
             <div className="p-3 border rounded-lg">
               <h4 className="font-medium text-gray-900 mb-2">Recent RAG Operations ({(realTimeUpdates.ragOperations?.length || 0)})</h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
-                {(realTimeUpdates.ragOperations || []).slice(0, 5).map((operation: { operation: string; status: string }, index: number) => (
+                {(realTimeUpdates.ragOperations || []).slice(0, 5).map((operation: RAGOperation, index: number) => (
                   <div key={index} className="text-xs">
                     <div className="flex justify-between">
                       <span>{operation.operation}</span>

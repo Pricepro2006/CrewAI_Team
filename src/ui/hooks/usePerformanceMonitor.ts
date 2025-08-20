@@ -64,7 +64,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
     if (!isSupported || !finalConfig.enableWebVitals) return;
 
     // LCP - Largest Contentful Paint
-    new PerformanceObserver((list: any) => {
+    new PerformanceObserver((list: unknown) => {
       const entries = list.getEntries() as PerformanceEventTiming[];
       const lastEntry = entries[Math.max(0, (entries?.length || 0) - 1)];
       const lcp = lastEntry?.startTime;
@@ -80,7 +80,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
     }).observe({ type: 'largest-contentful-paint', buffered: true });
 
     // FID - First Input Delay  
-    new PerformanceObserver((list: any) => {
+    new PerformanceObserver((list: unknown) => {
       const entries = list.getEntries() as PerformanceEventTiming[];
       const firstEntry = entries[0];
       const fid = firstEntry?.processingStart && firstEntry?.startTime 
@@ -99,10 +99,10 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
 
     // CLS - Cumulative Layout Shift
     let clsValue = 0;
-    new PerformanceObserver((list: any) => {
+    new PerformanceObserver((list: unknown) => {
       for (const entry of list.getEntries()) {
-        if (!(entry as any).hadRecentInput) {
-          clsValue += (entry as any).value;
+        if (!(entry as unknown).hadRecentInput) {
+          clsValue += (entry as unknown).value;
         }
       }
       
@@ -115,7 +115,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
     }).observe({ type: 'layout-shift', buffered: true });
 
     // FCP - First Contentful Paint
-    new PerformanceObserver((list: any) => {
+    new PerformanceObserver((list: unknown) => {
       const entries = list.getEntries() as PerformanceEventTiming[];
       const fcp = entries[0]?.startTime;
       
@@ -128,7 +128,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
   const measureResourceTiming = useCallback(() => {
     if (!isSupported || !finalConfig.enableResourceTiming) return;
 
-    const observer = new PerformanceObserver((list: any) => {
+    const observer = new PerformanceObserver((list: unknown) => {
       const entries = list.getEntries() as PerformanceResourceTiming[];
       let totalSize = 0;
       let networkRequests = 0;
@@ -169,7 +169,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
   const measurePageLoad = useCallback(() => {
     if (!isSupported) return;
 
-    const timing = (performance as any)?.timing;
+    const timing = (performance as unknown)?.timing;
     if (!timing) return;
     
     const loadTime = timing.loadEventEnd && timing.navigationStart 
@@ -193,7 +193,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
     if (!isSupported) return;
 
     // Modern browsers support performance.memory
-    const memory = (performance as any).memory;
+    const memory = (performance as unknown).memory;
     if (memory) {
       setMetrics(prev => ({
         ...prev,

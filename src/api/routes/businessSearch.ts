@@ -6,7 +6,7 @@ import {
   premiumRateLimit,
 } from "../../core/middleware/RateLimiter.js";
 import { BusinessSearchMiddleware } from "../../core/middleware/BusinessSearchMiddleware.js";
-import { OllamaProvider } from "../../core/llm/OllamaProvider.js";
+import { LlamaCppHttpProvider } from "../../core/llm/LlamaCppHttpProvider.js";
 import { logger } from "../../utils/logger.js";
 
 const router: ExpressRouter = Router();
@@ -19,14 +19,26 @@ const businessSearchMiddleware = new BusinessSearchMiddleware({
   collectMetrics: true,
 });
 
-// Initialize Ollama provider
-const ollamaProvider = new OllamaProvider({
-  model: "llama2",
-  temperature: 0.7,
-});
+// Initialize LlamaCpp provider
+const llamaProvider = new LlamaCppHttpProvider('http://localhost:8081');
+
+// Initialize provider on startup
+let providerInitialized = false;
+const initProvider = async () => {
+  if (!providerInitialized) {
+    try {
+      await llamaProvider.initialize();
+      providerInitialized = true;
+      logger.info('LlamaCpp provider initialized for business search', 'BUSINESS_SEARCH');
+    } catch (error) {
+      logger.error('Failed to initialize LlamaCpp provider', 'BUSINESS_SEARCH', { error });
+      throw error;
+    }
+  }
+};
 
 // Wrap provider with middleware
-const wrappedProvider = businessSearchMiddleware.wrapProvider(ollamaProvider);
+const wrappedProvider = businessSearchMiddleware.wrapProvider(llamaProvider);
 
 /**
  * Health check endpoint
@@ -67,6 +79,9 @@ router.post(
         ? `Find ${query} in ${location}`
         : `Find ${query} near me`;
 
+      // Ensure provider is initialized
+      await initProvider();
+      
       // Generate response using wrapped provider
       const response = await wrappedProvider.generate(prompt);
 
@@ -112,6 +127,9 @@ router.post(
         });
       }
 
+      // Ensure provider is initialized
+      await initProvider();
+      
       // Generate response using wrapped provider
       const response = await wrappedProvider.generate(query);
 
@@ -160,6 +178,9 @@ router.post(
         });
       }
 
+      // Ensure provider is initialized
+      await initProvider();
+      
       // Generate response with premium options
       const response = await wrappedProvider.generate(query, {
         maxTokens: options?.maxTokens || 2000,

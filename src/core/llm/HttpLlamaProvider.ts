@@ -14,7 +14,7 @@ export class HttpLlamaProvider implements LLMProviderInterface {
   private modelName: string;
   private isInitialized: boolean = false;
 
-  constructor(baseUrl: string = 'http://localhost:11434') {
+  constructor(baseUrl: string = 'http://localhost:8081') {
     this.baseUrl = baseUrl;
     this.modelName = 'llama-3.2-3b-instruct';
     
@@ -98,7 +98,7 @@ export class HttpLlamaProvider implements LLMProviderInterface {
       
       if (axios.isAxiosError(error)) {
         if (error.code === 'ECONNREFUSED') {
-          throw new Error('Llama server is not running. Please start it with: ./llama.cpp/build/bin/llama-server -m ./models/llama-3.2-3b-instruct.Q4_K_M.gguf --host 0.0.0.0 --port 11434');
+          throw new Error('Llama server is not running. Please start it with: ./llama.cpp/build/bin/llama-server -m ./models/llama-3.2-3b-instruct.Q4_K_M.gguf --host 0.0.0.0 --port 8081');
         }
         throw new Error(`HTTP request failed: ${error.message}`);
       }

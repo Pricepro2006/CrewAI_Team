@@ -41,7 +41,19 @@ interface SmartWebSocketState {
   dataVersion: number;
 }
 
-export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
+import type { TRPCClient } from '@trpc/client';
+
+export interface SmartWebSocketReturn extends SmartWebSocketState {
+  connect: () => void;
+  disconnect: () => void;
+  reconnect: () => void;
+  sendMessage: (message: Record<string, unknown>) => void;
+  switchMode: (mode: ConnectionMode) => void;
+  trpcClient: TRPCClient<AppRouter> | null;
+  canSend: boolean;
+}
+
+export function useSmartWebSocket(options: SmartWebSocketOptions = {}): SmartWebSocketReturn {
   const {
     wsUrl,
     userId = 'default',
@@ -160,7 +172,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
           }
         }
       } catch (error) {
-        logger.error('Polling error', 'SMART_WS', error as Record<string, any>);
+        logger.error('Polling error', 'SMART_WS', error as Record<string, unknown>);
       }
     };
 
@@ -260,7 +272,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
           onConnect?.();
           onModeChange?.('websocket');
         },
-        onClose: (event: any) => {
+        onClose: (event: unknown) => {
           if (isUnmountedRef.current) return;
 
           logger.warn('WebSocket closed', 'SMART_WS', { code: event?.code });
@@ -374,7 +386,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
   /**
    * Send message
    */
-  const sendMessage = useCallback((message: any) => {
+  const sendMessage = useCallback((message: unknown) => {
     if (wsClientRef.current && state.mode === 'websocket') {
       try {
         const ws = wsClientRef.current.getConnection();
@@ -383,7 +395,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
           return true;
         }
       } catch (error) {
-        logger.error('Error sending WebSocket message', 'SMART_WS', error as any);
+        logger.error('Error sending WebSocket message', 'SMART_WS', error as unknown);
       }
     }
     
