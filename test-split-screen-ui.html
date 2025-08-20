@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split Screen Grocery Tracker Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🛒 Split Screen Grocery Tracker UI Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button onclick="testComponentLoad()">Test Component Load</button>
+            <button onclick="testAPIConnection()">Test API Connection</button>
+            <button onclick="testWebSocket()">Test WebSocket</button>
+            <button onclick="openActualUI()">Open Actual UI</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="results">
+                <p>Click a test button to begin...</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Component Information</h2>
+            <ul>
+                <li><strong>Component Path:</strong> /src/ui/components/Walmart/SplitScreenGroceryTracker.tsx</li>
+                <li><strong>API Endpoint:</strong> http://localhost:3001/trpc</li>
+                <li><strong>WebSocket Port:</strong> 8080</li>
+                <li><strong>Expected Features:</strong>
+                    <ul>
+                        <li>Product Search (left panel)</li>
+                        <li>Receipt Builder (right panel)</li>
+                        <li>Budget Tracking</li>
+                        <li>Real-time Updates via WebSocket</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+        const WS_URL = 'ws://localhost:8080';
+        
+        function updateResults(message, type = 'loading') {
+            const results = document.getElementById('results');
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'loading';
+            results.innerHTML = `<div class="status ${className}">${message}</div>`;
+        }
+
+        async function testComponentLoad() {
+            updateResults('Testing if component can be loaded...');
+            
+            try {
+                // Try to load the main app
+                const response = await fetch(`${API_BASE}/`);
+                if (response.ok) {
+                    const html = await response.text();
+                    if (html.includes('root') || html.includes('app')) {
+                        updateResults('✅ Main app HTML loaded successfully! React root element found.', 'success');
+                    } else {
+                        updateResults('⚠️ Main app loaded but React root element not found.', 'error');
+                    }
+                } else {
+                    updateResults(`❌ Failed to load main app: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                updateResults(`❌ Error loading component: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAPIConnection() {
+            updateResults('Testing API connection...');
+            
+            try {
+                // Test the tRPC endpoint
+                const response = await fetch(`${API_BASE}/trpc/walmartGroceryTRPC.quickSearch`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        json: {
+                            query: 'milk',
+                            limit: 5
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateResults(`✅ API connection successful! Response: ${JSON.stringify(data).substring(0, 100)}...`, 'success');
+                } else {
+                    const error = await response.text();
+                    updateResults(`❌ API error: ${response.status} - ${error.substring(0, 100)}`, 'error');
+                }
+            } catch (error) {
+                updateResults(`❌ Failed to connect to API: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWebSocket() {
+            updateResults('Testing WebSocket connection...');
+            
+            try {
+                const ws = new WebSocket(WS_URL);
+                
+                ws.onopen = () => {
+                    updateResults('✅ WebSocket connected successfully!', 'success');
+                    ws.close();
+                };
+                
+                ws.onerror = (error) => {
+                    updateResults(`❌ WebSocket error: ${error.message || 'Connection failed'}`, 'error');
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket closed');
+                };
+                
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.CONNECTING) {
+                        ws.close();
+                        updateResults('❌ WebSocket connection timeout', 'error');
+                    }
+                }, 5000);
+            } catch (error) {
+                updateResults(`❌ Failed to create WebSocket: ${error.message}`, 'error');
+            }
+        }
+
+        function openActualUI() {
+            updateResults('Opening actual UI in new tab...');
+            window.open(`${API_BASE}/walmart/grocery-tracker`, '_blank');
+            updateResults('✅ Opened UI in new tab. Check if it loads correctly.', 'success');
+        }
+
+        // Auto-run basic test on load
+        window.onload = () => {
+            console.log('Split Screen Grocery Tracker UI Test Loaded');
+        };
+    </script>
+</body>
+</html>

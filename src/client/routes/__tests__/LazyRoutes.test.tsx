@@ -1,6 +1,6 @@
 /// <reference types="react" />
 /// <reference types="react-dom" />
-import React, { Suspense } from 'react';
+import React, { Suspense, LazyExoticComponent, ComponentType } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom';
@@ -15,6 +15,8 @@ import {
   StatusDistributionChart,
   WorkflowTimelineChart,
   SLATrackingDashboard,
+  type EmailDashboardMultiPanelProps,
+  type StatusDistributionChartProps,
 } from '../LazyRoutes';
 
 // Mock React.lazy to control component loading
@@ -102,7 +104,7 @@ class TestErrorBoundary extends React.Component<
   }
 }
 
-const renderWithSuspense = (Component: React.ComponentType<any>, props = {}) => {
+const renderWithSuspense = (Component: LazyExoticComponent<ComponentType<any>> | ComponentType<any>, props = {}) => {
   return render(
     <TestErrorBoundary>
       <Suspense fallback={<LoadingFallback />}>
@@ -139,7 +141,7 @@ describe('LazyRoutes - Email Dashboard Components', () => {
 
     it('is a lazy component', () => {
       expect(EmailDashboardDemo).toHaveProperty('$$typeof');
-      expect(EmailDashboardDemo).toHaveProperty('_payload');
+      expect((EmailDashboardDemo as any)._payload).toBeDefined();
     });
   });
 
@@ -157,7 +159,7 @@ describe('LazyRoutes - Email Dashboard Components', () => {
     });
 
     it('passes props correctly to the lazy component', async () => {
-      const testProps = {
+      const testProps: EmailDashboardMultiPanelProps = {
         emails: [],
         loading: false,
         error: null,
@@ -311,7 +313,7 @@ describe('LazyRoutes - Error Handling', () => {
       },
     }));
 
-    const FailingComponent = React.lazy(() => import('../../pages/EmailDashboardDemo').then(module => ({ default: module.EmailDashboardDemo })));
+    const FailingComponent = React.lazy<ComponentType<any>>(() => import('../../pages/EmailDashboardDemo').then(module => ({ default: module.EmailDashboardDemo })));
 
     render(
       <TestErrorBoundary>
@@ -339,9 +341,9 @@ describe('LazyRoutes - Performance', () => {
     expect(StatusDistributionChart).toHaveProperty('$$typeof');
     
     // The components should be React.lazy wrappers
-    expect(EmailDashboardDemo).toHaveProperty('$$typeof');
-    expect(WalmartDashboard).toHaveProperty('$$typeof');
-    expect(StatusDistributionChart).toHaveProperty('$$typeof');
+    expect((EmailDashboardDemo as any)._payload).toBeDefined();
+    expect((WalmartDashboard as any)._payload).toBeDefined();
+    expect((StatusDistributionChart as any)._payload).toBeDefined();
   });
 
   it('multiple components can be loaded concurrently', async () => {
@@ -351,7 +353,7 @@ describe('LazyRoutes - Performance', () => {
           <div>
             <EmailDashboardDemo />
             <WalmartDashboard />
-            <StatusDistributionChart data={{ red: 1, yellow: 1, green: 1 }} totalEmails={3} />
+            {React.createElement(StatusDistributionChart as any, { data: { red: 1, yellow: 1, green: 1 }, totalEmails: 3 })}
           </div>
         </Suspense>
       </TestErrorBoundary>
@@ -485,7 +487,7 @@ describe('LazyRoutes - Integration Scenarios', () => {
     const NestedComponent = () => (
       <div>
         <Suspense fallback={<div data-testid="nested-loading">Nested Loading...</div>}>
-          <EmailDashboardMultiPanel emails={[]} loading={false} error={null} />
+          {React.createElement(EmailDashboardMultiPanel as any, { emails: [], loading: false, error: null })}
         </Suspense>
       </div>
     );
@@ -539,10 +541,11 @@ describe('LazyRoutes - Memory Management', () => {
             {components.map((Component, index) => {
               // StatusDistributionChart requires data and totalEmails props
               if (Component === StatusDistributionChart) {
-                return <Component key={index} data={{ red: 1, yellow: 1, green: 1 }} totalEmails={3} />;
+                const chartProps: StatusDistributionChartProps = { data: { red: 1, yellow: 1, green: 1 }, totalEmails: 3 };
+                return <Component key={index} {...chartProps} />;
               }
               // Provide default props for components that might need them
-              const defaultProps: any = {};
+              const defaultProps: Record<string, any> = {};
               return <Component key={index} {...defaultProps} />;
             })}
           </div>

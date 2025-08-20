@@ -1,16 +1,30 @@
-import React, { lazy, Suspense } from 'react';
-// import { SkeletonLoader } from '../../client/components/loading/SkeletonLoader'; // Module not found
+import React, { useEffect, useState } from 'react';
+
 interface SkeletonLoaderProps {
   height?: string;
   width?: string;
   className?: string;
 }
+
 const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ height = '300px', width = '100%', className = '' }) => (
   <div className={`animate-pulse bg-gray-200 rounded ${className}`} style={{ height, width }}>Loading...</div>
 );
 
-// Define chart component types without importing recharts
-type ChartComponent = React.ComponentType<any>;
+// Type definitions for recharts components
+interface RechartsComponents {
+  LineChart: React.ComponentType<any>;
+  Line: React.ComponentType<any>;
+  BarChart: React.ComponentType<any>;
+  Bar: React.ComponentType<any>;
+  PieChart: React.ComponentType<any>;
+  Pie: React.ComponentType<any>;
+  Cell: React.ComponentType<any>;
+  XAxis: React.ComponentType<any>;
+  YAxis: React.ComponentType<any>;
+  CartesianGrid: React.ComponentType<any>;
+  Tooltip: React.ComponentType<any>;
+  ResponsiveContainer: React.ComponentType<any>;
+}
 
 // Chart component props interfaces
 export interface ChartDataPoint {
@@ -26,8 +40,6 @@ export interface LazyChartProps {
   height?: string | number;
 }
 
-// Lazy load heavy chart components to reduce initial bundle size
-const LazyRecharts = lazy(() => import('recharts') as any);
 
 // Chart component wrapper with lazy loading  
 export const LazyLineChart: React.FC<LazyChartProps> = ({ 
@@ -37,13 +49,13 @@ export const LazyLineChart: React.FC<LazyChartProps> = ({
   width = "100%", 
   height = 300 
 }) => {
-  const ChartRenderer = () => {
-    const [RechartsComponents, setRechartsComponents] = React.useState<any>(null);
+  const ChartRenderer: React.FC = () => {
+    const [RechartsComponents, setRechartsComponents] = useState<RechartsComponents | null>(null);
     
-    React.useEffect(() => {
+    useEffect(() => {
       import('recharts')
         .then((recharts) => {
-          setRechartsComponents(recharts);
+          setRechartsComponents(recharts as RechartsComponents);
         })
         .catch((error) => {
           console.error('Failed to load recharts:', error);
@@ -79,13 +91,13 @@ export const LazyBarChart: React.FC<LazyChartProps> = ({
   width = "100%", 
   height = 300 
 }) => {
-  const ChartRenderer = () => {
-    const [RechartsComponents, setRechartsComponents] = React.useState<any>(null);
+  const ChartRenderer: React.FC = () => {
+    const [RechartsComponents, setRechartsComponents] = useState<RechartsComponents | null>(null);
     
-    React.useEffect(() => {
+    useEffect(() => {
       import('recharts')
         .then((recharts) => {
-          setRechartsComponents(recharts);
+          setRechartsComponents(recharts as RechartsComponents);
         })
         .catch((error) => {
           console.error('Failed to load recharts:', error);
@@ -121,13 +133,13 @@ export const LazyPieChart: React.FC<LazyChartProps> = ({
   width = "100%", 
   height = 300 
 }) => {
-  const ChartRenderer = () => {
-    const [RechartsComponents, setRechartsComponents] = React.useState<any>(null);
+  const ChartRenderer: React.FC = () => {
+    const [RechartsComponents, setRechartsComponents] = useState<RechartsComponents | null>(null);
     
-    React.useEffect(() => {
+    useEffect(() => {
       import('recharts')
         .then((recharts) => {
-          setRechartsComponents(recharts);
+          setRechartsComponents(recharts as RechartsComponents);
         })
         .catch((error) => {
           console.error('Failed to load recharts:', error);
@@ -151,8 +163,8 @@ export const LazyPieChart: React.FC<LazyChartProps> = ({
             fill="#8884d8"
             dataKey={yKey}
           >
-            {data?.map((entry: ChartDataPoint, index: number) => (
-              <Cell key={`cell-${index}`} fill={colors[index % (colors?.length || 4)]} />
+            {data.map((entry: ChartDataPoint, index: number) => (
+              <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
             ))}
           </Pie>
           <Tooltip />
