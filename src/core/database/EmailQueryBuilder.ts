@@ -40,7 +40,7 @@ export class EmailQueryBuilder {
    * Add a WHERE condition
    */
   where(field: string, operator: QueryFilter["operator"], value: any): this {
-    this.filters.push({ field, operator, value });
+    this?.filters?.push({ field, operator, value });
     return this;
   }
 
@@ -48,7 +48,7 @@ export class EmailQueryBuilder {
    * Add a JOIN clause
    */
   join(joinClause: string): this {
-    this.joins.push(joinClause);
+    this?.joins?.push(joinClause);
     return this;
   }
 
@@ -56,7 +56,7 @@ export class EmailQueryBuilder {
    * Add a LEFT JOIN clause
    */
   leftJoin(table: string, condition: string): this {
-    this.joins.push(`LEFT JOIN ${table} ON ${condition}`);
+    this?.joins?.push(`LEFT JOIN ${table} ON ${condition}`);
     return this;
   }
 
@@ -72,7 +72,7 @@ export class EmailQueryBuilder {
    * Add HAVING clause
    */
   having(clause: string): this {
-    this.havingClauses.push(clause);
+    this?.havingClauses?.push(clause);
     return this;
   }
 
@@ -80,8 +80,16 @@ export class EmailQueryBuilder {
    * Set ORDER BY
    */
   orderBy(field: string, direction: "ASC" | "DESC" = "ASC"): this {
-    this.options.orderBy = field;
-    this.options.orderDirection = direction;
+    if (this.options) {
+
+      this.options.orderBy = field;
+
+    }
+    if (this.options) {
+
+      this.options.orderDirection = direction;
+
+    }
     return this;
   }
 
@@ -89,7 +97,11 @@ export class EmailQueryBuilder {
    * Set LIMIT
    */
   limit(limit: number): this {
-    this.options.limit = limit;
+    if (this.options) {
+
+      this.options.limit = limit;
+
+    }
     return this;
   }
 
@@ -97,7 +109,11 @@ export class EmailQueryBuilder {
    * Set OFFSET
    */
   offset(offset: number): this {
-    this.options.offset = offset;
+    if (this.options) {
+
+      this.options.offset = offset;
+
+    }
     return this;
   }
 
@@ -106,19 +122,19 @@ export class EmailQueryBuilder {
    */
   build(): { query: string; params: any[] } {
     const params: any[] = [];
-    let query = `SELECT ${this.selectFields.join(", ")} FROM ${this.tableName}`;
+    let query = `SELECT ${this?.selectFields?.join(", ")} FROM ${this.tableName}`;
 
     // Add joins
-    if (this.joins.length > 0) {
-      query += " " + this.joins.join(" ");
+    if (this?.joins?.length > 0) {
+      query += " " + this?.joins?.join(" ");
     }
 
     // Add WHERE clause
-    if (this.filters.length > 0) {
-      const whereConditions = this.filters.map((filter) => {
+    if (this?.filters?.length > 0) {
+      const whereConditions = this?.filters?.map((filter: any) => {
         if (filter.operator === "IN" || filter.operator === "NOT IN") {
           const placeholders = Array.isArray(filter.value)
-            ? filter.value.map(() => "?").join(", ")
+            ? filter?.value?.map(() => "?").join(", ")
             : "?";
           if (Array.isArray(filter.value)) {
             params.push(...filter.value);
@@ -135,28 +151,28 @@ export class EmailQueryBuilder {
     }
 
     // Add GROUP BY
-    if (this.groupByFields.length > 0) {
-      query += " GROUP BY " + this.groupByFields.join(", ");
+    if (this?.groupByFields?.length > 0) {
+      query += " GROUP BY " + this?.groupByFields?.join(", ");
     }
 
     // Add HAVING
-    if (this.havingClauses.length > 0) {
-      query += " HAVING " + this.havingClauses.join(" AND ");
+    if (this?.havingClauses?.length > 0) {
+      query += " HAVING " + this?.havingClauses?.join(" AND ");
     }
 
     // Add ORDER BY
-    if (this.options.orderBy) {
-      query += ` ORDER BY ${this.options.orderBy} ${this.options.orderDirection}`;
+    if (this?.options?.orderBy) {
+      query += ` ORDER BY ${this?.options?.orderBy} ${this?.options?.orderDirection}`;
     }
 
     // Add LIMIT
-    if (this.options.limit) {
-      query += ` LIMIT ${this.options.limit}`;
+    if (this?.options?.limit) {
+      query += ` LIMIT ${this?.options?.limit}`;
     }
 
     // Add OFFSET
-    if (this.options.offset) {
-      query += ` OFFSET ${this.options.offset}`;
+    if (this?.options?.offset) {
+      query += ` OFFSET ${this?.options?.offset}`;
     }
 
     logger.debug("Built query", "EMAIL_QUERY", { query, params });

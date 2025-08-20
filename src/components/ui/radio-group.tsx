@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "../../lib/utils.js";
 
-interface RadioGroupProps {
+interface RadioGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: string;
   onValueChange?: (value: string) => void;
   children: React.ReactNode;
@@ -18,10 +18,15 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
         {...props}
       >
         {React.Children.map(children, (child) => {
-          if (React.isValidElement(child)) {
-            return React.cloneElement(child, {
-              checked: child.props.value === value,
-              onChange: () => onValueChange?.(child.props.value),
+          if (React.isValidElement(child) && child.props) {
+            const childElement = child as React.ReactElement<RadioGroupItemProps>;
+            return React.cloneElement(childElement, {
+              checked: childElement.props.value === value,
+              onChange: () => {
+                if (childElement.props.value) {
+                  onValueChange?.(childElement.props.value);
+                }
+              },
             });
           }
           return child;
@@ -32,7 +37,7 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
 );
 RadioGroup.displayName = "RadioGroup";
 
-interface RadioGroupItemProps {
+interface RadioGroupItemProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
   value: string;
   checked?: boolean;
   onChange?: () => void;

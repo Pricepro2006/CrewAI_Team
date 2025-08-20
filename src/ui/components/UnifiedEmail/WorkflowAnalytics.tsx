@@ -98,21 +98,21 @@ export const WorkflowAnalytics: React.FC<WorkflowAnalyticsProps> = ({
                 </div>
                 <div className="workflow-stat__label">Complete Chains</div>
                 <div className="workflow-stat__count">
-                  ({workflowData.completeChains.toLocaleString()} workflows)
+                  ({workflowData?.completeChains?.toLocaleString()} workflows)
                 </div>
               </div>
               <div className="workflow-stat workflow-stat--partial">
                 <div className="workflow-stat__value">{partialPercentage}%</div>
                 <div className="workflow-stat__label">Partial Chains</div>
                 <div className="workflow-stat__count">
-                  ({workflowData.partialChains.toLocaleString()} workflows)
+                  ({workflowData?.partialChains?.toLocaleString()} workflows)
                 </div>
               </div>
               <div className="workflow-stat workflow-stat--broken">
                 <div className="workflow-stat__value">{brokenPercentage}%</div>
                 <div className="workflow-stat__label">Broken Chains</div>
                 <div className="workflow-stat__count">
-                  ({workflowData.brokenChains.toLocaleString()} workflows)
+                  ({workflowData?.brokenChains?.toLocaleString()} workflows)
                 </div>
               </div>
             </div>
@@ -146,12 +146,12 @@ export const WorkflowAnalytics: React.FC<WorkflowAnalyticsProps> = ({
           </div>
           <div className="card-content">
             <div className="workflow-types">
-              {workflowData.workflowTypes.map((type) => (
+              {workflowData?.workflowTypes?.map((type: any) => (
                 <div key={type.type} className="workflow-type">
                   <div className="workflow-type__header">
                     <span className="workflow-type__name">{type.type}</span>
                     <span className="workflow-type__count">
-                      {type.count.toLocaleString()}
+                      {type?.count?.toLocaleString()}
                     </span>
                   </div>
                   <div className="workflow-type__completion">
@@ -162,7 +162,7 @@ export const WorkflowAnalytics: React.FC<WorkflowAnalyticsProps> = ({
                       />
                     </div>
                     <span className="workflow-type__percentage">
-                      {type.completePercentage.toFixed(1)}% complete
+                      {type?.completePercentage?.toFixed(1)}% complete
                     </span>
                   </div>
                 </div>
@@ -179,20 +179,20 @@ export const WorkflowAnalytics: React.FC<WorkflowAnalyticsProps> = ({
           </div>
           <div className="card-content">
             <div className="bottlenecks">
-              {workflowData.bottlenecks.map((bottleneck) => (
+              {workflowData?.bottlenecks?.map((bottleneck: any) => (
                 <div key={bottleneck.stage} className="bottleneck">
                   <div className="bottleneck__info">
                     <span className="bottleneck__stage">
                       {bottleneck.stage}
                     </span>
                     <span className="bottleneck__count">
-                      {bottleneck.count.toLocaleString()} stuck
+                      {bottleneck?.count?.toLocaleString()} stuck
                     </span>
                   </div>
                   <div className="bottleneck__delay">
                     <span className="bottleneck__delay-label">Avg delay:</span>
                     <span className="bottleneck__delay-value">
-                      {bottleneck.avgDelayHours.toFixed(1)}h
+                      {bottleneck?.avgDelayHours?.toFixed(1)}h
                     </span>
                   </div>
                 </div>
@@ -210,7 +210,7 @@ export const WorkflowAnalytics: React.FC<WorkflowAnalyticsProps> = ({
           <div className="card-content">
             <div className="recommendations">
               {workflowData.recommendations
-                .filter((rec) => rec.priority === "critical")
+                .filter((rec: any) => rec.priority === "critical")
                 .map((rec, index) => (
                   <div
                     key={index}
@@ -218,7 +218,7 @@ export const WorkflowAnalytics: React.FC<WorkflowAnalyticsProps> = ({
                   >
                     <div className="recommendation__header">
                       <span className="recommendation__priority">
-                        {rec.priority.toUpperCase()}
+                        {rec?.priority?.toUpperCase()}
                       </span>
                       <h4>{rec.title}</h4>
                     </div>

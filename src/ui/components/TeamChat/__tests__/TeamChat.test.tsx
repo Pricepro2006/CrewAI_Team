@@ -3,9 +3,9 @@
  * Tests team chat functionality and real-time messaging
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock TeamChat component
@@ -62,7 +62,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
 
   const handleInputChange = (value: string) => {
     setInputValue(value);
-    onTyping?.(value.length > 0);
+    onTyping?.((value?.length || 0) > 0);
   };
 
   const getMessageTypeClass = (type: string) => {
@@ -104,9 +104,9 @@ const TeamChat: React.FC<TeamChatProps> = ({
 
       <div className="chat-container">
         <div className="members-sidebar" data-testid="members-sidebar">
-          <h4>Team Members ({members.length})</h4>
+          <h4>Team Members ({members?.length || 0})</h4>
           <div className="members-list">
-            {members.map((member) => (
+            {members?.map((member: any) => (
               <div 
                 key={member.id} 
                 className="member-item"
@@ -117,7 +117,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
                     <img src={member.avatar} alt={member.username} />
                   ) : (
                     <div className="avatar-placeholder">
-                      {member.username.charAt(0).toUpperCase()}
+                      {member?.username?.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
@@ -138,7 +138,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
 
         <div className="messages-container" data-testid="messages-container">
           <div className="messages-list">
-            {messages.map((message) => (
+            {messages?.map((message: any) => (
               <div 
                 key={message.id}
                 className={`message ${getMessageTypeClass(message.type)} ${message.userId === currentUserId ? "own-message" : ""}`}
@@ -162,9 +162,9 @@ const TeamChat: React.FC<TeamChatProps> = ({
             <div ref={messagesEndRef} />
           </div>
 
-          {typingUsers.length > 0 && (
+          {(typingUsers?.length || 0) > 0 && (
             <div className="typing-indicator" data-testid="typing-indicator">
-              {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing...
+              {typingUsers.join(", ")} {(typingUsers?.length || 0) === 1 ? "is" : "are"} typing...
             </div>
           )}
 
@@ -172,8 +172,8 @@ const TeamChat: React.FC<TeamChatProps> = ({
             <input
               type="text"
               value={inputValue}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={(e) => {
+              onChange={(e: any) => handleInputChange(e?.target?.value)}
+              onKeyDown={(e: any) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage();
@@ -289,7 +289,7 @@ describe("TeamChat Component", () => {
 
     expect(screen.getByText("Team Members (3)")).toBeInTheDocument();
     
-    mockMembers.forEach((member) => {
+    mockMembers.forEach((member: any) => {
       expect(screen.getByTestId(`member-${member.id}`)).toBeInTheDocument();
       expect(screen.getByTestId(`member-name-${member.id}`)).toHaveTextContent(member.username);
     });
@@ -318,7 +318,7 @@ describe("TeamChat Component", () => {
       />
     );
 
-    mockMessages.forEach((message) => {
+    mockMessages.forEach((message: any) => {
       expect(screen.getByTestId(`message-${message.id}`)).toBeInTheDocument();
       expect(screen.getByTestId(`message-content-${message.id}`)).toHaveTextContent(message.message);
       

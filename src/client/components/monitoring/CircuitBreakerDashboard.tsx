@@ -148,21 +148,22 @@ const CircuitBreakerDashboard: React.FC = () => {
 
       return () => clearInterval(interval);
     }
+    return undefined; // Explicit return for when autoRefresh is false
   }, [autoRefresh]);
 
-  const getStateColor = (state: string) => {
+  const getStateColor = (state: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (state) {
-      case 'closed': return 'success';
-      case 'half-open': return 'warning';
+      case 'closed': return 'default';
+      case 'half-open': return 'secondary';
       case 'open': return 'destructive';
       default: return 'secondary';
     }
   };
 
-  const getHealthColor = (health: string) => {
+  const getHealthColor = (health: string): "default" | "destructive" | "secondary" => {
     switch (health) {
-      case 'healthy': return 'success';
-      case 'degraded': return 'warning';
+      case 'healthy': return 'default';
+      case 'degraded': return 'secondary';
       case 'unhealthy': return 'destructive';
       default: return 'secondary';
     }
@@ -211,7 +212,7 @@ const CircuitBreakerDashboard: React.FC = () => {
   const services = Object.keys(systemHealth.services);
   const filteredServices = selectedService === 'all' 
     ? services 
-    : services.filter(service => service === selectedService);
+    : services?.filter(service => service === selectedService);
 
   return (
     <div className="circuit-breaker-dashboard">
@@ -220,11 +221,11 @@ const CircuitBreakerDashboard: React.FC = () => {
         <div className="dashboard-controls">
           <select 
             value={selectedService} 
-            onChange={(e) => setSelectedService(e.target.value)}
+            onChange={(e: any) => setSelectedService(e?.target?.value)}
             className="service-selector"
           >
             <option value="all">All Services</option>
-            {services.map(service => (
+            {services?.map(service => (
               <option key={service} value={service}>{service}</option>
             ))}
           </select>
@@ -247,21 +248,21 @@ const CircuitBreakerDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="health-indicator">
-              <Badge variant={getHealthColor(systemHealth.overall)}>
-                {systemHealth.overall.toUpperCase()}
+              <Badge variant={getHealthColor(systemHealth.overall) as "default" | "secondary" | "destructive" | "outline" | undefined}>
+                {systemHealth?.overall?.toUpperCase()}
               </Badge>
               <div className="health-stats">
-                <span>{services.length} Services</span>
-                <span>{systemHealth.deadLetterQueue.total} Pending Operations</span>
+                <span>{services?.length || 0} Services</span>
+                <span>{systemHealth?.deadLetterQueue?.total} Pending Operations</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {systemHealth.deadLetterQueue.total > 0 && (
-          <Alert variant="warning" className="dlq-alert">
+        {systemHealth?.deadLetterQueue?.total > 0 && (
+          <Alert variant="default" className="dlq-alert warning-alert">
             <AlertDescription>
-              {systemHealth.deadLetterQueue.total} operations in dead letter queue require attention
+              {systemHealth?.deadLetterQueue?.total} operations in dead letter queue require attention
             </AlertDescription>
           </Alert>
         )}
@@ -276,8 +277,9 @@ const CircuitBreakerDashboard: React.FC = () => {
 
         <TabsContent value="circuit-breakers" className="circuit-breakers-tab">
           <div className="service-grid">
-            {filteredServices.map(serviceName => {
+            {filteredServices?.map(serviceName => {
               const service = systemHealth.services[serviceName];
+              if (!service) return null;
               const circuitBreakers = Object.entries(service.circuitBreakers);
               
               return (
@@ -287,16 +289,16 @@ const CircuitBreakerDashboard: React.FC = () => {
                       {serviceName.charAt(0).toUpperCase() + serviceName.slice(1)} Service
                     </CardTitle>
                     <CardDescription>
-                      {circuitBreakers.length} Circuit Breaker{circuitBreakers.length !== 1 ? 's' : ''}
+                      {circuitBreakers?.length || 0} Circuit Breaker{(circuitBreakers?.length || 0) !== 1 ? 's' : ''}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="circuit-breakers-list">
-                      {circuitBreakers.map(([name, stats]) => (
+                      {circuitBreakers?.map(([name, stats]) => (
                         <div key={name} className="circuit-breaker-item">
                           <div className="cb-header">
                             <span className="cb-name">{name.replace(`${serviceName}_`, '')}</span>
-                            <Badge variant={getStateColor(stats.state)}>
+                            <Badge variant={getStateColor(stats.state) as "default" | "secondary" | "destructive" | "outline" | undefined}>
                               {stats.state}
                             </Badge>
                           </div>
@@ -304,7 +306,7 @@ const CircuitBreakerDashboard: React.FC = () => {
                           <div className="cb-metrics">
                             <div className="metric">
                               <span className="label">Requests</span>
-                              <span className="value">{stats.totalRequests.toLocaleString()}</span>
+                              <span className="value">{stats?.totalRequests?.toLocaleString()}</span>
                             </div>
                             <div className="metric">
                               <span className="label">Success Rate</span>
@@ -370,8 +372,10 @@ const CircuitBreakerDashboard: React.FC = () => {
 
         <TabsContent value="bulkheads" className="bulkheads-tab">
           <div className="bulkhead-grid">
-            {filteredServices.map(serviceName => {
-              const bulkhead = systemHealth.services[serviceName].bulkhead;
+            {filteredServices?.map(serviceName => {
+              const service = systemHealth.services[serviceName];
+              if (!service) return null;
+              const bulkhead = service?.bulkhead;
               const utilizationPercent = (bulkhead.currentActive / bulkhead.maxConcurrent) * 100;
               
               return (
@@ -398,11 +402,11 @@ const CircuitBreakerDashboard: React.FC = () => {
                         </div>
                         <div className="stat">
                           <span className="label">Total Requests</span>
-                          <span className="value">{bulkhead.totalRequests.toLocaleString()}</span>
+                          <span className="value">{bulkhead?.totalRequests?.toLocaleString()}</span>
                         </div>
                         <div className="stat">
                           <span className="label">Rejected</span>
-                          <span className="value">{bulkhead.totalRejected.toLocaleString()}</span>
+                          <span className="value">{bulkhead?.totalRejected?.toLocaleString()}</span>
                         </div>
                         <div className="stat">
                           <span className="label">Avg Wait Time</span>
@@ -422,17 +426,17 @@ const CircuitBreakerDashboard: React.FC = () => {
             <CardHeader>
               <CardTitle>Dead Letter Queue</CardTitle>
               <CardDescription>
-                Failed operations waiting for retry ({deadLetterItems.length} items)
+                Failed operations waiting for retry ({deadLetterItems?.length || 0} items)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {deadLetterItems.length === 0 ? (
+              {deadLetterItems?.length || 0 === 0 ? (
                 <div className="empty-state">
                   <p>No items in dead letter queue</p>
                 </div>
               ) : (
                 <div className="dlq-items">
-                  {deadLetterItems.map(item => (
+                  {deadLetterItems?.map(item => (
                     <div key={item.id} className="dlq-item">
                       <div className="dlq-header">
                         <span className="dlq-service">{item.service}</span>

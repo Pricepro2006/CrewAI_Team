@@ -4,19 +4,19 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { NLPMicroservice } from '../index.js';
-import type { NLPServiceConfig } from '../types/index.js';
+import { NLPMicroservice } from '../index';
+import type { NLPServiceConfig } from '../types/index';
 
 // Mock the GroceryNLPQueue for integration tests
-vi.mock('../../../../api/services/GroceryNLPQueue.js', () => ({
+vi.mock('../../../../api/services/GroceryNLPQueue', () => ({
   GroceryNLPQueue: {
     getInstance: vi.fn(() => ({
-      enqueue: vi.fn(async (operation) => {
+      enqueue: vi.fn(async (operation: any) => {
         // Simulate actual NLP processing
         await new Promise(resolve => setTimeout(resolve, 100));
         return await operation();
       }),
-      enqueueBatch: vi.fn(async (operations) => {
+      enqueueBatch: vi.fn(async (operations: any) => {
         // Process operations in sequence for testing
         const results = [];
         for (const operation of operations) {
@@ -159,7 +159,7 @@ describe('NLP Microservice Integration', () => {
       expect(data.result).toBeDefined();
       expect(data.result.entities).toBeInstanceOf(Array);
       expect(data.result.intent).toBeDefined();
-      expect(data.result.normalized).toBeDefined();
+      expect(data.result.normalizedItems).toBeDefined();
       expect(data.processingTime).toBeGreaterThan(0);
     });
 

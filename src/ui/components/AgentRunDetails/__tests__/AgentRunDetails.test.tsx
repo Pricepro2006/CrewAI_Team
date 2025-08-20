@@ -3,9 +3,9 @@
  * Tests agent run details display and management
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock AgentRunDetails component
@@ -154,10 +154,10 @@ const AgentRunDetails: React.FC<AgentRunDetailsProps> = ({
         <div className="logs-section" data-testid={`logs-section-${run.id}`}>
           <h4>Recent Logs:</h4>
           <div className="logs-container">
-            {run.logs.length === 0 ? (
+            {run?.logs?.length === 0 ? (
               <p data-testid={`no-logs-${run.id}`}>No logs available</p>
             ) : (
-              run.logs.map((log, index) => (
+              run?.logs?.map((log, index) => (
                 <div
                   key={index}
                   className="log-entry"

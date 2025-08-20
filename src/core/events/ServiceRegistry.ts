@@ -92,7 +92,7 @@ export interface LoadBalancerState {
  */
 export class ServiceRegistry extends EventEmitter {
   private config: ServiceDiscoveryConfig;
-  private client: Redis;
+  private client!: Redis;
   private isConnected = false;
   
   private services = new Map<string, ServiceInfo>();
@@ -134,7 +134,7 @@ export class ServiceRegistry extends EventEmitter {
       this.loadServicesFromRedis();
     });
 
-    this.client.on('error', (error) => {
+    this.client.on('error', (error: Error) => {
       this.isConnected = false;
       this.emit('error', error);
     });
@@ -372,6 +372,22 @@ export class ServiceRegistry extends EventEmitter {
     }
   }
 
+  // Utility method for safe Redis array conversion
+  private safeRedisArrayToStringArray(redisResult: unknown): string[] {
+    if (Array.isArray(redisResult)) {
+      return redisResult.filter((item): item is string => typeof item === 'string');
+    }
+    return [];
+  }
+
+  // Utility method for set intersection
+  private intersectServiceIdSets(existingIds: Set<string>, newIds: string[]): Set<string> {
+    if (existingIds.size === 0) {
+      return new Set(newIds);
+    }
+    return new Set(Array.from(existingIds).filter(id => newIds.includes(id)));
+  }
+
   // Service discovery methods
   public async discoverServices(query: ServiceQuery = {}): Promise<ServiceInfo[]> {
     if (!this.isConnected) {
@@ -385,29 +401,24 @@ export class ServiceRegistry extends EventEmitter {
         const nameMembers = await this.client.smembers(
           `${this.config.redis.keyPrefix}by_name:${query.name}`
         );
-        serviceIds = new Set(nameMembers);
+        const nameMembersArray = this.safeRedisArrayToStringArray(nameMembers);
+        serviceIds = new Set(nameMembersArray);
       }
 
       if (query.type) {
         const typeMembers = await this.client.smembers(
           `${this.config.redis.keyPrefix}by_type:${query.type}`
         );
-        if (serviceIds.size === 0) {
-          serviceIds = new Set(typeMembers);
-        } else {
-          serviceIds = new Set([...serviceIds].filter(id => typeMembers.includes(id)));
-        }
+        const typeMembersArray = this.safeRedisArrayToStringArray(typeMembers);
+        serviceIds = this.intersectServiceIdSets(serviceIds, typeMembersArray);
       }
 
       if (query.capability) {
         const capabilityMembers = await this.client.smembers(
           `${this.config.redis.keyPrefix}by_capability:${query.capability}`
         );
-        if (serviceIds.size === 0) {
-          serviceIds = new Set(capabilityMembers);
-        } else {
-          serviceIds = new Set([...serviceIds].filter(id => capabilityMembers.includes(id)));
-        }
+        const capabilityMembersArray = this.safeRedisArrayToStringArray(capabilityMembers);
+        serviceIds = this.intersectServiceIdSets(serviceIds, capabilityMembersArray);
       }
 
       if (query.eventType) {
@@ -417,31 +428,41 @@ export class ServiceRegistry extends EventEmitter {
         const subscribers = await this.client.smembers(
           `${this.config.redis.keyPrefix}subscribers:${query.eventType}`
         );
-        const eventMembers = [...publishers, ...subscribers];
-        
-        if (serviceIds.size === 0) {
-          serviceIds = new Set(eventMembers);
-        } else {
-          serviceIds = new Set([...serviceIds].filter(id => eventMembers.includes(id)));
-        }
+        const publishersArray = this.safeRedisArrayToStringArray(publishers);
+        const subscribersArray = this.safeRedisArrayToStringArray(subscribers);
+        const eventMembers = [...publishersArray, ...subscribersArray];
+        serviceIds = this.intersectServiceIdSets(serviceIds, eventMembers);
       }
 
       // If no specific query, get all services
       if (serviceIds.size === 0 && Object.keys(query).length === 0) {
         const allKeys = await this.client.keys(`${this.config.redis.keyPrefix}service:*`);
-        serviceIds = new Set(allKeys.map(key => key.split(':').pop()!));
+        const keysArray = this.safeRedisArrayToStringArray(allKeys);
+        const extractedIds = keysArray
+          .map(key => {
+            const parts = key.split(':');
+            return parts[parts.length - 1] || '';
+          })
+          .filter((id): id is string => typeof id === 'string' && id.length > 0);
+        serviceIds = new Set(extractedIds);
       }
 
       // Fetch service details
       const services: ServiceInfo[] = [];
-      for (const serviceId of serviceIds) {
-        const service = await this.getService(serviceId);
-        if (service) {
-          // Apply additional filters
-          if (query.status && service.status !== query.status) continue;
-          if (query.version && service.version !== query.version) continue;
-          
-          services.push(service);
+      for (const serviceId of Array.from(serviceIds)) {
+        try {
+          const service = await this.getService(serviceId);
+          if (service) {
+            // Apply additional filters
+            if (query.status && service.status !== query.status) continue;
+            if (query.version && service.version !== query.version) continue;
+            
+            services.push(service);
+          }
+        } catch (error) {
+          // Skip services that cannot be retrieved
+          console.warn(`Failed to retrieve service ${serviceId}:`, error);
+          continue;
         }
       }
 
@@ -462,9 +483,15 @@ export class ServiceRegistry extends EventEmitter {
   }
 
   public async getService(serviceId: string): Promise<ServiceInfo | null> {
+    // Validate service ID
+    if (!serviceId || typeof serviceId !== 'string' || serviceId.trim().length === 0) {
+      return null;
+    }
+
     // Check local cache first
-    if (this.services.has(serviceId)) {
-      return this.services.get(serviceId)!;
+    const cachedService = this.services.get(serviceId);
+    if (cachedService) {
+      return cachedService;
     }
 
     if (!this.isConnected) {
@@ -475,11 +502,11 @@ export class ServiceRegistry extends EventEmitter {
       const serviceKey = this.getServiceKey(serviceId);
       const serviceData = await this.client.hgetall(serviceKey);
 
-      if (Object.keys(serviceData).length === 0) {
+      if (!serviceData || typeof serviceData !== 'object' || Object.keys(serviceData).length === 0) {
         return null;
       }
 
-      const service = this.deserializeService(serviceData);
+      const service = this.deserializeService(serviceData as Record<string, string>);
       
       // Cache locally
       this.services.set(serviceId, service);
@@ -518,24 +545,41 @@ export class ServiceRegistry extends EventEmitter {
       case 'least_connections':
         return this.selectLeastConnections(services);
       
-      case 'random':
-        return services[Math.floor(Math.random() * services.length)];
+      case 'random': {
+        const randomService = services[Math.floor(Math.random() * services.length)];
+        if (!randomService) {
+          throw new Error('No services available for random selection');
+        }
+        return randomService;
+      }
       
       case 'weighted':
         return this.selectWeighted(services);
       
-      default:
-        return services[0];
+      default: {
+        const defaultService = services[0];
+        if (!defaultService) {
+          throw new Error('No services available for default selection');
+        }
+        return defaultService;
+      }
     }
   }
 
   private selectRoundRobin(serviceName: string, services: ServiceInfo[]): ServiceInfo {
+    if (services.length === 0) {
+      throw new Error(`No services available for round robin selection: ${serviceName}`);
+    }
+
     if (!this.loadBalancerState.roundRobinIndex.has(serviceName)) {
       this.loadBalancerState.roundRobinIndex.set(serviceName, 0);
     }
 
-    const currentIndex = this.loadBalancerState.roundRobinIndex.get(serviceName)!;
+    const currentIndex = this.loadBalancerState.roundRobinIndex.get(serviceName) || 0;
     const selectedService = services[currentIndex % services.length];
+    if (!selectedService) {
+      throw new Error(`No service available at index ${currentIndex % services.length} for ${serviceName}`);
+    }
     
     this.loadBalancerState.roundRobinIndex.set(serviceName, currentIndex + 1);
     
@@ -543,8 +587,15 @@ export class ServiceRegistry extends EventEmitter {
   }
 
   private selectLeastConnections(services: ServiceInfo[]): ServiceInfo {
+    if (services.length === 0) {
+      throw new Error('No services available for least connections selection');
+    }
+
     let minConnections = Infinity;
     let selectedService = services[0];
+    if (!selectedService) {
+      throw new Error('No services available for least connections selection');
+    }
 
     for (const service of services) {
       const connections = this.loadBalancerState.connectionCounts.get(service.id) || 0;
@@ -558,9 +609,22 @@ export class ServiceRegistry extends EventEmitter {
   }
 
   private selectWeighted(services: ServiceInfo[]): ServiceInfo {
-    const totalWeight = services.reduce((sum, service) => {
+    if (services.length === 0) {
+      throw new Error('No services available for weighted selection');
+    }
+
+    const totalWeight = services.reduce((sum: number, service: ServiceInfo) => {
       return sum + (this.loadBalancerState.weights.get(service.id) || 1);
     }, 0);
+
+    if (totalWeight <= 0) {
+      // Fallback to first service if no valid weights
+      const fallbackService = services[0];
+      if (!fallbackService) {
+        throw new Error('No services available for weighted selection with zero weights');
+      }
+      return fallbackService;
+    }
 
     const random = Math.random() * totalWeight;
     let weightSum = 0;
@@ -572,7 +636,11 @@ export class ServiceRegistry extends EventEmitter {
       }
     }
 
-    return services[services.length - 1];
+    const lastService = services[services.length - 1];
+    if (!lastService) {
+      throw new Error('No services available for weighted selection fallback');
+    }
+    return lastService;
   }
 
   public incrementConnectionCount(serviceId: string): void {
@@ -669,11 +737,25 @@ export class ServiceRegistry extends EventEmitter {
   private async cleanupStaleServices(): Promise<void> {
     const now = Date.now();
     const staleThreshold = now - this.config.discovery.serviceTimeout;
+    const servicesToCleanup: string[] = [];
 
-    for (const [serviceId, service] of this.services) {
+    // Collect stale services first to avoid modifying collection during iteration
+    for (const [serviceId, service] of Array.from(this.services.entries())) {
       if (service.lastSeen < staleThreshold && service.id !== this.localServiceId) {
-        console.log(`Cleaning up stale service: ${service.name}@${serviceId}`);
-        await this.unregisterService(serviceId);
+        servicesToCleanup.push(serviceId);
+      }
+    }
+
+    // Clean up stale services
+    for (const serviceId of servicesToCleanup) {
+      try {
+        const service = this.services.get(serviceId);
+        if (service) {
+          console.log(`Cleaning up stale service: ${service.name}@${serviceId}`);
+          await this.unregisterService(serviceId);
+        }
+      } catch (error) {
+        console.error(`Failed to cleanup stale service ${serviceId}:`, error);
       }
     }
   }
@@ -698,8 +780,17 @@ export class ServiceRegistry extends EventEmitter {
 
   private handleServiceNotification(channel: string, message: string): void {
     try {
+      if (!message || typeof message !== 'string') {
+        console.warn('Invalid notification message format');
+        return;
+      }
+
       const notification = JSON.parse(message);
-      this.emit('service_notification', notification);
+      if (notification && typeof notification === 'object') {
+        this.emit('service_notification', notification);
+      } else {
+        console.warn('Invalid notification structure');
+      }
     } catch (error) {
       console.error('Failed to parse service notification:', error);
     }
@@ -709,12 +800,18 @@ export class ServiceRegistry extends EventEmitter {
   private async loadServicesFromRedis(): Promise<void> {
     try {
       const serviceKeys = await this.client.keys(`${this.config.redis.keyPrefix}service:*`);
+      const validKeys = this.safeRedisArrayToStringArray(serviceKeys);
       
-      for (const key of serviceKeys) {
-        const serviceData = await this.client.hgetall(key);
-        if (Object.keys(serviceData).length > 0) {
-          const service = this.deserializeService(serviceData);
-          this.services.set(service.id, service);
+      for (const key of validKeys) {
+        try {
+          const serviceData = await this.client.hgetall(key);
+          if (serviceData && typeof serviceData === 'object' && Object.keys(serviceData).length > 0) {
+            const service = this.deserializeService(serviceData as Record<string, string>);
+            this.services.set(service.id, service);
+          }
+        } catch (error) {
+          console.warn(`Failed to load service from key ${key}:`, error);
+          continue;
         }
       }
 
@@ -737,33 +834,48 @@ export class ServiceRegistry extends EventEmitter {
       type: service.type,
       status: service.status,
       address: JSON.stringify(service.address),
-      endpoints: JSON.stringify(service.endpoints),
-      capabilities: JSON.stringify(service.capabilities),
-      eventTypes: JSON.stringify(service.eventTypes),
-      metadata: JSON.stringify(service.metadata),
-      health: JSON.stringify(service.health),
+      endpoints: JSON.stringify(service.endpoints || []),
+      capabilities: JSON.stringify(service.capabilities || []),
+      eventTypes: JSON.stringify(service.eventTypes || { publishes: [], subscribes: [] }),
+      metadata: JSON.stringify(service.metadata || {}),
+      health: JSON.stringify(service.health || {}),
       registeredAt: service.registeredAt.toString(),
       lastSeen: service.lastSeen.toString(),
       heartbeatInterval: service.heartbeatInterval.toString()
     };
   }
 
+  private safeJsonParse<T>(jsonString: string, defaultValue: T): T {
+    try {
+      return JSON.parse(jsonString) as T;
+    } catch {
+      return defaultValue;
+    }
+  }
+
   private deserializeService(data: Record<string, string>): ServiceInfo {
+    const defaultAddress = { host: 'localhost', port: 3000, protocol: 'http' as const };
+    const defaultEndpoints: ServiceInfo['endpoints'] = [];
+    const defaultCapabilities: string[] = [];
+    const defaultEventTypes = { publishes: [], subscribes: [] };
+    const defaultMetadata: Record<string, any> = {};
+    const defaultHealth = { endpoint: '/health', interval: 30000, timeout: 5000, retries: 3 };
+
     return {
-      id: data.id,
-      name: data.name,
-      version: data.version,
-      type: data.type,
-      status: data.status as ServiceInfo['status'],
-      address: JSON.parse(data.address),
-      endpoints: JSON.parse(data.endpoints || '[]'),
-      capabilities: JSON.parse(data.capabilities || '[]'),
-      eventTypes: JSON.parse(data.eventTypes || '{"publishes":[],"subscribes":[]}'),
-      metadata: JSON.parse(data.metadata || '{}'),
-      health: JSON.parse(data.health || '{"endpoint":"/health","interval":30000,"timeout":5000,"retries":3}'),
-      registeredAt: parseInt(data.registeredAt),
-      lastSeen: parseInt(data.lastSeen),
-      heartbeatInterval: parseInt(data.heartbeatInterval || '15000')
+      id: data.id || '',
+      name: data.name || '',
+      version: data.version || '1.0.0',
+      type: data.type || 'microservice',
+      status: (data.status as ServiceInfo['status']) || 'starting',
+      address: this.safeJsonParse(data.address || '', defaultAddress),
+      endpoints: this.safeJsonParse(data.endpoints || '[]', defaultEndpoints),
+      capabilities: this.safeJsonParse(data.capabilities || '[]', defaultCapabilities),
+      eventTypes: this.safeJsonParse(data.eventTypes || '{"publishes":[],"subscribes":[]}', defaultEventTypes),
+      metadata: this.safeJsonParse(data.metadata || '{}', defaultMetadata),
+      health: this.safeJsonParse(data.health || '', defaultHealth),
+      registeredAt: parseInt(data.registeredAt || '0') || Date.now(),
+      lastSeen: parseInt(data.lastSeen || '0') || Date.now(),
+      heartbeatInterval: parseInt(data.heartbeatInterval || '15000') || 15000
     };
   }
 
@@ -778,17 +890,22 @@ export class ServiceRegistry extends EventEmitter {
     const services = Array.from(this.services.values());
     const healthyCount = services.filter(s => s.status === 'healthy').length;
     
-    const servicesByType = services.reduce((acc, service) => {
-      acc[service.type] = (acc[service.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const servicesByType: Record<string, number> = {};
+    for (const service of services) {
+      const serviceType = service.type || 'unknown';
+      servicesByType[serviceType] = (servicesByType[serviceType] || 0) + 1;
+    }
 
     return {
       connected: this.isConnected,
       totalServices: services.length,
       healthyServices: healthyCount,
       servicesByType,
-      loadBalancerStats: this.loadBalancerState
+      loadBalancerStats: {
+        roundRobinIndex: new Map(this.loadBalancerState.roundRobinIndex),
+        connectionCounts: new Map(this.loadBalancerState.connectionCounts),
+        weights: new Map(this.loadBalancerState.weights)
+      }
     };
   }
 

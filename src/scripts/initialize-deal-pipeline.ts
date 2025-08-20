@@ -5,12 +5,12 @@
  * Sets up and initializes the complete deal detection pipeline
  */
 
-import { logger } from "../utils/logger.js";
-import { getDealPipelineConfig, validateDealPipelineConfig } from "../config/deal-pipeline.config.js";
-import { getDatabaseManager } from "../database/DatabaseManager.js";
-import { DealPipelineIntegration } from "../api/services/DealPipelineIntegration.js";
-import { DealPipelineMonitor } from "../api/services/DealPipelineMonitor.js";
-import { DealReportingService } from "../api/services/DealReportingService.js";
+import { logger } from "../utils/logger";
+import { getDealPipelineConfig, validateDealPipelineConfig } from "../config/deal-pipeline.config";
+import { getDatabaseManager } from "../database/DatabaseManager";
+import { DealPipelineIntegration } from "../api/services/DealPipelineIntegration";
+import { DealPipelineMonitor } from "../api/services/DealPipelineMonitor";
+import { DealReportingService } from "../api/services/DealReportingService";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -25,9 +25,9 @@ interface InitializationOptions {
 
 class DealPipelineInitializer {
   private config: any;
-  private integration: DealPipelineIntegration;
-  private monitor: DealPipelineMonitor;
-  private reporting: DealReportingService;
+  private integration!: DealPipelineIntegration;
+  private monitor!: DealPipelineMonitor;
+  private reporting!: DealReportingService;
 
   constructor(private options: InitializationOptions) {
     this.loadConfiguration();
@@ -39,7 +39,7 @@ class DealPipelineInitializer {
   async initialize(): Promise<void> {
     try {
       logger.info("Starting deal pipeline initialization", "PIPELINE_INIT", {
-        environment: this.options.environment,
+        environment: this?.options?.environment,
         options: this.options
       });
 
@@ -50,7 +50,7 @@ class DealPipelineInitializer {
       await this.initializeDatabase();
 
       // Step 3: Run database migrations
-      if (!this.options.skipMigrations) {
+      if (!this?.options?.skipMigrations) {
         await this.runDatabaseMigrations();
       }
 
@@ -61,7 +61,7 @@ class DealPipelineInitializer {
       await this.startMonitoring();
 
       // Step 6: Start reporting (optional)
-      if (this.options.enableReporting !== false) {
+      if (this?.options?.enableReporting !== false) {
         await this.startReporting();
       }
 
@@ -69,12 +69,12 @@ class DealPipelineInitializer {
       await this.initializeIntegration();
 
       // Step 8: Populate test data (if requested)
-      if (this.options.populateTestData) {
+      if (this?.options?.populateTestData) {
         await this.populateTestData();
       }
 
       // Step 9: Run health check
-      if (this.options.runHealthCheck !== false) {
+      if (this?.options?.runHealthCheck !== false) {
         await this.performHealthCheck();
       }
 
@@ -97,7 +97,7 @@ class DealPipelineInitializer {
       logger.info("Shutting down deal pipeline", "PIPELINE_INIT");
 
       if (this.monitor) {
-        await this.monitor.stopMonitoring();
+        await this?.monitor?.stopMonitoring();
       }
 
       logger.info("Deal pipeline shutdown completed", "PIPELINE_INIT");
@@ -109,16 +109,16 @@ class DealPipelineInitializer {
 
   private loadConfiguration(): void {
     try {
-      if (this.options.configFile) {
+      if (this?.options?.configFile) {
         // Load configuration from file
-        const configPath = join(process.cwd(), this.options.configFile);
+        const configPath = join(process.cwd(), this?.options?.configFile);
         const configData = readFileSync(configPath, 'utf-8');
         this.config = JSON.parse(configData);
-        logger.info("Configuration loaded from file", "PIPELINE_INIT", { configFile: this.options.configFile });
+        logger.info("Configuration loaded from file", "PIPELINE_INIT", { configFile: this?.options?.configFile });
       } else {
         // Load default configuration
-        this.config = getDealPipelineConfig(this.options.environment);
-        logger.info("Default configuration loaded", "PIPELINE_INIT", { environment: this.options.environment });
+        this.config = getDealPipelineConfig(this?.options?.environment);
+        logger.info("Default configuration loaded", "PIPELINE_INIT", { environment: this?.options?.environment });
       }
     } catch (error) {
       logger.error("Failed to load configuration", "PIPELINE_INIT", { error });
@@ -132,7 +132,7 @@ class DealPipelineInitializer {
 
       const validationErrors = validateDealPipelineConfig(this.config);
       
-      if (validationErrors.length > 0) {
+      if (validationErrors?.length || 0 > 0) {
         logger.error("Configuration validation failed", "PIPELINE_INIT", { errors: validationErrors });
         throw new Error(`Configuration validation failed: ${validationErrors.join(', ')}`);
       }
@@ -189,15 +189,15 @@ class DealPipelineInitializer {
         const statements = schemaSQL
           .split(';')
           .map(stmt => stmt.trim())
-          .filter(stmt => stmt.length > 0 && !stmt.startsWith('--') && !stmt.startsWith('/*'));
+          .filter(stmt => stmt?.length || 0 > 0 && !stmt.startsWith('--') && !stmt.startsWith('/*'));
 
         for (const statement of statements) {
           try {
             db.exec(statement);
           } catch (error) {
             // Ignore errors for CREATE IF NOT EXISTS, INSERT OR IGNORE, etc.
-            if (!error.message.includes('already exists') && 
-                !error.message.includes('UNIQUE constraint failed')) {
+            if (!(error as any)?.message?.includes('already exists') && 
+                !(error as any)?.message?.includes('UNIQUE constraint failed')) {
               throw error;
             }
           }
@@ -239,7 +239,7 @@ class DealPipelineInitializer {
     try {
       logger.info("Starting pipeline monitoring", "PIPELINE_INIT");
 
-      await this.monitor.startMonitoring();
+      await this?.monitor?.startMonitoring();
 
       logger.info("Pipeline monitoring started", "PIPELINE_INIT");
 
@@ -266,7 +266,7 @@ class DealPipelineInitializer {
     try {
       logger.info("Initializing pipeline integration", "PIPELINE_INIT");
 
-      await this.integration.initialize();
+      await this?.integration?.initialize();
 
       logger.info("Pipeline integration initialized", "PIPELINE_INIT");
 
@@ -337,7 +337,7 @@ class DealPipelineInitializer {
     try {
       logger.info("Performing initial health check", "PIPELINE_INIT");
 
-      const healthStatus = await this.monitor.performHealthCheck();
+      const healthStatus = await this?.monitor?.performHealthCheck();
 
       if (healthStatus.overall === 'healthy') {
         logger.info("Health check passed - all systems operational", "PIPELINE_INIT");
@@ -355,38 +355,38 @@ class DealPipelineInitializer {
   }
 
   private printStatusSummary(): void {
-    const integrationStatus = this.integration.getIntegrationStatus();
-    const healthStatus = this.monitor.getHealthStatus();
-    const currentMetrics = this.monitor.getCurrentMetrics();
+    const integrationStatus = this?.integration?.getIntegrationStatus();
+    const healthStatus = this?.monitor?.getHealthStatus();
+    const currentMetrics = this?.monitor?.getCurrentMetrics();
 
     console.log('\n' + '='.repeat(60));
     console.log('🎯 DEAL DETECTION PIPELINE - STATUS SUMMARY');
     console.log('='.repeat(60));
     
     console.log('\n📊 SYSTEM STATUS:');
-    console.log(`   Overall Health: ${healthStatus.overall.toUpperCase()}`);
+    console.log(`   Overall Health: ${healthStatus?.overall?.toUpperCase()}`);
     console.log(`   Integration: ${integrationStatus.isActive ? 'ACTIVE' : 'INACTIVE'}`);
     console.log(`   Migration Progress: ${integrationStatus.migrationProgress}%`);
     console.log(`   Hybrid Mode: ${integrationStatus.hybridMode ? 'ENABLED' : 'DISABLED'}`);
 
     console.log('\n⚡ PERFORMANCE METRICS:');
     console.log(`   Queue Size: ${currentMetrics.currentQueueSize}`);
-    console.log(`   Success Rate: ${currentMetrics.successRate.toFixed(1)}%`);
-    console.log(`   Error Rate: ${currentMetrics.errorRate.toFixed(1)}%`);
-    console.log(`   Avg Response Time: ${currentMetrics.avgPriceUpdateTimeMs.toFixed(0)}ms`);
+    console.log(`   Success Rate: ${currentMetrics?.successRate?.toFixed(1)}%`);
+    console.log(`   Error Rate: ${currentMetrics?.errorRate?.toFixed(1)}%`);
+    console.log(`   Avg Response Time: ${currentMetrics?.avgPriceUpdateTimeMs?.toFixed(0)}ms`);
 
     console.log('\n🎯 DEAL METRICS (Last 24h):');
     console.log(`   Deals Detected: ${currentMetrics.dealsDetectedLast24h}`);
-    console.log(`   Total Savings: $${currentMetrics.totalSavingsOffered.toFixed(2)}`);
-    console.log(`   Avg Deal Score: ${currentMetrics.avgDealScore.toFixed(2)}`);
+    console.log(`   Total Savings: $${currentMetrics?.totalSavingsOffered?.toFixed(2)}`);
+    console.log(`   Avg Deal Score: ${currentMetrics?.avgDealScore?.toFixed(2)}`);
     console.log(`   Active Users: ${currentMetrics.activeWebSocketConnections}`);
 
     console.log('\n🔧 CONFIGURATION:');
-    console.log(`   Environment: ${this.config.environment.name}`);
-    console.log(`   Debug Mode: ${this.config.environment.debug}`);
-    console.log(`   Log Level: ${this.config.environment.logLevel}`);
-    console.log(`   Price Update Interval: ${this.config.pipeline.processingIntervals.priceUpdateMs / 1000 / 60} minutes`);
-    console.log(`   Deal Detection Interval: ${this.config.pipeline.processingIntervals.dealDetectionMs / 1000 / 60} minutes`);
+    console.log(`   Environment: ${this?.config?.environment.name}`);
+    console.log(`   Debug Mode: ${this?.config?.environment.debug}`);
+    console.log(`   Log Level: ${this?.config?.environment.logLevel}`);
+    console.log(`   Price Update Interval: ${this?.config?.pipeline.processingIntervals.priceUpdateMs / 1000 / 60} minutes`);
+    console.log(`   Deal Detection Interval: ${this?.config?.pipeline.processingIntervals.dealDetectionMs / 1000 / 60} minutes`);
 
     console.log('\n🚀 READY TO DETECT DEALS!');
     console.log('='.repeat(60) + '\n');
@@ -395,13 +395,13 @@ class DealPipelineInitializer {
 
 // CLI Interface
 async function main() {
-  const args = process.argv.slice(2);
+  const args = process?.argv?.slice(2);
   const options: InitializationOptions = {
     environment: process.env.NODE_ENV || 'development'
   };
 
   // Parse command line arguments
-  for (let i = 0; i < args.length; i++) {
+  for (let i = 0; i < args?.length || 0; i++) {
     switch (args[i]) {
       case '--env':
       case '--environment':
@@ -425,7 +425,6 @@ async function main() {
       case '--help':
         printHelp();
         process.exit(0);
-        break;
     }
   }
 

@@ -9,7 +9,7 @@ export const WalmartDealAlert: React.FC = () => {
 
   // Subscribe to deal updates
   // TODO: Implement subscribeToDeals endpoint
-  // api.walmartGrocery.subscribeToDeals.useSubscription(undefined, {
+  // api?.walmartGrocery?.subscribeToDeals.useSubscription(undefined, {
   //   onData: (deals: DealMatch[]) => {
   //     setActiveDeals(deals);
   //   },
@@ -68,15 +68,15 @@ export const WalmartDealAlert: React.FC = () => {
           Deal Alerts
         </h2>
         <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm">
-          {activeDeals.length} active
+          {activeDeals?.length || 0} active
         </span>
       </div>
 
-      {activeDeals.length === 0 ? (
+      {activeDeals?.length || 0 === 0 ? (
         <p className="text-gray-500 text-center py-4">No active deals at the moment</p>
       ) : (
         <div className="space-y-3">
-          {displayedDeals.map((deal) => (
+          {displayedDeals?.map((deal: any) => (
             <div
               key={deal.deal_id}
               className="border rounded-lg p-3 hover:shadow-sm transition-shadow"
@@ -102,7 +102,7 @@ export const WalmartDealAlert: React.FC = () => {
                       Deal: <span className="font-medium text-green-600">${(deal.deal?.products?.[0]?.dealPrice || 0).toFixed(2)}</span>
                     </span>
                     <span className="text-gray-600">
-                      Save: <span className="font-medium">${deal.potential_savings.toFixed(2)}</span>
+                      Save: <span className="font-medium">${deal?.potential_savings?.toFixed(2)}</span>
                     </span>
                   </div>
                 </div>
@@ -115,9 +115,9 @@ export const WalmartDealAlert: React.FC = () => {
                 </div>
               </div>
 
-              {deal.matched_criteria && deal.matched_criteria.length > 0 && (
+              {deal.matched_criteria && deal?.matched_criteria?.length > 0 && (
                 <p className="text-xs text-gray-500 mt-2">
-                  Matched: {deal.matched_criteria.join(", ")}
+                  Matched: {deal?.matched_criteria?.join(", ")}
                 </p>
               )}
             </div>
@@ -125,12 +125,12 @@ export const WalmartDealAlert: React.FC = () => {
         </div>
       )}
 
-      {activeDeals.length > 3 && (
+      {activeDeals?.length || 0 > 3 && (
         <button
           onClick={() => setShowAll(!showAll)}
           className="w-full mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
         >
-          {showAll ? "Show Less" : `Show All (${activeDeals.length})`}
+          {showAll ? "Show Less" : `Show All (${activeDeals?.length || 0})`}
         </button>
       )}
 

@@ -1,10 +1,10 @@
-import type { ErrorInfo } from "../contexts/ErrorContext";
+import type { ErrorInfo } from "../contexts/ErrorContext.js";
 
 interface ErrorLogEntry {
   timestamp: string;
   level: "error" | "warning" | "info";
   message: string;
-  error?: any;
+  error?: unknown;
   context?: string;
   userAction?: string;
   stackTrace?: string;
@@ -43,7 +43,7 @@ class ErrorLogger {
     }
 
     this.flushTimer = setInterval(() => {
-      if (this.queue.length > 0) {
+      if (this?.queue?.length > 0) {
         this.flush();
       }
     }, this.flushInterval);
@@ -65,7 +65,7 @@ class ErrorLogger {
   public log(
     level: ErrorLogEntry["level"],
     message: string,
-    error?: any,
+    error?: unknown,
     context?: string,
     userAction?: string
   ) {
@@ -78,7 +78,7 @@ class ErrorLogger {
       userAction,
       stackTrace: error?.stack,
       browser: this.getBrowserInfo(),
-      url: typeof window !== "undefined" ? window.location.href : undefined,
+      url: typeof window !== "undefined" ? window?.location?.href : undefined,
       userId: this.getUserId(),
       sessionId: this.sessionId,
     };
@@ -94,10 +94,10 @@ class ErrorLogger {
     }
 
     // Add to queue
-    this.queue.push(entry);
+    this?.queue?.push(entry);
 
     // Auto-flush if queue is full
-    if (this.queue.length >= this.maxQueueSize) {
+    if (this?.queue?.length >= this.maxQueueSize) {
       this.flush();
     }
   }
@@ -117,27 +117,35 @@ class ErrorLogger {
   public logToServer(errorInfo: ErrorInfo) {
     this.log(
       errorInfo.severity === "critical" ? "error" : "warning",
-      errorInfo.error.message,
+      errorInfo?.error?.message,
       errorInfo.error,
       errorInfo.context,
       errorInfo.userAction
     );
   }
 
-  private serializeError(error: any): any {
+  private serializeError(error: unknown): unknown {
     if (error instanceof Error) {
+      // Get all enumerable properties from the error, excluding the built-in ones we handle explicitly
+      const customProps = Object.getOwnPropertyNames(error).reduce((acc: unknown, key: unknown) => {
+        if (!['name', 'message', 'stack'].includes(key)) {
+          acc[key] = (error as unknown)[key];
+        }
+        return acc;
+      }, {} as Record<string, unknown>);
+
       return {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        ...error, // Include any custom properties
+        ...customProps, // Include unknown custom properties without duplicates
       };
     }
     return error;
   }
 
   private async flush() {
-    if (this.queue.length === 0) return;
+    if (this?.queue?.length === 0) return;
 
     const logs = [...this.queue];
     this.queue = [];
@@ -147,7 +155,7 @@ class ErrorLogger {
       await this.sendToServer(logs);
     } catch (error) {
       // If sending fails, add back to queue (up to max size)
-      if (this.queue.length + logs.length <= this.maxQueueSize * 2) {
+      if (this?.queue?.length + logs?.length || 0 <= this.maxQueueSize * 2) {
         this.queue = [...logs, ...this.queue].slice(0, this.maxQueueSize * 2);
       }
       

@@ -65,7 +65,7 @@ export class SearXNGSearchTool extends ValidatedTool {
           topK: 5,
         },
       });
-      await this.searchKnowledgeService.initialize();
+      await this?.searchKnowledgeService?.initialize();
     } catch (error) {
       console.warn("Failed to initialize SearchKnowledgeService:", error);
       // Continue without knowledge service
@@ -117,7 +117,7 @@ export class SearXNGSearchTool extends ValidatedTool {
   }
 
   override async validateExecution(params: SearXNGSearchParams) {
-    if (!params.query || params.query.trim().length === 0) {
+    if (!params.query || params?.query?.trim().length === 0) {
       return { valid: false, error: "Search query cannot be empty" };
     }
     return { valid: true };
@@ -127,6 +127,8 @@ export class SearXNGSearchTool extends ValidatedTool {
     params: SearXNGSearchParams,
   ): Promise<ToolResult> {
     try {
+      console.log(`[SearXNGSearchTool] Received search query: "${params.query}"`);
+      
       // Build query parameters
       const searchParams = new URLSearchParams({
         q: params.query,
@@ -161,11 +163,11 @@ export class SearXNGSearchTool extends ValidatedTool {
       // Transform results to our standard format
       const results = data.results
         .slice(0, params.limit || 10)
-        .map((result) => ({
+        .map((result: any) => ({
           title: result.title,
           url: result.url,
           snippet: result.content,
-          source: result.engines.join(", "),
+          source: result?.engines?.join(", "),
           relevance: this.normalizeScore(result.score),
           metadata: {
             engines: result.engines,
@@ -179,11 +181,11 @@ export class SearXNGSearchTool extends ValidatedTool {
         }));
 
       // Save search results to knowledge base
-      if (this.searchKnowledgeService && results.length > 0) {
+      if (this.searchKnowledgeService && results?.length || 0 > 0) {
         try {
-          await this.searchKnowledgeService.saveSearchResults(
+          await this?.searchKnowledgeService?.saveSearchResults(
             params.query,
-            results.map((r) => ({
+            results?.map((r: any) => ({
               title: r.title,
               url: r.url,
               snippet: r.snippet,
@@ -241,9 +243,9 @@ export class SearXNGSearchTool extends ValidatedTool {
 
   private getUniqueEngines(results: any[]): string[] {
     const engines = new Set<string>();
-    results.forEach((result) => {
+    results.forEach((result: any) => {
       if (result.metadata?.engines) {
-        result.metadata.engines.forEach((engine: string) =>
+        result?.metadata?.engines.forEach((engine: string) =>
           engines.add(engine),
         );
       }
@@ -270,7 +272,7 @@ export class SearXNGSearchTool extends ValidatedTool {
     }
 
     try {
-      return await this.searchKnowledgeService.searchPreviousResults(
+      return await this?.searchKnowledgeService?.searchPreviousResults(
         query,
         limit,
       );

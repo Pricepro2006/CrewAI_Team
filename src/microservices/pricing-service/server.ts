@@ -50,7 +50,7 @@ const pricingService = new PricingService({
     }
   },
   api: {
-    baseUrl: process.env.WALMART_API_URL || 'https://api.walmart.com',
+    baseUrl: process.env.WALMART_API_URL || 'https://api?.walmart.com',
     apiKey: process.env.WALMART_API_KEY || '',
     rateLimit: parseInt(process.env.API_RATE_LIMIT || '10'),
     timeout: parseInt(process.env.API_TIMEOUT || '5000'),
@@ -124,7 +124,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught errors
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: any) => {
   console.error('Uncaught Exception:', error);
   gracefulShutdown('uncaughtException');
 });

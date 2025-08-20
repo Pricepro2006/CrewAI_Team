@@ -1,5 +1,25 @@
 import { v4 as uuidv4 } from "uuid";
+// Use optimized database from centralized module
+import { getDatabase, executeSecure, OptimizedQueryExecutor } from "../../database/index.js";
 import Database from "better-sqlite3";
+
+// Import enhanced API types
+import type {
+  DatabaseConnection,
+  DatabaseStatement,
+  DatabaseRow,
+  DatabaseRunResult,
+  EmailDatabaseRow,
+  WorkflowPatternRow,
+  ChainAnalysisRow,
+  ProcessingError,
+  isDatabaseRow,
+  isEmailRecord
+} from "../../shared/types/api.types.js";
+
+// Type definitions for database operations
+type DatabaseQueryParams = string | number | boolean | null | undefined;
+type DatabaseInstance = DatabaseConnection; // Type-safe database instance
 import appConfig from "../../config/app.config.js";
 import { Logger } from "../../utils/logger.js";
 const logger = Logger.getInstance();
@@ -7,22 +27,22 @@ import { wsService } from "./WebSocketService.js";
 import { performanceOptimizer } from "./PerformanceOptimizer.js";
 import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
 import { LazyLoader } from "../../utils/LazyLoader.js";
+import { databaseManager } from "../../core/database/DatabaseManager.js";
 import { ConnectionPool } from "../../core/database/ConnectionPool.js";
 import type { EmailRecord } from "../../shared/types/email.js";
 import type { 
   EmailEntity, 
-  EmailRecipient, 
-  DatabaseQueryParams, 
-  DatabaseRow,
-  DatabaseConnection,
-  DatabaseTransaction
+  EmailRecipient
 } from "../../types/common.types.js";
+
+// Database parameter type already defined above
 import type { 
   EmailUpdateData, 
   EmailQueryOptions,
   PoolConnection,
   PoolStatistics
 } from "../../types/email-storage.types.js";
+import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator.js";
 
 // Extended type for createEmail method
 interface CreateEmailData {
@@ -165,7 +185,7 @@ export interface EmailStorageServiceInterface {
     slaCompliance: Record<string, number>;
     averageProcessingTime: number;
   }>;
-  getWorkflowPatterns(): Promise<any[]>;
+  getWorkflowPatterns(): Promise<WorkflowPatternRow[]>;
   startSLAMonitoring(intervalMs?: number): void;
   stopSLAMonitoring(): void;
   getDashboardStats(): Promise<{
@@ -226,39 +246,31 @@ export interface EmailStorageServiceInterface {
 }
 
 export class EmailStorageService implements EmailStorageServiceInterface {
-  private db: Database.Database;
+  private db: DatabaseInstance;
   private connectionPool?: ConnectionPool;
   private slaMonitoringInterval: NodeJS.Timeout | null = null;
-  private lazyLoader: LazyLoader<any>;
+  private lazyLoader: LazyLoader<DatabaseConnection>;
   private useConnectionPool: boolean;
+  private masterOrchestrator?: MasterOrchestrator;
 
-  constructor(dbPath?: string, enableConnectionPool: boolean = false) {
-    const databasePath = dbPath || appConfig.database.path;
+  constructor(dbPath?: string, enableConnectionPool: boolean = true) {
+    // Always use optimized connection pool by default for better performance
     this.useConnectionPool = enableConnectionPool;
 
     if (this.useConnectionPool) {
-      // Initialize connection pool for high-concurrency scenarios
-      this.connectionPool = new ConnectionPool({
-        filename: databasePath,
-        poolSize: 5,
-        enableWAL: true,
-        checkpointInterval: 60000, // 1 minute
-        walSizeLimit: 10 * 1024 * 1024, // 10MB
-        verbose: process.env.NODE_ENV === "development",
-      });
-
-      // Create a proxy db object for compatibility
-      this.db = this.createPooledDbProxy();
-
+      // Use the optimized DatabaseManager for pooled connections
+      this.db = this.createOptimizedDbProxy();
+      
       logger.info(
-        "EmailStorageService initialized with connection pool",
+        "EmailStorageService initialized with optimized connection pool",
         "EMAIL_STORAGE",
       );
     } else {
-      // Use single connection for better performance in single-threaded scenarios
-      this.db = new Database(databasePath);
+      // Use optimized database with caching and performance monitoring
+      const databasePath = dbPath || appConfig?.database?.path;
+      this.db = getDatabase(databasePath) as DatabaseConnection;
       logger.info(
-        "EmailStorageService initialized with single connection",
+        "EmailStorageService initialized with OptimizedQueryExecutor",
         "EMAIL_STORAGE",
       );
     }
@@ -266,35 +278,37 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     this.lazyLoader = new LazyLoader(50, 20, 5 * 60 * 1000); // 50 items per chunk, 20 chunks cache, 5min TTL
     this.initializeDatabase();
     this.initializePerformanceMonitoring();
+    this.initializeMasterOrchestrator();
   }
 
   /**
-   * Create a proxy database object that uses the connection pool
-   * This provides compatibility with existing code that expects a db object
+   * Create a proxy database object that uses the optimized DatabaseManager
+   * This provides better performance and comprehensive monitoring
    */
-  private createPooledDbProxy(): Database.Database {
-    const pool = this.connectionPool!;
-
-    // Create a proxy that intercepts database method calls
-    const handler: ProxyHandler<Database.Database> = {
+  private createOptimizedDbProxy(): DatabaseInstance {
+    // Create a proxy that uses the optimized DatabaseManager
+    const handler: ProxyHandler<DatabaseInstance> = {
       get: (target, prop: string | symbol) => {
-        // For prepare method, return a function that uses the pool
+        // For prepare method, return a function that uses the optimized pool
         if (prop === "prepare") {
           return (sql: string) => {
-            // Return a statement-like object that uses the pool
+            // Return a statement-like object that uses the DatabaseManager
             return {
-              run: (...params: any[]) => {
-                return pool.execute((db) => db.prepare(sql).run(...params));
+              run: (...params: DatabaseQueryParams[]) => {
+                const connection = databaseManager.getConnection('main');
+                return connection.execute((db: DatabaseConnection) => db.prepare(sql).run(...params));
               },
-              get: (...params: any[]) => {
-                return pool.execute((db) => db.prepare(sql).get(...params));
+              get: (...params: DatabaseQueryParams[]) => {
+                const connection = databaseManager.getConnection('main');
+                return connection.execute((db: DatabaseConnection) => db.prepare(sql).get(...params));
               },
-              all: (...params: any[]) => {
-                return pool.execute((db) => db.prepare(sql).all(...params));
+              all: (...params: DatabaseQueryParams[]) => {
+                const connection = databaseManager.getConnection('main');
+                return connection.execute((db: DatabaseConnection) => db.prepare(sql).all(...params));
               },
-              iterate: (...params: any[]) => {
-                // For iterate, we need special handling as it returns an iterator
-                return pool.execute((db) => db.prepare(sql).iterate(...params));
+              iterate: (...params: DatabaseQueryParams[]) => {
+                const connection = databaseManager.getConnection('main');
+                return connection.execute((db: DatabaseConnection) => db.prepare(sql).iterate(...params));
               },
             };
           };
@@ -302,12 +316,89 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
         // For transaction method
         if (prop === "transaction") {
-          return <T>(fn: (trx: DatabaseTransaction) => T) => {
-            return async (): Promise<T> => {
-              return pool.execute((db) => {
-                const transaction = db.transaction(fn);
-                return transaction(...args);
-              });
+          return <T>(fn: (db: DatabaseConnection) => unknown) => {
+            const connection = databaseManager.getConnection('main');
+            return connection.transaction(fn);
+          };
+        }
+
+        // For pragma method
+        if (prop === "pragma") {
+          return (pragma: string, options?: DatabaseQueryParams) => {
+            const connection = databaseManager.getConnection('main');
+            return connection.execute((db: DatabaseConnection) => db.pragma(pragma, options));
+          };
+        }
+
+        // For exec method
+        if (prop === "exec") {
+          return (sql: string) => {
+            const connection = databaseManager.getConnection('main');
+            return connection.execute((db: DatabaseConnection) => db.exec(sql));
+          };
+        }
+
+        // For close method (no-op as DatabaseManager handles connection lifecycle)
+        if (prop === "close") {
+          return () => {
+            logger.debug("Close called on optimized database proxy - handled by DatabaseManager");
+          };
+        }
+
+        // For other methods, delegate to DatabaseManager
+        return (...args: DatabaseQueryParams[]) => {
+          const connection = databaseManager.getConnection('main');
+          if (!connection || typeof connection.execute !== 'function') {
+            throw new Error(`DatabaseManager connection does not support method: ${String(prop)}`);
+          }
+          return connection.execute((db: DatabaseConnection) => (db as Database.Database)[prop as keyof Database.Database](...args));
+        };
+      }
+    };
+
+    return new Proxy({} as DatabaseInstance, handler);
+  }
+
+  /**
+   * Create a proxy database object that uses the legacy connection pool
+   * This provides compatibility with existing code that expects a db object
+   */
+  private createPooledDbProxy(): DatabaseInstance {
+    const pool = this.connectionPool!;
+
+    // Create a proxy that intercepts database method calls
+    const handler: ProxyHandler<DatabaseInstance> = {
+      get: (target, prop: string | symbol) => {
+        // For prepare method, return a function that uses the pool
+        if (prop === "prepare") {
+          return (sql: string) => {
+            // Return a statement-like object that uses the pool
+            return {
+              run: (...params: DatabaseQueryParams[]) => {
+                return pool.execute((db: DatabaseConnection) => db.prepare(sql).run(...params));
+              },
+              get: (...params: DatabaseQueryParams[]) => {
+                return pool.execute((db: DatabaseConnection) => db.prepare(sql).get(...params));
+              },
+              all: (...params: DatabaseQueryParams[]) => {
+                return pool.execute((db: DatabaseConnection) => db.prepare(sql).all(...params));
+              },
+              iterate: (...params: DatabaseQueryParams[]) => {
+                // For iterate, we need special handling as it returns an iterator
+                return pool.execute((db: DatabaseConnection) => db.prepare(sql).iterate(...params));
+              },
+            };
+          };
+        }
+
+        // For transaction method
+        if (prop === "transaction") {
+          return <T>(fn: (trx: DatabaseInstance) => T) => {
+            return (): T => {
+              return pool.execute((db: DatabaseConnection) => {
+                const transaction = db.transaction((trx: DatabaseConnection) => fn(trx));
+                return transaction(db);
+              }) as T;
             };
           };
         }
@@ -315,14 +406,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         // For pragma method
         if (prop === "pragma") {
           return (pragma: string) => {
-            return pool.execute((db) => db.pragma(pragma));
+            return pool.execute((db: DatabaseConnection) => db.pragma(pragma));
           };
         }
 
         // For exec method
         if (prop === "exec") {
           return (sql: string) => {
-            return pool.execute((db) => db.exec(sql));
+            return pool.execute((db: DatabaseConnection) => db.exec(sql));
           };
         }
 
@@ -337,12 +428,201 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         }
 
         // Default: return property as-is
-        return (target as any)[prop];
+        return (target as Record<string, unknown>)[prop];
       },
     };
 
     // Create and return the proxy
-    return new Proxy({}, handler) as Database.Database;
+    return new Proxy({} as DatabaseInstance, handler) as DatabaseInstance;
+  }
+
+  /**
+   * Initialize MasterOrchestrator for agent-based email processing
+   */
+  private async initializeMasterOrchestrator(): Promise<void> {
+    try {
+      this.masterOrchestrator = new MasterOrchestrator({
+        ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
+        rag: {
+          vectorStore: {
+            type: "chromadb" as const,
+            path: "./data/chroma-email",
+            collectionName: "email-analysis",
+            dimension: 384,
+          },
+          chunking: {
+            size: 500,
+            overlap: 50,
+            method: "sentence" as const,
+          },
+          retrieval: {
+            topK: 5,
+            minScore: 0.5,
+            reranking: false,
+          },
+        },
+      });
+      
+      await this.masterOrchestrator.initialize();
+      logger.info("MasterOrchestrator initialized for email processing", "EMAIL_STORAGE");
+    } catch (error) {
+      logger.warn(
+        `Failed to initialize MasterOrchestrator: ${error instanceof Error ? error.message : 'Unknown error'}. Email processing will use fallback methods.`,
+        "EMAIL_STORAGE"
+      );
+    }
+  }
+
+  /**
+   * Process email through agent system
+   */
+  async processEmailThroughAgents(email: EmailDatabaseRow): Promise<EmailAnalysisResult> {
+    if (!this.masterOrchestrator) {
+      throw new Error("MasterOrchestrator not initialized");
+    }
+
+    logger.info(
+      `Processing email through agent system: ${email.subject}`,
+      "EMAIL_STORAGE"
+    );
+
+    try {
+      const result = await this.masterOrchestrator.processEmail(email);
+      
+      logger.info(
+        `Email processed successfully through agents: ${email.id}`,
+        "EMAIL_STORAGE",
+        {
+          priority: result.quick.priority,
+          workflow: result.quick.workflow.primary,
+          confidence: result.quick.confidence,
+        }
+      );
+
+      return result;
+    } catch (error) {
+      logger.error(
+        `Failed to process email through agents: ${email.id}`,
+        "EMAIL_STORAGE",
+        { error }
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Process a batch of emails through the agent system
+   */
+  async processBatchThroughAgents(
+    emailIds: string[],
+    batchSize: number = 10
+  ): Promise<{ processed: number; failed: number; errors: ProcessingError[] }> {
+    let processed = 0;
+    let failed = 0;
+    const errors: ProcessingError[] = [];
+
+    logger.info(
+      `Starting batch processing of ${emailIds.length} emails through agent system`,
+      "EMAIL_STORAGE"
+    );
+
+    // Process in batches to avoid overwhelming the system
+    for (let i = 0; i < emailIds.length; i += batchSize) {
+      const batch = emailIds.slice(i, i + batchSize);
+      
+      await Promise.allSettled(
+        batch.map(async (emailId) => {
+          try {
+            // Get email data
+            const email = await this.getEmail(emailId);
+            if (!email) {
+              throw new Error(`Email not found: ${emailId}`);
+            }
+
+            // Process through agents
+            const analysis = await this.processEmailThroughAgents(email);
+
+            // Store analysis
+            await this.storeEmailAnalysis(emailId, analysis);
+            
+            processed++;
+            
+            // Broadcast progress update
+            if (processed % 10 === 0) {
+              wsService.broadcastEmailProcessingProgress({
+                processed,
+                total: emailIds.length,
+                current: emailId,
+                percentage: Math.round((processed / emailIds.length) * 100),
+              });
+            }
+          } catch (error) {
+            failed++;
+            errors.push({ emailId, error: error instanceof Error ? error.message : String(error) });
+            logger.error(
+              `Failed to process email ${emailId} through agents`,
+              "EMAIL_STORAGE",
+              { error }
+            );
+          }
+        })
+      );
+
+      // Small delay between batches to prevent overwhelming
+      if (i + batchSize < emailIds.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    logger.info(
+      `Batch processing completed: ${processed} processed, ${failed} failed`,
+      "EMAIL_STORAGE"
+    );
+
+    return { processed, failed, errors };
+  }
+
+  /**
+   * Start processing the email backlog through agents
+   */
+  async startAgentBacklogProcessing(): Promise<void> {
+    try {
+      // Get emails that haven't been processed through agents yet
+      const unprocessedQuery = `
+        SELECT id FROM emails 
+        WHERE id NOT IN (
+          SELECT DISTINCT email_id FROM email_analysis 
+          WHERE deep_model LIKE '%Agent%' OR quick_model LIKE '%Agent%'
+        )
+        ORDER BY received_at DESC
+        LIMIT 1000
+      `;
+      
+      const unprocessedEmails = this.db.prepare(unprocessedQuery).all() as EmailDatabaseRow[];
+      const emailIds = unprocessedEmails.map((row: EmailDatabaseRow) => row.id);
+
+      if (emailIds.length === 0) {
+        logger.info("No unprocessed emails found for agent processing", "EMAIL_STORAGE");
+        return;
+      }
+
+      logger.info(
+        `Starting agent processing for ${emailIds.length} unprocessed emails`,
+        "EMAIL_STORAGE"
+      );
+
+      // Process in background
+      this.processBatchThroughAgents(emailIds, 5).catch((error) => {
+        logger.error("Background agent processing failed", "EMAIL_STORAGE", { error });
+      });
+    } catch (error) {
+      logger.error(
+        "Failed to start agent backlog processing",
+        "EMAIL_STORAGE",
+        { error }
+      );
+      throw error;
+    }
   }
 
   /**
@@ -384,7 +664,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   private async executeOptimizedQuery<T>(
     queryDescription: string,
     query: string,
-    params: any[] = [],
+    params: DatabaseQueryParams[] = [],
     method: "get" | "all" = "all",
   ): Promise<T> {
     const startTime = Date.now();
@@ -406,7 +686,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         );
 
         // Execute the optimized query with prepared statement
-        const stmt = this.db.prepare(optimizedQuery.optimizedQuery);
+        const stmt = this?.db?.prepare(optimizedQuery.optimizedQuery);
         result =
           method === "get"
             ? (stmt.get(...params) as T)
@@ -431,7 +711,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             `Database query failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms: ${error}`,
             "EMAIL_STORAGE",
           );
-          await new Promise((resolve) => setTimeout(resolve, delay));
+          await new Promise((resolve: (value: void) => void) => setTimeout(resolve, delay));
           continue;
         }
 
@@ -450,8 +730,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         const enhancedError = new Error(
           `Database operation failed: ${queryDescription}. ${error}`,
         );
-        (enhancedError as any).originalError = queryError;
-        (enhancedError as any).retryCount = retryCount;
+        (enhancedError as Error & Record<string, unknown>).originalError = queryError;
+        (enhancedError as Error & Record<string, unknown>).retryCount = retryCount;
         throw enhancedError;
       } finally {
         // Record performance metrics
@@ -481,7 +761,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     cacheKey: string,
     queryDescription: string,
     query: string,
-    params: any[] = [],
+    params: DatabaseQueryParams[] = [],
     method: "get" | "all" = "all",
   ): Promise<T> {
     return performanceOptimizer.cacheQuery(cacheKey, async () => {
@@ -501,13 +781,13 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     // (Connection pool handles this internally)
     if (!this.useConnectionPool) {
       try {
-        this.db.pragma("journal_mode = WAL");
-        this.db.pragma("synchronous = NORMAL");
-        this.db.pragma("cache_size = 10000"); // 10MB cache
-        this.db.pragma("temp_store = MEMORY");
-        this.db.pragma("mmap_size = 268435456"); // 256MB memory map
-        this.db.pragma("foreign_keys = ON");
-        this.db.pragma("busy_timeout = 30000"); // 30 seconds
+        this?.db?.pragma("journal_mode = WAL");
+        this?.db?.pragma("synchronous = NORMAL");
+        this?.db?.pragma("cache_size = 10000"); // 10MB cache
+        this?.db?.pragma("temp_store = MEMORY");
+        this?.db?.pragma("mmap_size = 268435456"); // 256MB memory map
+        this?.db?.pragma("foreign_keys = ON");
+        this?.db?.pragma("busy_timeout = 30000"); // 30 seconds
 
         logger.info(
           "WAL mode enabled with performance optimizations",
@@ -522,7 +802,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
 
     // Create emails table
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS emails (
         id TEXT PRIMARY KEY,
         graph_id TEXT UNIQUE,
@@ -544,7 +824,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     `);
 
     // Create enhanced email analysis table
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS email_analysis (
         id TEXT PRIMARY KEY,
         email_id TEXT NOT NULL,
@@ -610,7 +890,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     `);
 
     // Create workflow patterns table
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS workflow_patterns (
         id TEXT PRIMARY KEY,
         pattern_name TEXT NOT NULL,
@@ -625,10 +905,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     `);
 
     // Create indexes for performance
-    this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_emails_graph_id ON emails(graph_id);
-      CREATE INDEX IF NOT EXISTS idx_emails_received_time ON emails(received_time);
-      CREATE INDEX IF NOT EXISTS idx_emails_from_address ON emails(from_address);
+    // Note: 'emails' is a view, so we cannot create indexes on it
+    // Only create indexes on actual tables
+    this?.db?.exec(`
       CREATE INDEX IF NOT EXISTS idx_email_analysis_email_id ON email_analysis(email_id);
       CREATE INDEX IF NOT EXISTS idx_workflow_primary ON email_analysis(deep_workflow_primary);
       CREATE INDEX IF NOT EXISTS idx_workflow_state ON email_analysis(workflow_state);
@@ -713,7 +992,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       },
     ];
 
-    const insertPattern = this.db.prepare(`
+    const insertPattern = this?.db?.prepare(`
       INSERT OR IGNORE INTO workflow_patterns (
         id, pattern_name, workflow_category, success_rate, 
         average_completion_time, trigger_keywords, typical_entities
@@ -751,9 +1030,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           analysis.processingMetadata,
         );
 
-        const transaction = this.db.transaction(() => {
+        const transaction = this?.db?.transaction(() => {
           // Store email
-          const emailStmt = this.db.prepare(`
+          const emailStmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO emails (
           id, graph_id, subject, sender_email, sender_name, to_addresses,
           received_at, is_read, has_attachments, body_preview, body,
@@ -765,9 +1044,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             email.id,
             email.graphId,
             email.subject,
-            email.from.emailAddress.address,
-            email.from.emailAddress.name,
-            JSON.stringify(email.to?.map((t) => t.emailAddress) || []),
+            email?.from?.emailAddress.address,
+            email?.from?.emailAddress.name,
+            JSON.stringify(email.to?.map((t: EmailRecipient) => t.emailAddress) || []),
             email.receivedDateTime,
             email.isRead ? 1 : 0,
             email.hasAttachments ? 1 : 0,
@@ -780,7 +1059,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           );
 
           // Store enhanced analysis
-          const analysisStmt = this.db.prepare(`
+          const analysisStmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO email_analysis (
           id, email_id,
           quick_workflow, quick_priority, quick_intent, quick_urgency,
@@ -804,46 +1083,46 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             uuidv4(),
             email.id,
             // Quick analysis
-            analysis.quick.workflow.primary,
-            analysis.quick.priority,
-            analysis.quick.intent,
-            analysis.quick.urgency,
-            analysis.quick.confidence,
-            analysis.quick.suggestedState,
-            analysis.processingMetadata.models.stage1,
+            analysis?.quick?.workflow.primary,
+            analysis?.quick?.priority,
+            analysis?.quick?.intent,
+            analysis?.quick?.urgency,
+            analysis?.quick?.confidence,
+            analysis?.quick?.suggestedState,
+            analysis?.processingMetadata?.models.stage1,
             validatedProcessingTimes.stage1Time,
             // Deep analysis
-            analysis.deep.detailedWorkflow.primary,
-            JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
+            analysis?.deep?.detailedWorkflow.primary,
+            JSON.stringify(analysis?.deep?.detailedWorkflow.secondary || []),
             JSON.stringify(
-              analysis.deep.detailedWorkflow.relatedCategories || [],
+              analysis?.deep?.detailedWorkflow.relatedCategories || [],
             ),
-            analysis.deep.detailedWorkflow.confidence,
+            analysis?.deep?.detailedWorkflow.confidence,
             // Entities
-            JSON.stringify(analysis.deep.entities.poNumbers),
-            JSON.stringify(analysis.deep.entities.quoteNumbers),
-            JSON.stringify(analysis.deep.entities.caseNumbers),
-            JSON.stringify(analysis.deep.entities.partNumbers),
-            JSON.stringify(analysis.deep.entities.orderReferences),
-            JSON.stringify(analysis.deep.entities.contacts),
+            JSON.stringify(analysis?.deep?.entities.poNumbers),
+            JSON.stringify(analysis?.deep?.entities.quoteNumbers),
+            JSON.stringify(analysis?.deep?.entities.caseNumbers),
+            JSON.stringify(analysis?.deep?.entities.partNumbers),
+            JSON.stringify(analysis?.deep?.entities.orderReferences),
+            JSON.stringify(analysis?.deep?.entities.contacts),
             // Actions
             analysis.actionSummary,
-            JSON.stringify(analysis.deep.actionItems),
-            analysis.deep.actionItems[0]?.slaStatus || "on-track",
+            JSON.stringify(analysis?.deep?.actionItems),
+            analysis?.deep?.actionItems[0]?.slaStatus || "on-track",
             // Workflow state
-            analysis.deep.workflowState.current,
-            analysis.deep.workflowState.suggestedNext,
-            JSON.stringify(analysis.deep.workflowState.blockers || []),
+            analysis?.deep?.workflowState.current,
+            analysis?.deep?.workflowState.suggestedNext,
+            JSON.stringify(analysis?.deep?.workflowState.blockers || []),
             // Business impact
-            analysis.deep.businessImpact.revenue,
-            analysis.deep.businessImpact.customerSatisfaction,
-            analysis.deep.businessImpact.urgencyReason,
+            analysis?.deep?.businessImpact.revenue,
+            analysis?.deep?.businessImpact.customerSatisfaction,
+            analysis?.deep?.businessImpact.urgencyReason,
             // Context
-            analysis.deep.contextualSummary,
-            analysis.deep.suggestedResponse,
-            JSON.stringify(analysis.deep.relatedEmails || []),
+            analysis?.deep?.contextualSummary,
+            analysis?.deep?.suggestedResponse,
+            JSON.stringify(analysis?.deep?.relatedEmails || []),
             // Metadata
-            analysis.processingMetadata.models.stage2,
+            analysis?.processingMetadata?.models.stage2,
             validatedProcessingTimes.stage2Time,
             validatedProcessingTimes.totalTime,
             new Date().toISOString(),
@@ -860,12 +1139,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         try {
           wsService.broadcastEmailAnalyzed(
             email.id,
-            analysis.deep.detailedWorkflow.primary,
-            analysis.quick.priority,
+            analysis?.deep?.detailedWorkflow.primary,
+            analysis?.quick?.priority,
             analysis.actionSummary,
-            analysis.deep.detailedWorkflow.confidence,
-            analysis.deep.actionItems[0]?.slaStatus || "on-track",
-            analysis.deep.workflowState.current,
+            analysis?.deep?.detailedWorkflow.confidence,
+            analysis?.deep?.actionItems[0]?.slaStatus || "on-track",
+            analysis?.deep?.workflowState.current,
           );
           logger.debug(
             `WebSocket broadcast sent for email analysis: ${email.id}`,
@@ -907,8 +1186,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           const enhancedError = new Error(
             `Failed to store email analysis for "${email.subject}": ${errorMessage}`,
           );
-          (enhancedError as any).emailId = email.id;
-          (enhancedError as any).attempts = attempt;
+          (enhancedError as Error & Record<string, unknown>).emailId = email.id;
+          (enhancedError as Error & Record<string, unknown>).attempts = attempt;
           throw enhancedError;
         }
 
@@ -918,7 +1197,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           `Email storage failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms: ${errorMessage}`,
           "EMAIL_STORAGE",
         );
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise((resolve: (value: void) => void) => setTimeout(resolve, delay));
       }
     }
   }
@@ -941,9 +1220,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         analysis.processingMetadata,
       );
 
-      const transaction = this.db.transaction(() => {
+      const transaction = this?.db?.transaction(() => {
         // Store enhanced analysis
-        const analysisStmt = this.db.prepare(`
+        const analysisStmt = this?.db?.prepare(`
           INSERT OR REPLACE INTO email_analysis (
             id, email_id, 
             quick_workflow, quick_priority, quick_intent, quick_urgency,
@@ -961,25 +1240,25 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         analysisStmt.run(
           analysisId,
           messageId, // Use messageId as email_id reference
-          analysis.quick.workflow.primary,
-          analysis.quick.priority,
-          analysis.quick.intent,
-          analysis.quick.urgency,
-          analysis.quick.confidence,
-          analysis.quick.suggestedState,
-          validatedProcessingTimes.models.stage1,
+          analysis?.quick?.workflow.primary,
+          analysis?.quick?.priority,
+          analysis?.quick?.intent,
+          analysis?.quick?.urgency,
+          analysis?.quick?.confidence,
+          analysis?.quick?.suggestedState,
+          validatedProcessingTimes?.models?.stage1,
           validatedProcessingTimes.stage1Time,
-          analysis.deep.detailedWorkflow.primary,
-          JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
+          analysis?.deep?.detailedWorkflow.primary,
+          JSON.stringify(analysis?.deep?.detailedWorkflow.secondary || []),
           JSON.stringify(
-            analysis.deep.detailedWorkflow.relatedCategories || [],
+            analysis?.deep?.detailedWorkflow.relatedCategories || [],
           ),
-          analysis.deep.detailedWorkflow.confidence,
-          JSON.stringify(analysis.deep.entities),
-          JSON.stringify(analysis.deep.actionItems),
-          JSON.stringify(analysis.deep.workflowState),
-          JSON.stringify(analysis.deep.businessImpact),
-          analysis.deep.contextualSummary || "",
+          analysis?.deep?.detailedWorkflow.confidence,
+          JSON.stringify(analysis?.deep?.entities),
+          JSON.stringify(analysis?.deep?.actionItems),
+          JSON.stringify(analysis?.deep?.workflowState),
+          JSON.stringify(analysis?.deep?.businessImpact),
+          analysis?.deep?.contextualSummary || "",
           analysis.actionSummary,
           validatedProcessingTimes.stage1Time,
           validatedProcessingTimes.stage2Time,
@@ -1029,7 +1308,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       WHERE e.id = ?
     `);
 
-    const result = stmt.get(emailId) as any;
+    const result = stmt.get(emailId) as DatabaseConnection;
 
     if (!result) {
       return null;
@@ -1163,10 +1442,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       LIMIT ? OFFSET ?
     `);
 
-    const results = stmt.all(workflow, limit, offset) as any[];
+    const results = stmt.all($1) as DatabaseRow[];
 
     // Process all results in memory without additional queries
-    const emails: EmailWithAnalysis[] = results.map((result) => ({
+    const emails: EmailWithAnalysis[] = results?.map((result: EmailDatabaseRow) => ({
       id: result.id,
       graphId: result.graph_id,
       subject: result.subject,
@@ -1279,7 +1558,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       SELECT COUNT(*) as count FROM emails
     `,
         )
-        .get() as any
+        .get($1) as EmailDatabaseRow | undefined
     ).count;
 
     const workflowDistribution = this.db
@@ -1293,7 +1572,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       GROUP BY deep_workflow_primary
     `,
       )
-      .all() as any[];
+      .all() as EmailDatabaseRow[];
 
     const slaCompliance = this.db
       .prepare(
@@ -1306,7 +1585,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       GROUP BY action_sla_status
     `,
       )
-      .all() as any[];
+      .all() as EmailDatabaseRow[];
 
     const avgProcessingTime =
       (
@@ -1318,17 +1597,17 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       WHERE total_processing_time IS NOT NULL
     `,
           )
-          .get() as any
+          .get($1) as EmailDatabaseRow | undefined
       ).avg_time || 0;
 
     return {
       totalEmails,
-      workflowDistribution: workflowDistribution.reduce((acc, item) => {
-        acc[item.workflow] = item.count;
+      workflowDistribution: workflowDistribution.reduce((acc: Record<string, number>, item: DatabaseRow) => {
+        acc[item.workflow as string] = item.count as number;
         return acc;
       }, {}),
-      slaCompliance: slaCompliance.reduce((acc, item) => {
-        acc[item.status] = item.count;
+      slaCompliance: slaCompliance.reduce((acc: Record<string, number>, item: DatabaseRow) => {
+        acc[item.status as string] = item.count as number;
         return acc;
       }, {}),
       averageProcessingTime: Math.round(avgProcessingTime),
@@ -1341,14 +1620,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     changedBy?: string,
   ): Promise<void> {
     // Get current state first
-    const currentStateStmt = this.db.prepare(`
+    const currentStateStmt = this?.db?.prepare(`
       SELECT workflow_state FROM email_analysis WHERE email_id = ?
     `);
-    const currentResult = currentStateStmt.get(emailId) as any;
+    const currentResult = currentStateStmt.get(emailId) as DatabaseConnection;
     const oldState = currentResult?.workflow_state || "unknown";
 
     // Update the state
-    const updateStmt = this.db.prepare(`
+    const updateStmt = this?.db?.prepare(`
       UPDATE email_analysis
       SET workflow_state = ?, workflow_state_updated_at = ?, updated_at = ?
       WHERE email_id = ?
@@ -1382,7 +1661,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
   }
 
-  async getWorkflowPatterns(): Promise<any[]> {
+  async getWorkflowPatterns(): Promise<WorkflowPatternRow[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM workflow_patterns
       ORDER BY success_rate DESC
@@ -1429,6 +1708,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       workflow_state: string;
     }
 
+    if (!stmt) {
+      logger.error("Failed to prepare SLA check query", "EMAIL_STORAGE");
+      return;
+    }
     const slaViolations = stmt.all() as SLAViolationRecord[];
 
     // Process SLA violations in batches to avoid N+1 updates
@@ -1487,14 +1770,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
 
     // Perform batch updates using a transaction for better performance
-    if (updates.length > 0) {
-      const updateStmt = this.db.prepare(`
+    if (updates?.length || 0 > 0) {
+      const updateStmt = this?.db?.prepare(`
         UPDATE email_analysis 
         SET action_sla_status = ?
         WHERE email_id = ?
       `);
 
-      const transaction = this.db.transaction(
+      const transaction = this?.db?.transaction(
         (updates: Array<{ emailId: string; status: string }>) => {
           for (const update of updates) {
             updateStmt.run(update.status, update.emailId);
@@ -1536,7 +1819,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
 
     this.slaMonitoringInterval = setInterval(() => {
-      this.checkSLAStatus().catch((error) => {
+      this.checkSLAStatus().catch((error: unknown) => {
         logger.error(`SLA monitoring failed: ${error}`, "EMAIL_STORAGE");
       });
     }, intervalMs);
@@ -1565,10 +1848,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       this.validateEmailData(emailData);
 
       const emailId = uuidv4();
-      const receivedAt = emailData.receivedDate.toISOString();
+      const receivedAt = emailData?.receivedDate?.toISOString();
 
       // Insert email record
-      const insertEmailStmt = this.db.prepare(`
+      const insertEmailStmt = this?.db?.prepare(`
         INSERT INTO emails (
           id, graph_id, subject, sender_email, sender_name, to_addresses,
           received_at, is_read, has_attachments, body_preview, body,
@@ -1594,7 +1877,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       );
 
       // Insert analysis record with IEMS data
-      const insertAnalysisStmt = this.db.prepare(`
+      const insertAnalysisStmt = this?.db?.prepare(`
         INSERT INTO email_analysis (
           id, email_id, quick_workflow, quick_priority, quick_intent,
           quick_urgency, quick_confidence, quick_suggested_state,
@@ -1668,7 +1951,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       // Get current status
       const currentEmail = this.db
         .prepare("SELECT * FROM email_analysis WHERE email_id = ?")
-        .get(emailId) as any;
+        .get(emailId) as DatabaseConnection;
 
       if (!currentEmail) {
         throw new Error(`Email not found: ${emailId}`);
@@ -1677,7 +1960,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       const oldStatus = this.mapWorkflowToStatus(currentEmail.workflow_state);
 
       // Update status in email_analysis table
-      const updateStmt = this.db.prepare(`
+      const updateStmt = this?.db?.prepare(`
         UPDATE email_analysis 
         SET workflow_state = ?, updated_at = ?
         WHERE email_id = ?
@@ -1730,7 +2013,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async getRecentEmailsForUser(
     userId: string,
     daysBack: number = 7,
-  ): Promise<any[]> {
+  ): Promise<WorkflowPatternRow[]> {
     try {
       const stmt = this.db.prepare(`
         SELECT 
@@ -1755,9 +2038,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       `);
 
       const userPattern = `%${userId}%`;
-      const results = stmt.all(userPattern, userPattern) as any[];
+      if (!stmt) {
+        return [];
+      }
+      const results = stmt.all($1) as DatabaseRow[];
 
-      return results.map((row) => ({
+      return results?.map((row: EmailDatabaseRow) => ({
         id: row.id,
         subject: row.subject,
         sender: row.sender,
@@ -1767,7 +2053,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         intent: row.intent,
         sentiment: row.sentiment || "neutral",
         urgency: row.urgency,
-        entities: row.entities ? row.entities.split(",") : [],
+        entities: row.entities ? row?.entities?.split(",") : [],
       }));
     } catch (error) {
       logger.error("Failed to get recent emails for user", "EMAIL_STORAGE", {
@@ -1786,13 +2072,13 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     entityType: string;
     entityId: string;
     action: string;
-    oldValues: Record<string, any>;
-    newValues: Record<string, any>;
+    oldValues: Record<string, unknown>;
+    newValues: Record<string, unknown>;
     performedBy: string;
   }): Promise<void> {
     try {
       // Create audit_logs table if it doesn't exist
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS audit_logs (
           id TEXT PRIMARY KEY,
           entity_type TEXT NOT NULL,
@@ -1805,7 +2091,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         )
       `);
 
-      const insertStmt = this.db.prepare(`
+      const insertStmt = this?.db?.prepare(`
         INSERT INTO audit_logs (
           id, entity_type, entity_id, action, old_values, new_values, performed_by, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -1839,12 +2125,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async batchLoadEmailsWithAnalysis(
     emailIds: string[],
   ): Promise<Map<string, EmailWithAnalysis>> {
-    if (emailIds.length === 0) {
+    if (emailIds?.length || 0 === 0) {
       return new Map();
     }
 
     // Create placeholders for the IN clause
-    const placeholders = emailIds.map(() => "?").join(",");
+    const placeholders = emailIds?.map(() => "?").join(",");
 
     const stmt = this.db.prepare(`
       SELECT 
@@ -1865,7 +2151,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       WHERE e.id IN (${placeholders})
     `);
 
-    const results = stmt.all(...emailIds) as any[];
+    if (!stmt) {
+      return new Map();
+    }
+    const results = stmt.all($1) as DatabaseRow[];
     const emailMap = new Map<string, EmailWithAnalysis>();
 
     for (const result of results) {
@@ -2034,47 +2323,47 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
       // Status filter - using parameterized placeholders
       if (options.filters?.status?.length) {
-        const statusPlaceholders = options.filters.status
+        const statusPlaceholders = options?.filters?.status
           .map(() => "?")
           .join(",");
         whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
         params.push(
-          ...options.filters.status.map((s) =>
-            this.mapStatusToWorkflowState(s as any),
+          ...options?.filters?.status?.map((s: string) =>
+            this.mapStatusToWorkflowState(s),
           ),
         );
       }
 
       // Email alias filter - using parameterized placeholders
       if (options.filters?.emailAlias?.length) {
-        const aliasPlaceholders = options.filters.emailAlias
+        const aliasPlaceholders = options?.filters?.emailAlias
           .map(() => "?")
           .join(",");
         whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
-        params.push(...options.filters.emailAlias);
+        params.push(...options?.filters?.emailAlias?.map(alias => alias));
       }
 
       // Priority filter - using parameterized placeholders
       if (options.filters?.priority?.length) {
-        const priorityPlaceholders = options.filters.priority
+        const priorityPlaceholders = options?.filters?.priority
           .map(() => "?")
           .join(",");
         whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
-        params.push(...options.filters.priority);
+        params.push(...options?.filters?.priority?.map(priority => priority));
       }
 
       // Date range filter
       if (options.filters?.dateRange) {
         whereClauses.push("e.received_at BETWEEN ? AND ?");
         params.push(
-          options.filters.dateRange.start,
-          options.filters.dateRange.end,
+          options?.filters?.dateRange.start,
+          options?.filters?.dateRange.end,
         );
       }
 
       // Build WHERE clause
       const whereClause =
-        whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+        whereClauses?.length || 0 > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
       // Sanitize and validate sort column
       const sortColumn = this.getSortColumn(options.sortBy);
@@ -2123,18 +2412,18 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         countQueryCacheKey: `${cacheKey}_count`,
         dataQuery: dataQuery.replace(/\s+/g, " ").trim(),
         countQuery: countQuery.replace(/\s+/g, " ").trim(),
-        dataParamsLength: dataParams.length,
-        countParamsLength: params.length,
+        dataParamsLength: dataParams?.length || 0,
+        countParamsLength: params?.length || 0,
       });
 
       const [emailsResult, countResult] = await Promise.all([
-        this.executeCachedQuery<any[]>(
+        this.executeCachedQuery<EmailDatabaseRow[]>(
           `${cacheKey}_data`,
           "email_table_view_data",
           dataQuery,
           dataParams,
         ),
-        this.executeCachedQuery<any>(
+        this.executeCachedQuery<{ count: number }>(
           `${cacheKey}_count`,
           "email_table_view_count",
           countQuery,
@@ -2147,7 +2436,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         emailsResultType: typeof emailsResult,
         emailsResultIsArray: Array.isArray(emailsResult),
         emailsResultLength: Array.isArray(emailsResult)
-          ? emailsResult.length
+          ? emailsResult?.length || 0
           : "N/A",
         countResultType: typeof countResult,
         countResultKeys: countResult ? Object.keys(countResult) : "N/A",
@@ -2169,7 +2458,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       const totalPages = Math.ceil(totalCount / pageSize);
 
       // Transform emails to include proper status mapping
-      const transformedEmails = emails.map((email) => ({
+      const transformedEmails = emails?.map((email: EmailDatabaseRow) => ({
         ...email,
         status: this.mapWorkflowToStatus(email.workflow_state),
         status_text: this.getStatusText(email.workflow_state),
@@ -2253,44 +2542,44 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         }
 
         if (options.filters?.status?.length) {
-          const statusPlaceholders = options.filters.status
+          const statusPlaceholders = options?.filters?.status
             .map(() => "?")
             .join(",");
           whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
           params.push(
-            ...options.filters.status.map((s) =>
-              this.mapStatusToWorkflowState(s as any),
+            ...options?.filters?.status?.map((s: string) =>
+              this.mapStatusToWorkflowState(s),
             ),
           );
         }
 
         if (options.filters?.emailAlias?.length) {
-          const aliasPlaceholders = options.filters.emailAlias
+          const aliasPlaceholders = options?.filters?.emailAlias
             .map(() => "?")
             .join(",");
           whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
-          params.push(...options.filters.emailAlias);
+          params.push(...options?.filters?.emailAlias?.map(alias => alias));
         }
 
         if (options.filters?.priority?.length) {
-          const priorityPlaceholders = options.filters.priority
+          const priorityPlaceholders = options?.filters?.priority
             .map(() => "?")
             .join(",");
           whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
-          params.push(...options.filters.priority);
+          params.push(...options?.filters?.priority?.map(priority => priority));
         }
 
         if (options.filters?.dateRange) {
           whereClauses.push("e.received_at BETWEEN ? AND ?");
           params.push(
-            options.filters.dateRange.start,
-            options.filters.dateRange.end,
+            options?.filters?.dateRange.start,
+            options?.filters?.dateRange.end,
           );
         }
 
         // Build WHERE clause
         const whereClause =
-          whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+          whereClauses?.length || 0 > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
         // Sanitize sort column and direction
         const sortColumn = this.getSortColumn(options.sortBy);
@@ -2319,14 +2608,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         // Add pagination params
         params.push(limit, offset);
 
-        const emails = await this.executeOptimizedQuery<any[]>(
+        const emails = await this.executeOptimizedQuery<EmailDatabaseRow[]>(
           "email_table_lazy_load",
           query,
           params,
         );
 
         // Transform emails
-        return emails.map((email) => ({
+        return emails?.map((email: EmailDatabaseRow) => ({
           ...email,
           status: this.mapWorkflowToStatus(email.workflow_state),
           status_text: this.getStatusText(email.workflow_state),
@@ -2336,7 +2625,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       };
 
       // Use lazy loader to get chunk
-      const result = await this.lazyLoader.loadChunk(startIndex, loadFn);
+      const result = await this?.lazyLoader?.loadChunk(startIndex, loadFn);
 
       return result;
     } catch (error) {
@@ -2369,7 +2658,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         LEFT JOIN email_analysis ea ON e.id = ea.email_id
       `;
 
-      const stats = this.db.prepare(statsQuery).get() as any;
+      const stats = this?.db?.prepare(statsQuery).get() as DatabaseConnection;
 
       return {
         totalEmails: stats.total,
@@ -2514,8 +2803,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }
 
   private extractEntitiesOfType(entities: EmailEntity[] = [], type: string): string {
-    const filtered = entities.filter((e) => e.type === type);
-    return JSON.stringify(filtered.map((e) => e.value));
+    const filtered = entities?.filter((e: EmailEntity) => e.type === type);
+    return JSON.stringify(filtered?.map((e: EmailEntity) => e.value));
   }
 
   // =====================================================
@@ -2526,26 +2815,26 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    * Get comprehensive performance statistics
    */
   async getPerformanceMetrics(): Promise<{
-    database: PerformanceMetric[];
-    cache: PerformanceMetric[];
+    database: DatabaseRow[];
+    cache: DatabaseRow[];
     lazyLoader: Record<string, unknown>;
     recommendations: string[];
   }> {
     try {
       const [dbMetrics, lazyLoaderStats] = await Promise.all([
         queryPerformanceMonitor.getPerformanceStatistics(),
-        Promise.resolve(this.lazyLoader.getStats()),
+        Promise.resolve(this?.lazyLoader?.getStats()),
       ]);
 
       const cacheMetrics = performanceOptimizer.getPerformanceMetrics();
 
       return {
-        database: dbMetrics,
-        cache: cacheMetrics,
-        lazyLoader: lazyLoaderStats,
+        database: Array.isArray(dbMetrics) ? dbMetrics : [dbMetrics],
+        cache: Array.isArray(cacheMetrics) ? cacheMetrics : [cacheMetrics],
+        lazyLoader: lazyLoaderStats as Record<string, unknown>,
         recommendations: [
-          ...cacheMetrics.recommendations,
-          ...(dbMetrics.alerts?.map((alert) => alert.message) || []),
+          ...(cacheMetrics.recommendations || []),
+          ...(Array.isArray(dbMetrics) ? [] : ((dbMetrics as { alerts?: Array<{ message: string }> }).alerts?.map((alert) => alert.message) || [])),
         ],
       };
     } catch (error) {
@@ -2560,7 +2849,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Get detailed performance report
    */
-  async getDetailedPerformanceReport(): Promise<any> {
+  async getDetailedPerformanceReport(): Promise<unknown> {
     try {
       return await queryPerformanceMonitor.getDetailedReport();
     } catch (error) {
@@ -2578,7 +2867,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async clearPerformanceCaches(): Promise<void> {
     try {
       performanceOptimizer.clearCache();
-      this.lazyLoader.clearCache();
+      this?.lazyLoader?.clearCache();
       queryPerformanceMonitor.clearHistory();
 
       logger.info("All performance caches cleared", "EMAIL_STORAGE");
@@ -2609,10 +2898,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           startIndex: offset,
           chunkSize: limit,
           ...options,
-        }).then((result) => result.data);
+        }).then((result: { data: EmailDatabaseRow[] }) => result.data);
       };
 
-      await this.lazyLoader.preloadAdjacentChunks(currentIndex, loadFn);
+      await this?.lazyLoader?.preloadAdjacentChunks(currentIndex, loadFn);
       logger.debug(
         `Preloaded adjacent chunks for index ${currentIndex}`,
         "EMAIL_STORAGE",
@@ -2647,7 +2936,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       let indexesRebuilt = 0;
       for (const indexQuery of indexQueries) {
         try {
-          this.db.exec(indexQuery);
+          this?.db?.exec(indexQuery);
           indexesRebuilt++;
         } catch (indexError) {
           logger.warn(
@@ -2660,7 +2949,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       // Run VACUUM to optimize database file
       let vacuumCompleted = false;
       try {
-        this.db.exec("VACUUM");
+        this?.db?.exec("VACUUM");
         vacuumCompleted = true;
       } catch (vacuumError) {
         logger.warn(`Database VACUUM failed: ${vacuumError}`, "EMAIL_STORAGE");
@@ -2701,12 +2990,26 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       );
     }
 
+    // Clean up MasterOrchestrator
+    if (this.masterOrchestrator) {
+      try {
+        // MasterOrchestrator doesn't have explicit cleanup, but we can clear the reference
+        this.masterOrchestrator = undefined;
+        logger.info("MasterOrchestrator cleaned up", "EMAIL_STORAGE");
+      } catch (error) {
+        logger.warn(
+          `Failed to cleanup MasterOrchestrator: ${error}`,
+          "EMAIL_STORAGE",
+        );
+      }
+    }
+
     // Close database or connection pool
     if (this.useConnectionPool && this.connectionPool) {
-      this.connectionPool.close();
+      this?.connectionPool?.close();
       logger.info("Connection pool closed", "EMAIL_STORAGE");
     } else {
-      this.db.close();
+      this?.db?.close();
       logger.info("Database connection closed", "EMAIL_STORAGE");
     }
 
@@ -2718,7 +3021,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    */
   getPoolStats(): PoolStatistics | null {
     if (this.useConnectionPool && this.connectionPool) {
-      const stats = this.connectionPool.getStats();
+      const stats = this?.connectionPool?.getStats();
       return {
         total_connections: stats.poolSize,
         active_connections: stats.activeConnections,
@@ -2751,8 +3054,11 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         SELECT * FROM emails 
         WHERE id = ?
       `);
-      const email = stmt.get(emailId);
-      return email || null;
+      if (!stmt) {
+        return null;
+      }
+      const email = stmt.get(emailId) as DatabaseConnection;
+      return email ? email as EmailRecord : null;
     } catch (error) {
       logger.error(`Failed to get email ${emailId}: ${error}`, "EMAIL_STORAGE");
       throw error;
@@ -2762,11 +3068,11 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Update an email record
    */
-  async updateEmail(emailId: string, updates: Partial<any>): Promise<void> {
+  async updateEmail(emailId: string, updates: Partial<EmailDatabaseRow>): Promise<void> {
     try {
       const updateFields = Object.keys(updates)
-        .filter((key) => key !== "id")
-        .map((key) => `${key} = @${key}`)
+        .filter((key: string) => key !== "id")
+        .map((key: string) => `${key} = @${key}`)
         .join(", ");
 
       const stmt = this.db.prepare(`
@@ -2775,7 +3081,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         WHERE id = @id
       `);
 
-      stmt.run({ id: emailId, ...updates });
+      if (!stmt) {
+        throw new Error("Failed to prepare update statement");
+      }
+      if (stmt) {
+        stmt.run({ id: emailId, ...updates });
+      }
       logger.info(`Updated email ${emailId}`, "EMAIL_STORAGE");
     } catch (error) {
       logger.error(
@@ -2802,14 +3113,16 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         VALUES (?, ?, ?, ?, ?, ?)
       `);
 
-      stmt.run(
-        uuidv4(),
-        activity.emailId || null,
-        activity.action,
-        activity.userId,
-        JSON.stringify(activity.details || {}),
-        activity.timestamp,
-      );
+      if (stmt) {
+        stmt.run(
+          uuidv4(),
+          activity.emailId || null,
+          activity.action,
+          activity.userId,
+          JSON.stringify(activity.details || {}),
+          activity.timestamp,
+        );
+      }
 
       logger.info(`Logged activity: ${activity.action}`, "EMAIL_STORAGE");
     } catch (error) {
@@ -2830,13 +3143,16 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         GROUP BY assignedTo
       `);
 
+      if (!stmt) {
+        return {};
+      }
       const results = stmt.all() as Array<{
         assignedTo: string;
         count: number;
       }>;
       const workload: Record<string, number> = {};
 
-      results.forEach((row) => {
+      results.forEach((row: DatabaseRow) => {
         workload[row.assignedTo] = row.count;
       });
 
@@ -2861,6 +3177,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         WHERE assignedTo IS NULL OR assignedTo = ''
       `);
 
+      if (!stmt) {
+        return 0;
+      }
       const result = stmt.get() as { count: number };
       return result.count;
     } catch (error) {
@@ -2893,7 +3212,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       logger.warn("Negative stage1Time detected", "EMAIL_STORAGE", {
         original: metadata.stage1Time,
         corrected: validated.stage1Time,
-        model: metadata.models.stage1,
+        model: metadata?.models?.stage1,
         timestamp: new Date().toISOString(),
       });
     }
@@ -2906,7 +3225,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       logger.warn("Negative stage2Time detected", "EMAIL_STORAGE", {
         original: metadata.stage2Time,
         corrected: validated.stage2Time,
-        model: metadata.models.stage2,
+        model: metadata?.models?.stage2,
         timestamp: new Date().toISOString(),
       });
     }
@@ -2941,8 +3260,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       validated.totalTime = minTotalTime;
     }
 
-    // Log summary if any issues were found
-    if (issues.length > 0) {
+    // Log summary if issues were found
+    if (issues?.length || 0 > 0) {
       logger.error(
         "Processing time validation issues detected",
         "EMAIL_STORAGE",
@@ -2958,15 +3277,15 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         this.trackProcessingTimeAnomaly({
           type: "negative_values",
           issues,
-          original: metadata,
-          corrected: validated,
+          originalValues: metadata as Record<string, unknown>,
+          correctedValues: validated as Record<string, unknown>,
           timestamp: new Date().toISOString(),
         });
       } catch (trackingError) {
         logger.error(
           "Failed to track processing time anomaly",
           "EMAIL_STORAGE",
-          trackingError as Record<string, any>,
+          trackingError as Record<string, unknown>,
         );
       }
     }
@@ -2986,7 +3305,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }): void {
     try {
       // Create table if it doesn't exist
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS processing_time_anomalies (
           id TEXT PRIMARY KEY,
           type TEXT NOT NULL,
@@ -3004,20 +3323,22 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         VALUES (?, ?, ?, ?, ?, ?)
       `);
 
-      stmt.run(
-        uuidv4(),
-        anomaly.type,
-        JSON.stringify(anomaly.issues),
-        JSON.stringify(anomaly.original),
-        JSON.stringify(anomaly.corrected),
-        anomaly.timestamp,
-      );
+      if (stmt) {
+        stmt.run(
+          uuidv4(),
+          anomaly.type,
+          JSON.stringify(anomaly.issues),
+          JSON.stringify(anomaly.originalValues),
+          JSON.stringify(anomaly.correctedValues),
+          anomaly.timestamp,
+        );
+      }
     } catch (error) {
       // Don't throw - this is auxiliary tracking
       logger.error(
         "Failed to track processing time anomaly",
         "EMAIL_STORAGE",
-        error as Record<string, any>,
+        error as Record<string, unknown>,
       );
     }
   }

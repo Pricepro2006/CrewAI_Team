@@ -1,10 +1,9 @@
-import Database from "better-sqlite3";
-import { resolve } from "path";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
+import { resolve, dirname } from "path";
 import { readdir } from "fs/promises";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = resolve(fileURLToPath(import.meta.url), "..");
+// Use __dirname for Node.js compatibility without import.meta
+const __dirname = dirname(__filename || process.cwd());
 
 /**
  * Database Migration System
@@ -18,7 +17,7 @@ interface MigrationRecord {
 }
 
 export class MigrationRunner {
-  private db: Database;
+  private db: DatabaseInstance;
   private migrationsPath: string;
 
   constructor(dbPath: string, migrationsPath?: string) {
@@ -44,25 +43,25 @@ export class MigrationRunner {
 
   async getPendingMigrations(): Promise<string[]> {
     const applied = await this.getAppliedMigrations();
-    const appliedFilenames = new Set(applied.map((m) => m.filename));
+    const appliedFilenames = new Set(applied?.map((m: any) => m.filename));
 
     const files = await readdir(this.migrationsPath);
     const migrationFiles = files
-      .filter((f) => f.endsWith(".ts") && f !== "migrate.ts")
+      .filter((f: any) => f.endsWith(".ts") && f !== "migrate.ts")
       .sort();
 
-    return migrationFiles.filter((f) => !appliedFilenames.has(f));
+    return migrationFiles?.filter((f: any) => !appliedFilenames.has(f));
   }
 
   async runMigrations(): Promise<void> {
     const pending = await this.getPendingMigrations();
 
-    if (pending.length === 0) {
+    if (pending?.length || 0 === 0) {
       console.log("✅ No pending migrations");
       return;
     }
 
-    console.log(`📦 Running ${pending.length} pending migration(s)...`);
+    console.log(`📦 Running ${pending?.length || 0} pending migration(s)...`);
 
     for (const filename of pending) {
       console.log(`📦 Running migration: ${filename}`);
@@ -99,15 +98,15 @@ export class MigrationRunner {
   async rollbackMigration(filename?: string): Promise<void> {
     const applied = await this.getAppliedMigrations();
 
-    if (applied.length === 0) {
+    if (applied?.length || 0 === 0) {
       console.log("No migrations to rollback");
       return;
     }
 
     // If no filename provided, rollback the last migration
     const target = filename
-      ? applied.find((m) => m.filename === filename)
-      : applied[applied.length - 1];
+      ? applied.find((m: any) => m.filename === filename)
+      : applied[applied?.length || 0 - 1];
 
     if (!target) {
       throw new Error(`Migration ${filename} not found in applied migrations`);
@@ -143,19 +142,19 @@ export class MigrationRunner {
     const pending = await this.getPendingMigrations();
 
     console.log("\n📊 Migration Status:");
-    console.log(`Applied: ${applied.length}`);
-    console.log(`Pending: ${pending.length}`);
+    console.log(`Applied: ${applied?.length || 0}`);
+    console.log(`Pending: ${pending?.length || 0}`);
 
-    if (applied.length > 0) {
+    if (applied?.length || 0 > 0) {
       console.log("\n✅ Applied Migrations:");
-      applied.forEach((m) => {
+      applied.forEach((m: any) => {
         console.log(`  ${m.filename} (${m.applied_at})`);
       });
     }
 
-    if (pending.length > 0) {
+    if (pending?.length || 0 > 0) {
       console.log("\n⏳ Pending Migrations:");
-      pending.forEach((f) => {
+      pending.forEach((f: any) => {
         console.log(`  ${f}`);
       });
     }

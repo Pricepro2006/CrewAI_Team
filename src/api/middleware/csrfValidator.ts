@@ -14,7 +14,7 @@ export function csrfValidator(skipPaths: string[] = []) {
     }
 
     // Skip specific paths
-    const path = req.path;
+    const path = req?.path;
     if (skipPaths.some(skipPath => path.startsWith(skipPath))) {
       logger.debug("Skipping CSRF check for path", "CSRF_VALIDATOR", { path });
       return next();

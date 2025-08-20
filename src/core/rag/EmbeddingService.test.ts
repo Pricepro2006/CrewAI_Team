@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { EmbeddingService } from "./EmbeddingService.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmbeddingService } from './EmbeddingService';
 import axios from "axios";
 
 // Mock axios
@@ -8,7 +8,10 @@ const mockedAxios = vi.mocked(axios);
 
 describe("EmbeddingService", () => {
   let service: EmbeddingService;
-  let mockAxiosInstance: unknown;
+  let mockAxiosInstance: {
+    get: any;
+    post: any;
+  };
 
   beforeEach(() => {
     // Create mock axios instance
@@ -32,20 +35,20 @@ describe("EmbeddingService", () => {
 
   describe("initialize", () => {
     it("should initialize successfully when Ollama is available", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance?.get?.mockResolvedValue({
         data: {
           models: [{ name: "llama3.2:3b" }],
         },
       });
 
-      await expect(service.initialize()).resolves.not.toThrow();
+      await expect(service.initialize()).resolves?.not?.toThrow();
       expect(mockAxiosInstance.get).toHaveBeenCalledWith("/api/tags");
     });
 
     it("should warn when embedding model is not found", async () => {
       const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance?.get?.mockResolvedValue({
         data: {
           models: [{ name: "other-model" }],
         },
@@ -60,7 +63,7 @@ describe("EmbeddingService", () => {
     });
 
     it("should throw error when connection fails", async () => {
-      mockAxiosInstance.get.mockRejectedValue(new Error("Connection failed"));
+      mockAxiosInstance?.get?.mockRejectedValue(new Error("Connection failed"));
 
       await expect(service.initialize()).rejects.toThrow(
         "Failed to initialize embedding service",
@@ -71,14 +74,14 @@ describe("EmbeddingService", () => {
   describe("embed", () => {
     beforeEach(() => {
       // Mock successful initialization
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance?.get?.mockResolvedValue({
         data: { models: [{ name: "llama3.2:3b" }] },
       });
     });
 
     it("should generate embeddings for text", async () => {
       const mockEmbedding = new Array(768).fill(0).map((_, i) => i / 768);
-      mockAxiosInstance.post.mockResolvedValue({
+      mockAxiosInstance?.post?.mockResolvedValue({
         data: { embedding: mockEmbedding },
       });
 
@@ -94,7 +97,7 @@ describe("EmbeddingService", () => {
 
     it("should handle empty text", async () => {
       const mockEmbedding = new Array(768).fill(0);
-      mockAxiosInstance.post.mockResolvedValue({
+      mockAxiosInstance?.post?.mockResolvedValue({
         data: { embedding: mockEmbedding },
       });
 
@@ -107,7 +110,7 @@ describe("EmbeddingService", () => {
       const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
-      mockAxiosInstance.post.mockRejectedValue(new Error("API error"));
+      mockAxiosInstance?.post?.mockRejectedValue(new Error("API error"));
 
       const result = await service.embed("test");
 
@@ -121,7 +124,7 @@ describe("EmbeddingService", () => {
   describe("embedBatch", () => {
     beforeEach(() => {
       // Mock successful initialization
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance?.get?.mockResolvedValue({
         data: { models: [{ name: "llama3.2:3b" }] },
       });
     });
@@ -145,14 +148,14 @@ describe("EmbeddingService", () => {
       const texts = Array(150).fill("test");
       const mockEmbedding = new Array(768).fill(0.5);
 
-      mockAxiosInstance.post.mockResolvedValue({
+      mockAxiosInstance?.post?.mockResolvedValue({
         data: { embedding: mockEmbedding },
       });
 
       const result = await service.embedBatch(texts);
 
       expect(result).toHaveLength(150);
-      expect(result.every((emb) => emb.length === 768)).toBe(true);
+      expect(result.every((emb: any) => (emb?.length || 0) === 768)).toBe(true);
     });
   });
 
@@ -255,12 +258,12 @@ describe("EmbeddingService", () => {
       const mockEmbedding = new Array(768).fill(0.1);
 
       // Mock initialization response
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance?.get?.mockResolvedValue({
         data: { models: [{ name: "llama3.2:3b" }] },
       });
 
       // Mock embed response
-      mockAxiosInstance.post.mockResolvedValue({
+      mockAxiosInstance?.post?.mockResolvedValue({
         data: { embedding: mockEmbedding },
       });
 

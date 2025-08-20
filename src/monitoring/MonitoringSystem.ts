@@ -93,8 +93,8 @@ export class MonitoringSystem extends EventEmitter {
 
     try {
       // Configure alert system
-      if (this.config.alerts) {
-        alertSystem.updateConfig(this.config.alerts);
+      if (this?.config?.alerts) {
+        alertSystem.updateConfig(this?.config?.alerts);
       }
 
       // Setup cross-component event handling
@@ -162,7 +162,7 @@ export class MonitoringSystem extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Connect grocery metrics to alert system
-    groceryAgentMetrics.on('alert', (alert) => {
+    groceryAgentMetrics.on('alert', (alert: any) => {
       alertSystem.createAlert(
         alert.type,
         alert.severity,
@@ -177,7 +177,7 @@ export class MonitoringSystem extends EventEmitter {
     });
 
     // Connect performance monitor to alert system
-    performanceMonitor.on('threshold-exceeded', (event) => {
+    performanceMonitor.on('threshold-exceeded', (event: any) => {
       alertSystem.createAlert(
         'performance_threshold_exceeded',
         event.severity === 'critical' ? 'critical' : 'warning',
@@ -193,23 +193,23 @@ export class MonitoringSystem extends EventEmitter {
     });
 
     // Connect error tracker to alert system
-    errorTracker.on('critical-error', (error) => {
+    errorTracker.on('critical-error', (error: any) => {
       alertSystem.createAlert(
         'critical_system_error',
         'critical',
-        `Critical system error: ${error.error.message}`,
-        error.context.component || 'unknown',
+        `Critical system error: ${error?.error?.message}`,
+        error?.context?.component || 'unknown',
         {
           error_id: error.id,
-          error_name: error.error.name,
-          endpoint: error.context.endpoint,
-          user_id: error.context.userId,
+          error_name: error?.error?.name,
+          endpoint: error?.context?.endpoint,
+          user_id: error?.context?.userId,
         }
       );
     });
 
     // Log all alerts for audit trail
-    alertSystem.on('alert-created', (alert) => {
+    alertSystem.on('alert-created', (alert: any) => {
       structuredLogger.log(
         alert.severity === 'critical' ? 'critical' :
         alert.severity === 'error' ? 'error' :
@@ -228,7 +228,7 @@ export class MonitoringSystem extends EventEmitter {
       );
     });
 
-    alertSystem.on('alert-resolved', (alert) => {
+    alertSystem.on('alert-resolved', (alert: any) => {
       structuredLogger.info(
         `Alert resolved: ${alert.message}`,
         'alert_system',
@@ -290,46 +290,54 @@ export class MonitoringSystem extends EventEmitter {
       const errorStats = errorTracker.getStatistics(30 * 60 * 1000); // Last 30 minutes
       const errorRate = errorStats.total > 0 ? errorStats.unhandled / errorStats.total : 0;
       
-      healthStatus.components.error_tracker = {
-        status: errorRate > 0.1 ? 'unhealthy' : errorRate > 0.05 ? 'degraded' : 'healthy',
-        error_rate: errorRate,
-        total_errors: errorStats.total,
-        unhandled_errors: errorStats.unhandled,
-      };
+      if (healthStatus?.components) {
+        healthStatus.components.error_tracker = {
+          status: errorRate > 0.1 ? 'unhealthy' : errorRate > 0.05 ? 'degraded' : 'healthy',
+          error_rate: errorRate,
+          total_errors: errorStats.total,
+          unhandled_errors: errorStats.unhandled,
+        };
+      }
 
       // Check performance metrics
       const perfStats = performanceMonitor.getStatistics();
       const avgResponseTime = Object.values(perfStats).length > 0 ? 
         Object.values(perfStats).reduce((sum: number, stat: any) => sum + stat.avg, 0) / Object.values(perfStats).length : 0;
 
-      healthStatus.components.performance = {
-        status: avgResponseTime > 2000 ? 'unhealthy' : avgResponseTime > 1000 ? 'degraded' : 'healthy',
-        avg_response_time: avgResponseTime,
-        monitored_operations: Object.keys(perfStats).length,
-      };
+      if (healthStatus?.components) {
+        healthStatus.components.performance = {
+          status: avgResponseTime > 2000 ? 'unhealthy' : avgResponseTime > 1000 ? 'degraded' : 'healthy',
+          avg_response_time: avgResponseTime,
+          monitored_operations: Object.keys(perfStats).length,
+        };
+      }
 
       // Check grocery metrics
       const groceryMetrics = groceryAgentMetrics.exportAllMetrics();
-      const nlpSuccessRate = groceryMetrics.nlp.successfulParses / Math.max(groceryMetrics.nlp.totalQueries, 1);
-      const priceSuccessRate = groceryMetrics.price.successfulFetches / Math.max(groceryMetrics.price.totalRequests, 1);
+      const nlpSuccessRate = groceryMetrics?.nlp?.successfulParses / Math.max(groceryMetrics?.nlp?.totalQueries, 1);
+      const priceSuccessRate = groceryMetrics?.price?.successfulFetches / Math.max(groceryMetrics?.price?.totalRequests, 1);
 
-      healthStatus.components.grocery_agent = {
-        status: (nlpSuccessRate < 0.8 || priceSuccessRate < 0.9) ? 'degraded' : 'healthy',
-        nlp_success_rate: nlpSuccessRate,
-        price_success_rate: priceSuccessRate,
-        active_users: groceryMetrics.session.totalSessions,
-      };
+      if (healthStatus?.components) {
+        healthStatus.components.grocery_agent = {
+          status: (nlpSuccessRate < 0.8 || priceSuccessRate < 0.9) ? 'degraded' : 'healthy',
+          nlp_success_rate: nlpSuccessRate,
+          price_success_rate: priceSuccessRate,
+          active_users: groceryMetrics?.session?.totalSessions,
+        };
+      }
 
       // Check system resources
       const resourceUsage = performanceMonitor.monitorResourceUsage();
-      const memoryUsagePercent = (resourceUsage.memory.heapUsed / resourceUsage.memory.heapTotal) * 100;
+      const memoryUsagePercent = (resourceUsage?.memory?.heapUsed / resourceUsage?.memory?.heapTotal) * 100;
 
-      healthStatus.components.system_resources = {
-        status: memoryUsagePercent > 90 ? 'unhealthy' : memoryUsagePercent > 75 ? 'degraded' : 'healthy',
-        memory_usage_percent: memoryUsagePercent,
-        memory_used_mb: resourceUsage.memory.heapUsed,
-        cpu_user_ms: resourceUsage.cpu.user,
-      };
+      if (healthStatus?.components) {
+        healthStatus.components.system_resources = {
+          status: memoryUsagePercent > 90 ? 'unhealthy' : memoryUsagePercent > 75 ? 'degraded' : 'healthy',
+          memory_usage_percent: memoryUsagePercent,
+          memory_used_mb: resourceUsage?.memory?.heapUsed,
+          cpu_user_ms: resourceUsage?.cpu?.user,
+        };
+      }
 
       // Determine overall health
       const componentStatuses = Object.values(healthStatus.components).map(c => c.status);
@@ -423,11 +431,11 @@ export class MonitoringSystem extends EventEmitter {
         {
           operation: 'metrics_report',
           data: {
-            total_errors: report.error_tracker.stats.total,
+            total_errors: report?.error_tracker?.stats.total,
             avg_response_time: Object.values(report.performance).length > 0 ?
               Object.values(report.performance).reduce((sum: number, stat: any) => sum + stat.avg, 0) / Object.values(report.performance).length : 0,
-            active_alerts: report.alerts.unresolved,
-            memory_usage_mb: report.system_resources.memory.heapUsed,
+            active_alerts: report?.alerts?.unresolved,
+            memory_usage_mb: report?.system_resources?.memory.heapUsed,
           },
           tags: ['metrics', 'report', 'comprehensive'],
         }
@@ -443,19 +451,19 @@ export class MonitoringSystem extends EventEmitter {
   private analyzeAlertPatterns(): void {
     try {
       const recentAlerts = alertSystem.getAlerts({ limit: 100 });
-      const last30Minutes = recentAlerts.filter(a => 
+      const last30Minutes = recentAlerts?.filter(a => 
         Date.now() - new Date(a.timestamp).getTime() < 30 * 60 * 1000
       );
 
       // Check for alert storms (many alerts in short time)
-      if (last30Minutes.length > 20) {
+      if ((last30Minutes?.length || 0) > 20) {
         alertSystem.createAlert(
           'alert_storm_detected',
           'warning',
-          `Alert storm detected: ${last30Minutes.length} alerts in last 30 minutes`,
+          `Alert storm detected: ${last30Minutes?.length || 0} alerts in last 30 minutes`,
           'monitoring_system',
           {
-            alert_count: last30Minutes.length,
+            alert_count: last30Minutes?.length || 0,
             time_window: '30 minutes',
             top_components: this.getTopAlertComponents(last30Minutes),
           }
@@ -463,13 +471,13 @@ export class MonitoringSystem extends EventEmitter {
       }
 
       // Check for repeated failures
-      const componentAlertCounts = last30Minutes.reduce((acc, alert) => {
+      const componentAlertCounts = last30Minutes.reduce((acc: any, alert: any) => {
         acc[alert.component] = (acc[alert.component] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
       Object.entries(componentAlertCounts).forEach(([component, count]) => {
-        if (count >= 5) {
+        if ((count as number) >= 5) {
           alertSystem.createAlert(
             'component_repeated_failures',
             'error',
@@ -490,15 +498,15 @@ export class MonitoringSystem extends EventEmitter {
   }
 
   private getTopAlertComponents(alerts: any[]): Array<{ component: string; count: number }> {
-    const counts = alerts.reduce((acc, alert) => {
+    const counts = alerts.reduce((acc: any, alert: any) => {
       acc[alert.component] = (acc[alert.component] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([component, count]) => ({ component, count }));
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .slice(0, 5)
+    .map(([component, count]) => ({ component, count: count as number }));
   }
 
   private setupGracefulShutdown(): void {
@@ -574,7 +582,7 @@ export class MonitoringSystem extends EventEmitter {
 
     // Update metrics thresholds
     if (newConfig.metrics?.alertThresholds) {
-      groceryAgentMetrics.updateAlertThresholds(newConfig.metrics.alertThresholds);
+      groceryAgentMetrics.updateAlertThresholds(newConfig?.metrics?.alertThresholds);
     }
 
     logger.info('Monitoring system configuration updated', 'MONITORING_SYSTEM', {

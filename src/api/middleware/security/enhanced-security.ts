@@ -31,7 +31,7 @@ export const enhancedSanitizationSchemas = {
   string: z.string().max(1000).trim(),
 
   // SQL-safe string with comprehensive validation
-  sqlSafe: DatabaseInputSchemas.shortText.refine((val) => {
+  sqlSafe: DatabaseInputSchemas?.shortText?.refine((val: any) => {
     try {
       sqlSecurity.validateQueryParameters([val]);
       return true;
@@ -43,7 +43,7 @@ export const enhancedSanitizationSchemas = {
   // HTML-safe string with encoding
   htmlSafe: z
     .string()
-    .transform((str) =>
+    .transform((str: any) =>
       str
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -325,7 +325,7 @@ function getObjectDepth(obj: any): number {
   }
 
   if (Array.isArray(obj)) {
-    return 1 + Math.max(0, ...obj.map(getObjectDepth));
+    return 1 + Math.max(0, ...obj?.map(getObjectDepth));
   }
 
   return 1 + Math.max(0, ...Object.values(obj).map(getObjectDepth));
@@ -424,7 +424,7 @@ export function createEnhancedAuthMiddleware() {
     const { ctx, next } = opts;
 
     // Check if user is authenticated
-    if (!ctx.user || ctx.user.username === "guest") {
+    if (!ctx.user || ctx?.user?.username === "guest") {
       logger.warn("Unauthenticated Access Attempt", "SECURITY", {
         ip: ctx.req?.ip,
         userAgent: ctx.req?.headers?.["user-agent"],
@@ -438,10 +438,10 @@ export function createEnhancedAuthMiddleware() {
     }
 
     // Check if user is active
-    if (!ctx.user.is_active) {
+    if (!ctx?.user?.is_active) {
       logger.warn("Inactive User Access Attempt", "SECURITY", {
-        userId: ctx.user.id,
-        username: ctx.user.username,
+        userId: ctx?.user?.id,
+        username: ctx?.user?.username,
         requestId: ctx.requestId,
       });
 
@@ -452,7 +452,9 @@ export function createEnhancedAuthMiddleware() {
     }
 
     // Update last activity
-    ctx.user.lastActivity = new Date();
+    if (ctx?.user) {
+      ctx.user.lastActivity = new Date();
+    }
 
     return next();
   };
@@ -524,6 +526,83 @@ export function createSecurityTestMiddleware() {
 
     return next();
   };
+}
+
+/**
+ * Audit logging utility for security events
+ */
+export class AuditLogger {
+  static async logSecurityEvent(event: {
+    action: string;
+    userId?: string;
+    resourceId?: string;
+    resourceType?: string;
+    metadata?: any;
+    success?: boolean;
+    error?: string;
+  }): Promise<void> {
+    const logData = {
+      ...event,
+      timestamp: new Date().toISOString(),
+      type: "SECURITY_AUDIT",
+    };
+
+    if (event.success === false || event.error) {
+      logger.error("Security Event Failed", "AUDIT", logData);
+    } else {
+      logger.info("Security Event", "AUDIT", logData);
+    }
+  }
+}
+
+/**
+ * PII redaction utility for sensitive data
+ */
+export class PIIRedactor {
+  private static readonly PII_PATTERNS = {
+    email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+    phone: /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g,
+    ssn: /\b\d{3}-?\d{2}-?\d{4}\b/g,
+    creditCard: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
+  };
+
+  static redact(data: any): any {
+    if (typeof data === 'string') {
+      return this.redactString(data);
+    }
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.redact(item));
+    }
+    
+    if (data && typeof data === 'object') {
+      const redacted: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        redacted[key] = this.redact(value);
+      }
+      return redacted;
+    }
+    
+    return data;
+  }
+
+  private static redactString(str: string): string {
+    let result = str;
+    
+    // Redact email addresses
+    result = result.replace(this.PII_PATTERNS.email, '[EMAIL_REDACTED]');
+    
+    // Redact phone numbers
+    result = result.replace(this.PII_PATTERNS.phone, '[PHONE_REDACTED]');
+    
+    // Redact SSNs
+    result = result.replace(this.PII_PATTERNS.ssn, '[SSN_REDACTED]');
+    
+    // Redact credit card numbers
+    result = result.replace(this.PII_PATTERNS.creditCard, '[CARD_REDACTED]');
+    
+    return result;
+  }
 }
 
 // Export SQL injection protection utilities

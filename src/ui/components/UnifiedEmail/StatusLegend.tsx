@@ -28,7 +28,7 @@ export const StatusLegend: React.FC = () => {
     <div className="status-legend">
       <h4>Status Legend</h4>
       <div className="legend-items">
-        {statuses.map((status, index) => (
+        {statuses?.map((status, index) => (
           <div key={index} className="legend-item">
             <span
               className="legend-color"

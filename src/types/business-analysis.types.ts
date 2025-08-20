@@ -48,7 +48,7 @@ export interface EnhancedPhase2Results extends Phase2Results {
   };
 }
 
-export interface EnhancedPhase3Results extends Phase3Results {
+export interface EnhancedPhase3Results extends Omit<Phase3Results, 'executive_analysis'> {
   executive_analysis: ExecutiveAnalysisData;
   strategic_context: {
     business_impact_score: number;

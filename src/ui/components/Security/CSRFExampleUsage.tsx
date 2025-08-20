@@ -18,14 +18,14 @@ export const CSRFExampleUsage: React.FC = () => {
 
   // Example 1: Using CSRF-protected form submission
   const formSubmit = useCSRFFormSubmit({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       console.log("Form submitted successfully:", data);
       alert("Form submitted successfully!");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Form submission failed:", error);
       // Show CSRF error modal if it's a CSRF error
-      if (error.message.toLowerCase().includes("csrf")) {
+      if (error?.message?.toLowerCase().includes("csrf")) {
         csrfErrorModal.showError(error, () =>
           formSubmit.submit("/api/example", formData),
         );
@@ -38,12 +38,12 @@ export const CSRFExampleUsage: React.FC = () => {
   // Example 2: Using tRPC mutation with CSRF protection
   // This would be your actual tRPC mutation:
   // const createUserMutation = useCSRFProtectedMutation(
-  //   api.user.create,
+  //   api?.user?.create,
   //   {
-  //     onSuccess: (data) => {
+  //     onSuccess: (data: any) => {
   //       console.log('User created:', data);
   //     },
-  //     onCSRFError: (error) => {
+  //     onCSRFError: (error: any) => {
   //       csrfErrorModal.showError(error, () => createUserMutation.mutate(userData));
   //     },
   //   }
@@ -121,8 +121,8 @@ export const CSRFExampleUsage: React.FC = () => {
                 id="name"
                 type="text"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                onChange={(e: any) =>
+                  setFormData((prev: any) => ({ ...prev, name: e?.target?.value }))
                 }
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
                          rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500
@@ -142,8 +142,8 @@ export const CSRFExampleUsage: React.FC = () => {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                onChange={(e: any) =>
+                  setFormData((prev: any) => ({ ...prev, email: e?.target?.value }))
                 }
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
                          rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500
@@ -173,7 +173,7 @@ export const CSRFExampleUsage: React.FC = () => {
           {formSubmit.error && (
             <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-md">
               <p className="text-sm text-red-800 dark:text-red-200">
-                Error: {formSubmit.error.message}
+                Error: {formSubmit?.error?.message}
               </p>
             </div>
           )}

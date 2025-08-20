@@ -14,7 +14,7 @@ import type { EmailRepositoryConfig, CreateEmailParams, UpdateEmailParams, Email
 import { cacheManager } from '../../core/cache/RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 export class CachedEmailRepository extends EmailRepository {
   private cacheNamespace = 'email';
@@ -57,7 +57,7 @@ export class CachedEmailRepository extends EmailRepository {
    */
   private generateAnalyticsCacheKey(dateRange?: { start: Date; end: Date }): string {
     if (dateRange) {
-      const rangeStr = `${dateRange.start.toISOString()}-${dateRange.end.toISOString()}`;
+      const rangeStr = `${dateRange?.start?.toISOString()}-${dateRange?.end?.toISOString()}`;
       return `analytics:${crypto.createHash('md5').update(rangeStr).digest('hex')}`;
     }
     return 'analytics:current';
@@ -229,7 +229,7 @@ export class CachedEmailRepository extends EmailRepository {
       metrics.histogram('cached_email_repository.store_entities_duration', Date.now() - startTime);
       logger.debug('Email entities stored and cached', 'CACHED_EMAIL_REPO', {
         emailId,
-        entityCount: entities.length,
+        entityCount: entities?.length || 0,
       });
     } catch (error) {
       logger.error('Failed to store cached email entities', 'CACHED_EMAIL_REPO', {
@@ -273,7 +273,7 @@ export class CachedEmailRepository extends EmailRepository {
       }
       
       // Use longer TTL for historical queries
-      if (params.dateRange && params.dateRange.end < new Date(Date.now() - 86400000)) {
+      if (params.dateRange && params?.dateRange?.end < new Date(Date.now() - 86400000)) {
         ttl = this.longTTL;
       }
 
@@ -281,11 +281,11 @@ export class CachedEmailRepository extends EmailRepository {
       const tags = ['emails:all'];
       
       if (params.senderEmails?.length) {
-        tags.push(...params.senderEmails.map(email => `sender:${email}`));
+        tags.push(...params?.senderEmails?.map(email => `sender:${email}`));
       }
       
       if (params.statuses?.length) {
-        tags.push(...params.statuses.map(status => `status:${status}`));
+        tags.push(...params?.statuses?.map(status => `status:${status}`));
       }
       
       if (params.assignedTo) {
@@ -304,7 +304,7 @@ export class CachedEmailRepository extends EmailRepository {
       
       logger.debug('Email query executed and cached', 'CACHED_EMAIL_REPO', {
         cacheKey,
-        resultCount: result.emails.length,
+        resultCount: result?.emails?.length,
         ttl,
       });
 
@@ -469,13 +469,13 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Bulk get emails by IDs with caching
    */
-  override async getEmailsByIds(emailIds: string[]): Promise<Map<string, any>> {
+  async getEmailsByIds(emailIds: string[]): Promise<Map<string, any>> {
     const startTime = Date.now();
     const results = new Map<string, any>();
 
     try {
       // Generate cache keys
-      const cacheKeys = emailIds.map(id => this.generateEmailCacheKey(id));
+      const cacheKeys = emailIds?.map(id => this.generateEmailCacheKey(id)) || [];
       
       // Try to get from cache
       const cachedResults = await cacheManager.mget<any>(cacheKeys, this.cacheNamespace);
@@ -484,23 +484,26 @@ export class CachedEmailRepository extends EmailRepository {
       const missedKeys: string[] = [];
 
       // Separate hits and misses
-      for (let i = 0; i < emailIds.length; i++) {
-        const emailId = emailIds[i];
-        const cacheKey = cacheKeys[i];
+      for (let i = 0; i < (emailIds?.length || 0); i++) {
+        const emailId = emailIds?.[i];
+        const cacheKey = cacheKeys?.[i];
         
-        if (cachedResults.has(cacheKey)) {
-          results.set(emailId, cachedResults.get(cacheKey));
-          metrics.increment('cached_email_repository.bulk_get_cache_hit');
-        } else {
-          missedIds.push(emailId);
-          missedKeys.push(cacheKey);
-          metrics.increment('cached_email_repository.bulk_get_cache_miss');
+        // Ensure emailId and cacheKey are defined before using
+        if (emailId && cacheKey) {
+          if (cachedResults.has(cacheKey)) {
+            results.set(emailId, cachedResults.get(cacheKey));
+            metrics.increment('cached_email_repository.bulk_get_cache_hit');
+          } else {
+            missedIds.push(emailId);
+            missedKeys.push(cacheKey);
+            metrics.increment('cached_email_repository.bulk_get_cache_miss');
+          }
         }
       }
 
       // Fetch missed emails from database
-      if (missedIds.length > 0) {
-        const dbPromises = missedIds.map(async (emailId, index) => {
+      if ((missedIds?.length || 0) > 0) {
+        const dbPromises = missedIds?.map(async (emailId) => {
           try {
             const email = await super.getEmailById(emailId);
             if (email) {
@@ -531,9 +534,9 @@ export class CachedEmailRepository extends EmailRepository {
       metrics.histogram('cached_email_repository.bulk_get_duration', Date.now() - startTime);
       
       logger.debug('Bulk email fetch completed', 'CACHED_EMAIL_REPO', {
-        totalRequested: emailIds.length,
-        cacheHits: emailIds.length - missedIds.length,
-        cacheMisses: missedIds.length,
+        totalRequested: emailIds?.length || 0,
+        cacheHits: (emailIds?.length || 0) - (missedIds?.length || 0),
+        cacheMisses: missedIds?.length || 0,
         resultCount: results.size,
       });
 

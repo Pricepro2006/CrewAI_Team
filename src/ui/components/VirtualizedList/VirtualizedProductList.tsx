@@ -98,7 +98,7 @@ const ProductListItem: React.FC<{
           />
           {item.savings && item.savings > 0 && (
             <div className="absolute top-0 right-0 bg-green-500 text-white text-xs px-1 py-0.5 rounded-bl-md">
-              Save ${item.savings.toFixed(2)}
+              Save ${item?.savings?.toFixed(2)}
             </div>
           )}
           {!item.inStock && (
@@ -115,11 +115,11 @@ const ProductListItem: React.FC<{
           
           <div className="flex items-center mt-2">
             <span className="font-semibold text-lg text-gray-900">
-              ${item.price.toFixed(2)}
+              ${item?.price?.toFixed(2)}
             </span>
             {item.originalPrice && (
               <span className="ml-2 text-sm text-gray-400 line-through">
-                ${item.originalPrice.toFixed(2)}
+                ${item?.originalPrice?.toFixed(2)}
               </span>
             )}
           </div>
@@ -189,7 +189,7 @@ export const VirtualizedProductList: React.FC<VirtualizedProductListProps> = Rea
     onSetPriceAlert
   }), [items, selectedItems, priceAlerts, onToggleSelection, onSetPriceAlert]);
 
-  if (!items || items.length === 0) {
+  if (!items || items?.length || 0 === 0) {
     return (
       <div className="flex items-center justify-center h-48 text-gray-500">
         <p>No products found</p>
@@ -201,7 +201,8 @@ export const VirtualizedProductList: React.FC<VirtualizedProductListProps> = Rea
     <div className="w-full">
       <List
         height={height}
-        itemCount={items.length}
+        width="100%"
+        itemCount={items?.length || 0}
         itemSize={itemHeight}
         itemData={listData}
         overscanCount={5} // Render a few extra items for smooth scrolling

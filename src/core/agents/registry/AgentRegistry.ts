@@ -10,12 +10,14 @@ import { DataAnalysisAgent } from "../specialized/DataAnalysisAgent.js";
 import { WriterAgent } from "../specialized/WriterAgent.js";
 import { ToolExecutorAgent } from "../specialized/ToolExecutorAgent.js";
 import { EmailAnalysisAgent } from "../specialized/EmailAnalysisAgent.js";
+import type { RAGSystem } from "../../rag/RAGSystem.js";
 
 export class AgentRegistry {
   private activeAgents: Map<string, BaseAgent>;
   private agentPool: Map<string, BaseAgent[]>;
   private config: AgentPoolConfig;
   private agentFactories: Map<string, AgentFactory>;
+  private ragSystem: RAGSystem | null = null;
 
   constructor(config?: Partial<AgentPoolConfig>) {
     this.activeAgents = new Map();
@@ -23,12 +25,36 @@ export class AgentRegistry {
     this.config = {
       maxAgents: 10,
       idleTimeout: 300000, // 5 minutes
-      preloadAgents: ["ResearchAgent", "CodeAgent"],
+      preloadAgents: ["ResearchAgent", "CodeAgent", "EmailAnalysisAgent"],
       ...config,
     };
 
     this.agentFactories = new Map();
     this.registerDefaultAgents();
+  }
+
+  /**
+   * Set the RAG system for all agents
+   * This should be called by MasterOrchestrator after RAG initialization
+   */
+  setRAGSystem(ragSystem: RAGSystem): void {
+    this.ragSystem = ragSystem;
+    
+    // Update all existing agents with RAG system
+    for (const agent of this.activeAgents.values()) {
+      if ('setRAGSystem' in agent && typeof (agent as any).setRAGSystem === 'function') {
+        (agent as any).setRAGSystem(ragSystem);
+      }
+    }
+    
+    // Update pooled agents
+    for (const agents of this.agentPool.values()) {
+      for (const agent of agents) {
+        if ('setRAGSystem' in agent && typeof (agent as any).setRAGSystem === 'function') {
+          (agent as any).setRAGSystem(ragSystem);
+        }
+      }
+    }
   }
 
   private registerDefaultAgents(): void {
@@ -61,15 +87,15 @@ export class AgentRegistry {
 
   async initialize(): Promise<void> {
     // Preload specified agents
-    if (this.config.preloadAgents) {
-      for (const agentType of this.config.preloadAgents) {
+    if (this?.config?.preloadAgents) {
+      for (const agentType of this?.config?.preloadAgents) {
         await this.preloadAgent(agentType);
       }
     }
   }
 
   private async preloadAgent(agentType: string): Promise<void> {
-    const factory = this.agentFactories.get(agentType);
+    const factory = this?.agentFactories?.get(agentType);
     if (!factory) {
       console.warn(`Agent factory not found for type: ${agentType}`);
       return;
@@ -79,11 +105,17 @@ export class AgentRegistry {
       const agent = factory();
       await agent.initialize();
 
-      if (!this.agentPool.has(agentType)) {
-        this.agentPool.set(agentType, []);
+      // Integrate RAG system if available
+      if (this.ragSystem && 'setRAGSystem' in agent && typeof (agent as any).setRAGSystem === 'function') {
+        (agent as any).setRAGSystem(this.ragSystem);
+        console.log(`RAG system integrated with preloaded agent: ${agentType}`);
       }
 
-      this.agentPool.get(agentType)!.push(agent);
+      if (!this?.agentPool?.has(agentType)) {
+        this?.agentPool?.set(agentType, []);
+      }
+
+      this?.agentPool?.get(agentType)!.push(agent);
     } catch (error) {
       console.error(`Failed to preload agent ${agentType}:`, error);
     }
@@ -92,28 +124,35 @@ export class AgentRegistry {
   async getAgent(agentType: string): Promise<BaseAgent> {
     // Check if agent is already active
     const activeKey = `${agentType}-${Date.now()}`;
-    const activeAgent = this.activeAgents.get(agentType);
+    const activeAgent = this?.activeAgents?.get(agentType);
     if (activeAgent) {
       return activeAgent;
     }
 
     // Check agent pool
-    const pooledAgents = this.agentPool.get(agentType);
-    if (pooledAgents && pooledAgents.length > 0) {
+    const pooledAgents = this.agentPool?.get(agentType);
+    if (pooledAgents && (pooledAgents?.length || 0) > 0) {
       const agent = pooledAgents.pop()!;
-      this.activeAgents.set(activeKey, agent);
+      this.activeAgents?.set(activeKey, agent);
       return agent;
     }
 
     // Create new agent
-    const factory = this.agentFactories.get(agentType);
+    const factory = this?.agentFactories?.get(agentType);
     if (!factory) {
       throw new Error(`Agent type not registered: ${agentType}`);
     }
 
     const agent = factory();
     await agent.initialize();
-    this.activeAgents.set(activeKey, agent);
+    
+    // Integrate RAG system if available
+    if (this.ragSystem && 'setRAGSystem' in agent && typeof (agent as any).setRAGSystem === 'function') {
+      (agent as any).setRAGSystem(this.ragSystem);
+      console.log(`RAG system integrated with new agent: ${agentType}`);
+    }
+    
+    this?.activeAgents?.set(activeKey, agent);
 
     // Set up idle timeout
     this.setupIdleTimeout(activeKey, agentType);
@@ -132,27 +171,30 @@ export class AgentRegistry {
     }
 
     if (keyToRemove) {
-      this.activeAgents.delete(keyToRemove);
+      this?.activeAgents?.delete(keyToRemove);
 
       // Return to pool if not at capacity
-      const pool = this.agentPool.get(agentType) || [];
+      const pool = this?.agentPool?.get(agentType) || [];
       if (
-        pool.length <
-        Math.ceil(this.config.maxAgents / this.agentFactories.size)
+        pool?.length || 0 <
+        Math.ceil(this?.config?.maxAgents / this?.agentFactories?.size)
       ) {
         pool.push(agent);
-        this.agentPool.set(agentType, pool);
+        this?.agentPool?.set(agentType, pool);
       }
     }
   }
 
   private setupIdleTimeout(key: string, agentType: string): void {
+    // Validate timeout is reasonable (between 0 and 24 hours)
+    const timeout = Math.max(0, Math.min(this?.config?.idleTimeout || 300000, 86400000));
+    
     setTimeout(() => {
-      const agent = this.activeAgents.get(key);
+      const agent = this?.activeAgents?.get(key);
       if (agent) {
         this.releaseAgent(agentType, agent);
       }
-    }, this.config.idleTimeout);
+    }, timeout);
   }
 
   registerAgentType(type: string, factory: AgentFactory): void {
@@ -160,7 +202,7 @@ export class AgentRegistry {
   }
 
   getRegisteredTypes(): string[] {
-    return Array.from(this.agentFactories.keys());
+    return Array.from(this?.agentFactories?.keys());
   }
 
   getActiveAgents(): AgentStatus[] {
@@ -185,8 +227,8 @@ export class AgentRegistry {
   getPoolStatus(): Record<string, number> {
     const status: Record<string, number> = {};
 
-    for (const [type, agents] of this.agentPool.entries()) {
-      status[type] = agents.length;
+    for (const [type, agents] of this?.agentPool?.entries()) {
+      status[type] = agents?.length || 0;
     }
 
     return status;
@@ -194,10 +236,10 @@ export class AgentRegistry {
 
   async clearPool(): Promise<void> {
     // Clear all pooled agents
-    this.agentPool.clear();
+    this?.agentPool?.clear();
 
     // Clear active agents
-    this.activeAgents.clear();
+    this?.activeAgents?.clear();
   }
 
   async shutdown(): Promise<void> {

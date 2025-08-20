@@ -73,7 +73,7 @@ function generateCacheKey(
 
   // Add user context if available
   if (ctx.user?.id) {
-    keyComponents.push(`user:${ctx.user.id}`);
+    keyComponents.push(`user:${ctx?.user?.id}`);
   }
 
   return `trpc:${keyComponents.join(':')}`;
@@ -143,7 +143,7 @@ function generateCacheTags(
     tags.push('users');
     
     if (ctx.user?.id) {
-      tags.push(`user:${ctx.user.id}`);
+      tags.push(`user:${ctx?.user?.id}`);
     }
   }
 
@@ -324,7 +324,7 @@ export function createMutationCacheMiddleware(options: CacheMiddlewareOptions = 
       if (result.ok && input?.invalidateOnMutation !== false) {
         const tags = generateCacheTags(path, input, ctx, input?.invalidateTags || []);
         
-        if (tags.length > 0) {
+        if (tags?.length || 0 > 0) {
           const invalidatedCount = await cacheManager.invalidateByTags(tags);
           
           metrics.increment('trpc_cache.invalidated', invalidatedCount);
@@ -398,16 +398,16 @@ export async function warmTRPCCache(
   let warmedCount = 0;
 
   logger.info('Starting tRPC cache warming', 'CACHE_MIDDLEWARE', {
-    procedureCount: procedures.length,
+    procedureCount: procedures?.length || 0,
     concurrency,
   });
 
   try {
     // Process procedures in batches
-    for (let i = 0; i < procedures.length; i += concurrency) {
+    for (let i = 0; i < procedures?.length || 0; i += concurrency) {
       const batch = procedures.slice(i, i + concurrency);
       
-      const batchPromises = batch.map(async (proc) => {
+      const batchPromises = batch?.map(async (proc: any) => {
         for (const input of proc.inputs) {
           try {
             const cacheKey = generateCacheKey(proc.name, input, proc.context);
@@ -440,7 +440,7 @@ export async function warmTRPCCache(
 
     logger.info('tRPC cache warming completed', 'CACHE_MIDDLEWARE', {
       warmedCount,
-      totalProcedures: procedures.length,
+      totalProcedures: procedures?.length || 0,
     });
 
     return warmedCount;

@@ -28,7 +28,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="auth-modal-overlay" onClick={onClose}>
-      <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="auth-modal-content" onClick={(e: any) => e.stopPropagation()}>
         <button className="auth-modal-close" onClick={onClose}>
           <svg
             width="24"

@@ -23,6 +23,8 @@ export interface LivePrice {
   wasPrice?: number;
   inStock?: boolean;
   lastUpdated?: string;
+  storeLocation?: string;
+  source?: string;
 }
 
 export interface WalmartProduct extends TimestampedEntity {
@@ -59,11 +61,15 @@ export interface WalmartProduct extends TimestampedEntity {
   stockLevel?: number;
   stock?: number;
   originalPrice?: number;
+  regularPrice?: number;
   livePrice?: LivePrice;
   averageRating?: number;
   reviewCount?: number;
   location?: string;
   nutritionalInfo?: any;
+  searchKeywords?: string[];
+  discount?: number;
+  featured?: boolean;
 }
 
 export type ProductCategory = string | {

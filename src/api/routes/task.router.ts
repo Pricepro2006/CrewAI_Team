@@ -20,7 +20,7 @@ export const taskRouter: Router<any> = router({
         logger.info("Submitting new task", "TASK", { type: input.type });
 
         // Submit task through TaskService
-        const taskId = await ctx.taskService.submitTask({
+        const taskId = await ctx?.taskService?.submitTask({
           type: input.type,
           priority: input.priority || 5,
           data: input.data,
@@ -44,7 +44,7 @@ export const taskRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const status = ctx.taskService.getTaskStatus(input.taskId);
+      const status = ctx?.taskService?.getTaskStatus(input.taskId);
 
       if (!status) {
         throw new Error(`Task ${input.taskId} not found`);
@@ -55,7 +55,7 @@ export const taskRouter: Router<any> = router({
         status: status.status,
         progress: status.progress,
         startTime:
-          status.startedAt?.toISOString() || status.submittedAt.toISOString(),
+          status.startedAt?.toISOString() || status?.submittedAt?.toISOString(),
         completedTime: status.completedAt?.toISOString(),
         estimatedCompletion: null,
         result: status.result,
@@ -71,23 +71,23 @@ export const taskRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      let tasks = ctx.taskService.getAllTasks();
+      let tasks = ctx?.taskService?.getAllTasks();
 
       // Apply filter
       if (input.filter === "active") {
-        tasks = ctx.taskService.getActiveTasks();
+        tasks = ctx?.taskService?.getActiveTasks();
       } else if (input.filter === "completed") {
-        tasks = ctx.taskService.getCompletedTasks();
+        tasks = ctx?.taskService?.getCompletedTasks();
       }
 
       // Transform to API format
-      return tasks.map((task: any) => ({
+      return tasks?.map((task: any) => ({
         id: task.id,
-        type: task.task.type,
+        type: task?.task?.type,
         status: task.status,
         progress: task.progress,
-        priority: task.task.priority,
-        submittedAt: task.submittedAt.toISOString(),
+        priority: task?.task?.priority,
+        submittedAt: task?.submittedAt?.toISOString(),
         startedAt: task.startedAt?.toISOString(),
         completedAt: task.completedAt?.toISOString(),
         result: task.result,
@@ -105,7 +105,7 @@ export const taskRouter: Router<any> = router({
     .mutation(async ({ input, ctx }) => {
       logger.info("Cancelling task", "TASK", { taskId: input.taskId });
 
-      const success = await ctx.taskService.cancelTask(input.taskId);
+      const success = await ctx?.taskService?.cancelTask(input.taskId);
 
       if (!success) {
         logger.warn("Failed to cancel task", "TASK", { taskId: input.taskId });
@@ -122,7 +122,7 @@ export const taskRouter: Router<any> = router({
 
   // Get queue status
   queueStatus: publicProcedure.query(async ({ ctx }) => {
-    const status = ctx.taskService.getQueueStatus();
+    const status = ctx?.taskService?.getQueueStatus();
 
     return {
       total: status.total,
@@ -139,7 +139,7 @@ export const taskRouter: Router<any> = router({
   clearCompleted: publicProcedure.mutation(async ({ ctx }) => {
     logger.info("Clearing completed tasks", "TASK");
 
-    ctx.taskService.clearCompletedTasks();
+    ctx?.taskService?.clearCompletedTasks();
 
     logger.info("Completed tasks cleared", "TASK");
     return {

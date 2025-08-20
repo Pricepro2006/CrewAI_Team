@@ -110,25 +110,25 @@ class SimpleFrontendAnalyzer {
     }
     
     const files = await this.walkDirectory(this.srcPath);
-    const componentFiles = files.filter(f => 
+    const componentFiles = files?.filter(f => 
       (f.endsWith('.tsx') || f.endsWith('.jsx')) &&
       !f.includes('.test.') &&
       !f.includes('.spec.')
     );
     
     return {
-      total: componentFiles.length,
+      total: componentFiles?.length || 0,
       files: componentFiles.slice(0, 20) // Limit output
     };
   }
 
   public async getSystemMetrics() {
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       // Get memory usage
       const memInfo = spawn('free', ['-m']);
       let memOutput = '';
       
-      memInfo.stdout.on('data', (data) => {
+      memInfo?.stdout?.on('data', (data: any) => {
         memOutput += data.toString();
       });
       
@@ -136,13 +136,13 @@ class SimpleFrontendAnalyzer {
         const memLines = memOutput.split('\n');
         let memUsage = { total: 0, used: 0, percentage: 0 };
         
-        if (memLines.length > 1) {
-          const memData = memLines[1].split(/\s+/);
-          if (memData.length >= 3) {
+        if (memLines?.length || 0 > 1) {
+          const memData = memLines[1]?.split(/\s+/);
+          if (memData?.length || 0 >= 3) {
             memUsage = {
-              total: parseInt(memData[1]),
-              used: parseInt(memData[2]),
-              percentage: (parseInt(memData[2]) / parseInt(memData[1])) * 100
+              total: parseInt(memData?.[1] || '0'),
+              used: parseInt(memData?.[2] || '0'),
+              percentage: (parseInt(memData?.[2] || '0') / parseInt(memData?.[1] || '1')) * 100
             };
           }
         }
@@ -170,16 +170,16 @@ class SimpleFrontendAnalyzer {
     console.log('='.repeat(80));
     
     // Bundle Analysis
-    const totalSize = bundleFiles.reduce((sum, file) => sum + file.size, 0);
-    const jsFiles = bundleFiles.filter(f => f.type === 'js');
-    const cssFiles = bundleFiles.filter(f => f.type === 'css');
+    const totalSize = bundleFiles.reduce((sum: any, file: any) => sum + file.size, 0);
+    const jsFiles = bundleFiles?.filter(f => f.type === 'js');
+    const cssFiles = bundleFiles?.filter(f => f.type === 'css');
     
     console.log('\n📦 BUNDLE SIZE ANALYSIS');
     console.log('-'.repeat(50));
-    console.log(`Total Files: ${bundleFiles.length}`);
+    console.log(`Total Files: ${bundleFiles?.length || 0}`);
     console.log(`Total Size: ${this.formatBytes(totalSize)}`);
-    console.log(`JavaScript Files: ${jsFiles.length} (${this.formatBytes(jsFiles.reduce((s, f) => s + f.size, 0))})`);
-    console.log(`CSS Files: ${cssFiles.length} (${this.formatBytes(cssFiles.reduce((s, f) => s + f.size, 0))})`);
+    console.log(`JavaScript Files: ${jsFiles?.length || 0} (${this.formatBytes(jsFiles.reduce((s: any, f: any) => s + f.size, 0))})`);
+    console.log(`CSS Files: ${cssFiles?.length || 0} (${this.formatBytes(cssFiles.reduce((s: any, f: any) => s + f.size, 0))})`);
     
     console.log('\n🔍 LARGEST FILES:');
     bundleFiles.slice(0, 15).forEach((file, index) => {
@@ -192,9 +192,9 @@ class SimpleFrontendAnalyzer {
     console.log('-'.repeat(50));
     console.log(`Total Components: ${components.total}`);
     
-    if (components.files.length > 0) {
+    if (components?.files?.length > 0) {
       console.log('\nComponent Files (first 20):');
-      components.files.forEach((file: string, index: number) => {
+      components?.files?.forEach((file: string, index: number) => {
         const relativePath = file.replace(this.srcPath + '/', '');
         console.log(`  ${index + 1}. ${relativePath}`);
       });
@@ -203,8 +203,8 @@ class SimpleFrontendAnalyzer {
     // System Metrics
     console.log('\n📊 SYSTEM METRICS');
     console.log('-'.repeat(50));
-    if (systemMetrics.memory.total > 0) {
-      console.log(`Memory Usage: ${systemMetrics.memory.used}MB / ${systemMetrics.memory.total}MB (${systemMetrics.memory.percentage.toFixed(1)}%)`);
+    if (systemMetrics?.memory?.total > 0) {
+      console.log(`Memory Usage: ${systemMetrics?.memory?.used}MB / ${systemMetrics?.memory?.total}MB (${systemMetrics?.memory?.percentage.toFixed(1)}%)`);
     }
     
     // Performance Recommendations
@@ -221,11 +221,11 @@ class SimpleFrontendAnalyzer {
       });
     }
     
-    const largeJSFiles = jsFiles.filter(f => f.size > 5 * 1024 * 1024); // > 5MB
-    if (largeJSFiles.length > 0) {
+    const largeJSFiles = jsFiles?.filter(f => f.size > 5 * 1024 * 1024); // > 5MB
+    if (largeJSFiles?.length || 0 > 0) {
       recommendations.push({
         priority: 'HIGH',
-        issue: `${largeJSFiles.length} large JavaScript files detected`,
+        issue: `${largeJSFiles?.length || 0} large JavaScript files detected`,
         solution: 'Split large bundles, implement dynamic imports'
       });
     }
@@ -238,7 +238,7 @@ class SimpleFrontendAnalyzer {
       });
     }
     
-    if (bundleFiles.filter(f => f.type === 'asset').length > 200) {
+    if (bundleFiles?.filter(f => f.type === 'asset').length > 200) {
       recommendations.push({
         priority: 'MEDIUM',
         issue: 'Large number of static assets',
@@ -246,7 +246,7 @@ class SimpleFrontendAnalyzer {
       });
     }
     
-    if (recommendations.length === 0) {
+    if (recommendations?.length || 0 === 0) {
       console.log('✅ Frontend bundle size looks reasonable!');
     } else {
       recommendations.forEach((rec, index) => {
@@ -274,8 +274,8 @@ class SimpleFrontendAnalyzer {
     const report = {
       timestamp: new Date().toISOString(),
       bundleAnalysis: {
-        totalFiles: bundleFiles.length,
-        totalSize: bundleFiles.reduce((sum, file) => sum + file.size, 0),
+        totalFiles: bundleFiles?.length || 0,
+        totalSize: bundleFiles.reduce((sum: any, file: any) => sum + file.size, 0),
         files: bundleFiles
       },
       componentAnalysis: components,

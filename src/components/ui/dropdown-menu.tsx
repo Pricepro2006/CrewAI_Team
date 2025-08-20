@@ -82,7 +82,7 @@ const DropdownMenuContent = React.forwardRef<
           ref &&
           "current" in ref &&
           ref.current &&
-          !ref.current.contains(event.target as Node)
+          !ref?.current?.contains(event.target as Node)
         ) {
           setOpen(false);
         }

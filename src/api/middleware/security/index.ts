@@ -19,7 +19,7 @@ export const sanitizationSchemas = {
 
   htmlSafe: z
     .string()
-    .transform((str) =>
+    .transform((str: any) =>
       str
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -101,7 +101,7 @@ export function createAuthMiddleware() {
     const { ctx, next } = opts;
 
     // Check if user is authenticated
-    if (!ctx.user || ctx.user.username === "guest") {
+    if (!ctx.user || ctx?.user?.username === "guest") {
       throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "Authentication required",
@@ -109,7 +109,7 @@ export function createAuthMiddleware() {
     }
 
     // Check if user is active
-    if (!ctx.user.is_active) {
+    if (!ctx?.user?.is_active) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account is inactive",
@@ -117,7 +117,9 @@ export function createAuthMiddleware() {
     }
 
     // Update last activity
-    ctx.user.lastActivity = new Date();
+    if (ctx?.user) {
+      ctx.user.lastActivity = new Date();
+    }
 
     return next();
   };
@@ -131,7 +133,7 @@ export function createAuthorizationMiddleware(allowedRoles: string[]) {
     const { ctx, next } = opts;
 
     // Ensure user is authenticated first
-    if (!ctx.user || ctx.user.username === "guest") {
+    if (!ctx.user || ctx?.user?.username === "guest") {
       throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "Authentication required",
@@ -139,10 +141,10 @@ export function createAuthorizationMiddleware(allowedRoles: string[]) {
     }
 
     // Check if user has required role
-    if (!allowedRoles.includes(ctx.user.role)) {
+    if (!allowedRoles.includes(ctx?.user?.role)) {
       logger.warn("Authorization Failed", "SECURITY", {
-        userId: ctx.user.id,
-        userRole: ctx.user.role,
+        userId: ctx?.user?.id,
+        userRole: ctx?.user?.role,
         requiredRoles: allowedRoles,
         requestId: ctx.requestId,
       });
@@ -211,7 +213,7 @@ export function createRateLimitMiddleware(options: {
     // Generate rate limit key
     const key = options.keyGenerator
       ? options.keyGenerator(ctx)
-      : ctx.user?.id || ctx.req.ip || "anonymous";
+      : ctx.user?.id || ctx?.req?.ip || "anonymous";
 
     const now = Date.now();
     const windowStart = now - options.windowMs;
@@ -227,7 +229,7 @@ export function createRateLimitMiddleware(options: {
     // Clean up old entries periodically
     if (Math.random() < 0.01) {
       // 1% chance
-      for (const [k, v] of requests.entries()) {
+      for (const [k, v] of Array.from(requests.entries())) {
         if (v.resetAt < windowStart) {
           requests.delete(k);
         }
@@ -278,7 +280,7 @@ export function createIPRestriction(options: {
   return async (opts: { ctx: Context; next: () => Promise<any> }) => {
     const { ctx, next } = opts;
 
-    const clientIP = ctx.req.ip || ctx.req.connection?.remoteAddress || "";
+    const clientIP = ctx?.req?.ip || ctx?.req?.connection?.remoteAddress || "";
 
     // Check blocklist first
     if (options.blocklist?.includes(clientIP)) {
@@ -295,7 +297,7 @@ export function createIPRestriction(options: {
     }
 
     // Check allowlist if configured
-    if (options.allowlist && !options.allowlist.includes(clientIP)) {
+    if (options.allowlist && !options?.allowlist?.includes(clientIP)) {
       logger.warn("Non-Allowlisted IP Access Attempt", "SECURITY", {
         ip: clientIP,
         userId: ctx.user?.id,

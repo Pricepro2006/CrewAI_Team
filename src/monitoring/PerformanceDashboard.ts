@@ -174,10 +174,10 @@ class PerformanceDashboard extends EventEmitter {
 
       // Calculate overview metrics
       const uptime = timestamp - this.startTime;
-      const totalRequests = rumMetrics.user_metrics.total_sessions;
-      const errorRate = rumMetrics.user_metrics.error_rate * 100;
-      const avgResponseTime = rumMetrics.user_metrics.avg_load_time;
-      const activeUsers = rumMetrics.user_metrics.unique_users;
+      const totalRequests = rumMetrics?.user_metrics?.total_sessions;
+      const errorRate = rumMetrics?.user_metrics?.error_rate * 100;
+      const avgResponseTime = rumMetrics?.user_metrics?.avg_load_time;
+      const activeUsers = rumMetrics?.user_metrics?.unique_users;
 
       // Determine system status
       let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
@@ -212,12 +212,12 @@ class PerformanceDashboard extends EventEmitter {
             slowest_endpoints: this.getSlowestEndpoints(performanceStats),
           },
           frontend: {
-            avg_load_time: rumMetrics.user_metrics.avg_load_time,
-            avg_fcp: rumMetrics.user_metrics.avg_fcp,
-            avg_lcp: rumMetrics.user_metrics.avg_lcp,
-            avg_fid: rumMetrics.user_metrics.avg_fid,
-            avg_cls: rumMetrics.user_metrics.avg_cls,
-            bounce_rate: rumMetrics.user_metrics.bounce_rate,
+            avg_load_time: rumMetrics?.user_metrics?.avg_load_time,
+            avg_fcp: rumMetrics?.user_metrics?.avg_fcp,
+            avg_lcp: rumMetrics?.user_metrics?.avg_lcp,
+            avg_fid: rumMetrics?.user_metrics?.avg_fid,
+            avg_cls: rumMetrics?.user_metrics?.avg_cls,
+            bounce_rate: rumMetrics?.user_metrics?.bounce_rate,
             device_breakdown: rumMetrics.device_distribution,
           },
           database: {
@@ -237,16 +237,16 @@ class PerformanceDashboard extends EventEmitter {
             product_match_rate: this.calculateSuccessRate(groceryMetrics.product?.successfulMatches, groceryMetrics.product?.totalSearches),
             price_fetch_success_rate: this.calculateSuccessRate(groceryMetrics.price?.successfulFetches, groceryMetrics.price?.totalRequests),
             nlp_accuracy: groceryMetrics.nlp?.accuracy || 0,
-            cart_conversion_rate: rumMetrics.business_metrics.conversion_rate,
+            cart_conversion_rate: rumMetrics?.business_metrics?.conversion_rate,
           },
         },
         resources: {
           memory: {
-            used_mb: Math.round(resourceUsage.memory.heapUsed / 1024 / 1024),
-            total_mb: Math.round(resourceUsage.memory.heapTotal / 1024 / 1024),
-            usage_percent: Math.round((resourceUsage.memory.heapUsed / resourceUsage.memory.heapTotal) * 100),
-            heap_used_mb: Math.round(resourceUsage.memory.heapUsed / 1024 / 1024),
-            heap_total_mb: Math.round(resourceUsage.memory.heapTotal / 1024 / 1024),
+            used_mb: Math.round(resourceUsage?.memory?.heapUsed / 1024 / 1024),
+            total_mb: Math.round(resourceUsage?.memory?.heapTotal / 1024 / 1024),
+            usage_percent: Math.round((resourceUsage?.memory?.heapUsed / resourceUsage?.memory?.heapTotal) * 100),
+            heap_used_mb: Math.round(resourceUsage?.memory?.heapUsed / 1024 / 1024),
+            heap_total_mb: Math.round(resourceUsage?.memory?.heapTotal / 1024 / 1024),
           },
           cpu: {
             usage_percent: this.calculateCpuUsage(resourceUsage.cpu),
@@ -259,19 +259,19 @@ class PerformanceDashboard extends EventEmitter {
         },
         slos: {
           availability: {
-            target: this.sloConfig.availability_target,
+            target: this?.sloConfig?.availability_target,
             current: availability,
-            status: this.getSLOStatus(availability, this.sloConfig.availability_target),
+            status: this.getSLOStatus(availability, this?.sloConfig?.availability_target),
           },
           latency: {
-            target_p95: this.sloConfig.latency_p95_target,
+            target_p95: this?.sloConfig?.latency_p95_target,
             current_p95: latencyP95,
-            status: this.getSLOStatus(latencyP95, this.sloConfig.latency_p95_target, true),
+            status: this.getSLOStatus(latencyP95, this?.sloConfig?.latency_p95_target, true),
           },
           error_rate: {
-            target: this.sloConfig.error_rate_target,
+            target: this?.sloConfig?.error_rate_target,
             current: currentErrorRate,
-            status: this.getSLOStatus(currentErrorRate, this.sloConfig.error_rate_target, true),
+            status: this.getSLOStatus(currentErrorRate, this?.sloConfig?.error_rate_target, true),
           },
         },
         alerts: {
@@ -282,11 +282,11 @@ class PerformanceDashboard extends EventEmitter {
       };
 
       // Store metrics
-      this.metricsHistory.push(dashboardMetrics);
+      this?.metricsHistory?.push(dashboardMetrics);
       
       // Keep only last 100 entries (about 50 minutes of data)
-      if (this.metricsHistory.length > 100) {
-        this.metricsHistory = this.metricsHistory.slice(-100);
+      if (this?.metricsHistory?.length > 100) {
+        this.metricsHistory = this?.metricsHistory?.slice(-100);
       }
 
       // Emit metrics update
@@ -296,10 +296,10 @@ class PerformanceDashboard extends EventEmitter {
       this.checkSLOViolations(dashboardMetrics);
 
       logger.debug('Dashboard metrics collected', 'PERF_DASHBOARD', {
-        status: dashboardMetrics.overview.status,
-        requests: dashboardMetrics.overview.totalRequests,
-        error_rate: dashboardMetrics.overview.errorRate,
-        avg_response_time: dashboardMetrics.overview.avgResponseTime,
+        status: dashboardMetrics?.overview?.status,
+        requests: dashboardMetrics?.overview?.totalRequests,
+        error_rate: dashboardMetrics?.overview?.errorRate,
+        avg_response_time: dashboardMetrics?.overview?.avgResponseTime,
       });
 
     } catch (error) {
@@ -314,24 +314,24 @@ class PerformanceDashboard extends EventEmitter {
 
   private calculateAvailability(): number {
     // Calculate availability based on successful requests vs total requests
-    const totalRequests = Array.from(this.requestCounts.values()).reduce((sum, count) => sum + count, 0);
-    const totalErrors = Array.from(this.errorCounts.values()).reduce((sum, count) => sum + count, 0);
+    const totalRequests = Array.from(this?.requestCounts?.values()).reduce((sum: any, count: any) => sum + count, 0);
+    const totalErrors = Array.from(this?.errorCounts?.values()).reduce((sum: any, count: any) => sum + count, 0);
     
     if (totalRequests === 0) return 100;
     return Math.round(((totalRequests - totalErrors) / totalRequests) * 100 * 100) / 100;
   }
 
   private calculateP95Latency(): number {
-    if (this.responseTimes.length === 0) return 0;
+    if (this?.responseTimes?.length === 0) return 0;
     const sorted = [...this.responseTimes].sort((a, b) => a - b);
-    const index = Math.floor(sorted.length * 0.95);
+    const index = Math.floor(sorted?.length || 0 * 0.95);
     return sorted[index] || 0;
   }
 
   private calculateP99Latency(): number {
-    if (this.responseTimes.length === 0) return 0;
+    if (this?.responseTimes?.length === 0) return 0;
     const sorted = [...this.responseTimes].sort((a, b) => a - b);
-    const index = Math.floor(sorted.length * 0.99);
+    const index = Math.floor(sorted?.length || 0 * 0.99);
     return sorted[index] || 0;
   }
 
@@ -453,19 +453,19 @@ class PerformanceDashboard extends EventEmitter {
   private checkSLOViolations(metrics: DashboardMetrics): void {
     const violations: string[] = [];
 
-    if (metrics.slos.availability.status === 'violated') {
-      violations.push(`Availability SLO violated: ${metrics.slos.availability.current}% < ${metrics.slos.availability.target}%`);
+    if (metrics?.slos?.availability.status === 'violated') {
+      violations.push(`Availability SLO violated: ${metrics?.slos?.availability.current}% < ${metrics?.slos?.availability.target}%`);
     }
 
-    if (metrics.slos.latency.status === 'violated') {
-      violations.push(`Latency SLO violated: P95 ${metrics.slos.latency.current_p95}ms > ${metrics.slos.latency.target_p95}ms`);
+    if (metrics?.slos?.latency.status === 'violated') {
+      violations.push(`Latency SLO violated: P95 ${metrics?.slos?.latency.current_p95}ms > ${metrics?.slos?.latency.target_p95}ms`);
     }
 
-    if (metrics.slos.error_rate.status === 'violated') {
-      violations.push(`Error rate SLO violated: ${metrics.slos.error_rate.current}% > ${metrics.slos.error_rate.target}%`);
+    if (metrics?.slos?.error_rate.status === 'violated') {
+      violations.push(`Error rate SLO violated: ${metrics?.slos?.error_rate.current}% > ${metrics?.slos?.error_rate.target}%`);
     }
 
-    if (violations.length > 0) {
+    if (violations?.length || 0 > 0) {
       this.emit('slo-violation', {
         violations,
         timestamp: metrics.timestamp,
@@ -474,51 +474,51 @@ class PerformanceDashboard extends EventEmitter {
 
       logger.warn('SLO violations detected', 'PERF_DASHBOARD', {
         violations,
-        availability: metrics.slos.availability,
-        latency: metrics.slos.latency,
-        error_rate: metrics.slos.error_rate,
+        availability: metrics?.slos?.availability,
+        latency: metrics?.slos?.latency,
+        error_rate: metrics?.slos?.error_rate,
       });
     }
   }
 
   // Public API methods
   getCurrentMetrics(): DashboardMetrics | null {
-    return this.metricsHistory[this.metricsHistory.length - 1] || null;
+    return this.metricsHistory[this?.metricsHistory?.length - 1] || null;
   }
 
   getMetricsHistory(limit: number = 50): DashboardMetrics[] {
-    return this.metricsHistory.slice(-limit);
+    return this?.metricsHistory?.slice(-limit);
   }
 
   getSLOSummary(timeWindow: number = 24 * 60 * 60 * 1000): any {
     const cutoff = Date.now() - timeWindow;
-    const relevantMetrics = this.metricsHistory.filter(m => m.timestamp > cutoff);
+    const relevantMetrics = this?.metricsHistory?.filter(m => m.timestamp > cutoff);
     
-    if (relevantMetrics.length === 0) {
+    if (relevantMetrics?.length || 0 === 0) {
       return null;
     }
 
-    const totalPoints = relevantMetrics.length;
-    const availabilityMet = relevantMetrics.filter(m => m.slos.availability.status === 'met').length;
-    const latencyMet = relevantMetrics.filter(m => m.slos.latency.status === 'met').length;
-    const errorRateMet = relevantMetrics.filter(m => m.slos.error_rate.status === 'met').length;
+    const totalPoints = relevantMetrics?.length || 0;
+    const availabilityMet = relevantMetrics?.filter(m => m?.slos?.availability.status === 'met').length;
+    const latencyMet = relevantMetrics?.filter(m => m?.slos?.latency.status === 'met').length;
+    const errorRateMet = relevantMetrics?.filter(m => m?.slos?.error_rate.status === 'met').length;
 
     return {
       time_window_hours: timeWindow / (60 * 60 * 1000),
       total_measurements: totalPoints,
       slo_compliance: {
         availability: {
-          target: this.sloConfig.availability_target,
+          target: this?.sloConfig?.availability_target,
           compliance_percentage: Math.round((availabilityMet / totalPoints) * 100),
           status: availabilityMet / totalPoints >= 0.95 ? 'met' : 'violated',
         },
         latency: {
-          target: this.sloConfig.latency_p95_target,
+          target: this?.sloConfig?.latency_p95_target,
           compliance_percentage: Math.round((latencyMet / totalPoints) * 100),
           status: latencyMet / totalPoints >= 0.95 ? 'met' : 'violated',
         },
         error_rate: {
-          target: this.sloConfig.error_rate_target,
+          target: this?.sloConfig?.error_rate_target,
           compliance_percentage: Math.round((errorRateMet / totalPoints) * 100),
           status: errorRateMet / totalPoints >= 0.95 ? 'met' : 'violated',
         },
@@ -532,26 +532,26 @@ class PerformanceDashboard extends EventEmitter {
   }
 
   recordRequest(endpoint: string, responseTime: number, isError: boolean): void {
-    const count = this.requestCounts.get(endpoint) || 0;
-    this.requestCounts.set(endpoint, count + 1);
+    const count = this?.requestCounts?.get(endpoint) || 0;
+    this?.requestCounts?.set(endpoint, count + 1);
     
-    this.responseTimes.push(responseTime);
+    this?.responseTimes?.push(responseTime);
     
     // Keep only last 1000 response times for memory efficiency
-    if (this.responseTimes.length > 1000) {
-      this.responseTimes = this.responseTimes.slice(-1000);
+    if (this?.responseTimes?.length > 1000) {
+      this.responseTimes = this?.responseTimes?.slice(-1000);
     }
     
     if (isError) {
-      const errorCount = this.errorCounts.get(endpoint) || 0;
-      this.errorCounts.set(endpoint, errorCount + 1);
+      const errorCount = this?.errorCounts?.get(endpoint) || 0;
+      this?.errorCounts?.set(endpoint, errorCount + 1);
     }
   }
 
   reset(): void {
-    this.requestCounts.clear();
+    this?.requestCounts?.clear();
     this.responseTimes = [];
-    this.errorCounts.clear();
+    this?.errorCounts?.clear();
     this.metricsHistory = [];
     this.startTime = Date.now();
     logger.info('Performance dashboard metrics reset', 'PERF_DASHBOARD');

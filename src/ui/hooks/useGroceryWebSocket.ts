@@ -17,7 +17,7 @@ export type GroceryWebSocketEventType =
 
 export interface GroceryWebSocketEvent {
   type: GroceryWebSocketEventType;
-  data: any;
+  data: unknown;
   timestamp: number;
   conversationId?: string;
   userId?: string;
@@ -53,7 +53,7 @@ export interface UseGroceryWebSocketReturn extends GroceryWebSocketState {
 }
 
 const WS_URL = process.env.NODE_ENV === 'production' 
-  ? `wss://${window.location.hostname}:3002/trpc-ws`
+  ? `wss://${window?.location?.hostname}:3002/trpc-ws`
   : `ws://localhost:3002/trpc-ws`;
 const MAX_EVENT_HISTORY = 50;
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
@@ -91,7 +91,7 @@ export function useGroceryWebSocket(
   const isMountedRef = useRef(true);
 
   // Log helper
-  const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: any) => {
+  const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: unknown) => {
     if (enableLogging) {
       logger[level](message, "GROCERY_WS", data);
     }
@@ -108,13 +108,14 @@ export function useGroceryWebSocket(
 
     log(`Received event: ${event.type}`, 'info', event);
 
-    updateState(prev => ({
+    setState(prev => ({
+      ...prev,
       lastEvent: event,
       eventHistory: [...prev.eventHistory, event].slice(-MAX_EVENT_HISTORY)
     }));
 
     onEvent?.(event);
-  }, [onEvent, log, updateState]);
+  }, [onEvent, log]);
 
   // Connection establishment
   const connect = useCallback(() => {
@@ -150,18 +151,25 @@ export function useGroceryWebSocket(
 
           // Subscribe to grocery-specific channels
           if (conversationId) {
-            wsClient.send(JSON.stringify({
-              type: "subscribe",
-              channels: [
-                `grocery.conversation.${conversationId}`,
-                `grocery.user.${userId || 'anonymous'}`,
-                "grocery.global.deals",
-                "grocery.global.prices"
-              ]
-            }));
+            try {
+              const ws = wsClient.getConnection();
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                  type: "subscribe",
+                  channels: [
+                    `grocery.conversation.${conversationId}`,
+                    `grocery.user.${userId || 'anonymous'}`,
+                    "grocery.global.deals",
+                    "grocery.global.prices"
+                  ]
+                }));
+              }
+            } catch (error) {
+              log("Failed to send subscription message", 'warn', error);
+            }
           }
         },
-        onClose: (event) => {
+        onClose: (event: unknown) => {
           if (!isMountedRef.current) return;
 
           log("WebSocket disconnected", 'warn', { code: event?.code, reason: event?.reason });
@@ -176,41 +184,31 @@ export function useGroceryWebSocket(
           onDisconnect?.();
 
           // Attempt reconnection if within retry limits
-          if (state.reconnectAttempts < maxReconnectAttempts && isMountedRef.current) {
-            const delay = getReconnectionDelay(state.reconnectAttempts + 1);
-            
-            log(`Attempting reconnection in ${delay}ms (attempt ${state.reconnectAttempts + 1}/${maxReconnectAttempts})`, 'info');
-            
-            isReconnectingRef.current = true;
-            reconnectTimeoutRef.current = setTimeout(() => {
-              if (isMountedRef.current) {
-                updateState(prev => ({ reconnectAttempts: prev.reconnectAttempts + 1 }));
-                connect();
-              }
-            }, delay);
-          } else if (state.reconnectAttempts >= maxReconnectAttempts) {
-            const error = new Error("Max reconnection attempts reached");
-            log("Max reconnection attempts reached", 'error', error);
-            updateState({ connectionStatus: "error", error });
-            onError?.(error);
-          }
-        },
-        onMessage: (message) => {
-          try {
-            const parsed = JSON.parse(message.data);
-            if (parsed.type && subscriptionsRef.current.has(parsed.type)) {
-              handleEvent({
-                type: parsed.type,
-                data: parsed.data,
-                timestamp: Date.now(),
-                conversationId: parsed.conversationId,
-                userId: parsed.userId,
-              });
+          setState(prev => {
+            if (prev.reconnectAttempts < maxReconnectAttempts && isMountedRef.current) {
+              const delay = getReconnectionDelay(prev.reconnectAttempts + 1);
+              
+              log(`Attempting reconnection in ${delay}ms (attempt ${prev.reconnectAttempts + 1}/${maxReconnectAttempts})`, 'info');
+              
+              isReconnectingRef.current = true;
+              reconnectTimeoutRef.current = setTimeout(() => {
+                if (isMountedRef.current) {
+                  connect();
+                }
+              }, delay);
+              
+              return { ...prev, reconnectAttempts: prev.reconnectAttempts + 1 };
+            } else if (prev.reconnectAttempts >= maxReconnectAttempts) {
+              const error = new Error("Max reconnection attempts reached");
+              log("Max reconnection attempts reached", 'error', error);
+              updateState({ connectionStatus: "error", error });
+              onError?.(error);
+              return prev;
             }
-          } catch (error) {
-            log("Failed to parse WebSocket message", 'error', error);
-          }
-        }
+            return prev;
+          });
+        },
+
       });
 
       wsClientRef.current = wsClient;
@@ -235,14 +233,12 @@ export function useGroceryWebSocket(
       isReconnectingRef.current = false;
     }
   }, [
-    state.reconnectAttempts,
     maxReconnectAttempts,
     conversationId,
     userId,
     onConnect,
     onDisconnect,
     onError,
-    handleEvent,
     log,
     updateState
   ]);
@@ -260,12 +256,12 @@ export function useGroceryWebSocket(
     }
 
     if (wsClientRef.current) {
-      wsClientRef.current.close();
+      wsClientRef?.current?.close();
       wsClientRef.current = null;
     }
 
     clientRef.current = null;
-    subscriptionsRef.current.clear();
+    subscriptionsRef?.current?.clear();
 
     updateState({
       isConnected: false,
@@ -277,13 +273,20 @@ export function useGroceryWebSocket(
 
   // Subscribe to specific events
   const subscribe = useCallback((events: GroceryWebSocketEventType[]) => {
-    events.forEach(event => subscriptionsRef.current.add(event));
+    events.forEach(event => subscriptionsRef?.current?.add(event));
     
     if (wsClientRef.current && state.isConnected) {
-      wsClientRef.current.send(JSON.stringify({
-        type: "subscribe",
-        events: events
-      }));
+      try {
+        const ws = wsClientRef.current.getConnection();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "subscribe",
+            events: events
+          }));
+        }
+      } catch (error) {
+        log("Failed to send subscription message", 'warn', error);
+      }
     }
     
     log(`Subscribed to events: ${events.join(", ")}`, 'info');
@@ -291,13 +294,20 @@ export function useGroceryWebSocket(
 
   // Unsubscribe from specific events
   const unsubscribe = useCallback((events: GroceryWebSocketEventType[]) => {
-    events.forEach(event => subscriptionsRef.current.delete(event));
+    events.forEach(event => subscriptionsRef?.current?.delete(event));
     
     if (wsClientRef.current && state.isConnected) {
-      wsClientRef.current.send(JSON.stringify({
-        type: "unsubscribe",
-        events: events
-      }));
+      try {
+        const ws = wsClientRef.current.getConnection();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "unsubscribe",
+            events: events
+          }));
+        }
+      } catch (error) {
+        log("Failed to send unsubscription message", 'warn', error);
+      }
     }
     
     log(`Unsubscribed from events: ${events.join(", ")}`, 'info');
@@ -313,7 +323,7 @@ export function useGroceryWebSocket(
     isMountedRef.current = true;
     
     // Subscribe to all grocery events by default
-    subscriptionsRef.current = new Set([
+    subscriptionsRef.current = new Set<GroceryWebSocketEventType>([
       'grocery_input_processed',
       'totals_calculated', 
       'recommendations_generated',
@@ -334,15 +344,22 @@ export function useGroceryWebSocket(
   useEffect(() => {
     if (state.isConnected && wsClientRef.current) {
       // Re-subscribe with new context
-      wsClientRef.current.send(JSON.stringify({
-        type: "subscribe",
-        channels: [
-          `grocery.conversation.${conversationId || 'default'}`,
-          `grocery.user.${userId || 'anonymous'}`,
-          "grocery.global.deals",
-          "grocery.global.prices"
-        ]
-      }));
+      try {
+        const ws = wsClientRef.current.getConnection();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "subscribe",
+            channels: [
+              `grocery.conversation.${conversationId || 'default'}`,
+              `grocery.user.${userId || 'anonymous'}`,
+              "grocery.global.deals",
+              "grocery.global.prices"
+            ]
+          }));
+        }
+      } catch (error) {
+        log("Failed to re-subscribe with new context", 'warn', error);
+      }
     }
   }, [conversationId, userId, state.isConnected]);
 

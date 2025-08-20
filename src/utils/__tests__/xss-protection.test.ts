@@ -105,7 +105,7 @@ describe('XSS Protection', () => {
         '<svg onload="alert(\'XSS\')"></svg>',
         '<svg><animate onbegin="alert(\'XSS\')" />',
         '<svg><set attributeName="onmouseover" to="alert(\'XSS\')"/>',
-        '<svg><handler xmlns:ev="http://www.w3.org/2001/xml-events" ev:event="load">alert(\'XSS\')</handler></svg>',
+        '<svg><handler xmlns:ev="http://www?.w3?.org/2001/xml-events" ev:event="load">alert(\'XSS\')</handler></svg>',
       ];
 
       vectors.forEach(vector => {
@@ -264,8 +264,8 @@ describe('XSS Protection', () => {
       const sanitized = xssProtection.sanitizeInput(input) as any;
       
       expect(sanitized.name).not.toContain('<script>');
-      expect(sanitized.nested.value).not.toContain('{{');
-      expect(sanitized.nested.array[0]).not.toContain('onerror');
+      expect(sanitized?.nested?.value).not.toContain('{{');
+      expect(sanitized?.nested?.array[0]).not.toContain('onerror');
     });
 
     it('should skip dangerous object keys', () => {
@@ -291,7 +291,7 @@ describe('XSS Protection', () => {
       const result = XSSSchemas.safeString.parse(input);
       
       expect(result).not.toContain('<script>');
-      expect(result).toBe('Hello <script>alert("XSS")</script> World');
+      expect(result).toBe('Hello  World');
     });
 
     it('should sanitize HTML content through schema', () => {

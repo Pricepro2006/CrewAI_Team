@@ -45,45 +45,114 @@ export class AgentRouter {
 
   private determineAgentType(analysis: QueryAnalysis): string {
     const { intent, entities, domains } = analysis;
-
-    // Research-related queries
-    if (
-      domains.includes("research") ||
-      intent.includes("search") ||
-      intent.includes("find")
-    ) {
-      return "ResearchAgent";
+    const intentLower = intent.toLowerCase();
+    
+    // Create a scoring system for each agent
+    const agentScores: Record<string, number> = {
+      ResearchAgent: 0,
+      CodeAgent: 0,
+      DataAnalysisAgent: 0,
+      WriterAgent: 0,
+      ToolExecutorAgent: 0
+    };
+    
+    // Score based on domains (highest weight)
+    domains.forEach(domain => {
+      switch(domain.toLowerCase()) {
+        case 'research':
+        case 'information':
+        case 'web':
+          agentScores.ResearchAgent = (agentScores.ResearchAgent || 0) + 3;
+          break;
+        case 'code':
+        case 'programming':
+        case 'development':
+          agentScores.CodeAgent = (agentScores.CodeAgent || 0) + 3;
+          break;
+        case 'analysis':
+        case 'data':
+        case 'statistics':
+          agentScores.DataAnalysisAgent = (agentScores.DataAnalysisAgent || 0) + 3;
+          break;
+        case 'writing':
+        case 'documentation':
+        case 'content':
+          agentScores.WriterAgent = (agentScores.WriterAgent || 0) + 3;
+          break;
+        case 'automation':
+        case 'tools':
+        case 'execution':
+          agentScores.ToolExecutorAgent = (agentScores.ToolExecutorAgent || 0) + 3;
+          break;
+      }
+    });
+    
+    // Score based on intent keywords (medium weight)
+    const intentPatterns = {
+      ResearchAgent: ['search', 'find', 'research', 'investigate', 'explore', 
+                     'discover', 'lookup', 'query', 'information', 'latest', 
+                     'trends', 'news', 'updates'],
+      CodeAgent: ['code', 'implement', 'debug', 'fix', 'create function', 
+                 'write function', 'program', 'script', 'develop', 'compile',
+                 'syntax', 'algorithm', 'class', 'method'],
+      DataAnalysisAgent: ['analyze', 'analysis', 'data', 'metrics', 'statistics',
+                         'visualize', 'chart', 'graph', 'pattern', 'trend',
+                         'correlation', 'insight', 'report data'],
+      WriterAgent: ['write article', 'write blog', 'compose', 'draft', 'document',
+                   'summarize', 'explain', 'describe', 'create content', 
+                   'narrative', 'story', 'report writing'],
+      ToolExecutorAgent: ['execute', 'run', 'automate', 'deploy', 'integrate',
+                         'workflow', 'pipeline', 'orchestrate', 'coordinate']
+    };
+    
+    Object.entries(intentPatterns).forEach(([agent, patterns]) => {
+      patterns.forEach(pattern => {
+        if (intentLower.includes(pattern)) {
+          agentScores[agent] = (agentScores[agent] || 0) + 2;
+        }
+      });
+    });
+    
+    // Score based on entities (lower weight)
+    if (entities) {
+      if (entities.code || entities.functions || entities.classes) {
+        agentScores.CodeAgent = (agentScores.CodeAgent || 0) + 1;
+      }
+      if (entities.data || entities.metrics || entities.numbers) {
+        agentScores.DataAnalysisAgent = (agentScores.DataAnalysisAgent || 0) + 1;
+      }
+      if (entities.topics || entities.concepts) {
+        agentScores.ResearchAgent = (agentScores.ResearchAgent || 0) + 1;
+      }
+      if (entities.documents || entities.text) {
+        agentScores.WriterAgent = (agentScores.WriterAgent || 0) + 1;
+      }
     }
-
-    // Code-related queries
-    if (
-      domains.includes("code") ||
-      intent.includes("code") ||
-      intent.includes("debug")
-    ) {
-      return "CodeAgent";
+    
+    // Special case: prioritize CodeAgent for explicit code requests
+    if (intentLower.includes('write') && intentLower.includes('function')) {
+      agentScores.CodeAgent = (agentScores.CodeAgent || 0) + 5;
     }
-
-    // Data analysis queries
-    if (
-      domains.includes("analysis") ||
-      intent.includes("analyze") ||
-      intent.includes("data")
-    ) {
-      return "DataAnalysisAgent";
-    }
-
-    // Writing-related queries
-    if (
-      domains.includes("writing") ||
-      intent.includes("write") ||
-      intent.includes("content")
-    ) {
-      return "WriterAgent";
-    }
-
-    // Default to ResearchAgent for general queries
-    return "ResearchAgent";
+    
+    // Find agent with highest score
+    let selectedAgent = 'ResearchAgent'; // Default
+    let highestScore = 0;
+    
+    Object.entries(agentScores).forEach(([agent, score]) => {
+      if (score > highestScore) {
+        highestScore = score;
+        selectedAgent = agent;
+      }
+    });
+    
+    // Log scoring for debugging
+    logger.debug("Agent scoring results", "ROUTER", { 
+      scores: agentScores, 
+      selected: selectedAgent,
+      intent: intentLower
+    });
+    
+    return selectedAgent;
   }
 
   private getFallbackAgents(primaryAgent: string): string[] {
@@ -117,13 +186,13 @@ export class AgentRouter {
     const capabilities = baseCapabilities[agentType] || ["general_processing"];
 
     // Add domain-specific capabilities based on analysis
-    if (analysis.resourceRequirements.requiresInternet) {
+    if (analysis?.resourceRequirements?.requiresInternet) {
       capabilities.push("internet_access");
     }
-    if (analysis.resourceRequirements.requiresDatabase) {
+    if (analysis?.resourceRequirements?.requiresDatabase) {
       capabilities.push("database_access");
     }
-    if (analysis.resourceRequirements.requiresVector) {
+    if (analysis?.resourceRequirements?.requiresVector) {
       capabilities.push("vector_search");
     }
 

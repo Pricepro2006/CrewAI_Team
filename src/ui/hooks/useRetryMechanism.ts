@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { toast } from "../components/Toast/useToast";
+import { toast } from "../components/Toast/useToast.js";
 
 export interface RetryConfig {
   maxAttempts?: number;
@@ -29,7 +29,7 @@ const defaultConfig: Required<RetryConfig> = {
   onFailure: () => {},
   shouldRetry: (error, attempt) => {
     // Don't retry on auth errors
-    if (error.message.match(/401|403|unauthorized|forbidden/i)) {
+    if (error?.message?.match(/401|403|unauthorized|forbidden/i)) {
       return false;
     }
     return attempt < 3;
@@ -72,7 +72,7 @@ export function useRetryMechanism<T>(
 
   const executeWithRetry = useCallback(
     async (attemptNumber = 1): Promise<T> => {
-      setState((prev) => ({
+      setState(prev => ({
         ...prev,
         isRetrying: true,
         attempt: attemptNumber,
@@ -82,7 +82,7 @@ export function useRetryMechanism<T>(
       try {
         const result = await asyncFn();
         
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
           isRetrying: false,
           lastError: null,
@@ -99,7 +99,7 @@ export function useRetryMechanism<T>(
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error(String(error));
         
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
           lastError: errorObj,
         }));
@@ -112,12 +112,12 @@ export function useRetryMechanism<T>(
           
           // Start countdown
           let remainingTime = Math.floor(delay / 1000);
-          setState((prev) => ({ ...prev, nextRetryIn: remainingTime }));
+          setState(prev => ({ ...prev, nextRetryIn: remainingTime }));
           
           countdownRef.current = setInterval(() => {
             remainingTime -= 1;
             if (remainingTime > 0) {
-              setState((prev) => ({ ...prev, nextRetryIn: remainingTime }));
+              setState(prev => ({ ...prev, nextRetryIn: remainingTime }));
             } else {
               if (countdownRef.current) clearInterval(countdownRef.current);
             }
@@ -137,7 +137,7 @@ export function useRetryMechanism<T>(
             }, delay);
           });
         } else {
-          setState((prev) => ({
+          setState(prev => ({
             ...prev,
             isRetrying: false,
             nextRetryIn: null,
@@ -164,7 +164,7 @@ export function useRetryMechanism<T>(
       clearInterval(countdownRef.current);
       countdownRef.current = null;
     }
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       isRetrying: false,
       nextRetryIn: null,
@@ -264,7 +264,7 @@ export function useExponentialBackoff(
   }, [attempt, baseDelay, maxDelay, factor]);
 
   const increment = useCallback(() => {
-    setAttempt((prev) => prev + 1);
+    setAttempt(prev => prev + 1);
   }, []);
 
   const reset = useCallback(() => {

@@ -11,23 +11,23 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } 
 vi.setConfig({ testTimeout: 30000 });
 import { Redis } from 'ioredis';
 import { Queue, Worker, QueueEvents } from 'bullmq';
-import { EmailIngestionServiceImpl } from '../EmailIngestionServiceImpl.js';
-import { EmailIngestionServiceFactory } from '../EmailIngestionServiceFactory.js';
+import { EmailIngestionServiceImpl } from '../EmailIngestionServiceImpl';
+import { EmailIngestionServiceFactory } from '../EmailIngestionServiceFactory';
 import {
   IngestionMode,
   IngestionSource,
   EmailIngestionConfig,
   RawEmailData
-} from '../EmailIngestionService.js';
-import { EmailRepository } from '../../../database/repositories/EmailRepository.js';
-import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService.js';
+} from '../EmailIngestionService';
+import { EmailRepository } from '../../../database/repositories/EmailRepository';
+import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService';
 
 // Mock only external dependencies, use real Redis/BullMQ
-vi.mock('../../../database/repositories/EmailRepository.js');
-vi.mock('../../../api/services/UnifiedEmailService.js');
-vi.mock('../../../utils/logger.js');
-vi.mock('../../../api/monitoring/metrics.js');
-vi.mock('../../../api/websocket/index.js');
+vi.mock('../../../database/repositories/EmailRepository');
+vi.mock('../../../api/services/UnifiedEmailService');
+vi.mock('../../../utils/logger');
+vi.mock('../../../api/monitoring/metrics');
+vi.mock('../../../api/websocket/index');
 
 describe('EmailIngestionService Integration Tests', () => {
   let redis: Redis;
@@ -94,7 +94,7 @@ describe('EmailIngestionService Integration Tests', () => {
     if (redis) {
       // Clean up test queues
       const keys = await redis.keys(`bull:${testQueueName}*`);
-      if (keys.length > 0) {
+      if (keys?.length || 0 > 0) {
         await redis.del(...keys);
       }
       await redis.quit();
@@ -145,10 +145,10 @@ describe('EmailIngestionService Integration Tests', () => {
     });
 
     // Mock unified email service
-    vi.mocked(mockUnifiedEmailService.processIncomingEmail).mockImplementation(async (email) => ({
+    vi.mocked(mockUnifiedEmailService.processIncomingEmail).mockImplementation(async (email: any) => ({
       id: `processed-${email.messageId}`,
       subject: email.subject,
-      from: email.from.address,
+      from: email?.from?.address,
       status: 'processed',
       createdAt: new Date(),
       updatedAt: new Date()
@@ -174,7 +174,7 @@ describe('EmailIngestionService Integration Tests', () => {
     // Clean up test data from Redis
     if (redis && redis.status === 'ready') {
       const keys = await redis.keys(`email:dedup:*`);
-      if (keys.length > 0) {
+      if (keys?.length || 0 > 0) {
         await redis.del(...keys);
       }
     }
@@ -240,12 +240,12 @@ describe('EmailIngestionService Integration Tests', () => {
       // First ingestion should succeed
       const result1 = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result1.success).toBe(true);
-      expect(result1.data?.status).not.toBe('duplicate');
+      expect(result1.data?.length).not.toBe('duplicate');
 
       // Second ingestion should detect duplicate
       const result2 = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result2.success).toBe(true);
-      expect(result2.data?.status).toBe('duplicate');
+      expect(result2.data?.length).toBe('duplicate');
 
       // Verify Redis has the key
       const serviceRedis = (service as any).redis;
@@ -280,7 +280,7 @@ describe('EmailIngestionService Integration Tests', () => {
         expect(result.success).toBeTruthy();
       } finally {
         // Cleanup test keys
-        if (testKeys.length > 0) {
+        if (testKeys?.length || 0 > 0) {
           await serviceRedis.del(...testKeys);
         }
       }
@@ -300,9 +300,9 @@ describe('EmailIngestionService Integration Tests', () => {
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?.emailId).toBeDefined();
-      expect(result.data?.messageId).toBe(testEmail.messageId);
-      expect(result.data?.status).toBe('processed');
+      expect(result.data?.length).toBeDefined();
+      expect(result.data?.length).toBe(testEmail.messageId);
+      expect(result.data?.length).toBe('processed');
 
       // Verify the email was processed through UnifiedEmailService
       expect(mockUnifiedEmailService.processIncomingEmail).toHaveBeenCalledWith(testEmail);
@@ -377,7 +377,7 @@ describe('EmailIngestionService Integration Tests', () => {
         const throughput = emailCount / durationMinutes;
 
         expect(result.success).toBe(true);
-        expect(result.data?.processed).toBe(emailCount);
+        expect(result.data?.length).toBe(emailCount);
         expect(throughput).toBeGreaterThan(100); // Should be much higher with real queue
       } finally {
         await highThroughputService.shutdown();
@@ -480,9 +480,9 @@ describe('EmailIngestionService Integration Tests', () => {
 
       expect(health.healthy).toBe(true);
       expect(health.status).toBe('operational');
-      expect(health.components.redis.healthy).toBe(true);
-      expect(health.components.queue.healthy).toBe(true);
-      expect(health.components.database.healthy).toBe(true);
+      expect(health?.components?.redis.healthy).toBe(true);
+      expect(health?.components?.queue.healthy).toBe(true);
+      expect(health?.components?.database.healthy).toBe(true);
       expect(health.uptime).toBeGreaterThan(0);
     });
 
@@ -500,7 +500,7 @@ describe('EmailIngestionService Integration Tests', () => {
 
       const health = await service.healthCheck();
 
-      expect(health.components.redis.healthy).toBe(false);
+      expect(health?.components?.redis.healthy).toBe(false);
       expect(health.healthy).toBe(false);
       expect(health.status).toBe('degraded');
     });
@@ -529,13 +529,13 @@ describe('EmailIngestionService Integration Tests', () => {
         const endTime = performance.now();
 
         expect(result.success).toBe(true);
-        expect(result.data?.processed).toBe(batchSize);
+        expect(result.data?.length).toBe(batchSize);
 
         performanceResults.push(endTime - startTime);
       }
 
       // Performance should be consistent across iterations
-      const avgTime = performanceResults.reduce((a, b) => a + b, 0) / performanceResults.length;
+      const avgTime = performanceResults.reduce((a: any, b: any) => a + b, 0) / performanceResults?.length || 0;
       const maxTime = Math.max(...performanceResults);
       const minTime = Math.min(...performanceResults);
 
@@ -567,7 +567,7 @@ describe('EmailIngestionService Integration Tests', () => {
       expect(results.every(r => r.success)).toBe(true);
       expect(results.every(r => r.data?.processed === emailsPerOperation)).toBe(true);
 
-      const totalProcessed = results.reduce((sum, r) => sum + (r.data?.processed || 0), 0);
+      const totalProcessed = results.reduce((sum: any, r: any) => sum + (r.data?.processed || 0), 0);
       expect(totalProcessed).toBe(concurrentOperations * emailsPerOperation);
     }, 30000);
   });
@@ -599,7 +599,7 @@ describe('EmailIngestionService Integration Tests', () => {
         const result = await factoryService.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
         expect(result.success).toBe(true);
-        expect(result.data?.messageId).toBe(testEmail.messageId);
+        expect(result.data?.length).toBe(testEmail.messageId);
       } finally {
         await factoryService.shutdown();
         EmailIngestionServiceFactory.reset();

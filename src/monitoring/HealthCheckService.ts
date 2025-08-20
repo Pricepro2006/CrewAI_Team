@@ -13,13 +13,13 @@
 import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
 import { promisify } from 'node:util';
-import os from 'node:os';
-import process from 'node:process';
+import * as os from 'node:os';
+import * as process from 'node:process';
 import { logger } from '../utils/logger.js';
 import { metricsCollector } from './MetricsCollector.js';
 import Database from 'better-sqlite3';
 import Redis from 'ioredis';
-import WebSocket from 'ws';
+import * as WebSocket from 'ws';
 
 // Types and Interfaces
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
@@ -260,16 +260,16 @@ export class HealthCheckService extends EventEmitter {
    */
   private initializeDefaultServices(): void {
     DEFAULT_SERVICES.forEach(service => {
-      this.services.set(service.id, service);
-      this.circuitBreakers.set(service.id, {
+      this?.services?.set(service.id, service);
+      this?.circuitBreakers?.set(service.id, {
         state: 'closed',
         failures: 0
       });
     });
     
     logger.info('Initialized health check services', 'HEALTH_CHECK', {
-      serviceCount: this.services.size,
-      services: Array.from(this.services.keys())
+      serviceCount: this?.services?.size,
+      services: Array.from(this?.services?.keys())
     });
   }
 
@@ -280,7 +280,7 @@ export class HealthCheckService extends EventEmitter {
     try {
       // SQLite Database
       const dbPath = process.env.DATABASE_PATH || './data/grocery.db';
-      this.database = new Database(dbPath, { readonly: true });
+      this.database = Database(dbPath, { readonly: true });
       
       // Redis
       if (process.env.REDIS_HOST) {
@@ -289,7 +289,6 @@ export class HealthCheckService extends EventEmitter {
           port: parseInt(process.env.REDIS_PORT || '6379'),
           password: process.env.REDIS_PASSWORD,
           lazyConnect: true,
-          retryDelayOnFailover: 100,
           maxRetriesPerRequest: 3
         });
       }
@@ -304,8 +303,8 @@ export class HealthCheckService extends EventEmitter {
    * Register a new service for health monitoring
    */
   public registerService(config: ServiceConfig): void {
-    this.services.set(config.id, config);
-    this.circuitBreakers.set(config.id, {
+    this?.services?.set(config.id, config);
+    this?.circuitBreakers?.set(config.id, {
       state: 'closed',
       failures: 0
     });
@@ -322,12 +321,12 @@ export class HealthCheckService extends EventEmitter {
    * Unregister a service
    */
   public unregisterService(serviceId: string): void {
-    const config = this.services.get(serviceId);
+    const config = this?.services?.get(serviceId);
     if (config) {
       this.stopHealthCheck(serviceId);
-      this.services.delete(serviceId);
-      this.healthResults.delete(serviceId);
-      this.circuitBreakers.delete(serviceId);
+      this?.services?.delete(serviceId);
+      this?.healthResults?.delete(serviceId);
+      this?.circuitBreakers?.delete(serviceId);
       
       logger.info('Service unregistered', 'HEALTH_CHECK', { serviceId });
       this.emit('service:unregistered', serviceId);
@@ -338,12 +337,12 @@ export class HealthCheckService extends EventEmitter {
    * Start health monitoring for all services
    */
   public startHealthMonitoring(): void {
-    this.services.forEach((config) => {
+    this?.services?.forEach((config: any) => {
       this.startServiceHealthCheck(config);
     });
     
     logger.info('Health monitoring started', 'HEALTH_CHECK', {
-      serviceCount: this.services.size
+      serviceCount: this?.services?.size
     });
     
     this.emit('monitoring:started');
@@ -373,7 +372,7 @@ export class HealthCheckService extends EventEmitter {
       });
     }, config.interval);
     
-    this.intervals.set(config.id, interval);
+    this?.intervals?.set(config.id, interval);
     
     logger.info('Health monitoring started for service', 'HEALTH_CHECK', {
       serviceId: config.id,
@@ -385,10 +384,10 @@ export class HealthCheckService extends EventEmitter {
    * Stop health monitoring for a service
    */
   public stopHealthCheck(serviceId: string): void {
-    const interval = this.intervals.get(serviceId);
+    const interval = this?.intervals?.get(serviceId);
     if (interval) {
       clearInterval(interval);
-      this.intervals.delete(serviceId);
+      this?.intervals?.delete(serviceId);
       
       logger.info('Health monitoring stopped for service', 'HEALTH_CHECK', {
         serviceId
@@ -400,10 +399,10 @@ export class HealthCheckService extends EventEmitter {
    * Stop all health monitoring
    */
   public stopAllHealthChecks(): void {
-    this.intervals.forEach((interval, serviceId) => {
+    this?.intervals?.forEach((interval, serviceId) => {
       clearInterval(interval);
     });
-    this.intervals.clear();
+    this?.intervals?.clear();
     
     logger.info('All health monitoring stopped', 'HEALTH_CHECK');
     this.emit('monitoring:stopped');
@@ -415,7 +414,7 @@ export class HealthCheckService extends EventEmitter {
   public async performHealthCheck(config: ServiceConfig): Promise<HealthCheckResult> {
     const startTime = performance.now();
     const timestamp = new Date();
-    const circuitBreaker = this.circuitBreakers.get(config.id)!;
+    const circuitBreaker = this?.circuitBreakers?.get(config.id)!;
 
     // Check circuit breaker
     if (circuitBreaker.state === 'open') {
@@ -489,7 +488,7 @@ export class HealthCheckService extends EventEmitter {
       }
 
       // Store result
-      this.healthResults.set(config.id, result);
+      this?.healthResults?.set(config.id, result);
 
       // Record metrics
       this.recordMetrics(result);
@@ -497,8 +496,8 @@ export class HealthCheckService extends EventEmitter {
       // Emit events
       this.emit('health:check', result);
       
-      if (this.healthResults.has(config.id)) {
-        const previous = this.healthResults.get(config.id)!;
+      if (this?.healthResults?.has(config.id)) {
+        const previous = this?.healthResults?.get(config.id)!;
         if (previous.status !== result.status) {
           this.emit('health:status-changed', {
             serviceId: config.id,
@@ -527,7 +526,7 @@ export class HealthCheckService extends EventEmitter {
         timestamp
       );
       
-      this.healthResults.set(config.id, result);
+      this?.healthResults?.set(config.id, result);
       this.recordMetrics(result);
       this.emit('health:error', result);
       
@@ -657,7 +656,7 @@ export class HealthCheckService extends EventEmitter {
    * Check service dependencies
    */
   private async checkDependencies(config: ServiceConfig): Promise<CheckResult[]> {
-    if (!config.dependencies || config.dependencies.length === 0) {
+    if (!config.dependencies || config?.dependencies?.length === 0) {
       return [];
     }
 
@@ -680,9 +679,9 @@ export class HealthCheckService extends EventEmitter {
             break;
           default:
             // Check other services
-            const depService = this.services.get(dep);
+            const depService = this?.services?.get(dep);
             if (depService) {
-              const depResult = this.healthResults.get(dep);
+              const depResult = this?.healthResults?.get(dep);
               result = {
                 name: dep,
                 status: depResult?.status || 'unhealthy',
@@ -724,11 +723,11 @@ export class HealthCheckService extends EventEmitter {
     try {
       if (!this.database) {
         const dbPath = process.env.DATABASE_PATH || './data/grocery.db';
-        this.database = new Database(dbPath, { readonly: true });
+        this.database = Database(dbPath, { readonly: true });
       }
       
       // Simple query to test connectivity
-      const result = this.database.prepare('SELECT 1 as test').get();
+      const result = this?.database?.prepare('SELECT 1 as test').get();
       const responseTime = performance.now() - startTime;
       
       return {
@@ -767,11 +766,11 @@ export class HealthCheckService extends EventEmitter {
         };
       }
       
-      await this.redisClient.ping();
+      await this?.redisClient?.ping();
       const responseTime = performance.now() - startTime;
       
       // Get additional Redis info
-      const info = await this.redisClient.info('server');
+      const info = await this?.redisClient?.info('server');
       
       return {
         name: 'redis',
@@ -852,7 +851,7 @@ export class HealthCheckService extends EventEmitter {
   private async checkResources(config: ServiceConfig): Promise<ResourceCheck> {
     try {
       // CPU Usage
-      const cpuUsage = os.loadavg()[0] / os.cpus().length * 100;
+      const cpuUsage = (os.loadavg()[0] || 0) / os.cpus().length * 100;
       const cpuStatus: HealthStatus = 
         cpuUsage > this.CPU_THRESHOLD_CRITICAL ? 'unhealthy' :
         cpuUsage > this.CPU_THRESHOLD_WARNING ? 'degraded' : 'healthy';
@@ -925,15 +924,15 @@ export class HealthCheckService extends EventEmitter {
     }
 
     // Check resources
-    if (resources.cpu.status === 'unhealthy' || resources.memory.status === 'unhealthy') {
+    if (resources?.cpu?.status === 'unhealthy' || resources?.memory?.status === 'unhealthy') {
       return 'unhealthy';
     }
 
     // Check for degraded state
     const hasDegradedStates = [
       readiness.status === 'degraded',
-      resources.cpu.status === 'degraded',
-      resources.memory.status === 'degraded',
+      resources?.cpu?.status === 'degraded',
+      resources?.memory?.status === 'degraded',
       dependencies.some(dep => dep.status === 'degraded')
     ].some(Boolean);
 
@@ -982,7 +981,7 @@ export class HealthCheckService extends EventEmitter {
       metadata: {
         type: config.type,
         critical: config.critical,
-        circuitBreakerState: this.circuitBreakers.get(config.id)?.state
+        circuitBreakerState: this?.circuitBreakers?.get(config.id)?.state
       }
     };
   }
@@ -991,26 +990,26 @@ export class HealthCheckService extends EventEmitter {
    * Get health status for a specific service
    */
   public getServiceHealth(serviceId: string): HealthCheckResult | null {
-    return this.healthResults.get(serviceId) || null;
+    return this?.healthResults?.get(serviceId) || null;
   }
 
   /**
    * Get aggregated health status for all services
    */
   public getAggregatedHealth(): AggregatedHealth {
-    const services = Array.from(this.healthResults.values());
-    const healthyCount = services.filter(s => s.status === 'healthy').length;
-    const degradedCount = services.filter(s => s.status === 'degraded').length;
-    const unhealthyCount = services.filter(s => s.status === 'unhealthy').length;
+    const services = Array.from(this?.healthResults?.values());
+    const healthyCount = services?.filter(s => s.status === 'healthy').length;
+    const degradedCount = services?.filter(s => s.status === 'degraded').length;
+    const unhealthyCount = services?.filter(s => s.status === 'unhealthy').length;
     
     const criticalDown = services
       .filter(s => s.status === 'unhealthy')
       .map(s => s.serviceId)
-      .filter(id => this.services.get(id)?.critical);
+      .filter(id => this?.services?.get(id)?.critical);
 
     // Determine overall status
     let overall: HealthStatus = 'healthy';
-    if (criticalDown.length > 0) {
+    if (criticalDown?.length || 0 > 0) {
       overall = 'unhealthy';
     } else if (unhealthyCount > 0 || degradedCount > 0) {
       overall = degradedCount > unhealthyCount ? 'degraded' : 'unhealthy';
@@ -1020,7 +1019,7 @@ export class HealthCheckService extends EventEmitter {
       overall,
       services,
       summary: {
-        total: services.length,
+        total: services?.length || 0,
         healthy: healthyCount,
         degraded: degradedCount,
         unhealthy: unhealthyCount,
@@ -1047,13 +1046,13 @@ export class HealthCheckService extends EventEmitter {
     const metrics: PrometheusMetrics = {};
     
     // Service health metrics
-    this.healthResults.forEach((result, serviceId) => {
+    this?.healthResults?.forEach((result, serviceId) => {
       const labels = { 
         service: serviceId, 
-        type: this.services.get(serviceId)?.type || 'unknown' 
+        type: this?.services?.get(serviceId)?.type || 'unknown' 
       };
       
-      metrics[`health_status`] = {
+      metrics[`health_status_${serviceId}`] = {
         value: result.status === 'healthy' ? 1 : result.status === 'degraded' ? 0.5 : 0,
         labels,
         help: 'Service health status (1=healthy, 0.5=degraded, 0=unhealthy)',
@@ -1076,7 +1075,7 @@ export class HealthCheckService extends EventEmitter {
     });
 
     // Circuit breaker metrics
-    this.circuitBreakers.forEach((state, serviceId) => {
+    this?.circuitBreakers?.forEach((state, serviceId) => {
       metrics[`circuit_breaker_state`] = {
         value: state.state === 'closed' ? 0 : state.state === 'half-open' ? 1 : 2,
         labels: { service: serviceId },
@@ -1101,7 +1100,7 @@ export class HealthCheckService extends EventEmitter {
     };
     
     metrics[`services_total`] = {
-      value: aggregated.summary.total,
+      value: aggregated?.summary?.total,
       help: 'Total number of monitored services',
       type: 'gauge'
     };
@@ -1117,19 +1116,19 @@ export class HealthCheckService extends EventEmitter {
       const labels = {
         service: result.serviceId,
         status: result.status,
-        type: this.services.get(result.serviceId)?.type || 'unknown'
+        type: this?.services?.get(result.serviceId)?.type || 'unknown'
       };
 
       metricsCollector.histogram('health_check_duration_ms', result.responseTime, labels);
       metricsCollector.gauge(`health_check_status`, result.status === 'healthy' ? 1 : 0, labels);
-      metricsCollector.increment('health_check_total', labels);
+      metricsCollector.increment('health_check_total', 1, labels);
       
       // Resource metrics
-      if (result.checks.resources.cpu) {
-        metricsCollector.gauge('health_cpu_usage_percent', result.checks.resources.cpu.usage, labels);
+      if (result?.checks?.resources.cpu) {
+        metricsCollector.gauge('health_cpu_usage_percent', result?.checks?.resources.cpu.usage, labels);
       }
-      if (result.checks.resources.memory) {
-        metricsCollector.gauge('health_memory_usage_percent', result.checks.resources.memory.percentage, labels);
+      if (result?.checks?.resources.memory) {
+        metricsCollector.gauge('health_memory_usage_percent', result?.checks?.resources.memory.percentage, labels);
       }
       
     } catch (error) {
@@ -1149,10 +1148,10 @@ export class HealthCheckService extends EventEmitter {
       // Close dependencies
       try {
         if (this.database) {
-          this.database.close();
+          this?.database?.close();
         }
         if (this.redisClient) {
-          await this.redisClient.quit();
+          await this?.redisClient?.quit();
         }
       } catch (error) {
         logger.error('Error during health check shutdown', 'HEALTH_CHECK', { error });
@@ -1171,7 +1170,7 @@ export class HealthCheckService extends EventEmitter {
    * Manual health check for a specific service
    */
   public async checkServiceNow(serviceId: string): Promise<HealthCheckResult | null> {
-    const config = this.services.get(serviceId);
+    const config = this?.services?.get(serviceId);
     if (!config) {
       return null;
     }
@@ -1183,11 +1182,11 @@ export class HealthCheckService extends EventEmitter {
    * Batch health check for multiple services
    */
   public async checkServicesNow(serviceIds: string[]): Promise<HealthCheckResult[]> {
-    const promises = serviceIds.map(id => this.checkServiceNow(id));
+    const promises = serviceIds?.map(id => this.checkServiceNow(id));
     const results = await Promise.allSettled(promises);
     
     return results
-      .filter((result): result is PromiseFulfilledResult<HealthCheckResult> => 
+      .filter((result: any): result is PromiseFulfilledResult<HealthCheckResult> => 
         result.status === 'fulfilled' && result.value !== null)
       .map(result => result.value);
   }
@@ -1196,17 +1195,17 @@ export class HealthCheckService extends EventEmitter {
    * Get service configurations
    */
   public getServiceConfigurations(): ServiceConfig[] {
-    return Array.from(this.services.values());
+    return Array.from(this?.services?.values());
   }
 
   /**
    * Update service configuration
    */
   public updateServiceConfig(serviceId: string, updates: Partial<ServiceConfig>): void {
-    const current = this.services.get(serviceId);
+    const current = this?.services?.get(serviceId);
     if (current) {
       const updated = { ...current, ...updates };
-      this.services.set(serviceId, updated);
+      this?.services?.set(serviceId, updated);
       
       // Restart health check with new config
       this.stopHealthCheck(serviceId);

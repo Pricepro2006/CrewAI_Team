@@ -82,8 +82,8 @@ export class PerformanceOptimizer {
       const valuesList = values.split(",").map((v: string) => v.trim());
 
       // Only optimize if more than 5 values (performance threshold)
-      if (valuesList.length > 5) {
-        const valuesTable = valuesList.map((v: string) => `(${v})`).join(", ");
+      if (valuesList?.length || 0 > 5) {
+        const valuesTable = valuesList?.map((v: string) => `(${v})`).join(", ");
         return `INNER JOIN (VALUES ${valuesTable}) AS vt(${column}_val) ON ${column} = vt.${column}_val`;
       }
 
@@ -157,7 +157,7 @@ export class PerformanceOptimizer {
    */
   async cacheQuery<T>(key: string, queryFn: () => Promise<T>): Promise<T> {
     const cacheKey = this.generateCacheKey(key);
-    const cached = this.queryCache.get(cacheKey);
+    const cached = this?.queryCache?.get(cacheKey);
 
     // Check cache hit
     if (cached && !this.isCacheExpired(cached)) {
@@ -196,14 +196,14 @@ export class PerformanceOptimizer {
    */
   private setCache(key: string, data: any, executionTime: number): void {
     // Implement LRU eviction if cache is full
-    if (this.queryCache.size >= this.MAX_CACHE_SIZE) {
-      const oldestKey = this.queryCache.keys().next().value;
+    if (this?.queryCache?.size >= this.MAX_CACHE_SIZE) {
+      const oldestKey = this?.queryCache?.keys().next().value;
       if (oldestKey !== undefined) {
-        this.queryCache.delete(oldestKey);
+        this?.queryCache?.delete(oldestKey);
       }
     }
 
-    this.queryCache.set(key, {
+    this?.queryCache?.set(key, {
       data,
       timestamp: Date.now(),
       executionTime,
@@ -213,7 +213,7 @@ export class PerformanceOptimizer {
     logger.debug("Query cached", "PERFORMANCE_OPTIMIZER", {
       key,
       executionTime,
-      cacheSize: this.queryCache.size,
+      cacheSize: this?.queryCache?.size,
     });
   }
 
@@ -292,7 +292,7 @@ export class PerformanceOptimizer {
    * Monitor query performance and generate recommendations
    */
   private recordQueryPerformance(query: string, executionTime: number): void {
-    this.performanceMetrics.queryTimes.push({
+    this?.performanceMetrics?.queryTimes.push({
       query,
       executionTime,
       timestamp: Date.now(),
@@ -300,7 +300,7 @@ export class PerformanceOptimizer {
 
     // Track slow queries
     if (executionTime > this.SLOW_QUERY_THRESHOLD) {
-      this.performanceMetrics.slowQueries.push({
+      this?.performanceMetrics?.slowQueries.push({
         query,
         executionTime,
         timestamp: Date.now(),
@@ -314,7 +314,7 @@ export class PerformanceOptimizer {
     }
 
     // Keep only last 100 query times
-    if (this.performanceMetrics.queryTimes.length > 100) {
+    if (this?.performanceMetrics?.queryTimes?.length || 0 > 100) {
       this.performanceMetrics.queryTimes =
         this.performanceMetrics.queryTimes.slice(-100);
     }
@@ -390,7 +390,7 @@ export class PerformanceOptimizer {
   generateQueryKey(query: string): string {
     // Simple hash function for query caching
     let hash = 0;
-    for (let i = 0; i < query.length; i++) {
+    for (let i = 0; i < query?.length || 0; i++) {
       const char = query.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
@@ -407,7 +407,7 @@ export class PerformanceOptimizer {
     ttl: number = this.CACHE_TTL,
   ): Promise<T> {
     // Check cache first
-    const cached = this.queryCache.get(cacheKey);
+    const cached = this?.queryCache?.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < ttl) {
       this.performanceMetrics.cacheHits++;
       logger.debug("Cache hit", "PERFORMANCE_OPTIMIZER", { cacheKey });
@@ -421,7 +421,7 @@ export class PerformanceOptimizer {
     const executionTime = Date.now() - startTime;
 
     // Store in cache
-    this.queryCache.set(cacheKey, {
+    this?.queryCache?.set(cacheKey, {
       data: result,
       timestamp: Date.now(),
       executionTime,
@@ -429,13 +429,13 @@ export class PerformanceOptimizer {
     });
 
     // Evict old entries if cache is too large
-    if (this.queryCache.size > this.MAX_CACHE_SIZE) {
-      const entries = Array.from(this.queryCache.entries()).sort(
+    if (this?.queryCache?.size > this.MAX_CACHE_SIZE) {
+      const entries = Array.from(this?.queryCache?.entries()).sort(
         (a, b) => a[1].timestamp - b[1].timestamp,
       );
       const oldestEntry = entries[0];
       if (oldestEntry) {
-        this.queryCache.delete(oldestEntry[0]);
+        this?.queryCache?.delete(oldestEntry[0]);
       }
     }
 
@@ -447,23 +447,23 @@ export class PerformanceOptimizer {
    */
   getStatistics() {
     return {
-      cacheSize: this.queryCache.size,
+      cacheSize: this?.queryCache?.size,
       cacheHitRate:
-        this.performanceMetrics.cacheHits > 0
-          ? this.performanceMetrics.cacheHits /
-            (this.performanceMetrics.cacheHits +
-              this.performanceMetrics.cacheMisses)
+        this?.performanceMetrics?.cacheHits > 0
+          ? this?.performanceMetrics?.cacheHits /
+            (this?.performanceMetrics?.cacheHits +
+              this?.performanceMetrics?.cacheMisses)
           : 0,
       avgQueryTime:
-        this.performanceMetrics.queryTimes.length > 0
-          ? this.performanceMetrics.queryTimes.reduce(
+        this?.performanceMetrics?.queryTimes?.length || 0 > 0
+          ? this?.performanceMetrics?.queryTimes.reduce(
               (sum, q) => sum + q.executionTime,
               0,
-            ) / this.performanceMetrics.queryTimes.length
+            ) / this?.performanceMetrics?.queryTimes?.length || 0
           : 0,
-      slowQueriesCount: this.performanceMetrics.slowQueries.length,
+      slowQueriesCount: this?.performanceMetrics?.slowQueries?.length || 0,
       totalOptimizationRecommendations:
-        this.performanceMetrics.optimizationRecommendations.length,
+        this?.performanceMetrics?.optimizationRecommendations?.length || 0,
     };
   }
 
@@ -474,7 +474,7 @@ export class PerformanceOptimizer {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
     }
-    this.queryCache.clear();
+    this?.queryCache?.clear();
     logger.info("PerformanceOptimizer cleaned up", "PERFORMANCE_OPTIMIZER");
   }
 
@@ -483,31 +483,31 @@ export class PerformanceOptimizer {
    */
   getPerformanceMetrics(): PerformanceReport {
     const avgQueryTime =
-      this.performanceMetrics.queryTimes.length > 0
-        ? this.performanceMetrics.queryTimes.reduce(
+      this?.performanceMetrics?.queryTimes?.length || 0 > 0
+        ? this?.performanceMetrics?.queryTimes.reduce(
             (sum, q) => sum + q.executionTime,
             0,
-          ) / this.performanceMetrics.queryTimes.length
+          ) / this?.performanceMetrics?.queryTimes?.length || 0
         : 0;
 
     const cacheHitRatio =
-      this.performanceMetrics.cacheHits + this.performanceMetrics.cacheMisses >
+      this?.performanceMetrics?.cacheHits + this?.performanceMetrics?.cacheMisses >
       0
-        ? (this.performanceMetrics.cacheHits /
-            (this.performanceMetrics.cacheHits +
-              this.performanceMetrics.cacheMisses)) *
+        ? (this?.performanceMetrics?.cacheHits /
+            (this?.performanceMetrics?.cacheHits +
+              this?.performanceMetrics?.cacheMisses)) *
           100
         : 0;
 
     return {
       averageQueryTime: avgQueryTime,
       cacheHitRatio,
-      totalCacheHits: this.performanceMetrics.cacheHits,
-      totalCacheMisses: this.performanceMetrics.cacheMisses,
-      slowQueriesCount: this.performanceMetrics.slowQueries.length,
-      cacheSize: this.queryCache.size,
+      totalCacheHits: this?.performanceMetrics?.cacheHits,
+      totalCacheMisses: this?.performanceMetrics?.cacheMisses,
+      slowQueriesCount: this?.performanceMetrics?.slowQueries?.length || 0,
+      cacheSize: this?.queryCache?.size,
       recommendations: this.generateGlobalRecommendations(),
-      recentSlowQueries: this.performanceMetrics.slowQueries.slice(-5),
+      recentSlowQueries: this?.performanceMetrics?.slowQueries.slice(-5),
       performanceTrend: this.calculatePerformanceTrend(),
     };
   }
@@ -517,7 +517,7 @@ export class PerformanceOptimizer {
    */
   private generateGlobalRecommendations(): string[] {
     const recommendations: string[] = [];
-    const metrics = this.performanceMetrics;
+    const metrics = this?.performanceMetrics;
 
     const cacheHitRatio =
       metrics.cacheHits + metrics.cacheMisses > 0
@@ -530,16 +530,16 @@ export class PerformanceOptimizer {
       );
     }
 
-    if (metrics.slowQueries.length > 10) {
+    if (metrics?.slowQueries?.length > 10) {
       recommendations.push(
         "High number of slow queries detected - review database indexes and query optimization",
       );
     }
 
     const avgQueryTime =
-      metrics.queryTimes.length > 0
-        ? metrics.queryTimes.reduce((sum, q) => sum + q.executionTime, 0) /
-          metrics.queryTimes.length
+      metrics?.queryTimes?.length > 0
+        ? metrics?.queryTimes?.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+          metrics?.queryTimes?.length
         : 0;
 
     if (avgQueryTime > 500) {
@@ -548,7 +548,7 @@ export class PerformanceOptimizer {
       );
     }
 
-    if (this.queryCache.size >= this.MAX_CACHE_SIZE * 0.9) {
+    if (this?.queryCache?.size >= this.MAX_CACHE_SIZE * 0.9) {
       recommendations.push(
         "Cache is near capacity - consider increasing cache size or implementing better eviction strategy",
       );
@@ -561,19 +561,19 @@ export class PerformanceOptimizer {
    * Calculate performance trend over time
    */
   private calculatePerformanceTrend(): PerformanceTrend {
-    const recentQueries = this.performanceMetrics.queryTimes.slice(-20);
-    const olderQueries = this.performanceMetrics.queryTimes.slice(-40, -20);
+    const recentQueries = this?.performanceMetrics?.queryTimes.slice(-20);
+    const olderQueries = this?.performanceMetrics?.queryTimes.slice(-40, -20);
 
-    if (recentQueries.length === 0 || olderQueries.length === 0) {
+    if (recentQueries?.length || 0 === 0 || olderQueries?.length || 0 === 0) {
       return { trend: "stable", percentChange: 0 };
     }
 
     const recentAvg =
-      recentQueries.reduce((sum, q) => sum + q.executionTime, 0) /
-      recentQueries.length;
+      recentQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+      recentQueries?.length || 0;
     const olderAvg =
-      olderQueries.reduce((sum, q) => sum + q.executionTime, 0) /
-      olderQueries.length;
+      olderQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+      olderQueries?.length || 0;
 
     const percentChange = ((recentAvg - olderAvg) / olderAvg) * 100;
 
@@ -593,7 +593,7 @@ export class PerformanceOptimizer {
    * Clear cache and reset metrics
    */
   clearCache(): void {
-    this.queryCache.clear();
+    this?.queryCache?.clear();
     this.performanceMetrics.cacheHits = 0;
     this.performanceMetrics.cacheMisses = 0;
     logger.info("Performance cache cleared", "PERFORMANCE_OPTIMIZER");
@@ -606,18 +606,18 @@ export class PerformanceOptimizer {
     this.cleanupInterval = setInterval(() => {
       const expiredKeys: string[] = [];
 
-      this.queryCache.forEach((entry, key) => {
+      this?.queryCache?.forEach((entry, key) => {
         if (this.isCacheExpired(entry)) {
           expiredKeys.push(key);
         }
       });
 
-      expiredKeys.forEach((key) => this.queryCache.delete(key));
+      expiredKeys.forEach((key: any) => this?.queryCache?.delete(key));
 
-      if (expiredKeys.length > 0) {
+      if (expiredKeys?.length || 0 > 0) {
         logger.debug("Cache cleanup completed", "PERFORMANCE_OPTIMIZER", {
-          expiredEntries: expiredKeys.length,
-          remainingEntries: this.queryCache.size,
+          expiredEntries: expiredKeys?.length || 0,
+          remainingEntries: this?.queryCache?.size,
         });
       }
     }, this.CACHE_CLEANUP_INTERVAL);

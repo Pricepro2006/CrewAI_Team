@@ -11,6 +11,7 @@
  * Critical for preventing regression of the JSON parsing improvements
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   describe,
   it,
@@ -21,17 +22,17 @@ import {
   afterEach,
 } from "vitest";
 import axios from "axios";
-import { EmailThreePhaseAnalysisService } from "./EmailThreePhaseAnalysisService.js";
-import { RedisService } from "../cache/RedisService.js";
-import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
+import { EmailThreePhaseAnalysisService } from './EmailThreePhaseAnalysisService';
+import { RedisService } from '../cache/RedisService';
+import { EmailChainAnalyzer } from './EmailChainAnalyzer';
 
 // Mock dependencies
 vi.mock("axios");
-vi.mock("../cache/RedisService.js");
-vi.mock("./EmailChainAnalyzer.js");
+vi.mock('../cache/RedisService');
+vi.mock('./EmailChainAnalyzer');
 
 // Mock database connection pool with proper mock structure
-vi.mock("../../database/ConnectionPool.js", () => {
+vi.mock('../../database/ConnectionPool', () => {
   const createMockDbImplementation = () => ({
     prepare: vi.fn().mockReturnValue({
       run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
@@ -128,7 +129,7 @@ describe("EmailThreePhaseAnalysisService - JSON Parsing Tests", () => {
         extracted_requirements: ["High-performance computing", "24/7 support"],
       };
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: JSON.stringify(validJsonResponse) },
       });
@@ -136,7 +137,7 @@ describe("EmailThreePhaseAnalysisService - JSON Parsing Tests", () => {
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("QUOTE_PROCESSING confirmed");
-      expect(analysis.missed_entities.project_names).toEqual(["Project Alpha"]);
+      expect(analysis?.missed_entities).toEqual(["Project Alpha"]);
       expect(analysis.action_items).toHaveLength(1);
       expect(analysis.confidence).toBe(0.85);
       expect(analysis.business_process).toBe("QUOTE_REQUEST_PROCESSING");
@@ -176,7 +177,7 @@ Here's the analysis in JSON format:
 This analysis shows a straightforward order processing scenario.
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: markdownResponse },
       });
@@ -184,7 +185,7 @@ This analysis shows a straightforward order processing scenario.
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("ORDER_MANAGEMENT confirmed");
-      expect(analysis.missed_entities.company_names).toEqual(["TechCorp"]);
+      expect(analysis?.missed_entities).toEqual(["TechCorp"]);
       expect(analysis.confidence).toBe(0.9);
       expect(analysis.business_process).toBe("ORDER_FULFILLMENT");
     });
@@ -221,7 +222,7 @@ Based on the analysis of the email content, here's the structured response:
 This indicates a high-priority support scenario requiring immediate attention.
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: prefixedResponse },
       });
@@ -264,7 +265,7 @@ Analysis complete. Here are the results:
 The analysis shows standard logistics processing.
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: complexResponse },
       });
@@ -272,7 +273,7 @@ The analysis shows standard logistics processing.
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("SHIPPING confirmed");
-      expect(analysis.missed_entities.project_names).toEqual([
+      expect(analysis?.missed_entities).toEqual([
         "Deployment Phase 1",
       ]);
       expect(analysis.confidence).toBe(0.95);
@@ -343,8 +344,8 @@ The analysis shows standard logistics processing.
         "Still not valid JSON",
       ];
 
-      invalidResponses.forEach((response) => {
-        mockedAxios.post.mockResolvedValueOnce({
+      invalidResponses.forEach((response: any) => {
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: { response },
         });
@@ -359,7 +360,7 @@ The analysis shows standard logistics processing.
     });
 
     it("should handle LLM service errors gracefully", async () => {
-      mockedAxios.post.mockRejectedValue(new Error("LLM service unavailable"));
+      mockedAxios?.post?.mockRejectedValue(new Error("LLM service unavailable"));
 
       const analysis = await service.analyzeEmail(sampleEmail);
 
@@ -369,7 +370,7 @@ The analysis shows standard logistics processing.
     });
 
     it("should handle empty LLM responses", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: "" },
       });
@@ -381,7 +382,7 @@ The analysis shows standard logistics processing.
     });
 
     it("should handle null/undefined LLM responses", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: null },
       });
@@ -402,7 +403,7 @@ risk_assessment: Medium risk - large order value
 business_process: ENTERPRISE_ORDER
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: kvResponse },
       });
@@ -428,7 +429,7 @@ Here's some intro text that should be ignored.
 And some trailing text that should also be ignored.
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: mixedResponse },
       });
@@ -480,8 +481,8 @@ And some trailing text that should also be ignored.
       expect(analysis.confidence).toBe(0.95);
 
       // Verify that retry used different prompt (check call arguments)
-      const firstCall = mockedAxios.post.mock.calls[0];
-      const secondCall = mockedAxios.post.mock.calls[1];
+      const firstCall = mockedAxios?.post?.mock.calls[0];
+      const secondCall = mockedAxios?.post?.mock.calls[1];
 
       expect(firstCall[1].prompt).not.toBe(secondCall[1].prompt);
       expect(secondCall[1].prompt).toContain("retry attempt"); // Retry prompt should mention retry
@@ -519,8 +520,8 @@ And some trailing text that should also be ignored.
 
       const analysis = await service.analyzeEmail(sampleEmail);
 
-      const firstCall = mockedAxios.post.mock.calls[0];
-      const secondCall = mockedAxios.post.mock.calls[1];
+      const firstCall = mockedAxios?.post?.mock.calls[0];
+      const secondCall = mockedAxios?.post?.mock.calls[1];
 
       // First call should use higher temperature (0.1)
       expect(firstCall[1].options.temperature).toBe(0.1);
@@ -550,7 +551,7 @@ And some trailing text that should also be ignored.
         extracted_requirements: [],
       };
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: JSON.stringify(validResponse) },
       });
@@ -558,8 +559,8 @@ And some trailing text that should also be ignored.
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats.parsingMetrics.successRate).toBeGreaterThan(0);
-      expect(stats.parsingMetrics.totalAttempts).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
     });
 
     it("should track retry success metrics", async () => {
@@ -595,7 +596,7 @@ And some trailing text that should also be ignored.
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats.parsingMetrics.retryRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
     });
 
     it("should track fallback usage metrics", async () => {
@@ -617,7 +618,7 @@ And some trailing text that should also be ignored.
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats.parsingMetrics.fallbackRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics).toBeGreaterThan(0);
     });
   });
 
@@ -629,7 +630,7 @@ And some trailing text that should also be ignored.
         confidence: 0.7,
       };
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: JSON.stringify(incompleteResponse) },
       });
@@ -671,7 +672,7 @@ And some trailing text that should also be ignored.
         extracted_requirements: [],
       };
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: JSON.stringify(invalidConfidence) },
       });
@@ -686,7 +687,7 @@ And some trailing text that should also be ignored.
   describe("Integration with Chain Analysis", () => {
     it("should handle complete chains correctly", async () => {
       // Mock complete chain
-      mockChainAnalyzer.analyzeChain.mockResolvedValue({
+      mockChainAnalyzer?.analyzeChain?.mockResolvedValue({
         chain_id: "complete-chain",
         is_complete: true,
         chain_length: 5,
@@ -715,13 +716,13 @@ And some trailing text that should also be ignored.
       };
 
       // Mock Phase 2 response
-      mockedAxios.post.mockResolvedValueOnce({
+      mockedAxios?.post?.mockResolvedValueOnce({
         status: 200,
         data: { response: JSON.stringify(validResponse) },
       });
 
       // Mock Phase 3 response
-      mockedAxios.post.mockResolvedValueOnce({
+      mockedAxios?.post?.mockResolvedValueOnce({
         status: 200,
         data: {
           response: JSON.stringify({

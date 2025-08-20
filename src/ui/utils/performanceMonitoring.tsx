@@ -116,8 +116,8 @@ export function observePerformance() {
 
   try {
     // Observe long tasks (> 50ms)
-    const longTaskObserver = new PerformanceObserver((list) => {
-      list.getEntries().forEach((entry) => {
+    const longTaskObserver = new PerformanceObserver((list: any) => {
+      list.getEntries().forEach((entry: any) => {
         if (entry.duration > 50) {
           console.warn(`[Performance] Long task detected: ${entry.duration}ms`);
         }
@@ -126,7 +126,7 @@ export function observePerformance() {
     longTaskObserver.observe({ entryTypes: ['longtask'] });
 
     // Observe layout shifts
-    const layoutShiftObserver = new PerformanceObserver((list) => {
+    const layoutShiftObserver = new PerformanceObserver((list: any) => {
       list.getEntries().forEach((entry: any) => {
         if (entry.hadRecentInput) return; // Ignore shifts due to user input
         
@@ -188,7 +188,7 @@ export function checkPerformanceBudget() {
     const metric = metrics[key];
     if (metric && metric.value > threshold) {
       results.passed = false;
-      results.violations.push(`${key}: ${metric.value} > ${threshold}`);
+      results?.violations?.push(`${key}: ${metric.value} > ${threshold}`);
     }
   });
 

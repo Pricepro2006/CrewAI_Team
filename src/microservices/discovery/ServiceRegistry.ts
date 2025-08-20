@@ -207,7 +207,7 @@ export class ServiceRegistry extends EventEmitter {
    */
   async getByName(serviceName: string): Promise<ServiceMetadata[]> {
     const allServices = await this.getAll();
-    return allServices.filter(service => service.name === serviceName);
+    return allServices?.filter(service => service.name === serviceName);
   }
 
   /**
@@ -215,8 +215,8 @@ export class ServiceRegistry extends EventEmitter {
    */
   async getByTags(tags: string[]): Promise<ServiceMetadata[]> {
     const allServices = await this.getAll();
-    return allServices.filter(service => 
-      tags.some(tag => service.tags.includes(tag))
+    return allServices?.filter(service => 
+      tags.some(tag => service?.tags?.includes(tag))
     );
   }
 
@@ -225,7 +225,7 @@ export class ServiceRegistry extends EventEmitter {
    */
   async getHealthyByName(serviceName: string): Promise<ServiceMetadata[]> {
     const services = await this.getByName(serviceName);
-    return services.filter(service => service.status === 'healthy');
+    return services?.filter(service => service.status === 'healthy');
   }
 
   /**
@@ -311,7 +311,7 @@ export class ServiceRegistry extends EventEmitter {
       return false;
     }
 
-    const previousStatus = currentService.status;
+    const previousStatus = currentService?.status;
     const updated = await this.update(serviceId, { status });
     
     if (updated && previousStatus !== status) {
@@ -363,10 +363,10 @@ export class ServiceRegistry extends EventEmitter {
     try {
       const services = await this.getAll();
       const stats = {
-        total_services: services.length,
-        healthy_services: services.filter(s => s.status === 'healthy').length,
-        unhealthy_services: services.filter(s => s.status === 'unhealthy').length,
-        unknown_services: services.filter(s => s.status === 'unknown').length,
+        total_services: services?.length || 0,
+        healthy_services: services?.filter(s => s.status === 'healthy').length,
+        unhealthy_services: services?.filter(s => s.status === 'unhealthy').length,
+        unknown_services: services?.filter(s => s.status === 'unknown').length,
         services_by_type: {} as Record<string, number>,
       };
 

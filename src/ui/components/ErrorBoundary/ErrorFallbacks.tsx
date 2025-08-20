@@ -1,5 +1,5 @@
 import React from "react";
-import { translateError, getErrorCategory } from "../../utils/errorTranslator";
+import { translateError, getErrorCategory } from "../../utils/errorTranslator.js";
 
 interface BaseErrorFallbackProps {
   error: Error;
@@ -44,7 +44,7 @@ export const NetworkErrorFallback: React.FC<BaseErrorFallbackProps> = ({
           Try Again
         </button>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => window?.location?.reload()}
           className="w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors"
         >
           Refresh Page
@@ -138,7 +138,7 @@ export const PermissionErrorFallback: React.FC<BaseErrorFallbackProps> = ({
       </p>
       <div className="space-y-3">
         <button
-          onClick={() => window.location.href = "/"}
+          onClick={() => { if (window?.location) window.location.href = "/"; }}
           className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           Go to Home

@@ -3,9 +3,9 @@
  * Tests task card functionality and status management
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock TaskCard component
@@ -69,7 +69,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             style={{ backgroundColor: getStatusColor(task.status) }}
             data-testid={`task-status-${task.id}`}
           >
-            {task.status.replace("_", " ")}
+            {task?.status?.replace("_", " ")}
           </span>
           <span 
             className={`priority-badge ${task.priority}`}
@@ -100,9 +100,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
         )}
       </div>
 
-      {task.tags && task.tags.length > 0 && (
+      {task.tags && task?.tags?.length > 0 && (
         <div className="task-tags" data-testid={`task-tags-${task.id}`}>
-          {task.tags.map((tag, index) => (
+          {task?.tags?.map((tag, index) => (
             <span 
               key={index} 
               className="tag"
@@ -117,7 +117,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       <div className="task-actions">
         <select
           value={task.status}
-          onChange={(e) => onStatusChange?.(task.id, e.target.value as Task["status"])}
+          onChange={(e: any) => onStatusChange?.(task.id, e?.target?.value as Task["status"])}
           data-testid={`status-select-${task.id}`}
         >
           <option value="pending">Pending</option>

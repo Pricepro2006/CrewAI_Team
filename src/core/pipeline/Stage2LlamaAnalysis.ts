@@ -17,8 +17,8 @@ import type {
 import axios from "axios";
 
 export class Stage2LlamaAnalysis {
-  private model = MODEL_CONFIG.models.primary;
-  private apiUrl = `${MODEL_CONFIG.api.ollamaUrl}${MODEL_CONFIG.api.endpoints.generate}`;
+  private model = MODEL_CONFIG?.models?.primary;
+  private apiUrl = `${MODEL_CONFIG?.api?.ollamaUrl}${MODEL_CONFIG?.api?.endpoints.generate}`;
   private timeout = getModelTimeout("primary");
   private batchSize = getModelBatchSize("primary");
   private progressCallback?: (count: number) => Promise<void>;
@@ -45,12 +45,12 @@ export class Stage2LlamaAnalysis {
       const existingResults = await this.loadIntermediateResults();
       results.push(...existingResults.slice(0, resumeFromIndex));
       logger.info(
-        `Resuming Llama 3.2:3b analysis from email ${resumeFromIndex + 1}/${emails.length}`,
+        `Resuming Llama 3.2:3b analysis from email ${resumeFromIndex + 1}/${emails?.length || 0}`,
         "STAGE2",
       );
     } else {
       logger.info(
-        `Starting Llama 3.2:3b analysis for ${emails.length} priority emails`,
+        `Starting Llama 3.2:3b analysis for ${emails?.length || 0} priority emails`,
         "STAGE2",
       );
     }
@@ -59,7 +59,7 @@ export class Stage2LlamaAnalysis {
     const emailsToProcess = emails.slice(resumeFromIndex);
 
     // Process in smaller batches with proper timeout management
-    for (let i = 0; i < emailsToProcess.length; i += this.batchSize) {
+    for (let i = 0; i < emailsToProcess?.length || 0; i += this.batchSize) {
       const batch = emailsToProcess.slice(i, i + this.batchSize);
 
       // Process batch sequentially to avoid overwhelming the system
@@ -84,10 +84,10 @@ export class Stage2LlamaAnalysis {
 
       // Progress logging
       const totalProcessed =
-        resumeFromIndex + Math.min(i + this.batchSize, emailsToProcess.length);
-      const progress = ((totalProcessed / emails.length) * 100).toFixed(1);
+        resumeFromIndex + Math.min(i + this.batchSize, emailsToProcess?.length || 0);
+      const progress = ((totalProcessed / emails?.length || 0) * 100).toFixed(1);
       logger.info(
-        `Stage 2 Progress: ${totalProcessed}/${emails.length} (${progress}%)`,
+        `Stage 2 Progress: ${totalProcessed}/${emails?.length || 0} (${progress}%)`,
         "STAGE2",
       );
 
@@ -181,11 +181,11 @@ export class Stage2LlamaAnalysis {
         prompt,
         stream: false,
         options: {
-          temperature: MODEL_CONFIG.generation.temperature,
-          num_predict: MODEL_CONFIG.generation.numPredict,
-          top_k: MODEL_CONFIG.generation.topK,
-          top_p: MODEL_CONFIG.generation.topP,
-          repeat_penalty: MODEL_CONFIG.generation.repeatPenalty,
+          temperature: MODEL_CONFIG?.generation?.temperature,
+          num_predict: MODEL_CONFIG?.generation?.numPredict,
+          top_k: MODEL_CONFIG?.generation?.topK,
+          top_p: MODEL_CONFIG?.generation?.topP,
+          repeat_penalty: MODEL_CONFIG?.generation?.repeatPenalty,
         },
       },
       {
@@ -194,7 +194,7 @@ export class Stage2LlamaAnalysis {
       },
     );
 
-    const responseText = response.data.response;
+    const responseText = response?.data?.response;
     const analysis = this.parseResponse(responseText);
 
     const processingTime = (Date.now() - startTime) / 1000;
@@ -228,7 +228,7 @@ export class Stage2LlamaAnalysis {
 
 Subject: ${email.subject}
 From: ${email.sender_email}
-Body: ${email.body.substring(0, 2000)}
+Body: ${email?.body?.substring(0, 2000)}
 
 Provide a JSON response with the following structure:
 {
@@ -337,7 +337,7 @@ Respond ONLY with valid JSON, no additional text.`;
     // Context understanding (0-2.5)
     if (
       analysis.contextual_summary &&
-      analysis.contextual_summary.length > 50
+      analysis?.contextual_summary?.length > 50
     ) {
       score += weights.contextualSummary * 10;
     }
@@ -345,7 +345,7 @@ Respond ONLY with valid JSON, no additional text.`;
     // Entity extraction (0-2.0)
     const entityCount = Object.values(analysis.entities || {})
       .filter(Array.isArray)
-      .reduce((sum: number, arr: string[]) => sum + arr.length, 0);
+      .reduce((sum: number, arr: string[]) => sum + arr?.length || 0, 0);
     score += weights.entities * Math.min(entityCount * 2, 10);
 
     // Business process recognition (0-2.0)
@@ -354,15 +354,15 @@ Respond ONLY with valid JSON, no additional text.`;
     }
 
     // Action items (0-2.0)
-    if (analysis.action_items && analysis.action_items.length > 0) {
+    if (analysis.action_items && analysis?.action_items?.length > 0) {
       score +=
-        weights.actionItems * Math.min(analysis.action_items.length * 3, 10);
+        weights.actionItems * Math.min(analysis?.action_items?.length * 3, 10);
     }
 
     // Response suggestion (0-1.5)
     if (
       analysis.suggested_response &&
-      analysis.suggested_response.length > 20
+      analysis?.suggested_response?.length > 20
     ) {
       score += weights.suggestedResponse * 10;
     }
@@ -377,7 +377,7 @@ Respond ONLY with valid JSON, no additional text.`;
     results: PromiseSettledResult<LlamaAnalysisResult>[],
     emails: Email[],
   ): LlamaAnalysisResult[] {
-    return results.map((result, index) => {
+    return results?.map((result, index) => {
       if (result.status === "fulfilled") {
         return result.value;
       } else {
@@ -430,7 +430,7 @@ Respond ONLY with valid JSON, no additional text.`;
       const fs = await import("fs/promises");
       const path = "stage2_intermediate_results.json";
       await fs.writeFile(path, JSON.stringify(results, null, 2));
-      logger.debug(`Saved ${results.length} intermediate results`, "STAGE2");
+      logger.debug(`Saved ${results?.length || 0} intermediate results`, "STAGE2");
     } catch (error) {
       logger.warn(
         "Failed to save intermediate results",
@@ -450,7 +450,7 @@ Respond ONLY with valid JSON, no additional text.`;
       const data = await fs.readFile(path, "utf-8");
       const results = JSON.parse(data) as LlamaAnalysisResult[];
       logger.info(
-        `Loaded ${results.length} existing intermediate results`,
+        `Loaded ${results?.length || 0} existing intermediate results`,
         "STAGE2",
       );
       return results;

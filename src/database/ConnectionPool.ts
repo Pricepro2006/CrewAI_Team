@@ -16,6 +16,7 @@
  */
 
 import Database from "better-sqlite3";
+import type { Database as DatabaseInstance, Statement, Transaction } from "better-sqlite3";
 import { Worker, isMainThread, threadId } from "worker_threads";
 import { Logger } from "../utils/logger.js";
 import appConfig from "../config/app.config.js";
@@ -63,7 +64,7 @@ export interface PoolStats {
 // ============================================
 
 export class DatabaseConnection {
-  private db: Database.Database;
+  private db: DatabaseInstance;
   private config: ConnectionPoolConfig;
   private metrics: ConnectionMetrics;
   private disposed: boolean = false;
@@ -129,7 +130,9 @@ export class DatabaseConnection {
     } catch (error) {
       logger.error(
         `Failed to configure SQLite for connection ${this.metrics.id}:`,
-        error,
+        this.metrics.id,
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
       );
       throw error;
     }
@@ -138,13 +141,15 @@ export class DatabaseConnection {
   /**
    * Get the underlying database instance
    */
-  getDatabase(): Database.Database {
+  getDatabase(): DatabaseInstance {
     if (this.disposed) {
       throw new Error(`Connection ${this.metrics.id} has been disposed`);
     }
 
-    this.metrics.lastUsed = new Date();
-    this.metrics.queryCount++;
+    if (this.metrics) {
+      this.metrics.lastUsed = new Date();
+      this.metrics.queryCount++;
+    }
     return this.db;
   }
 
@@ -161,7 +166,9 @@ export class DatabaseConnection {
         const pageSize = this.db.pragma("page_size", {
           simple: true,
         }) as number;
-        this.metrics.memoryUsage = pageCount * pageSize;
+        if (this.metrics) {
+          this.metrics.memoryUsage = pageCount * pageSize;
+        }
       } catch (error) {
         // Ignore errors in metrics collection
       }
@@ -189,12 +196,19 @@ export class DatabaseConnection {
     try {
       this.db.close();
       this.disposed = true;
-      this.metrics.isActive = false;
+      if (this.metrics) {
+        this.metrics.isActive = false;
+      }
       logger.debug(
         `Disposed connection ${this.metrics.id} on thread ${threadId}`,
       );
     } catch (error) {
-      logger.error(`Error disposing connection ${this.metrics.id}:`, error);
+      logger.error(
+        `Error disposing connection ${this.metrics.id}:`,
+        this.metrics.id,
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
+      );
     }
   }
 
@@ -222,7 +236,7 @@ export class DatabaseConnectionPool {
 
   private constructor(config?: Partial<ConnectionPoolConfig>) {
     this.config = {
-      databasePath: config?.databasePath || appConfig.database.path,
+      databasePath: config?.databasePath || appConfig?.database?.path,
       maxConnections: config?.maxConnections || 10,
       connectionTimeout: config?.connectionTimeout || 30000,
       idleTimeout: config?.idleTimeout || 300000, // 5 minutes
@@ -236,10 +250,14 @@ export class DatabaseConnectionPool {
     // Start cleanup interval for idle connections
     this.startCleanupInterval();
 
-    logger.info(`Connection pool initialized for thread ${threadId}`, {
-      config: this.config,
-      isMainThread,
-    });
+    logger.info(
+      `Connection pool initialized for thread ${threadId}`,
+      "ConnectionPool",
+      {
+        config: this.config,
+        isMainThread,
+      }
+    );
   }
 
   /**
@@ -281,9 +299,13 @@ export class DatabaseConnectionPool {
       connection = new DatabaseConnection(this.config);
       this.connections.set(currentThreadId, connection);
 
-      logger.debug(`Created new connection for thread ${currentThreadId}`, {
-        totalConnections: this.connections.size,
-      });
+      logger.debug(
+        `Created new connection for thread ${currentThreadId}`,
+        "ConnectionPool",
+        {
+          totalConnections: this.connections.size,
+        }
+      );
     }
 
     // Update metrics
@@ -297,7 +319,7 @@ export class DatabaseConnectionPool {
    * Execute query with performance tracking
    */
   public async executeQuery<T>(
-    queryFn: (db: Database.Database) => T,
+    queryFn: (db: DatabaseInstance) => T,
   ): Promise<T> {
     const startTime = Date.now();
     const connection = this.getConnection();
@@ -317,7 +339,12 @@ export class DatabaseConnectionPool {
 
       return result;
     } catch (error) {
-      logger.error(`Query execution failed on thread ${threadId}:`, error);
+      logger.error(
+        `Query execution failed on thread ${threadId}:`,
+        "ConnectionPool",
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }
@@ -326,7 +353,7 @@ export class DatabaseConnectionPool {
    * Execute transaction with automatic rollback on error
    */
   public async executeTransaction<T>(
-    transactionFn: (db: Database.Database) => T,
+    transactionFn: (db: DatabaseInstance) => T,
   ): Promise<T> {
     const connection = this.getConnection();
     const db = connection.getDatabase();
@@ -343,11 +370,11 @@ export class DatabaseConnectionPool {
    */
   public getStats(): PoolStats {
     const activeConnections = Array.from(this.connections.values()).filter(
-      (conn) => !conn.isDisposed(),
+      (conn: any) => !conn.isDisposed(),
     ).length;
 
     const idleConnections = Array.from(this.connections.values()).filter(
-      (conn) => !conn.isDisposed() && conn.isIdle(),
+      (conn: any) => !conn.isDisposed() && conn.isIdle(),
     ).length;
 
     const threadConnections = new Map<number, number>();
@@ -359,7 +386,7 @@ export class DatabaseConnectionPool {
 
     const avgQueryTime =
       this.queryTimes.length > 0
-        ? this.queryTimes.reduce((a, b) => a + b, 0) / this.queryTimes.length
+        ? this.queryTimes.reduce((a: any, b: any) => a + b, 0) / this.queryTimes.length
         : 0;
 
     const totalMemory = Array.from(this.connectionMetrics.values()).reduce(
@@ -487,7 +514,12 @@ export class DatabaseConnectionPool {
       try {
         connection.dispose();
       } catch (error) {
-        logger.error(`Error closing connection for thread ${threadId}:`, error);
+        logger.error(
+          `Error closing connection for thread ${threadId}:`,
+          "ConnectionPool",
+          undefined,
+          error instanceof Error ? error : new Error(String(error))
+        );
       }
     }
 
@@ -533,7 +565,7 @@ export function getDatabaseConnection(
  * Execute query with automatic connection management
  */
 export async function executeQuery<T>(
-  queryFn: (db: Database.Database) => T,
+  queryFn: (db: DatabaseInstance) => T,
   config?: Partial<ConnectionPoolConfig>,
 ): Promise<T> {
   const pool = DatabaseConnectionPool.getInstance(config);
@@ -544,7 +576,7 @@ export async function executeQuery<T>(
  * Execute transaction with automatic connection management
  */
 export async function executeTransaction<T>(
-  transactionFn: (db: Database.Database) => T,
+  transactionFn: (db: DatabaseInstance) => T,
   config?: Partial<ConnectionPoolConfig>,
 ): Promise<T> {
   const pool = DatabaseConnectionPool.getInstance(config);
@@ -580,7 +612,12 @@ if (isMainThread) {
       await shutdownConnectionPool();
       process.exit(0);
     } catch (error) {
-      logger.error("Error during graceful shutdown:", error);
+      logger.error(
+        "Error during graceful shutdown:",
+        "ConnectionPool",
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
+      );
       process.exit(1);
     }
   };

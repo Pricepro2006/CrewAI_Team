@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import type { TRPCClientErrorLike } from "@trpc/client";
 import { useCSRF, handleCSRFError } from "./useCSRF.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Enhanced mutation hook with automatic CSRF protection and retry logic
@@ -9,12 +9,12 @@ import { logger } from "../utils/logger.js";
  * @example
  * ```tsx
  * const createUserMutation = useCSRFProtectedMutation(
- *   api.user.create,
+ *   api?.user?.create,
  *   {
- *     onSuccess: (data) => {
+ *     onSuccess: (data: unknown) => {
  *       console.log('User created:', data);
  *     },
- *     onError: (error) => {
+ *     onError: (error: unknown) => {
  *       console.error('Failed to create user:', error);
  *     },
  *   }
@@ -30,13 +30,13 @@ export function useCSRFProtectedMutation<
   TError = unknown,
   TContext = unknown,
 >(
-  mutation: any, // Use any temporarily to avoid complex type issues
+  mutation: unknown, // Use unknown temporarily to avoid complex type issues
   options?: {
     maxRetries?: number;
     retryDelay?: number;
     onCSRFError?: (error: Error) => void;
     onSuccess?: (data: TOutput) => void;
-    onError?: (error: TRPCClientErrorLike<any>) => void;
+    onError?: (error: TRPCClientErrorLike<unknown>) => void;
   },
 ) {
   const { refreshToken } = useCSRF();
@@ -44,7 +44,7 @@ export function useCSRFProtectedMutation<
   const [retryCount, setRetryCount] = useState(0);
 
   const mutateWithProtection = useCallback(
-    async (input: TInput, mutationOptions?: any) => {
+    async (input: TInput, mutationOptions?: unknown) => {
       setIsRetrying(true);
       setRetryCount(0);
 
@@ -55,7 +55,7 @@ export function useCSRFProtectedMutation<
           },
           {
             onTokenRefresh: async () => {
-              setRetryCount((prev) => prev + 1);
+              setRetryCount(prev => prev + 1);
               await refreshToken();
             },
             maxRetries: options?.maxRetries ?? 2,
@@ -68,8 +68,8 @@ export function useCSRFProtectedMutation<
 
         // Check if it's specifically a CSRF error
         if (
-          csrfError.message.toLowerCase().includes("csrf") ||
-          (error as any)?.code === "FORBIDDEN"
+          csrfError?.message?.toLowerCase().includes("csrf") ||
+          (error as unknown)?.code === "FORBIDDEN"
         ) {
           logger.error("CSRF error in protected mutation", "CSRF", {
             error: csrfError,
@@ -107,11 +107,11 @@ export function useCSRFProtectedMutation<
  * const batchDelete = useCSRFBatchOperation(
  *   async (ids: string[]) => {
  *     return Promise.all(
- *       ids.map(id => api.item.delete.mutateAsync({ id }))
+ *       ids?.map(id => api?.item?.delete.mutateAsync({ id }))
  *     );
  *   },
  *   {
- *     onSuccess: (results) => {
+ *     onSuccess: (results: unknown) => {
  *       console.log('Deleted items:', results);
  *     },
  *   }
@@ -157,8 +157,8 @@ export function useCSRFBatchOperation<TInput, TOutput>(
         setError(error);
 
         if (
-          error.message.toLowerCase().includes("csrf") ||
-          (err as any)?.code === "FORBIDDEN"
+          error?.message?.toLowerCase().includes("csrf") ||
+          (err as unknown)?.code === "FORBIDDEN"
         ) {
           if (options?.onCSRFError) {
             options.onCSRFError(error);
@@ -190,7 +190,7 @@ export function useCSRFBatchOperation<TInput, TOutput>(
  * @example
  * ```tsx
  * const submitForm = useCSRFFormSubmit({
- *   onSuccess: (data) => {
+ *   onSuccess: (data: unknown) => {
  *     console.log('Form submitted:', data);
  *   },
  * });
@@ -203,7 +203,7 @@ export function useCSRFBatchOperation<TInput, TOutput>(
  * ```
  */
 export function useCSRFFormSubmit(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: Error) => void;
   headers?: Record<string, string>;
 }) {
@@ -212,7 +212,7 @@ export function useCSRFFormSubmit(options?: {
   const [error, setError] = useState<Error | null>(null);
 
   const submit = useCallback(
-    async (url: string, data: FormData | Record<string, any>) => {
+    async (url: string, data: FormData | Record<string, unknown>) => {
       setIsSubmitting(true);
       setError(null);
 

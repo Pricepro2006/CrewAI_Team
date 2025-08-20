@@ -135,8 +135,8 @@ export class EventVersionManager extends EventEmitter {
         ...this.metrics,
         timestamp: Date.now(),
         cacheSize: this.transformationCache.size,
-        schemaCount: Array.from(this.schemas.values()).reduce((sum, versions) => sum + versions.size, 0),
-        ruleCount: Array.from(this.evolutionRules.values()).reduce((sum, rules) => sum + rules.length, 0)
+        schemaCount: Array.from(this.schemas.values()).reduce((sum: any, versions: any) => sum + versions.size, 0),
+        ruleCount: Array.from(this.evolutionRules.values()).reduce((sum: any, rules: any) => sum + (rules?.length || 0), 0)
       });
     }, 60000); // Every minute
   }
@@ -214,7 +214,7 @@ export class EventVersionManager extends EventEmitter {
     }
 
     const allSchemas: EventSchema[] = [];
-    for (const eventVersions of this.schemas.values()) {
+    for (const eventVersions of Array.from(this.schemas.values())) {
       allSchemas.push(...Array.from(eventVersions.values()));
     }
 
@@ -303,7 +303,7 @@ export class EventVersionManager extends EventEmitter {
     try {
       const versionedEvent = event as VersionedEvent;
       const currentVersion = versionedEvent.schemaVersion || 1;
-      const eventType = event.type;
+      const eventType = event?.type;
 
       // Check if transformation is needed
       if (currentVersion === targetVersion) {
@@ -365,8 +365,12 @@ export class EventVersionManager extends EventEmitter {
           const transformResult = await this.applyTransformationRule(currentEvent, rule);
           
           if (!transformResult.success) {
-            errors.push(...(transformResult.errors || []));
-            warnings.push(...(transformResult.warnings || []));
+            if (transformResult.errors) {
+            errors.push(...transformResult.errors);
+            }
+            if (transformResult.warnings) {
+            warnings.push(...transformResult.warnings);
+            }
             break;
           }
 
@@ -407,7 +411,13 @@ export class EventVersionManager extends EventEmitter {
       // Update metrics
       if (result.success) {
         this.metrics.transformations.successful++;
-        this.metrics.versions[`${transformationType}s` as keyof typeof this.metrics.versions]++;
+        if (transformationType === 'upgrade') {
+          this.metrics.versions.upgrades++;
+        } else if (transformationType === 'downgrade') {
+          this.metrics.versions.downgrades++;
+        } else if (transformationType === 'migrate') {
+          this.metrics.versions.migrations++;
+        }
       } else {
         this.metrics.transformations.failed++;
       }
@@ -425,7 +435,7 @@ export class EventVersionManager extends EventEmitter {
         toVersion: targetVersion,
         success: result.success,
         transformationType,
-        processingTime: result.metadata.processingTime
+        processingTime: result.metadata?.processingTime || 0
       });
 
       return result;
@@ -456,12 +466,20 @@ export class EventVersionManager extends EventEmitter {
   // Validation
   public validateEvent(event: BaseEvent, version?: number): { valid: boolean; errors: string[]; warnings: string[] } {
     try {
-      const eventType = event.type;
+      const eventType = event?.type;
+      if (!eventType) {
+        this.metrics.validations.failed++;
+        return {
+          valid: false,
+          errors: ['Event type is required'],
+          warnings: []
+        };
+      }
+      
       const schemaVersion = version || (event as VersionedEvent).schemaVersion || 1;
-
       const schema = this.getSchema(eventType, schemaVersion);
       if (!schema) {
-        this.metrics.validations.failed++;
+        if (this.metrics.validations.failed) { this.metrics.validations.failed++ };
         return {
           valid: false,
           errors: [`No schema found for ${eventType} version ${schemaVersion}`],
@@ -489,8 +507,12 @@ export class EventVersionManager extends EventEmitter {
       // Validate field types (simplified validation)
       if (this.config.strictValidation) {
         const validationResult = this.validateFieldTypes(event.payload, schema.schema.payload);
+        if (validationResult.errors) {
         errors.push(...validationResult.errors);
+        }
+        if (validationResult.warnings) {
         warnings.push(...validationResult.warnings);
+        }
       }
 
       const valid = errors.length === 0;
@@ -707,10 +729,27 @@ export class EventVersionManager extends EventEmitter {
     }
   }
 
-  private validateFieldTypes(payload: any, schema: any): { errors: string[]; warnings: string[] } {
+  private validateFieldTypes(payload: Record<string, any>, schema: Record<string, any>): { errors: string[]; warnings: string[] } {
     // Simplified field type validation
     // In production, would use a proper JSON schema validator
-    return { errors: [], warnings: [] };
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    
+    try {
+      // Basic validation - could be enhanced with proper schema validation
+      for (const [key, expectedType] of Object.entries(schema)) {
+        if (key in payload) {
+          const actualValue = payload[key];
+          if (actualValue === null || actualValue === undefined) {
+            warnings.push(`Field '${key}' is null or undefined`);
+          }
+        }
+      }
+    } catch (error) {
+      errors.push(`Field validation failed: ${error}`);
+    }
+    
+    return { errors, warnings };
   }
 
   private isVersionCompatible(fromSchema: EventSchema, toSchema: EventSchema, compatibilityType: string): boolean {
@@ -750,8 +789,8 @@ export class EventVersionManager extends EventEmitter {
     return {
       ...this.metrics,
       cacheSize: this.transformationCache.size,
-      schemaCount: Array.from(this.schemas.values()).reduce((sum, versions) => sum + versions.size, 0),
-      ruleCount: Array.from(this.evolutionRules.values()).reduce((sum, rules) => sum + rules.length, 0)
+      schemaCount: Array.from(this.schemas.values()).reduce((sum: number, versions: Map<number, EventSchema>) => sum + versions.size, 0),
+      ruleCount: Array.from(this.evolutionRules.values()).reduce((sum: number, rules: SchemaEvolutionRule[]) => sum + (rules?.length || 0), 0)
     };
   }
 

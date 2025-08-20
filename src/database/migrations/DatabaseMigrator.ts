@@ -3,14 +3,13 @@
  * Handles database schema migrations with version control and rollback support
  */
 
-import type Database from "better-sqlite3";
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
 import { readFileSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
 import { logger } from "../../utils/logger.js";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = join(fileURLToPath(import.meta.url), "..");
+// Use __dirname for Node.js compatibility without import.meta
+const __dirname = dirname(__filename || process.cwd());
 
 export interface Migration {
   version: string;
@@ -30,10 +29,10 @@ export interface MigrationResult {
 }
 
 export class DatabaseMigrator {
-  private db: Database.Database;
+  private db: DatabaseInstance;
   private migrationsPath: string;
 
-  constructor(db: Database.Database, migrationsPath?: string) {
+  constructor(db: DatabaseInstance, migrationsPath?: string) {
     this.db = db;
     this.migrationsPath = migrationsPath || join(__dirname, "./migrations");
     this.initializeMigrationsTable();
@@ -43,7 +42,7 @@ export class DatabaseMigrator {
    * Initialize the migrations table to track applied migrations
    */
   private initializeMigrationsTable(): void {
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         version TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -147,9 +146,9 @@ export class DatabaseMigrator {
       }
 
       // Apply migration in a transaction
-      const transaction = this.db.transaction(() => {
+      const transaction = this?.db?.transaction(() => {
         // Execute the migration SQL
-        this.db.exec(migration.up);
+        this?.db?.exec(migration.up);
 
         // Record the migration as applied
         this.db
@@ -230,9 +229,9 @@ export class DatabaseMigrator {
       }
 
       // Rollback migration in a transaction
-      const transaction = this.db.transaction(() => {
+      const transaction = this?.db?.transaction(() => {
         // Execute the rollback SQL
-        this.db.exec(migration.down!);
+        this?.db?.exec(migration.down!);
 
         // Remove the migration record
         this.db
@@ -286,7 +285,7 @@ export class DatabaseMigrator {
 
     // Sort migrations by version
     const sortedMigrations = migrations.sort((a, b) =>
-      a.version.localeCompare(b.version),
+      a?.version?.localeCompare(b.version),
     );
 
     for (const migration of sortedMigrations) {
@@ -318,12 +317,12 @@ export class DatabaseMigrator {
 
     // Find migrations to rollback (all versions after target)
     const migrationsToRollback = appliedMigrations
-      .filter((applied) => applied.version > targetVersion)
-      .sort((a, b) => b.version.localeCompare(a.version)); // Reverse order for rollback
+      .filter((applied: any) => applied.version > targetVersion)
+      .sort((a, b) => b?.version?.localeCompare(a.version)); // Reverse order for rollback
 
     for (const appliedMigration of migrationsToRollback) {
       const migration = migrations.find(
-        (m) => m.version === appliedMigration.version,
+        (m: any) => m.version === appliedMigration.version,
       );
 
       if (!migration) {
@@ -361,17 +360,17 @@ export class DatabaseMigrator {
   }> {
     const currentVersion = await getCurrentVersion();
     const appliedMigrations = await this.getAppliedMigrations();
-    const appliedVersions = appliedMigrations.map((m) => m.version);
+    const appliedVersions = appliedMigrations?.map((m: any) => m.version);
 
     const pendingMigrations = migrations
-      .filter((m) => !appliedVersions.includes(m.version))
-      .map((m) => m.version);
+      .filter((m: any) => !appliedVersions.includes(m.version))
+      .map((m: any) => m.version);
 
     return {
       currentVersion,
       appliedMigrations: appliedVersions,
       pendingMigrations,
-      totalMigrations: migrations.length,
+      totalMigrations: migrations?.length || 0,
     };
   }
 
@@ -449,7 +448,7 @@ export const migration_${version.replace(/-/g, "_")} = {
    */
   private calculateChecksum(content: string): string {
     let hash = 0;
-    for (let i = 0; i < content.length; i++) {
+    for (let i = 0; i < content?.length || 0; i++) {
       const char = content.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash;
@@ -462,7 +461,7 @@ export const migration_${version.replace(/-/g, "_")} = {
    */
   async createBackup(backupPath: string): Promise<void> {
     try {
-      this.db.backup(backupPath);
+      this?.db?.backup(backupPath);
       logger.info(`Database backup created at ${backupPath}`, "DB_MIGRATION");
     } catch (error) {
       logger.error(

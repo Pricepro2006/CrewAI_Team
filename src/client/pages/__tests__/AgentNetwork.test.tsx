@@ -3,9 +3,9 @@
  * Tests agent network functionality and interactions
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock AgentNetwork component that might exist
@@ -19,7 +19,7 @@ const AgentNetwork: React.FC = () => {
     <div data-testid="agent-network">
       <h1>Agent Network</h1>
       <div data-testid="agent-list">
-        {agents.map((agent) => (
+        {agents?.map((agent: any) => (
           <div key={agent.id} data-testid={`agent-${agent.id}`}>
             <span>{agent.name}</span>
             <span data-testid={`status-${agent.id}`}>{agent.status}</span>
@@ -85,7 +85,7 @@ describe("AgentNetwork Page", () => {
     const connectButtons = screen.getAllByRole("button", { name: /Connect/i });
     expect(connectButtons).toHaveLength(2);
 
-    connectButtons.forEach((button) => {
+    connectButtons.forEach((button: any) => {
       expect(button).toBeEnabled();
     });
   });
@@ -98,10 +98,10 @@ describe("AgentNetwork Page", () => {
         <div data-testid="agent-network">
           <h1>Agent Network</h1>
           <div data-testid="agent-list">
-            {agents.length === 0 ? (
+            {agents?.length || 0 === 0 ? (
               <p data-testid="no-agents">No agents available</p>
             ) : (
-              agents.map((agent: any) => (
+              agents?.map((agent: any) => (
                 <div key={agent.id}>{agent.name}</div>
               ))
             )}

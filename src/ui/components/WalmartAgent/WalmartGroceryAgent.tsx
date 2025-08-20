@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History, Zap } from 'lucide-react';
-import { api } from '../../../lib/trpc.js';
-import { WalmartLivePricing } from './WalmartLivePricing.js';
-import { GroceryListEnhanced } from './GroceryListEnhanced.js';
+import { api } from '../../../client/lib/api';
+import WalmartLivePricing from './WalmartLivePricing';
+import { GroceryListEnhanced } from './GroceryListEnhanced';
 import './WalmartGroceryAgent.css';
 
 interface GroceryItem {
@@ -39,25 +39,25 @@ export const WalmartGroceryAgent: React.FC = () => {
   const [priceAlerts, setPriceAlerts] = useState<Map<string, number>>(new Map());
 
   // Fetch real dashboard stats instead of hardcoded values
-  const { data: statsData } = api.walmartGrocery.getStats.useQuery(undefined, {
+  const { data: statsData } = api?.walmartGrocery?.getStats.useQuery(undefined, {
     refetchInterval: 60000, // Refresh every minute
   });
 
   // Fetch trending products for price history
-  const { data: trendingData } = api.walmartGrocery.getTrending.useQuery(
+  const { data: trendingData } = api?.walmartGrocery?.getTrending.useQuery(
     { limit: 6, days: 30 },
     { enabled: activeTab === 'price-history' }
   );
 
   // Fetch budget data
-  const { data: budgetData } = api.walmartGrocery.getBudget.useQuery(
+  const { data: budgetData } = api?.walmartGrocery?.getBudget.useQuery(
     { userId: 'default_user' },
     { enabled: activeTab === 'budget-tracker' }
   );
 
   // Use tRPC mutation for searching products
-  const searchProductsMutation = api.walmartGrocery.searchProducts.useMutation({
-    onError: (error) => {
+  const searchProductsMutation = api?.walmartGrocery?.searchProducts.useMutation({
+    onError: (error: any) => {
       console.error('Search failed:', error);
       // You might want to show a toast notification here
     }
@@ -76,16 +76,16 @@ export const WalmartGroceryAgent: React.FC = () => {
       setSearchResults({
         query: searchQuery.trim(),
         totalResults: results.metadata?.totalResults || results.products?.length || 0,
-        items: results.products?.map((product: any) => ({
-          id: product.id || product.productId || `item-${Date.now()}-${Math.random()}`,
-          name: product.name || product.title,
-          price: product.price || 0,
-          originalPrice: product.originalPrice,
-          savings: product.originalPrice ? product.originalPrice - product.price : undefined,
+        items: results.products?.map((product: Record<string, unknown>) => ({
+          id: String(product.id || product.productId || `item-${Date.now()}-${Math.random()}`),
+          name: String(product.name || product.title || 'Unknown Product'),
+          price: Number(product.price || 0),
+          originalPrice: product.originalPrice ? Number(product.originalPrice) : undefined,
+          savings: (product.originalPrice && product.price) ? Number(product.originalPrice) - Number(product.price) : undefined,
           inStock: product.inStock !== false,
-          imageUrl: product.imageUrl || product.image || '/api/placeholder/100/100',
-          category: product.category || 'General',
-          unit: product.unit || product.size || 'each'
+          imageUrl: String(product.imageUrl || product.image || '/api/placeholder/100/100'),
+          category: String(product.category || 'General'),
+          unit: String(product.unit || product.size || 'each')
         })) || [],
         timestamp: new Date()
       });
@@ -119,14 +119,14 @@ export const WalmartGroceryAgent: React.FC = () => {
     if (!searchResults) return 0;
     return searchResults.items
       .filter(item => selectedItems.has(item.id))
-      .reduce((total, item) => total + (item.savings || 0), 0);
+      .reduce((total: number, item: GroceryItem) => total + (item.savings || 0), 0);
   };
 
   const calculateTotalPrice = () => {
     if (!searchResults) return 0;
     return searchResults.items
       .filter(item => selectedItems.has(item.id))
-      .reduce((total, item) => total + item.price, 0);
+      .reduce((total: number, item: GroceryItem) => total + item.price, 0);
   };
 
   const tabs = [
@@ -156,7 +156,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             <Package className="stat-icon" />
             <div className="stat-content">
               <span className="stat-value">
-                {statsData?.stats?.productsTracked?.toLocaleString() || '0'}
+                {(statsData?.stats?.productsTracked || 0).toLocaleString()}
               </span>
               <span className="stat-label">Products Tracked</span>
             </div>
@@ -165,7 +165,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             <TrendingUp className="stat-icon" />
             <div className="stat-content">
               <span className="stat-value">
-                ${statsData?.stats?.savedThisMonth?.toFixed(2) || '0.00'}
+                ${(statsData?.stats?.savedThisMonth || 0).toFixed(2)}
               </span>
               <span className="stat-label">Saved This Month</span>
             </div>
@@ -174,7 +174,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             <AlertCircle className="stat-icon" />
             <div className="stat-content">
               <span className="stat-value">
-                {statsData?.stats?.activeAlerts || '0'}
+                {statsData?.stats?.activeAlerts || 0}
               </span>
               <span className="stat-label">Active Price Alerts</span>
             </div>
@@ -184,7 +184,7 @@ export const WalmartGroceryAgent: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="agent-nav">
-        {tabs.map((tab) => {
+        {tabs?.map((tab) => {
           const IconComponent = tab.icon;
           return (
             <button
@@ -211,8 +211,8 @@ export const WalmartGroceryAgent: React.FC = () => {
             className="search-input"
             placeholder="Search for groceries (e.g., 'organic milk', 'fresh produce', 'snacks')"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSearch()}
           />
           <button 
             className="search-button"
@@ -265,7 +265,7 @@ export const WalmartGroceryAgent: React.FC = () => {
           </div>
 
           <div className="results-grid">
-            {searchResults.items.map((item) => (
+            {searchResults?.items?.map((item: GroceryItem) => (
               <div 
                 key={item.id} 
                 className={`grocery-item ${selectedItems.has(item.id) ? 'selected' : ''} ${!item.inStock ? 'out-of-stock' : ''}`}
@@ -274,7 +274,7 @@ export const WalmartGroceryAgent: React.FC = () => {
                   <img src={item.imageUrl} alt={item.name} />
                   {item.savings && (
                     <div className="savings-badge">
-                      Save ${item.savings.toFixed(2)}
+                      Save ${item?.savings?.toFixed(2)}
                     </div>
                   )}
                   {!item.inStock && (
@@ -287,9 +287,9 @@ export const WalmartGroceryAgent: React.FC = () => {
                   <p className="item-category">{item.category} • {item.unit}</p>
                   
                   <div className="item-pricing">
-                    <span className="current-price">${item.price.toFixed(2)}</span>
+                    <span className="current-price">${item?.price?.toFixed(2)}</span>
                     {item.originalPrice && (
-                      <span className="original-price">${item.originalPrice.toFixed(2)}</span>
+                      <span className="original-price">${item?.originalPrice?.toFixed(2)}</span>
                     )}
                   </div>
                   
@@ -400,7 +400,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             </div>
 
             <div className="budget-categories">
-              {budgetData?.budget?.categories && Object.entries(budgetData.budget.categories).map(([category, data]: [string, any]) => {
+              {budgetData?.budget?.categories && Object.entries(budgetData?.budget?.categories).map(([category, data]: [string, { budget: number; spent: number }]) => {
                 const percentUsed = data.budget > 0 ? (data.spent / data.budget * 100) : 0;
                 const isWarning = percentUsed >= 90;
                 
@@ -408,7 +408,7 @@ export const WalmartGroceryAgent: React.FC = () => {
                   <div key={category} className="category-card">
                     <div className="category-header">
                       <h4>{category}</h4>
-                      <span className="category-amount">${data.spent.toFixed(2)}</span>
+                      <span className="category-amount">${data?.spent?.toFixed(2)}</span>
                     </div>
                     <div className="category-progress">
                       <div className={`progress-bar ${isWarning ? 'warning' : ''}`}>
@@ -423,7 +423,7 @@ export const WalmartGroceryAgent: React.FC = () => {
                 );
               })}
               
-              {(!budgetData?.budget?.categories || Object.keys(budgetData.budget.categories).length === 0) && (
+              {(!budgetData?.budget?.categories || Object.keys(budgetData?.budget?.categories).length === 0) && (
                 <div className="no-data-message">
                   <p>No spending data available yet. Start shopping to track your budget!</p>
                 </div>
@@ -481,12 +481,12 @@ export const WalmartGroceryAgent: React.FC = () => {
             <div className="trending-items">
               <h3>Trending Price Changes</h3>
               <div className="trend-list">
-                {trendingData?.trending && trendingData.trending.length > 0 ? (
-                  trendingData.trending.map((product) => (
+                {trendingData?.trending && trendingData?.trending?.length > 0 ? (
+                  trendingData?.trending?.map((product: Record<string, unknown> & { id: string; name: string; category: string }) => (
                     <div key={product.id} className="trend-item">
                       <div className="trend-info">
                         <img 
-                          src={product.imageUrl || "/api/placeholder/60/60"} 
+                          src={String(product.imageUrl || "/api/placeholder/60/60")} 
                           alt={product.name} 
                           className="trend-thumbnail" 
                         />
@@ -497,11 +497,11 @@ export const WalmartGroceryAgent: React.FC = () => {
                       </div>
                       <div className="trend-data">
                         <div className={`price-change ${product.trend === 'down' ? 'positive' : product.trend === 'up' ? 'negative' : 'neutral'}`}>
-                          <span className="current-price">${product.currentPrice.toFixed(2)}</span>
+                          <span className="current-price">${(Number(product?.currentPrice) || 0).toFixed(2)}</span>
                           <span className="change">
                             {product.trend === 'down' ? '↓' : product.trend === 'up' ? '↑' : '→'} 
                             {' '}
-                            {Math.abs(product.priceChange).toFixed(1)}%
+                            {Math.abs(Number(product.priceChange) || 0).toFixed(1)}%
                           </span>
                         </div>
                         <div className="trend-indicator">
@@ -545,7 +545,7 @@ export const WalmartGroceryAgent: React.FC = () => {
                           <img src={item.imageUrl} alt={item.name} className="alert-thumbnail" />
                           <div>
                             <h4>{item.name}</h4>
-                            <p>Current: ${item.price.toFixed(2)} • Target: ${targetPrice.toFixed(2)}</p>
+                            <p>Current: ${item?.price?.toFixed(2)} • Target: ${targetPrice.toFixed(2)}</p>
                           </div>
                         </div>
                         <div className="alert-status">

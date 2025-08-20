@@ -80,29 +80,31 @@ export class IEMSDataFlowService extends EventEmitter {
    * Start the data flow service
    */
   async start(): Promise<void> {
-    if (this.status.isRunning) {
+    if (this?.status?.isRunning) {
       logger.warn("Data flow service is already running");
       return;
     }
 
     logger.info("Starting IEMS data flow service");
-    this.status.isRunning = true;
+    if (this.status) {
+      this.status.isRunning = true;
+    }
 
     // Perform initial sync
     await this.performSync();
 
     // Set up scheduled sync
-    if (this.config.syncIntervalMinutes > 0) {
+    if (this?.config?.syncIntervalMinutes > 0) {
       this.setupScheduledSync();
     }
 
     // Set up file watcher for new analysis files
-    if (this.config.watchNewFiles) {
+    if (this?.config?.watchNewFiles) {
       await this.setupFileWatcher();
     }
 
     // Set up real-time event listeners
-    if (this.config.enableRealTimeSync) {
+    if (this?.config?.enableRealTimeSync) {
       this.setupRealTimeSync();
     }
 
@@ -115,7 +117,9 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   async stop(): Promise<void> {
     logger.info("Stopping IEMS data flow service");
-    this.status.isRunning = false;
+    if (this.status) {
+      this.status.isRunning = false;
+    }
 
     // Clear scheduled sync
     if (this.syncInterval) {
@@ -125,7 +129,7 @@ export class IEMSDataFlowService extends EventEmitter {
 
     // Stop file watcher
     if (this.fileWatcher) {
-      await this.fileWatcher.close();
+      await this?.fileWatcher?.close();
       this.fileWatcher = undefined;
     }
 
@@ -163,7 +167,7 @@ export class IEMSDataFlowService extends EventEmitter {
       this.emit("sync:start");
 
       // Run the migration pipeline
-      const migrationScript = path.join(
+      const migrationScript = path.resolve(
         __dirname,
         "..",
         "..",
@@ -171,6 +175,11 @@ export class IEMSDataFlowService extends EventEmitter {
         "migration",
         "data_pipeline.py",
       );
+
+      // Validate script path for security
+      if (!migrationScript.includes(path.normalize(__dirname))) {
+        throw new Error("Invalid script path - potential path traversal detected");
+      }
 
       const { stdout, stderr } = await execAsync(
         `python3 "${migrationScript}"`,
@@ -200,7 +209,7 @@ export class IEMSDataFlowService extends EventEmitter {
       this.status.totalRecordsProcessed += result.recordsProcessed;
 
       // Notify via WebSocket
-      this.wsService.broadcastEmailBulkUpdate("sync_complete", [], {
+      this?.wsService?.broadcastEmailBulkUpdate("sync_complete", [], {
         successful: result.recordsProcessed || 0,
         failed: 0,
         total: result.recordsProcessed || 0,
@@ -220,7 +229,7 @@ export class IEMSDataFlowService extends EventEmitter {
       );
 
       // Notify error via WebSocket
-      this.wsService.broadcastEmailBulkUpdate("sync_error", [], {
+      this?.wsService?.broadcastEmailBulkUpdate("sync_error", [], {
         successful: 0,
         failed: 1,
         total: 1,
@@ -273,10 +282,10 @@ export class IEMSDataFlowService extends EventEmitter {
       });
 
       // Save to database
-      await this.emailService.createEmail(emailData);
+      await this?.emailService?.createEmail(emailData);
 
       // Broadcast update
-      this.wsService.broadcastEmailBulkUpdate("new_email", [emailData.id], {
+      this?.wsService?.broadcastEmailBulkUpdate("new_email", [emailData.id], {
         successful: 1,
         failed: 0,
         total: 1,
@@ -393,7 +402,7 @@ export class IEMSDataFlowService extends EventEmitter {
     ];
 
     for (const mapping of mappings) {
-      if (mapping.pattern.test(primaryFocus)) {
+      if (mapping?.pattern?.test(primaryFocus)) {
         return mapping.type;
       }
     }
@@ -477,7 +486,7 @@ export class IEMSDataFlowService extends EventEmitter {
         type: "to",
         name: customer.name,
         email:
-          customer.email || `${customer.name.replace(/\s+/g, ".")}@unknown.com`,
+          customer.email || `${customer?.name?.replace(/\s+/g, ".")}@unknown.com`,
       });
     }
 
@@ -497,7 +506,7 @@ export class IEMSDataFlowService extends EventEmitter {
    * Set up scheduled sync
    */
   private setupScheduledSync(): void {
-    const intervalMs = this.config.syncIntervalMinutes * 60 * 1000;
+    const intervalMs = (this.config?.syncIntervalMinutes ?? 30) * 60 * 1000;
 
     this.syncInterval = setInterval(async () => {
       logger.info("Running scheduled sync");
@@ -505,9 +514,11 @@ export class IEMSDataFlowService extends EventEmitter {
     }, intervalMs);
 
     // Calculate next sync time
-    this.status.nextSync = new Date(Date.now() + intervalMs);
+    if (this.status) {
+      this.status.nextSync = new Date(Date.now() + intervalMs);
+    }
     logger.info(
-      `Scheduled sync every ${this.config.syncIntervalMinutes} minutes`,
+      `Scheduled sync every ${this.config?.syncIntervalMinutes ?? 30} minutes`,
     );
   }
 
@@ -525,7 +536,7 @@ export class IEMSDataFlowService extends EventEmitter {
     const chokidar = await import('chokidar');
     
     this.fileWatcher = chokidar.watch(
-      path.join(this.config.iemsAnalysisDir, 'analysis_batch_*.txt'),
+      path.join(this?.config?.iemsAnalysisDir, 'analysis_batch_*.txt'),
       {
         ignored: /(^|[\/\\])\../,
         persistent: true,
@@ -533,7 +544,7 @@ export class IEMSDataFlowService extends EventEmitter {
       }
     );
 
-    this.fileWatcher.on('add', async (filePath: string) => {
+    this?.fileWatcher?.on('add', async (filePath: string) => {
       logger.info(`New analysis file detected: ${filePath}`);
       
       // Wait a bit to ensure file is fully written
@@ -542,7 +553,7 @@ export class IEMSDataFlowService extends EventEmitter {
       }, 1000);
     });
 
-    logger.info(`Watching for new files in ${this.config.iemsAnalysisDir}`);
+    logger.info(`Watching for new files in ${this?.config?.iemsAnalysisDir}`);
     */
   }
 
@@ -551,14 +562,14 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   private setupRealTimeSync(): void {
     // Listen for manual sync requests
-    this.wsService.on("sync:request", async () => {
+    this?.wsService?.on("sync:request", async () => {
       logger.info("Manual sync requested via WebSocket");
       await this.performSync();
     });
 
     // Listen for status requests
-    this.wsService.on("status:request", () => {
-      this.wsService.broadcastEmailBulkUpdate("status_update", [], {
+    this?.wsService?.on("status:request", () => {
+      this?.wsService?.broadcastEmailBulkUpdate("status_update", [], {
         successful: 0,
         failed: 0,
         total: 0,
@@ -582,10 +593,10 @@ export class IEMSDataFlowService extends EventEmitter {
     const stats = {
       ...this.status,
       config: {
-        syncInterval: this.config.syncIntervalMinutes,
-        batchSize: this.config.batchSize,
-        realTimeSync: this.config.enableRealTimeSync,
-        fileWatching: this.config.watchNewFiles,
+        syncInterval: this.config?.syncIntervalMinutes,
+        batchSize: this.config?.batchSize,
+        realTimeSync: this.config?.enableRealTimeSync,
+        fileWatching: this.config?.watchNewFiles,
       },
       analysisFileCount: 0,
       lastAnalysisFile: null as string | null,
@@ -593,14 +604,14 @@ export class IEMSDataFlowService extends EventEmitter {
 
     try {
       // Count analysis files
-      const files = await fs.readdir(this.config.iemsAnalysisDir);
-      const analysisFiles = files.filter((f) =>
+      const files = await fs.readdir(this.config?.iemsAnalysisDir ?? '/tmp');
+      const analysisFiles = files?.filter((f: any) =>
         f.match(/analysis_batch_.*\.txt$/),
       );
-      stats.analysisFileCount = analysisFiles.length;
+      stats.analysisFileCount = analysisFiles?.length || 0;
 
       // Find most recent file
-      if (analysisFiles.length > 0) {
+      if (analysisFiles?.length || 0 > 0) {
         analysisFiles.sort().reverse();
         stats.lastAnalysisFile = analysisFiles[0] || null;
       }

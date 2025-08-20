@@ -76,7 +76,15 @@ export type {
 
 export interface MasterOrchestratorConfig {
   model?: string;
-  ollamaUrl: string;
+  ollamaUrl?: string; // For backward compatibility
+  llm?: {
+    type: 'ollama' | 'llamacpp' | 'auto';
+    ollamaUrl?: string;
+    ollamaModel?: string;
+    llamaModelPath?: string;
+    threads?: number;
+    gpuLayers?: number;
+  };
   rag?: RAGConfig;
   database?: any; // For testing with in-memory database
   agents?: AgentConfig[];

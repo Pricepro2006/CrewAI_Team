@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from "react";
 import { X, Filter, Search, Calendar, Tag, User, Mail } from "lucide-react";
-import { Button } from "../../../components/ui/button.js";
-import { Input } from "../../../components/ui/input.js";
-import { Label } from "../../../components/ui/label.js";
-import { Badge } from "../../../components/ui/badge.js";
-import { Checkbox } from "../../../components/ui/checkbox.js";
-import { ScrollArea } from "../../../components/ui/scroll-area.js";
-import { Separator } from "../../../components/ui/separator.js";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import { Badge } from "../../../components/ui/badge";
+import { Checkbox } from "../../../components/ui/checkbox";
+import { ScrollArea } from "../../../components/ui/scroll-area";
+import { Separator } from "../../../components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -15,19 +15,19 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetFooter,
-} from "../../../components/ui/sheet.js";
+} from "../../../components/ui/sheet";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../components/ui/select.js";
+} from "../../../components/ui/select";
 import {
   DateRangePicker,
   type DateRange,
-} from "../../../components/ui/date-range-picker.js";
-import { StatusIndicator } from "./StatusIndicator.js";
+} from "../../../components/ui/date-range-picker";
+import { StatusIndicator } from "./StatusIndicator";
 import type {
   EmailStatus,
   WorkflowState,
@@ -35,7 +35,7 @@ import type {
   FilterConfig,
   FilterOptions,
   StatusOption,
-} from "../../../types/email-dashboard.interfaces.js";
+} from "../../../types/email-dashboard.interfaces";
 
 interface FilterPanelProps {
   filters: FilterConfig;
@@ -70,7 +70,7 @@ export function FilterPanel({
 
   const handleFilterChange = useCallback(
     (key: keyof FilterConfig, value: any) => {
-      setLocalFilters((prev) => ({
+      setLocalFilters((prev: any) => ({
         ...prev,
         [key]: value,
       }));
@@ -108,7 +108,7 @@ export function FilterPanel({
     (key: keyof FilterConfig, value: string) => {
       const currentValues = (localFilters[key] as string[]) || [];
       const newValues = currentValues.includes(value)
-        ? currentValues.filter((v) => v !== value)
+        ? currentValues?.filter((v: any) => v !== value)
         : [...currentValues, value];
       handleFilterChange(key, newValues);
     },
@@ -166,7 +166,7 @@ export function FilterPanel({
                 Status
               </Label>
               <div className="space-y-2">
-                {filterOptions.statuses.map((status) => (
+                {filterOptions?.statuses?.map((status: any) => (
                   <div
                     key={status.value}
                     className="flex items-center space-x-2"
@@ -206,7 +206,7 @@ export function FilterPanel({
             <div className="space-y-2">
               <Label>Workflow State</Label>
               <div className="space-y-2">
-                {filterOptions.workflowStates.map((state) => (
+                {filterOptions?.workflowStates?.map((state: any) => (
                   <div key={state} className="flex items-center space-x-2">
                     <Checkbox
                       id={`workflow-${state}`}
@@ -222,7 +222,7 @@ export function FilterPanel({
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
                       <span className="text-sm font-medium">
-                        {workflowStateLabels[state]}
+                        {workflowStateLabels[state as WorkflowState]}
                       </span>
                     </label>
                   </div>
@@ -236,7 +236,7 @@ export function FilterPanel({
             <div className="space-y-2">
               <Label>Priority</Label>
               <div className="space-y-2">
-                {filterOptions.priorities.map((priority) => (
+                {filterOptions?.priorities?.map((priority: any) => (
                   <div key={priority} className="flex items-center space-x-2">
                     <Checkbox
                       id={`priority-${priority}`}
@@ -252,7 +252,7 @@ export function FilterPanel({
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
                       <span className="text-sm font-medium">
-                        {priorityLabels[priority]}
+                        {priorityLabels[priority as Priority]}
                       </span>
                     </label>
                   </div>
@@ -279,7 +279,7 @@ export function FilterPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All email aliases</SelectItem>
-                  {filterOptions.emailAliases.map((alias) => (
+                  {filterOptions?.emailAliases?.map((alias: any) => (
                     <SelectItem key={alias} value={alias}>
                       {alias}
                     </SelectItem>
@@ -305,7 +305,7 @@ export function FilterPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All requesters</SelectItem>
-                  {filterOptions.requesters.map((requester) => (
+                  {filterOptions?.requesters?.map((requester: any) => (
                     <SelectItem key={requester} value={requester}>
                       {requester}
                     </SelectItem>
@@ -324,14 +324,14 @@ export function FilterPanel({
               </Label>
               <DateRangePicker
                 value={
-                  localFilters.dateRange.start || localFilters.dateRange.end
+                  localFilters?.dateRange?.start || localFilters?.dateRange?.end
                     ? {
-                        from: localFilters.dateRange.start || undefined,
-                        to: localFilters.dateRange.end || undefined,
+                        from: localFilters?.dateRange?.start || undefined,
+                        to: localFilters?.dateRange?.end || undefined,
                       }
                     : undefined
                 }
-                onChange={(dateRange) => {
+                onChange={(dateRange: any) => {
                   handleFilterChange("dateRange", {
                     start: dateRange?.from || null,
                     end: dateRange?.to || null,
@@ -348,7 +348,7 @@ export function FilterPanel({
                 <Checkbox
                   id="has-attachments"
                   checked={localFilters.hasAttachments === true}
-                  onCheckedChange={(checked: boolean) =>
+                  onCheckedChange={(checked) =>
                     handleFilterChange(
                       "hasAttachments",
                       checked === true ? true : undefined,
@@ -367,7 +367,7 @@ export function FilterPanel({
                 <Checkbox
                   id="unread-only"
                   checked={localFilters.isRead === false}
-                  onCheckedChange={(checked: boolean) =>
+                  onCheckedChange={(checked) =>
                     handleFilterChange(
                       "isRead",
                       checked === true ? false : undefined,
@@ -384,7 +384,7 @@ export function FilterPanel({
             </div>
 
             {/* Tags Filter */}
-            {filterOptions.tags.length > 0 && (
+            {filterOptions?.tags?.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-2">
@@ -393,7 +393,7 @@ export function FilterPanel({
                     Tags
                   </Label>
                   <div className="flex flex-wrap gap-2">
-                    {filterOptions.tags.map((tag) => (
+                    {filterOptions?.tags?.map((tag: any) => (
                       <Badge
                         key={tag}
                         variant={

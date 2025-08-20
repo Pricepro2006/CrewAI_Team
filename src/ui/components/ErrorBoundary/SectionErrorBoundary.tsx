@@ -1,8 +1,8 @@
 import React, { Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
-import { ErrorFallback } from "./ErrorFallback";
-import { errorLogger } from "../../utils/errorLogger";
-import { translateError, getErrorSeverity } from "../../utils/errorTranslator";
+import { ErrorFallback } from "./ErrorFallback.js";
+import { errorLogger } from "../../utils/errorLogger.js";
+import { translateError, getErrorSeverity } from "../../utils/errorTranslator.js";
 
 export interface SectionErrorBoundaryProps {
   children: ReactNode;
@@ -60,7 +60,7 @@ export class SectionErrorBoundary extends Component<
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { sectionName, onError, isolate } = this.props;
     const { errorCount } = this.state;
 
@@ -68,7 +68,7 @@ export class SectionErrorBoundary extends Component<
     errorLogger.logError(error, `Section: ${sectionName}`, "Component Error");
 
     // Update error count
-    this.setState((prevState) => ({
+    this.setState((prevState: any) => ({
       errorInfo,
       errorCount: prevState.errorCount + 1,
     }));
@@ -89,11 +89,11 @@ export class SectionErrorBoundary extends Component<
     }
   }
 
-  componentDidUpdate(prevProps: SectionErrorBoundaryProps) {
+  override componentDidUpdate(prevProps: SectionErrorBoundaryProps) {
     const { resetKeys, resetOnPropsChange } = this.props;
     const { hasError } = this.state;
 
-    if (hasError && prevProps.children !== this.props.children && resetOnPropsChange) {
+    if (hasError && prevProps.children !== this?.props?.children && resetOnPropsChange) {
       this.resetError();
     }
 
@@ -109,7 +109,7 @@ export class SectionErrorBoundary extends Component<
     }
   }
 
-  componentWillUnmount() {
+  override componentWillUnmount() {
     if (this.resetTimeoutId) {
       clearTimeout(this.resetTimeoutId);
     }
@@ -139,7 +139,7 @@ export class SectionErrorBoundary extends Component<
     });
   };
 
-  render() {
+  override render() {
     const { hasError, error, errorCount } = this.state;
     const { children, sectionName, fallback: FallbackComponent, showDetails, customMessage } = this.props;
 
@@ -193,7 +193,7 @@ export class SectionErrorBoundary extends Component<
                 Try Again
               </button>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => window?.location?.reload()}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
               >
                 Refresh Page
@@ -214,11 +214,15 @@ export function withSectionErrorBoundary<P extends object>(
   sectionName: string,
   options?: Omit<SectionErrorBoundaryProps, "children" | "sectionName">
 ) {
-  return React.forwardRef<any, P>((props, ref) => (
+  const WrappedComponent = React.forwardRef<any, P>((props, ref) => (
     <SectionErrorBoundary sectionName={sectionName} {...options}>
-      <Component {...props} ref={ref} />
+      <Component {...(props as P)} ref={ref} />
     </SectionErrorBoundary>
   ));
+  
+  WrappedComponent.displayName = `withSectionErrorBoundary(${Component.displayName || Component.name})`;
+  
+  return WrappedComponent;
 }
 
 // Specific error boundaries for different sections

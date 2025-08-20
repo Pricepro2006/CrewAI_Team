@@ -19,8 +19,7 @@ import { CircuitBreakerFactory } from '../../core/resilience/CircuitBreaker.js';
 import { cacheManager } from '../../core/cache/RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
-import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { IncomingMessage, ServerResponse } from 'http';
 import WebSocket from 'ws';
 
@@ -106,14 +105,18 @@ export class ServiceProxy {
    */
   async proxyRequest(request: ProxyRequest): Promise<ProxyResponse> {
     const startTime = Date.now();
-    this.metrics.totalRequests++;
+    if (this.metrics.totalRequests) { this.metrics.totalRequests++ };
 
     try {
       // Check cache first if enabled
-      if (this.config.cachingEnabled && this.isCacheableRequest(request)) {
+      if (this?.config?.cachingEnabled && this.isCacheableRequest(request)) {
         const cachedResponse = await this.getCachedResponse(request);
         if (cachedResponse) {
-          this.metrics.cacheHitRate = (this.metrics.cacheHitRate + 1) / 2;
+          if (this.metrics) {
+
+            this.metrics.cacheHitRate = (this?.metrics?.cacheHitRate + 1) / 2;
+
+          }
           return {
             ...cachedResponse,
             cached: true,
@@ -123,8 +126,8 @@ export class ServiceProxy {
       }
 
       // Select service instance
-      const selection = await this.loadBalancer.selectService(
-        this.config.serviceName,
+      const selection = await this?.loadBalancer?.selectService(
+        this?.config?.serviceName,
         request.clientId,
         { clientIp: request.clientIp }
       );
@@ -133,13 +136,13 @@ export class ServiceProxy {
         throw new Error(selection.error || 'No available service instances');
       }
 
-      const service = selection.service;
+      const service = selection?.service;
       
       // Execute request with retry logic
       const response = await this.executeWithRetry(service, request, startTime);
 
       // Cache response if applicable
-      if (this.config.cachingEnabled && this.isCacheableResponse(response)) {
+      if (this?.config?.cachingEnabled && this.isCacheableResponse(response)) {
         await this.cacheResponse(request, response);
       }
 
@@ -147,7 +150,7 @@ export class ServiceProxy {
       this.updateSuccessMetrics(response.responseTime);
       
       // Report to load balancer
-      await this.loadBalancer.reportRequestCompletion(
+      await this?.loadBalancer?.reportRequestCompletion(
         service.id,
         response.responseTime,
         true
@@ -160,7 +163,7 @@ export class ServiceProxy {
       this.updateFailureMetrics();
       
       logger.error('Proxy request failed', 'SERVICE_PROXY', {
-        serviceName: this.config.serviceName,
+        serviceName: this?.config?.serviceName,
         path: request.path,
         error: error instanceof Error ? error.message : String(error),
         responseTime,
@@ -181,7 +184,7 @@ export class ServiceProxy {
     let lastError: Error | null = null;
     let attempt = 0;
 
-    while (attempt < this.config.retryAttempts) {
+    while (attempt < this?.config?.retryAttempts) {
       attempt++;
       
       try {
@@ -190,16 +193,16 @@ export class ServiceProxy {
         lastError = error instanceof Error ? error : new Error(String(error));
         
         // Check if we should retry
-        if (attempt >= this.config.retryAttempts || !this.isRetryableError(error)) {
+        if (attempt >= this?.config?.retryAttempts || !this.isRetryableError(error)) {
           break;
         }
 
         // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, this.config.retryDelay * attempt));
-        this.metrics.retryCount++;
+        await new Promise(resolve => setTimeout(resolve, this?.config?.retryDelay * attempt));
+        if (this.metrics.retryCount) { this.metrics.retryCount++ };
         
         logger.warn('Retrying request', 'SERVICE_PROXY', {
-          serviceName: this.config.serviceName,
+          serviceName: this?.config?.serviceName,
           serviceId: service.id,
           attempt,
           error: lastError.message,
@@ -208,7 +211,7 @@ export class ServiceProxy {
     }
 
     // Report failure to load balancer
-    await this.loadBalancer.reportRequestCompletion(
+    await this?.loadBalancer?.reportRequestCompletion(
       service.id,
       Date.now() - startTime,
       false
@@ -228,8 +231,8 @@ export class ServiceProxy {
     const url = `${service.protocol}://${service.host}:${service.port}${request.path}`;
     
     // Apply request transformation
-    const transformedRequest = this.config.requestTransform 
-      ? this.config.requestTransform(request)
+    const transformedRequest = this?.config?.requestTransform 
+      ? this?.config?.requestTransform(request)
       : request;
 
     // Prepare axios config
@@ -238,20 +241,20 @@ export class ServiceProxy {
       url,
       headers: {
         ...request.headers,
-        ...this.config.headers,
+        ...this?.config?.headers,
       },
-      timeout: this.config.timeout,
+      timeout: this?.config?.timeout,
       params: transformedRequest.query,
       data: transformedRequest.body,
     };
 
     // Add authentication
-    if (this.config.authentication) {
-      this.addAuthentication(axiosConfig, this.config.authentication);
+    if (this?.config?.authentication) {
+      this.addAuthentication(axiosConfig, this?.config?.authentication);
     }
 
     // Execute with circuit breaker if enabled
-    if (this.config.circuitBreakerEnabled) {
+    if (this?.config?.circuitBreakerEnabled) {
       const circuitBreaker = CircuitBreakerFactory.getInstance(service.id);
       
       const axiosResponse = await circuitBreaker.execute(async () => {
@@ -278,8 +281,8 @@ export class ServiceProxy {
     let body = axiosResponse.data;
     
     // Apply response transformation
-    if (this.config.responseTransform) {
-      body = this.config.responseTransform(body);
+    if (this?.config?.responseTransform) {
+      body = this?.config?.responseTransform(body);
     }
 
     return {
@@ -333,7 +336,7 @@ export class ServiceProxy {
    * Check if request is cacheable
    */
   private isCacheableRequest(request: ProxyRequest): boolean {
-    return request.method.toLowerCase() === 'get';
+    return request?.method?.toLowerCase() === 'get';
   }
 
   /**
@@ -366,9 +369,9 @@ export class ServiceProxy {
     try {
       const cacheKey = this.generateCacheKey(request);
       await cacheManager.set(cacheKey, response, {
-        ttl: this.config.cacheTTL,
+        ttl: this?.config?.cacheTTL,
         namespace: 'proxy',
-        tags: [this.config.serviceName],
+        tags: [this?.config?.serviceName],
       });
     } catch (error) {
       logger.warn('Cache set failed', 'SERVICE_PROXY', {
@@ -382,7 +385,7 @@ export class ServiceProxy {
    */
   private generateCacheKey(request: ProxyRequest): string {
     const keyData = {
-      service: this.config.serviceName,
+      service: this?.config?.serviceName,
       method: request.method,
       path: request.path,
       query: request.query,
@@ -396,7 +399,7 @@ export class ServiceProxy {
   private isRetryableError(error: any): boolean {
     if (axios.isAxiosError(error)) {
       // Retry on network errors and 5xx status codes
-      return !error.response || (error.response.status >= 500 && error.response.status < 600);
+      return !error.response || (error?.response?.status >= 500 && error?.response?.status < 600);
     }
     return true; // Retry on non-axios errors
   }
@@ -405,20 +408,24 @@ export class ServiceProxy {
    * Update success metrics
    */
   private updateSuccessMetrics(responseTime: number): void {
-    this.metrics.successfulRequests++;
+    if (this.metrics.successfulRequests) { this.metrics.successfulRequests++ };
     
     // Update average response time
-    const totalRequests = this.metrics.successfulRequests + this.metrics.failedRequests;
-    this.metrics.avgResponseTime = (
-      (this.metrics.avgResponseTime * (totalRequests - 1)) + responseTime
+    const totalRequests = this?.metrics?.successfulRequests + this?.metrics?.failedRequests;
+    if (this.metrics) {
+
+      this.metrics.avgResponseTime = (
+      (this?.metrics?.avgResponseTime * (totalRequests - 1)) + responseTime
     ) / totalRequests;
 
+    }
+
     // Record Prometheus metrics
-    metrics.increment('service_proxy.request.success', {
-      service: this.config.serviceName,
+    metrics.increment('service_proxy?.request?.success', 1, {
+      service: this?.config?.serviceName,
     });
     metrics.histogram('service_proxy.response_time', responseTime, {
-      service: this.config.serviceName,
+      service: this?.config?.serviceName,
     });
   }
 
@@ -426,11 +433,11 @@ export class ServiceProxy {
    * Update failure metrics
    */
   private updateFailureMetrics(): void {
-    this.metrics.failedRequests++;
+    if (this.metrics.failedRequests) { this.metrics.failedRequests++ };
     
     // Record Prometheus metrics
-    metrics.increment('service_proxy.request.failed', {
-      service: this.config.serviceName,
+    metrics.increment('service_proxy?.request?.failed', 1, {
+      service: this?.config?.serviceName,
     });
   }
 
@@ -447,7 +454,7 @@ export class ServiceProxy {
           body: req.body,
           query: req.query as Record<string, any>,
           clientIp: req.ip,
-          clientId: req.get('X-Client-ID') || req.sessionID,
+          clientId: req.get('X-Client-ID') || (req as any).sessionID || req.ip,
         };
 
         const response = await this.proxyRequest(proxyRequest);
@@ -476,10 +483,10 @@ export class ServiceProxy {
     return async (ws: WebSocket, req: IncomingMessage) => {
       try {
         // Select service instance
-        const selection = await this.loadBalancer.selectService(
-          this.config.serviceName,
+        const selection = await this?.loadBalancer?.selectService(
+          this?.config?.serviceName,
           req.headers['x-client-id'] as string,
-          { clientIp: req.socket.remoteAddress }
+          { clientIp: req?.socket?.remoteAddress }
         );
 
         if (!selection.service) {
@@ -487,20 +494,20 @@ export class ServiceProxy {
           return;
         }
 
-        const service = selection.service;
+        const service = selection?.service;
         const targetUrl = `${service.protocol === 'wss' ? 'wss' : 'ws'}://${service.host}:${service.port}${req.url}`;
 
         // Create connection to target service
         const targetWs = new WebSocket(targetUrl);
 
         // Set up bidirectional forwarding
-        ws.on('message', (data) => {
+        ws.on('message', (data: any) => {
           if (targetWs.readyState === WebSocket.OPEN) {
             targetWs.send(data);
           }
         });
 
-        targetWs.on('message', (data) => {
+        targetWs.on('message', (data: any) => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(data);
           }
@@ -518,7 +525,7 @@ export class ServiceProxy {
           ws.close(code, reason);
         });
 
-        targetWs.on('error', (error) => {
+        targetWs.on('error', (error: any) => {
           logger.error('WebSocket proxy target error', 'SERVICE_PROXY', {
             serviceId: service.id,
             error: error.message,
@@ -530,7 +537,7 @@ export class ServiceProxy {
           targetWs.close();
         });
 
-        ws.on('error', (error) => {
+        ws.on('error', (error: any) => {
           logger.error('WebSocket proxy client error', 'SERVICE_PROXY', {
             error: error.message,
           });
@@ -575,13 +582,13 @@ export class ServiceProxy {
     Object.assign(this.config, newConfig);
     
     if (newConfig.loadBalancingStrategy) {
-      this.loadBalancer.updateConfig({
+      this?.loadBalancer?.updateConfig({
         strategy: newConfig.loadBalancingStrategy,
       });
     }
 
     logger.info('Service proxy config updated', 'SERVICE_PROXY', {
-      serviceName: this.config.serviceName,
+      serviceName: this?.config?.serviceName,
       config: this.config,
     });
   }
@@ -590,9 +597,9 @@ export class ServiceProxy {
    * Graceful shutdown
    */
   shutdown(): void {
-    this.loadBalancer.shutdown();
+    this?.loadBalancer?.shutdown();
     logger.info('Service proxy shutdown complete', 'SERVICE_PROXY', {
-      serviceName: this.config.serviceName,
+      serviceName: this?.config?.serviceName,
     });
   }
 }
@@ -617,12 +624,12 @@ export class ServiceProxyFactory {
     };
 
     const proxy = new ServiceProxy(fullConfig);
-    this.instances.set(serviceName, proxy);
+    this?.instances?.set(serviceName, proxy);
     return proxy;
   }
 
   static getProxy(serviceName: string): ServiceProxy | undefined {
-    return this.instances.get(serviceName);
+    return this?.instances?.get(serviceName);
   }
 
   static getAllProxies(): Map<string, ServiceProxy> {
@@ -630,7 +637,7 @@ export class ServiceProxyFactory {
   }
 
   static shutdown(): void {
-    this.instances.forEach(proxy => proxy.shutdown());
-    this.instances.clear();
+    this?.instances?.forEach(proxy => proxy.shutdown());
+    this?.instances?.clear();
   }
 }

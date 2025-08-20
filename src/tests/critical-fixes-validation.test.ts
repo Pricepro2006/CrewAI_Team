@@ -19,6 +19,7 @@
  * and prevents regression of the critical issues discovered in production.
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   describe,
   it,
@@ -30,16 +31,16 @@ import {
   afterEach,
 } from "vitest";
 import axios from "axios";
-import { EmailThreePhaseAnalysisService } from "../core/services/EmailThreePhaseAnalysisService.js";
-import { EmailChainAnalyzer } from "../core/services/EmailChainAnalyzer.js";
-import { RedisService } from "../core/cache/RedisService.js";
+import { EmailThreePhaseAnalysisService } from '../core/services/EmailThreePhaseAnalysisService';
+import { EmailChainAnalyzer } from '../core/services/EmailChainAnalyzer';
+import { RedisService } from '../core/cache/RedisService';
 
 // Mock dependencies
 vi.mock("axios");
-vi.mock("../core/cache/RedisService.js");
+vi.mock('../core/cache/RedisService');
 
 // Mock database connection with inline factory function
-vi.mock("../database/ConnectionPool.js", () => ({
+vi.mock('../database/ConnectionPool', () => ({
   getDatabaseConnection: vi.fn(() => ({
     prepare: vi.fn().mockReturnValue({
       run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
@@ -48,7 +49,7 @@ vi.mock("../database/ConnectionPool.js", () => ({
     }),
     exec: vi.fn(),
   })),
-  executeQuery: vi.fn((callback) => callback({
+  executeQuery: vi.fn((callback: any) => callback({
     prepare: vi.fn().mockReturnValue({
       run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
       get: vi.fn().mockReturnValue(null),
@@ -56,7 +57,7 @@ vi.mock("../database/ConnectionPool.js", () => ({
     }),
     exec: vi.fn(),
   })),
-  executeTransaction: vi.fn((callback) => callback({
+  executeTransaction: vi.fn((callback: any) => callback({
     prepare: vi.fn().mockReturnValue({
       run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
       get: vi.fn().mockReturnValue(null),
@@ -106,14 +107,14 @@ Total Scenarios Tested: ${globalMetrics.totalScenarios}
 📈 CHAIN SCORING VALIDATION:
 - Score Range: ${Math.min(...globalMetrics.chainScores)} - ${Math.max(...globalMetrics.chainScores)}%
 - Unique Scores: ${new Set(globalMetrics.chainScores).size}
-- Intermediate Scores (1-99%): ${globalMetrics.chainScores.filter((s) => s > 0 && s < 100).length}/${globalMetrics.chainScores.length} (${((globalMetrics.chainScores.filter((s) => s > 0 && s < 100).length / globalMetrics.chainScores.length) * 100).toFixed(1)}%)
-- Binary Extremes (0% or 100%): ${globalMetrics.chainScores.filter((s) => s === 0 || s === 100).length} (${((globalMetrics.chainScores.filter((s) => s === 0 || s === 100).length / globalMetrics.chainScores.length) * 100).toFixed(1)}%)
+- Intermediate Scores (1-99%): ${globalMetrics?.chainScores?.filter((s: any) => s > 0 && s < 100).length}/${globalMetrics?.chainScores?.length} (${((globalMetrics?.chainScores?.filter((s: any) => s > 0 && s < 100).length / globalMetrics?.chainScores?.length) * 100).toFixed(1)}%)
+- Binary Extremes (0% or 100%): ${globalMetrics?.chainScores?.filter((s: any) => s === 0 || s === 100).length} (${((globalMetrics?.chainScores?.filter((s: any) => s === 0 || s === 100).length / globalMetrics?.chainScores?.length) * 100).toFixed(1)}%)
 
 ⚡ PERFORMANCE:
-- Average Processing Time: ${(globalMetrics.processingTimes.reduce((sum, t) => sum + t, 0) / globalMetrics.processingTimes.length).toFixed(0)}ms
-- Average Confidence: ${(globalMetrics.confidenceScores.reduce((sum, c) => sum + c, 0) / globalMetrics.confidenceScores.length).toFixed(3)}
+- Average Processing Time: ${(globalMetrics?.processingTimes?.reduce((sum: any, t: any) => sum + t, 0) / globalMetrics?.processingTimes?.length).toFixed(0)}ms
+- Average Confidence: ${(globalMetrics?.confidenceScores?.reduce((sum: any, c: any) => sum + c, 0) / globalMetrics?.confidenceScores?.length).toFixed(3)}
 
-${globalMetrics.chainScores.filter((s) => s > 0 && s < 100).length > globalMetrics.chainScores.length * 0.5 ? "✅" : "❌"} CHAIN SCORING FIX: ${globalMetrics.chainScores.filter((s) => s > 0 && s < 100).length > globalMetrics.chainScores.length * 0.5 ? "VALIDATED" : "FAILED"}
+${globalMetrics?.chainScores?.filter((s: any) => s > 0 && s < 100).length > globalMetrics?.chainScores?.length * 0.5 ? "✅" : "❌"} CHAIN SCORING FIX: ${globalMetrics?.chainScores?.filter((s: any) => s > 0 && s < 100).length > globalMetrics?.chainScores?.length * 0.5 ? "VALIDATED" : "FAILED"}
 ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === globalMetrics.totalScenarios ? "✅" : "❌"} JSON PARSING FIX: ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === globalMetrics.totalScenarios ? "VALIDATED" : "FAILED"}
     `);
   });
@@ -128,7 +129,7 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
         return {
           run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
           get: vi.fn().mockImplementation((id: string) => {
-            const email = mockDbData.find((email) => email.id === id);
+            const email = mockDbData.find((email: any) => email.id === id);
             if (!email) return null;
             
             // Return email with all the fields the EmailChainAnalyzer expects
@@ -146,8 +147,8 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
           all: vi.fn().mockImplementation((param?: string) => {
             let results;
             if (typeof param === "string") {
-              results = mockDbData.filter(
-                (email) =>
+              results = mockDbData?.filter(
+                (email: any) =>
                   email.thread_id === param || email.conversation_id === param,
               );
             } else {
@@ -155,7 +156,7 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
             }
             
             // Map all results to expected schema
-            return results.map((email) => ({
+            return results?.map((email: any) => ({
               id: email.id,
               internet_message_id: email.internet_message_id || email.message_id,
               subject: email.subject,
@@ -214,7 +215,7 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
       for (const format of problematicFormats) {
         mockDbData = createSingleEmailChain(format.name);
 
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: { response: format.response },
         });
@@ -228,14 +229,14 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
 
         globalMetrics.totalScenarios++;
         globalMetrics.jsonParsingSuccesses++;
-        globalMetrics.chainScores.push(
+        globalMetrics?.chainScores?.push(
           analysis.chain_analysis?.completeness_score || 0,
         );
-        globalMetrics.confidenceScores.push(analysis.confidence);
+        globalMetrics?.confidenceScores?.push(analysis.confidence);
       }
 
       console.log(
-        `✅ JSON Parsing: Handled ${problematicFormats.length} problematic formats`,
+        `✅ JSON Parsing: Handled ${problematicFormats?.length || 0} problematic formats`,
       );
     });
 
@@ -284,17 +285,17 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
       expect(analysis.workflow_validation).toBe("RETRY_SUCCESS");
 
       // Validate progressive parameters
-      const calls = mockedAxios.post.mock.calls;
+      const calls = mockedAxios?.post?.mock.calls;
       expect(calls[0][1].options.temperature).toBe(0.1);
       expect(calls[1][1].options.temperature).toBe(0.05);
       expect(calls[2][1].options.temperature).toBe(0.05);
 
       globalMetrics.totalScenarios++;
       globalMetrics.jsonParsingRetries++;
-      globalMetrics.chainScores.push(
+      globalMetrics?.chainScores?.push(
         analysis.chain_analysis?.completeness_score || 0,
       );
-      globalMetrics.confidenceScores.push(analysis.confidence);
+      globalMetrics?.confidenceScores?.push(analysis.confidence);
 
       console.log(
         "✅ JSON Parsing: Retry mechanism validated with progressive parameters",
@@ -306,7 +307,7 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
 
       // Mock complete parsing failure
       Array.from({ length: 3 }, () => {
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: {
             response: "Completely unparseable response with no structure",
@@ -325,10 +326,10 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
 
       globalMetrics.totalScenarios++;
       globalMetrics.jsonParsingFallbacks++;
-      globalMetrics.chainScores.push(
+      globalMetrics?.chainScores?.push(
         analysis.chain_analysis?.completeness_score || 0,
       );
-      globalMetrics.confidenceScores.push(analysis.confidence);
+      globalMetrics?.confidenceScores?.push(analysis.confidence);
 
       console.log("✅ JSON Parsing: Fallback extraction validated");
     });
@@ -345,7 +346,7 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
         mockDbData = chain;
 
         // Mock successful JSON parsing for consistent scoring validation
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: {
             response: JSON.stringify({
@@ -382,27 +383,27 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
 
         globalMetrics.totalScenarios++;
         globalMetrics.jsonParsingSuccesses++;
-        globalMetrics.chainScores.push(score);
-        globalMetrics.confidenceScores.push(analysis.confidence);
+        globalMetrics?.chainScores?.push(score);
+        globalMetrics?.confidenceScores?.push(analysis.confidence);
       }
 
       // CRITICAL VALIDATION: No binary pathology
       const uniqueScores = new Set(testResults);
-      const zeroScores = testResults.filter((s) => s === 0).length;
-      const hundredScores = testResults.filter((s) => s === 100).length;
-      const intermediateScores = testResults.filter(
-        (s) => s > 0 && s < 100,
+      const zeroScores = testResults?.filter((s: any) => s === 0).length;
+      const hundredScores = testResults?.filter((s: any) => s === 100).length;
+      const intermediateScores = testResults?.filter(
+        (s: any) => s > 0 && s < 100,
       ).length;
       const binaryExtremes = zeroScores + hundredScores;
 
       expect(uniqueScores.size).toBeGreaterThan(20); // Many different scores
-      expect(intermediateScores).toBeGreaterThan(testResults.length * 0.5); // >50% intermediate
-      expect(binaryExtremes).toBeLessThan(testResults.length * 0.3); // <30% at extremes
+      expect(intermediateScores).toBeGreaterThan(testResults?.length || 0 * 0.5); // >50% intermediate
+      expect(binaryExtremes).toBeLessThan(testResults?.length || 0 * 0.3); // <30% at extremes
 
       console.log(`✅ Chain Scoring: Binary pathology eliminated across 500 scenarios
         - Unique scores: ${uniqueScores.size}
-        - Intermediate (1-99%): ${intermediateScores} (${((intermediateScores / testResults.length) * 100).toFixed(1)}%)
-        - Binary extremes: ${binaryExtremes} (${((binaryExtremes / testResults.length) * 100).toFixed(1)}%)`);
+        - Intermediate (1-99%): ${intermediateScores} (${((intermediateScores / testResults?.length || 0) * 100).toFixed(1)}%)
+        - Binary extremes: ${binaryExtremes} (${((binaryExtremes / testResults?.length || 0) * 100).toFixed(1)}%)`);
     });
 
     it("should ensure single emails never achieve 100% scores", async () => {
@@ -428,7 +429,7 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
         ];
         mockDbData = chain;
 
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: {
             response: JSON.stringify({
@@ -465,13 +466,13 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
         // CRITICAL: Single emails must NEVER be 100%
         expect(score).toBeLessThan(100);
         expect(score).toBeLessThanOrEqual(30); // Should be low
-        expect(analysis.chain_analysis?.chain_length).toBe(1);
-        expect(analysis.chain_analysis?.is_complete_chain).toBe(false);
+        expect(analysis.chain_analysis?).toHaveLength(1);
+        expect(analysis.chain_analysis?.length).toBe(false);
 
         globalMetrics.totalScenarios++;
         globalMetrics.jsonParsingSuccesses++;
-        globalMetrics.chainScores.push(score);
-        globalMetrics.confidenceScores.push(analysis.confidence);
+        globalMetrics?.chainScores?.push(score);
+        globalMetrics?.confidenceScores?.push(analysis.confidence);
       }
 
       console.log(
@@ -489,14 +490,14 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
       ];
 
       for (const test of progressionTests) {
-        const chain = createProgressiveChain(test.length);
+        const chain = createProgressiveChain(test?.length || 0);
         mockDbData = chain;
 
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: {
             response: JSON.stringify({
-              workflow_validation: `PROGRESSION_${test.length}_EMAILS`,
+              workflow_validation: `PROGRESSION_${test?.length || 0}_EMAILS`,
               missed_entities: {
                 project_names: [],
                 company_names: [],
@@ -517,9 +518,9 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
         });
 
         const analysis = await analysisService.analyzeEmail({
-          id: `progressive-${test.length}-1`,
-          subject: `Test Email for progression-${test.length}`,
-          body: `Test content for progression-${test.length} validation`,
+          id: `progressive-${test?.length || 0}-1`,
+          subject: `Test Email for progression-${test?.length || 0}`,
+          body: `Test content for progression-${test?.length || 0} validation`,
           sender_email: "test@example.com",
           recipient_emails: "recipient@example.com",
           received_at: new Date().toISOString(),
@@ -528,12 +529,12 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
 
         expect(score).toBeGreaterThanOrEqual(test.expectedRange[0]);
         expect(score).toBeLessThanOrEqual(test.expectedRange[1]);
-        expect(analysis.chain_analysis?.chain_length).toBe(test.length);
+        expect(analysis.chain_analysis?.length).toBe(test?.length || 0);
 
         globalMetrics.totalScenarios++;
         globalMetrics.jsonParsingSuccesses++;
-        globalMetrics.chainScores.push(score);
-        globalMetrics.confidenceScores.push(analysis.confidence);
+        globalMetrics?.chainScores?.push(score);
+        globalMetrics?.confidenceScores?.push(analysis.confidence);
 
         console.log(
           `✅ Chain Scoring: ${test.name} scored ${score}% (expected ${test.expectedRange[0]}-${test.expectedRange[1]}%)`,
@@ -566,8 +567,8 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
 
         // Mock varied JSON parsing scenarios
         const responses = generateVariedResponses(responseComplexity, i);
-        responses.forEach((response) => {
-          mockedAxios.post.mockResolvedValueOnce({
+        responses.forEach((response: any) => {
+          mockedAxios?.post?.mockResolvedValueOnce({
             status: 200,
             data: { response },
           });
@@ -583,21 +584,21 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
             scenario: i,
             processingTime,
             chainScore: analysis.chain_analysis?.completeness_score || 0,
-            jsonParsingAttempts: responses.length,
+            jsonParsingAttempts: responses?.length || 0,
             success: true,
           });
 
           globalMetrics.totalScenarios++;
-          globalMetrics.processingTimes.push(processingTime);
-          globalMetrics.chainScores.push(
+          globalMetrics?.processingTimes?.push(processingTime);
+          globalMetrics?.chainScores?.push(
             analysis.chain_analysis?.completeness_score || 0,
           );
-          globalMetrics.confidenceScores.push(analysis.confidence);
+          globalMetrics?.confidenceScores?.push(analysis.confidence);
 
           // Count JSON parsing metrics
-          if (responses.length === 1 && !responses[0].includes("Invalid")) {
+          if (responses?.length || 0 === 1 && !responses[0].includes("Invalid")) {
             globalMetrics.jsonParsingSuccesses++;
-          } else if (responses.length > 1) {
+          } else if (responses?.length || 0 > 1) {
             globalMetrics.jsonParsingRetries++;
           } else {
             globalMetrics.jsonParsingFallbacks++;
@@ -607,38 +608,38 @@ ${globalMetrics.jsonParsingSuccesses + globalMetrics.jsonParsingFallbacks === gl
             scenario: i,
             processingTime: Date.now() - scenarioStart,
             chainScore: 0,
-            jsonParsingAttempts: responses.length,
+            jsonParsingAttempts: responses?.length || 0,
             success: false,
           });
         }
       }
 
       const totalTime = Date.now() - startTime;
-      const successfulScenarios = loadTestResults.filter((r) => r.success);
+      const successfulScenarios = loadTestResults?.filter((r: any) => r.success);
       const averageProcessingTime =
-        successfulScenarios.reduce((sum, r) => sum + r.processingTime, 0) /
-        successfulScenarios.length;
+        successfulScenarios.reduce((sum: any, r: any) => sum + r.processingTime, 0) /
+        successfulScenarios?.length || 0;
 
       // Validate performance
-      expect(successfulScenarios.length).toBe(200); // All should succeed
+      expect(successfulScenarios?.length || 0).toBe(200); // All should succeed
       expect(averageProcessingTime).toBeLessThan(5000); // <5s average
       expect(totalTime).toBeLessThan(300000); // <5 min total
 
       // Validate distribution
-      const chainScores = successfulScenarios.map((r) => r.chainScore);
+      const chainScores = successfulScenarios?.map((r: any) => r.chainScore);
       const uniqueScores = new Set(chainScores);
-      const intermediateScores = chainScores.filter((s) => s > 0 && s < 100);
+      const intermediateScores = chainScores?.filter((s: any) => s > 0 && s < 100);
 
       expect(uniqueScores.size).toBeGreaterThan(15);
-      expect(intermediateScores.length).toBeGreaterThan(
-        chainScores.length * 0.5,
+      expect(intermediateScores?.length || 0).toBeGreaterThan(
+        chainScores?.length || 0 * 0.5,
       );
 
       console.log(`✅ Load Test: 200 scenarios completed in ${(totalTime / 1000).toFixed(1)}s
         - Success rate: 100%
         - Average processing: ${averageProcessingTime.toFixed(0)}ms
         - Chain score diversity: ${uniqueScores.size} unique scores
-        - Intermediate scores: ${((intermediateScores.length / chainScores.length) * 100).toFixed(1)}%`);
+        - Intermediate scores: ${((intermediateScores?.length || 0 / chainScores?.length || 0) * 100).toFixed(1)}%`);
     });
   });
 });

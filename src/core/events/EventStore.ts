@@ -3,6 +3,7 @@ import Redis from 'ioredis';
 import { z } from 'zod';
 import { BaseEventSchema } from './EventBus.js';
 import type { BaseEvent } from './EventBus.js';
+import type { EventData, EventMetadata, AggregateData } from '../../shared/types/core.types.js';
 
 // Event store schemas and types
 export const EventStreamSchema = z.object({
@@ -21,7 +22,7 @@ export const SnapshotSchema = z.object({
   aggregateType: z.string(),
   aggregateId: z.string(),
   version: z.number(),
-  data: z.record(z.any()),
+  data: z.record(z.unknown()),
   timestamp: z.number(),
   metadata: z.record(z.string()).default({})
 });
@@ -96,11 +97,6 @@ export class EventStore extends EventEmitter {
   constructor(config: Partial<EventStoreConfig> = {}) {
     super();
     this.config = EventStoreConfigSchema.parse(config);
-    this.initializeRedisClient();
-    this.startCacheCleanup();
-  }
-
-  private initializeRedisClient(): void {
     this.client = new Redis({
       host: this.config.redis.host,
       port: this.config.redis.port,
@@ -113,13 +109,17 @@ export class EventStore extends EventEmitter {
       },
       lazyConnect: true
     });
+    this.initializeRedisClient();
+    this.startCacheCleanup();
+  }
 
+  private initializeRedisClient(): void {
     this.client.on('connect', () => {
       this.isConnected = true;
       this.emit('connected');
     });
 
-    this.client.on('error', (error) => {
+    this.client.on('error', (error: Error) => {
       this.isConnected = false;
       this.emit('error', error);
     });
@@ -204,8 +204,8 @@ export class EventStore extends EventEmitter {
           source: event.source,
           correlationId: event.correlationId || '',
           causationId: event.causationId || '',
-          metadata: JSON.stringify(event.metadata),
-          payload: JSON.stringify(event.payload)
+          metadata: JSON.stringify(event.metadata || {}),
+          payload: JSON.stringify(event.payload || {})
         });
         
         pipeline.expire(eventKey, this.config.streams.retentionDays * 24 * 60 * 60);
@@ -226,12 +226,18 @@ export class EventStore extends EventEmitter {
         pipeline.zadd(`${streamKey}:events`, eventVersion, event.id);
       });
 
-      await pipeline.exec();
+      const result = await pipeline.exec();
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        throw new Error('Pipeline execution failed during event append');
+      }
 
       // Update cache
       const cacheKey = `events:${streamId}`;
       if (this.eventCache.has(cacheKey)) {
-        this.eventCache.get(cacheKey)!.push(...events);
+        const cachedEvents = this.eventCache.get(cacheKey);
+        if (cachedEvents && Array.isArray(cachedEvents)) {
+          cachedEvents.push(...events);
+        }
       }
 
       // Check if snapshot needed
@@ -264,7 +270,10 @@ export class EventStore extends EventEmitter {
       // Check cache first
       const cacheKey = this.getCacheKey(query);
       if (this.eventCache.has(cacheKey)) {
-        return this.filterCachedEvents(this.eventCache.get(cacheKey)!, query);
+        const cachedEvents = this.eventCache.get(cacheKey);
+        if (cachedEvents) {
+          return this.filterCachedEvents(cachedEvents, query);
+        }
       }
 
       const events: BaseEvent[] = [];
@@ -282,8 +291,10 @@ export class EventStore extends EventEmitter {
         const streamIds = await this.findMatchingStreams(query);
         
         for (const streamId of streamIds) {
-          const streamEvents = await this.getStreamEvents(streamId);
-          events.push(...streamEvents);
+          if (streamId) {
+            const streamEvents = await this.getStreamEvents(streamId);
+            events.push(...streamEvents);
+          }
         }
       }
 
@@ -341,7 +352,7 @@ export class EventStore extends EventEmitter {
 
   public async createSnapshot(
     streamId: string,
-    aggregateData: Record<string, any>,
+    aggregateData: AggregateData,
     version: number,
     metadata: Record<string, string> = {}
   ): Promise<string> {
@@ -422,8 +433,8 @@ export class EventStore extends EventEmitter {
     try {
       // Check cache first
       if (this.snapshotCache.has(streamId)) {
-        const cached = this.snapshotCache.get(streamId)!;
-        if (!maxVersion || cached.version <= maxVersion) {
+        const cached = this.snapshotCache.get(streamId);
+        if (cached && (!maxVersion || cached.version <= maxVersion)) {
           return cached;
         }
       }
@@ -438,11 +449,15 @@ export class EventStore extends EventEmitter {
         'LIMIT', 0, 1
       );
 
-      if (results.length === 0) {
+      if (!Array.isArray(results) || results.length === 0) {
         return null;
       }
 
       const snapshotId = results[0];
+      if (!snapshotId || typeof snapshotId !== 'string') {
+        return null;
+      }
+      
       const snapshotKey = this.getSnapshotKey(snapshotId);
       const snapshotData = await this.client.hgetall(snapshotKey);
 
@@ -450,15 +465,32 @@ export class EventStore extends EventEmitter {
         return null;
       }
 
+      let data: EventData = {};
+      let metadata: Record<string, string> = {};
+      
+      try {
+        data = snapshotData.data ? JSON.parse(snapshotData.data) : {};
+      } catch (error) {
+        console.warn('Failed to parse snapshot data:', error);
+        data = {};
+      }
+      
+      try {
+        metadata = snapshotData.metadata ? JSON.parse(snapshotData.metadata) : {};
+      } catch (error) {
+        console.warn('Failed to parse snapshot metadata:', error);
+        metadata = {};
+      }
+
       const snapshot: Snapshot = {
-        id: snapshotData.id,
-        streamId: snapshotData.streamId,
-        aggregateType: snapshotData.aggregateType,
-        aggregateId: snapshotData.aggregateId,
-        version: parseInt(snapshotData.version),
-        data: JSON.parse(snapshotData.data),
-        timestamp: parseInt(snapshotData.timestamp),
-        metadata: JSON.parse(snapshotData.metadata || '{}')
+        id: snapshotData.id || '',
+        streamId: snapshotData.streamId || '',
+        aggregateType: snapshotData.aggregateType || '',
+        aggregateId: snapshotData.aggregateId || '',
+        version: parseInt(snapshotData.version || '0'),
+        data,
+        timestamp: parseInt(snapshotData.timestamp || '0'),
+        metadata
       };
 
       // Cache for future use
@@ -545,16 +577,34 @@ export class EventStore extends EventEmitter {
       const eventData = await this.client.hgetall(eventKey);
       
       if (Object.keys(eventData).length > 0) {
+        let metadata: EventMetadata = {};
+        let payload: EventData = {};
+        
+        try {
+          const metadataStr = eventData.metadata;
+          metadata = metadataStr ? JSON.parse(metadataStr) : {};
+        } catch (error) {
+          console.warn('Failed to parse event metadata:', error);
+          metadata = {};
+        }
+        
+        try {
+          payload = eventData.payload ? JSON.parse(eventData.payload) : {};
+        } catch (error) {
+          console.warn('Failed to parse event payload:', error);
+          payload = {};
+        }
+        
         const event: BaseEvent = {
-          id: eventData.id,
-          type: eventData.type,
-          version: parseInt(eventData.version),
-          source: eventData.source,
-          timestamp: parseInt(eventData.timestamp),
+          id: eventData.id || '',
+          type: eventData.type || '',
+          version: parseInt(eventData.version || '0'),
+          source: eventData.source || '',
+          timestamp: parseInt(eventData.timestamp || '0'),
           correlationId: eventData.correlationId || undefined,
           causationId: eventData.causationId || undefined,
-          metadata: JSON.parse(eventData.metadata || '{}'),
-          payload: JSON.parse(eventData.payload || '{}')
+          metadata,
+          payload
         };
 
         events.push(event);
@@ -571,9 +621,18 @@ export class EventStore extends EventEmitter {
   }
 
   private async findMatchingStreams(query: EventQuery): Promise<string[]> {
-    // This would implement complex stream discovery based on aggregate types, etc.
-    // For now, return empty array - would need proper indexing
-    return [];
+    try {
+      // This would implement complex stream discovery based on aggregate types, etc.
+      // For now, return empty array - would need proper indexing
+      if (query.aggregateType || query.aggregateId) {
+        // Could implement pattern matching here in the future
+        return [];
+      }
+      return [];
+    } catch (error) {
+      console.warn('Error finding matching streams:', error);
+      return [];
+    }
   }
 
   private async createIndexes(): Promise<void> {
@@ -597,23 +656,40 @@ export class EventStore extends EventEmitter {
   }
 
   private getStreamKey(streamId: string): string {
+    if (!streamId || typeof streamId !== 'string') {
+      throw new Error('Invalid streamId provided');
+    }
     return `${this.config.redis.keyPrefix}stream:${streamId}`;
   }
 
   private getEventsKey(streamId: string): string {
+    if (!streamId || typeof streamId !== 'string') {
+      throw new Error('Invalid streamId provided');
+    }
     return `${this.config.redis.keyPrefix}events:${streamId}`;
   }
 
   private getSnapshotKey(snapshotId: string): string {
+    if (!snapshotId || typeof snapshotId !== 'string') {
+      throw new Error('Invalid snapshotId provided');
+    }
     return `${this.config.redis.keyPrefix}snapshot:${snapshotId}`;
   }
 
   private extractAggregateType(streamId: string): string {
-    return streamId.split(':')[0] || 'unknown';
+    if (!streamId || typeof streamId !== 'string') {
+      return 'unknown';
+    }
+    const parts = streamId.split(':');
+    return parts[0] || 'unknown';
   }
 
   private extractAggregateId(streamId: string): string {
-    return streamId.split(':')[1] || streamId;
+    if (!streamId || typeof streamId !== 'string') {
+      return streamId || '';
+    }
+    const parts = streamId.split(':');
+    return parts[1] || streamId;
   }
 
   // Public API methods
@@ -666,12 +742,19 @@ export class EventStore extends EventEmitter {
         
         // Delete snapshots
         const snapshots = await this.client.zrange(snapshotsKey, 0, -1);
-        snapshots.forEach(snapshotId => {
-          pipeline.del(this.getSnapshotKey(snapshotId));
-        });
+        if (Array.isArray(snapshots) && snapshots.length > 0) {
+          snapshots.forEach((snapshotId) => {
+            if (typeof snapshotId === 'string' && snapshotId) {
+              pipeline.del(this.getSnapshotKey(snapshotId));
+            }
+          });
+        }
         pipeline.del(snapshotsKey);
 
-        await pipeline.exec();
+        const result = await pipeline.exec();
+        if (!result || !Array.isArray(result) || result.length === 0) {
+          throw new Error('Pipeline execution failed during stream deletion');
+        }
       } else {
         // Soft delete - mark as deleted
         await this.client.hset(streamKey, 'deleted', Date.now().toString());

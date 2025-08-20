@@ -6,8 +6,8 @@
 
 import axios from "axios";
 import { performance } from "perf_hooks";
-import { logger } from "../utils/logger.js";
-import { OllamaOptimizer } from "../core/services/OllamaOptimizer.js";
+import { logger } from "../utils/logger";
+import { OllamaOptimizer } from "../core/services/OllamaOptimizer";
 
 interface BenchmarkConfig {
   models: string[];
@@ -65,7 +65,7 @@ class OllamaBenchmark {
     logger.info(`\nBenchmarking ${model} with concurrency=${concurrency}, batch=${batchSize}`);
 
     // Update optimizer config
-    this.optimizer.updateConfig({
+    this?.optimizer?.updateConfig({
       maxConcurrentInference: concurrency,
       queueConcurrency: concurrency,
       maxBatchSize: batchSize
@@ -80,11 +80,11 @@ class OllamaBenchmark {
     const testEmails = this.generateTestEmails(totalEmails);
 
     // Process emails
-    const promises = testEmails.map(async (email, index) => {
+    const promises = testEmails?.map(async (email, index) => {
       const emailStart = performance.now();
       
       try {
-        await this.optimizer.generate(
+        await this?.optimizer?.generate(
           this.buildEmailPrompt(email),
           model,
           {
@@ -114,9 +114,9 @@ class OllamaBenchmark {
 
     // Calculate latency percentiles
     const sortedLatencies = latencies.sort((a, b) => a - b);
-    const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    const p95Latency = sortedLatencies[Math.floor(sortedLatencies.length * 0.95)] || 0;
-    const p99Latency = sortedLatencies[Math.floor(sortedLatencies.length * 0.99)] || 0;
+    const avgLatency = latencies.reduce((a: any, b: any) => a + b, 0) / latencies?.length || 0;
+    const p95Latency = sortedLatencies[Math.floor(sortedLatencies?.length || 0 * 0.95)] || 0;
+    const p99Latency = sortedLatencies[Math.floor(sortedLatencies?.length || 0 * 0.99)] || 0;
 
     // Store result
     const result: BenchmarkResult = {
@@ -132,12 +132,12 @@ class OllamaBenchmark {
       successRate: (successCount / totalEmails) * 100
     };
 
-    this.results.push(result);
+    this?.results?.push(result);
 
     // Print immediate result
     logger.info(`Results for ${model}:`);
     logger.info(`  Throughput: ${throughput.toFixed(2)} emails/sec (${(throughput * 60).toFixed(0)} emails/min)`);
-    logger.info(`  Success Rate: ${result.successRate.toFixed(1)}%`);
+    logger.info(`  Success Rate: ${result?.successRate?.toFixed(1)}%`);
     logger.info(`  Avg Latency: ${avgLatency.toFixed(0)}ms`);
     logger.info(`  P95 Latency: ${p95Latency.toFixed(0)}ms`);
     logger.info(`  P99 Latency: ${p99Latency.toFixed(0)}ms`);
@@ -169,7 +169,7 @@ class OllamaBenchmark {
 
     const emails = [];
     for (let i = 0; i < count; i++) {
-      const template = templates[i % templates.length];
+      const template = templates[i % templates?.length || 0];
       emails.push({
         id: `test-${i}`,
         ...template,
@@ -206,22 +206,22 @@ Respond with JSON only.`;
     console.log("\nTop Configurations by Throughput:");
     sorted.slice(0, 5).forEach((r, i) => {
       console.log(`\n${i + 1}. ${r.model} (C=${r.concurrency}, B=${r.batchSize})`);
-      console.log(`   Throughput: ${r.throughput.toFixed(2)} emails/sec (${(r.throughput * 60).toFixed(0)} emails/min)`);
-      console.log(`   Latency: ${r.avgLatency.toFixed(0)}ms avg, ${r.p95Latency.toFixed(0)}ms p95`);
-      console.log(`   Success: ${r.successRate.toFixed(1)}%`);
+      console.log(`   Throughput: ${r?.throughput?.toFixed(2)} emails/sec (${(r.throughput * 60).toFixed(0)} emails/min)`);
+      console.log(`   Latency: ${r?.avgLatency?.toFixed(0)}ms avg, ${r?.p95Latency?.toFixed(0)}ms p95`);
+      console.log(`   Success: ${r?.successRate?.toFixed(1)}%`);
     });
 
     console.log("\n\nDetailed Results Table:");
     console.log("Model                          | Conc | Batch | Throughput | Avg Latency | Success");
     console.log("-----------------------------|------|-------|------------|-------------|--------");
     
-    this.results.forEach(r => {
-      const modelName = r.model.padEnd(30);
-      const conc = r.concurrency.toString().padEnd(5);
-      const batch = r.batchSize.toString().padEnd(6);
-      const throughput = `${r.throughput.toFixed(2)} e/s`.padEnd(11);
-      const latency = `${r.avgLatency.toFixed(0)}ms`.padEnd(12);
-      const success = `${r.successRate.toFixed(1)}%`.padEnd(7);
+    this?.results?.forEach(r => {
+      const modelName = r?.model?.padEnd(30);
+      const conc = r?.concurrency?.toString().padEnd(5);
+      const batch = r?.batchSize?.toString().padEnd(6);
+      const throughput = `${r?.throughput?.toFixed(2)} e/s`.padEnd(11);
+      const latency = `${r?.avgLatency?.toFixed(0)}ms`.padEnd(12);
+      const success = `${r?.successRate?.toFixed(1)}%`.padEnd(7);
       
       console.log(`${modelName}| ${conc}| ${batch}| ${throughput}| ${latency}| ${success}`);
     });
@@ -251,8 +251,8 @@ Respond with JSON only.`;
         timestamp: new Date().toISOString(),
         results: this.results,
         summary: {
-          bestThroughput: Math.max(...this.results.map(r => r.throughput)),
-          avgSuccessRate: this.results.reduce((sum, r) => sum + r.successRate, 0) / this.results.length
+          bestThroughput: Math.max(...this?.results?.map(r => r.throughput)),
+          avgSuccessRate: this?.results?.reduce((sum: any, r: any) => sum + r.successRate, 0) / this?.results?.length
         }
       }, null, 2)
     );

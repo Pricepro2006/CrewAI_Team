@@ -58,7 +58,7 @@ export class SearchKnowledgeService {
     await fs.mkdir(this.searchHistoryPath, { recursive: true });
 
     // Initialize RAG system
-    await this.ragSystem.initialize();
+    await this?.ragSystem?.initialize();
   }
 
   /**
@@ -89,7 +89,7 @@ export class SearchKnowledgeService {
     const sanitizedQuery = searchQuery.query
       .replace(/[^a-z0-9]/gi, "_")
       .substring(0, 50);
-    const filename = `${searchQuery.timestamp.split("T")[0]}_${sanitizedQuery}.json`;
+    const filename = `${searchQuery?.timestamp?.split("T")[0]}_${sanitizedQuery}.json`;
     const filePath = path.join(this.searchHistoryPath, filename);
 
     // Save the search results as JSON
@@ -110,31 +110,31 @@ export class SearchKnowledgeService {
       query: searchQuery.query,
       provider: searchQuery.provider,
       timestamp: searchQuery.timestamp,
-      resultCount: searchQuery.results.length,
-      topUrls: searchQuery.results.slice(0, 3).map((r) => r.url),
+      resultCount: searchQuery?.results?.length,
+      topUrls: searchQuery?.results?.slice(0, 3).map((r: any) => r.url),
       // Add business-specific metadata if detected
-      hasBusinessInfo: searchQuery.results.some(
-        (r) => r.metadata?.phone || r.metadata?.address,
+      hasBusinessInfo: searchQuery?.results?.some(
+        (r: any) => r.metadata?.phone || r.metadata?.address,
       ),
     };
 
     // Add the formatted search results to RAG
-    await this.ragSystem.addDocument(content, metadata);
+    await this?.ragSystem?.addDocument(content, metadata);
 
     // Also add individual high-relevance results as separate documents
-    for (const result of searchQuery.results.filter((r) => r.relevance > 0.7)) {
+    for (const result of searchQuery?.results?.filter((r: any) => r.relevance > 0.7)) {
       const resultContent = `
 Search Result: ${result.title}
 URL: ${result.url}
 Content: ${result.snippet}
-${result.metadata?.phone ? `Phone: ${result.metadata.phone}` : ""}
-${result.metadata?.address ? `Address: ${result.metadata.address}` : ""}
+${result.metadata?.phone ? `Phone: ${result?.metadata?.phone}` : ""}
+${result.metadata?.address ? `Address: ${result?.metadata?.address}` : ""}
 Source: ${result.source}
 Relevance: ${result.relevance}
 From Query: "${searchQuery.query}"
       `.trim();
 
-      await this.ragSystem.addDocument(resultContent, {
+      await this?.ragSystem?.addDocument(resultContent, {
         id: `search_result_${searchQuery.timestamp}_${result.url}`,
         type: "search_result_item",
         parentQuery: searchQuery.query,
@@ -149,12 +149,12 @@ From Query: "${searchQuery.query}"
     let content = `Search Query: "${searchQuery.query}"
 Provider: ${searchQuery.provider}
 Timestamp: ${searchQuery.timestamp}
-Results Found: ${searchQuery.results.length}
+Results Found: ${searchQuery?.results?.length}
 
 Top Search Results:
 `;
 
-    searchQuery.results.forEach((result, index) => {
+    searchQuery?.results?.forEach((result, index) => {
       content += `
 ${index + 1}. ${result.title}
    URL: ${result.url}
@@ -163,14 +163,14 @@ ${index + 1}. ${result.title}
    Relevance: ${result.relevance}`;
 
       if (result.metadata) {
-        if (result.metadata.phone) {
-          content += `\n   Phone: ${result.metadata.phone}`;
+        if (result?.metadata?.phone) {
+          content += `\n   Phone: ${result?.metadata?.phone}`;
         }
-        if (result.metadata.address) {
-          content += `\n   Address: ${result.metadata.address}`;
+        if (result?.metadata?.address) {
+          content += `\n   Address: ${result?.metadata?.address}`;
         }
-        if (result.metadata.engines) {
-          content += `\n   Search Engines: ${result.metadata.engines.join(", ")}`;
+        if (result?.metadata?.engines) {
+          content += `\n   Search Engines: ${result?.metadata?.engines.join(", ")}`;
         }
       }
       content += "\n";
@@ -187,7 +187,7 @@ ${index + 1}. ${result.title}
     limit: number = 5,
   ): Promise<any[]> {
     // Search in RAG for relevant previous searches
-    const results = await this.ragSystem.searchWithFilter(
+    const results = await this?.ragSystem?.searchWithFilter(
       query,
       { type: "search_result" },
       limit,
@@ -209,12 +209,12 @@ ${index + 1}. ${result.title}
       const logContent = await fs.readFile(logPath, "utf-8");
       const searches = logContent
         .split("\n")
-        .filter((line) => line.trim())
-        .map((line) => JSON.parse(line) as SearchQuery);
+        .filter((line: any) => line.trim())
+        .map((line: any) => JSON.parse(line) as SearchQuery);
 
       // Filter by date if provided
       if (startDate || endDate) {
-        return searches.filter((search) => {
+        return searches?.filter((search: any) => {
           const searchDate = new Date(search.timestamp);
           if (startDate && searchDate < startDate) return false;
           if (endDate && searchDate > endDate) return false;
@@ -258,7 +258,7 @@ ${index + 1}. ${result.title}
       providerCount.set(search.provider, pCount + 1);
 
       // Count results
-      totalResults += search.results.length;
+      totalResults += search?.results?.length;
     }
 
     // Get top queries
@@ -268,10 +268,10 @@ ${index + 1}. ${result.title}
       .map(([query, count]) => ({ query, count }));
 
     return {
-      totalSearches: history.length,
+      totalSearches: history?.length || 0,
       uniqueQueries: queryCount.size,
       averageResultsPerSearch:
-        history.length > 0 ? Math.round(totalResults / history.length) : 0,
+        history?.length || 0 > 0 ? Math.round(totalResults / history?.length || 0) : 0,
       topQueries,
       providers: Object.fromEntries(providerCount),
     };

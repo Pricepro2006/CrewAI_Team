@@ -1,0 +1,214 @@
+{
+  "timestamp": "2025-08-17T02:26:31.240Z",
+  "securityScore": 9,
+  "testResults": {
+    "sqlInjection": false,
+    "xss": true,
+    "csrf": true,
+    "pathTraversal": true,
+    "authentication": true,
+    "authorization": true,
+    "inputValidation": true,
+    "secureHeaders": true,
+    "encryption": true,
+    "logging": true
+  },
+  "findings": {
+    "critical": [
+      {
+        "type": "Insecure JWT Secret",
+        "description": "Default or weak JWT secret detected in .env file",
+        "impact": "Complete authentication bypass, token forgery"
+      }
+    ],
+    "high": [
+      {
+        "type": "SQL Injection",
+        "payload": "'; DROP TABLE users; --",
+        "description": "Payload was not properly sanitized",
+        "impact": "Database compromise, data theft, unauthorized access"
+      },
+      {
+        "type": "SQL Injection",
+        "payload": "1' OR '1'='1",
+        "description": "Payload was not properly sanitized",
+        "impact": "Database compromise, data theft, unauthorized access"
+      },
+      {
+        "type": "SQL Injection",
+        "payload": "'; INSERT INTO logs (message) VALUES ('hacked'); --",
+        "description": "Payload was not properly sanitized",
+        "impact": "Database compromise, data theft, unauthorized access"
+      },
+      {
+        "type": "SQL Injection",
+        "payload": "' OR 1=1 --",
+        "description": "Payload was not properly sanitized",
+        "impact": "Database compromise, data theft, unauthorized access"
+      },
+      {
+        "type": "SQL Injection",
+        "payload": "admin'--",
+        "description": "Payload was not properly sanitized",
+        "impact": "Database compromise, data theft, unauthorized access"
+      },
+      {
+        "type": "SQL Injection",
+        "payload": "' OR 'x'='x",
+        "description": "Payload was not properly sanitized",
+        "impact": "Database compromise, data theft, unauthorized access"
+      },
+      {
+        "type": "SQL Injection",
+        "payload": "'; EXEC xp_cmdshell('dir'); --",
+        "description": "Payload was not properly sanitized",
+        "impact": "Database compromise, data theft, unauthorized access"
+      },
+      {
+        "type": "XSS Vulnerability",
+        "payload": "<img src='x' onerror='alert(\"XSS\")'>",
+        "description": "Malicious script payload not properly sanitized",
+        "impact": "Session hijacking, account takeover, malicious redirects"
+      },
+      {
+        "type": "XSS Vulnerability",
+        "payload": "javascript:alert('XSS')",
+        "description": "Malicious script payload not properly sanitized",
+        "impact": "Session hijacking, account takeover, malicious redirects"
+      },
+      {
+        "type": "XSS Vulnerability",
+        "payload": "<body onload='alert(\"XSS\")'>",
+        "description": "Malicious script payload not properly sanitized",
+        "impact": "Session hijacking, account takeover, malicious redirects"
+      },
+      {
+        "type": "Path Traversal Vulnerability",
+        "payload": "\\..\\..\\..\\windows\\system32\\drivers\\etc\\hosts",
+        "description": "Directory traversal payload not properly blocked",
+        "impact": "Unauthorized file system access, sensitive file disclosure"
+      }
+    ],
+    "medium": [
+      {
+        "type": "Weak Cryptography",
+        "description": "Weak cryptographic algorithms detected",
+        "impact": "Cryptographic attacks, data compromise"
+      }
+    ],
+    "low": [],
+    "info": [
+      {
+        "type": "XSS Protection",
+        "description": "Content sanitization library detected",
+        "protection": "Good"
+      },
+      {
+        "type": "XSS Protection",
+        "description": "Content Security Policy headers implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "CSRF Protection",
+        "description": "CSRF tokens implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "CSRF Protection",
+        "description": "SameSite cookie attribute configured",
+        "protection": "Good"
+      },
+      {
+        "type": "CSRF Protection",
+        "description": "Origin header validation implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "Path Traversal Protection",
+        "description": "Path validation functions detected",
+        "protection": "Good"
+      },
+      {
+        "type": "Authentication",
+        "description": "JWT authentication implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "Authentication",
+        "description": "bcrypt password hashing implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "Authentication",
+        "description": "Login rate limiting implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "Authorization",
+        "description": "Role-based access control implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "Authorization",
+        "description": "Resource-level access controls implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "Input Validation",
+        "description": "Schema validation library detected",
+        "protection": "Good"
+      },
+      {
+        "type": "Input Validation",
+        "description": "Input sanitization functions detected",
+        "protection": "Good"
+      },
+      {
+        "type": "Security Headers",
+        "description": "All critical security headers implemented",
+        "protection": "Excellent"
+      },
+      {
+        "type": "Encryption",
+        "description": "HTTPS enforcement detected",
+        "protection": "Good"
+      },
+      {
+        "type": "Encryption",
+        "description": "Cryptographic functions properly used",
+        "protection": "Good"
+      },
+      {
+        "type": "Security Logging",
+        "description": "Security event logging implemented",
+        "protection": "Good"
+      },
+      {
+        "type": "Security Logging",
+        "description": "Authentication failure logging implemented",
+        "protection": "Good"
+      }
+    ]
+  },
+  "owaspCompliance": {
+    "injection": false,
+    "brokenAuth": true,
+    "sensitiveData": true,
+    "brokenAccessControl": true,
+    "securityMisconfig": true,
+    "xss": true,
+    "loggingMonitoring": true
+  },
+  "recommendations": [
+    {
+      "priority": "CRITICAL",
+      "action": "Address all critical vulnerabilities immediately",
+      "timeline": "24 hours"
+    },
+    {
+      "priority": "HIGH",
+      "action": "Fix high-risk vulnerabilities",
+      "timeline": "1 week"
+    }
+  ]
+}

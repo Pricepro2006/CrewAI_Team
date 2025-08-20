@@ -104,8 +104,8 @@ class Circuit {
       const latency = Date.now() - startTime;
       this.onFailure(latency);
       
-      // Try fallback if circuit is now open
-      if (fallback && this.state === CircuitState.OPEN) {
+      // Try fallback if available (regardless of circuit state at this point)
+      if (fallback) {
         this.stats.fallbacks++;
         try {
           return await fallback();
@@ -171,7 +171,7 @@ class Circuit {
     
     // Update average
     if (this.stats.latency.length > 0) {
-      const sum = this.stats.latency.reduce((a, b) => a + b, 0);
+      const sum = this.stats.latency.reduce((a: number, b: number) => a + b, 0);
       this.stats.averageLatency = sum / this.stats.latency.length;
     }
     
@@ -368,9 +368,9 @@ export class CircuitBreakerService extends EventEmitter {
   getAllStats(): Record<string, CircuitStats> {
     const stats: Record<string, CircuitStats> = {};
     
-    for (const [name, circuit] of this.circuits) {
+    this.circuits.forEach((circuit, name) => {
       stats[name] = circuit.getStats();
-    }
+    });
     
     return stats;
   }
@@ -396,7 +396,7 @@ export class CircuitBreakerService extends EventEmitter {
     const degraded: string[] = [];
     const unhealthy: string[] = [];
     
-    for (const [name, circuit] of this.circuits) {
+    this.circuits.forEach((circuit, name) => {
       const state = circuit.getState();
       
       switch (state) {
@@ -410,7 +410,7 @@ export class CircuitBreakerService extends EventEmitter {
           unhealthy.push(name);
           break;
       }
-    }
+    });
     
     let overall: 'healthy' | 'degraded' | 'unhealthy';
     if (unhealthy.length > 0) {
@@ -439,9 +439,9 @@ export class CircuitBreakerService extends EventEmitter {
    * Reset all circuits
    */
   resetAll(): void {
-    for (const circuit of this.circuits.values()) {
+    this.circuits.forEach((circuit) => {
       circuit.reset();
-    }
+    });
     this.emit('all-circuits-reset');
     console.log('🔄 All circuits have been reset');
   }

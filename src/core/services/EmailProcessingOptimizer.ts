@@ -93,17 +93,17 @@ export class EmailProcessingOptimizer {
 
     // Initialize connection pool with keep-alive
     this.ollamaPool = axios.create({
-      baseURL: this.config.ollamaUrl,
-      timeout: this.config.ollamaTimeout,
+      baseURL: this?.config?.ollamaUrl,
+      timeout: this?.config?.ollamaTimeout,
       httpAgent: new Agent({
         keepAlive: true,
         keepAliveMsecs: 1000,
-        maxSockets: this.config.maxConnections,
-        maxFreeSockets: Math.floor(this.config.maxConnections / 2),
+        maxSockets: this?.config?.maxConnections,
+        maxFreeSockets: Math.floor(this?.config?.maxConnections / 2),
       }),
       headers: {
         'Connection': 'keep-alive',
-        'Keep-Alive': `timeout=${Math.floor(this.config.keepAliveTimeout / 1000)}`,
+        'Keep-Alive': `timeout=${Math.floor(this?.config?.keepAliveTimeout / 1000)}`,
       },
     });
 
@@ -118,13 +118,13 @@ export class EmailProcessingOptimizer {
     logger.info("Pre-warming Ollama connections...");
     
     const warmupPromises = [];
-    for (let i = 0; i < Math.min(3, this.config.maxConnections); i++) {
+    for (let i = 0; i < Math.min(3, this?.config?.maxConnections); i++) {
       warmupPromises.push(
-        this.ollamaPool.post("/api/generate", {
+        this?.ollamaPool?.post("/api/generate", {
           model: "llama3.2:3b",
           prompt: "Hello",
           stream: false,
-          keep_alive: this.config.ollamaKeepAlive,
+          keep_alive: this?.config?.ollamaKeepAlive,
           options: {
             num_predict: 1,
           },
@@ -149,47 +149,47 @@ export class EmailProcessingOptimizer {
     const model = options.model || "llama3.2:3b";
     
     // Check for cached results first
-    const results: (Phase2Results | null)[] = new Array(emails.length).fill(null);
+    const results: (Phase2Results | null)[] = new Array(emails?.length ?? 0).fill(null);
     const uncachedIndices: number[] = [];
     
-    if (this.config.enableSmartCaching) {
-      for (let i = 0; i < emails.length; i++) {
-        const cached = await this.checkSimilarCache(emails[i], phase1Results[i]);
+    if (this.config?.enableSmartCaching) {
+      for (let i = 0; i < (emails?.length ?? 0); i++) {
+        const cached = (emails[i] && phase1Results[i]) ? await this.checkSimilarCache(emails[i]!, phase1Results[i]!) : null;
         if (cached) {
           results[i] = cached;
-          this.metrics.cacheHits++;
+          if (this.metrics.cacheHits) { this.metrics.cacheHits++ };
         } else {
           uncachedIndices.push(i);
         }
       }
     } else {
-      uncachedIndices.push(...Array.from({ length: emails.length }, (_, i) => i));
+      uncachedIndices.push(...Array.from({ length: emails?.length ?? 0 }, (_, i) => i));
     }
 
-    if (uncachedIndices.length === 0) {
-      logger.debug(`All ${emails.length} emails served from cache`);
+    if ((uncachedIndices?.length ?? 0) === 0) {
+      logger.debug(`All ${emails?.length || 0} emails served from cache`);
       return results as Phase2Results[];
     }
 
     // Process uncached emails in optimized batches
-    const batchLimit = pLimit(this.config.parallelPhase2);
-    const batchPromises = uncachedIndices.map((index) =>
+    const batchLimit = pLimit(this?.config?.parallelPhase2);
+    const batchPromises = uncachedIndices?.map((index: any) =>
       batchLimit(async () => {
         const email = emails[index];
         const phase1 = phase1Results[index];
         
         try {
-          const result = await this.processPhase2Single(email, phase1, model);
+          const result = email && phase1 ? await this.processPhase2Single(email, phase1, model) : null;
           results[index] = result;
           
           // Cache the result
-          if (this.config.enableSmartCaching) {
-            await this.cacheResult(email, phase1, result);
+          if (this?.config?.enableSmartCaching) {
+            if (email && phase1 && result) { await this.cacheResult(email, phase1, result); }
           }
           
           return result;
         } catch (error) {
-          logger.error(`Phase 2 processing failed for email ${email.id}:`, error);
+          logger.error(`Phase 2 processing failed for email ${email?.id || 'unknown'}:`, error as string);
           throw error;
         }
       })
@@ -197,8 +197,10 @@ export class EmailProcessingOptimizer {
 
     await Promise.all(batchPromises);
     
-    this.metrics.totalProcessed += emails.length;
-    this.metrics.batchesProcessed++;
+    if (this.metrics) {
+      this.metrics.totalProcessed = (this.metrics.totalProcessed || 0) + (emails?.length || 0);
+    }
+    if (this.metrics.batchesProcessed) { this.metrics.batchesProcessed++ };
     
     return results as Phase2Results[];
   }
@@ -223,12 +225,12 @@ export class EmailProcessingOptimizer {
     while (attempt < maxAttempts) {
       try {
         const response = await this.acquireConnection(async () => {
-          return await this.ollamaPool.post("/api/generate", {
+          return await this?.ollamaPool?.post("/api/generate", {
             model,
             prompt,
             stream: false,
             format: "json",
-            keep_alive: this.config.ollamaKeepAlive,
+            keep_alive: this?.config?.ollamaKeepAlive,
             system: "Respond with JSON only. Be concise.",
             options: {
               temperature: 0.1,
@@ -241,7 +243,7 @@ export class EmailProcessingOptimizer {
           });
         });
 
-        const responseData = response.data.response;
+        const responseData = response?.data?.response;
         
         // Parse and validate response
         const parsed = this.parseOptimizedResponse(responseData);
@@ -254,7 +256,7 @@ export class EmailProcessingOptimizer {
       } catch (error) {
         attempt++;
         if (attempt >= maxAttempts) {
-          logger.error(`Phase 2 failed after ${maxAttempts} attempts:`, error);
+          logger.error(`Phase 2 failed after ${maxAttempts} attempts:`, error as string);
           return this.createPhase2Fallback(phase1Results, Date.now() - startTime);
         }
         await new Promise(resolve => setTimeout(resolve, 100 * attempt));
@@ -277,7 +279,7 @@ Email: "${emailContent}"
 Phase1 Data:
 - Workflow: ${phase1.workflow_state}
 - Priority: ${phase1.priority}
-- Entities: PO(${phase1.entities.po_numbers.length}), Quote(${phase1.entities.quote_numbers.length})
+- Entities: PO(${phase1?.entities?.po_numbers?.length || 0}), Quote(${phase1?.entities?.quote_numbers?.length || 0})
 
 Required JSON fields:
 {
@@ -328,9 +330,9 @@ Required JSON fields:
     operation: () => Promise<T>
   ): Promise<T> {
     // Wait if we're at max connections
-    while (this.activeConnections >= this.config.maxConnections) {
-      await new Promise<void>((resolve) => {
-        this.connectionQueue.push(resolve);
+    while (this.activeConnections >= this?.config?.maxConnections) {
+      await new Promise<void>((resolve: any) => {
+        this?.connectionQueue?.push(resolve);
       });
     }
 
@@ -338,13 +340,13 @@ Required JSON fields:
     
     try {
       const result = await operation();
-      this.metrics.connectionReuses++;
+      if (this.metrics.connectionReuses) { this.metrics.connectionReuses++ };
       return result;
     } finally {
       this.activeConnections--;
       
       // Release next waiting connection
-      const next = this.connectionQueue.shift();
+      const next = this?.connectionQueue?.shift();
       if (next) next();
     }
   }
@@ -360,7 +362,7 @@ Required JSON fields:
     const cacheKey = this.generateCacheKey(email, phase1);
     
     // Check exact match first
-    const exactMatch = await this.redisService.get<Phase2Results>(`phase2:${cacheKey}`);
+    const exactMatch = await this?.redisService?.get<Phase2Results>(`phase2:${cacheKey}`);
     if (exactMatch) {
       return exactMatch;
     }
@@ -368,7 +370,7 @@ Required JSON fields:
     // Check for similar emails (same workflow state, similar entities)
     if (phase1.workflow_state && phase1.priority) {
       const similarKey = `similar:${phase1.workflow_state}:${phase1.priority}`;
-      const similar = await this.redisService.get<Phase2Results>(similarKey);
+      const similar = await this?.redisService?.get<Phase2Results>(similarKey);
       
       if (similar && this.isSimilarEnough(phase1, similar)) {
         // Adapt the cached result
@@ -386,9 +388,9 @@ Required JSON fields:
     const elements = [
       phase1.workflow_state,
       phase1.priority,
-      phase1.entities.po_numbers.length,
-      phase1.entities.quote_numbers.length,
-      email.sender_email.split('@')[1], // domain
+      phase1?.entities?.po_numbers?.length || 0,
+      phase1?.entities?.quote_numbers?.length || 0,
+      email?.sender_email?.split('@')[1], // domain
       Math.floor(phase1.urgency_score),
     ];
     
@@ -400,7 +402,7 @@ Required JSON fields:
    */
   private isSimilarEnough(phase1: Phase1Results, cached: Phase2Results): boolean {
     // Simple similarity check - can be enhanced
-    return (
+    return Boolean(
       cached.workflow_validation &&
       cached.confidence > 0.6 &&
       cached.business_process !== "PARSING_ERROR"
@@ -430,7 +432,7 @@ Required JSON fields:
     const cacheKey = this.generateCacheKey(email, phase1);
     
     // Cache exact match
-    await this.redisService.set(
+    await this?.redisService?.set(
       `phase2:${cacheKey}`,
       result,
       3600 // 1 hour TTL
@@ -439,7 +441,7 @@ Required JSON fields:
     // Cache as similar template if high quality
     if (result.confidence > 0.7 && phase1.workflow_state) {
       const similarKey = `similar:${phase1.workflow_state}:${phase1.priority}`;
-      await this.redisService.set(similarKey, result, 7200); // 2 hour TTL
+      await this?.redisService?.set(similarKey, result, 7200); // 2 hour TTL
     }
   }
 
@@ -503,10 +505,16 @@ Required JSON fields:
    * Update performance metrics
    */
   private updateMetrics(processingTime: number): void {
-    const currentAvg = this.metrics.avgResponseTime;
-    const totalCount = this.metrics.totalProcessed;
+    const currentAvg = this?.metrics?.avgResponseTime;
+    const totalCount = this?.metrics?.totalProcessed;
     
-    this.metrics.avgResponseTime = (currentAvg * totalCount + processingTime) / (totalCount + 1);
+    if (this.metrics) {
+
+    
+      this.metrics.avgResponseTime = (currentAvg * totalCount + processingTime) / (totalCount + 1);
+
+    
+    }
   }
 
   /**
@@ -517,15 +525,15 @@ Required JSON fields:
     avgBatchSize: number;
     connectionsPerMinute: number;
   } {
-    const cacheHitRate = this.metrics.totalProcessed > 0
-      ? (this.metrics.cacheHits / this.metrics.totalProcessed) * 100
+    const cacheHitRate = this?.metrics?.totalProcessed > 0
+      ? (this?.metrics?.cacheHits / this?.metrics?.totalProcessed) * 100
       : 0;
       
-    const avgBatchSize = this.metrics.batchesProcessed > 0
-      ? this.metrics.totalProcessed / this.metrics.batchesProcessed
+    const avgBatchSize = this?.metrics?.batchesProcessed > 0
+      ? this?.metrics?.totalProcessed / this?.metrics?.batchesProcessed
       : 0;
       
-    const connectionsPerMinute = this.metrics.connectionReuses;
+    const connectionsPerMinute = this?.metrics?.connectionReuses;
 
     return {
       ...this.metrics,
@@ -559,7 +567,7 @@ Required JSON fields:
       // Pre-load models
       await this.preloadModels();
     } catch (error) {
-      logger.error("Failed to optimize Ollama settings:", error);
+      logger.error("Failed to optimize Ollama settings:", error as string);
     }
   }
 
@@ -571,18 +579,18 @@ Required JSON fields:
     
     for (const model of models) {
       try {
-        await this.ollamaPool.post("/api/generate", {
+        await this?.ollamaPool?.post("/api/generate", {
           model,
           prompt: "Initialize",
           stream: false,
-          keep_alive: this.config.ollamaKeepAlive,
+          keep_alive: this?.config?.ollamaKeepAlive,
           options: {
             num_predict: 1,
           },
         });
         logger.info(`Pre-loaded model: ${model}`);
       } catch (error) {
-        logger.warn(`Failed to pre-load model ${model}:`, error);
+        logger.warn(`Failed to pre-load model ${model}:`, error as string);
       }
     }
   }
@@ -592,11 +600,11 @@ Required JSON fields:
    */
   async cleanup(): Promise<void> {
     // Clear batch timers
-    this.batchTimers.forEach(timer => clearTimeout(timer));
-    this.batchTimers.clear();
+    this?.batchTimers?.forEach(timer => clearTimeout(timer));
+    this?.batchTimers?.clear();
     
     // Close connections
-    await this.redisService.close();
+    await this?.redisService?.close();
   }
 }
 

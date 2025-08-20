@@ -4,7 +4,7 @@ interface PerformanceMetrics {
   renderTime: number;
   componentName: string;
   timestamp: number;
-  props?: any;
+  props?: unknown;
 }
 
 class PerformanceTracker {
@@ -36,34 +36,38 @@ class PerformanceTracker {
 
   getAverageRenderTime(componentName?: string): number {
     const relevantMetrics = componentName 
-      ? this.metrics.filter(m => m.componentName === componentName)
+      ? this.metrics.filter((m: PerformanceMetrics) => m.componentName === componentName)
       : this.metrics;
     
     if (relevantMetrics.length === 0) return 0;
     
-    const total = relevantMetrics.reduce((sum, metric) => sum + metric.renderTime, 0);
+    const total = relevantMetrics.reduce((sum: number, metric: PerformanceMetrics) => sum + metric.renderTime, 0);
     return total / relevantMetrics.length;
   }
 
-  getSlowComponents(threshold = 16): string[] {
+  getSlowComponents(threshold: number = 16): string[] {
     const componentTimes: { [key: string]: number[] } = {};
     
-    this.metrics.forEach(metric => {
+    this.metrics.forEach((metric: PerformanceMetrics) => {
       if (!componentTimes[metric.componentName]) {
         componentTimes[metric.componentName] = [];
       }
-      componentTimes[metric.componentName].push(metric.renderTime);
+      const componentArray = componentTimes[metric.componentName];
+      if (componentArray) {
+        componentArray.push(metric.renderTime);
+      }
     });
 
     return Object.entries(componentTimes)
-      .filter(([_, times]) => {
-        const avg = times.reduce((sum, time) => sum + time, 0) / times.length;
+      .filter(([, times]: [string, number[]]) => {
+        if (!times || times.length === 0) return false;
+        const avg = times.reduce((sum: number, time: number) => sum + time, 0) / times.length;
         return avg > threshold;
       })
-      .map(([name]) => name);
+      .map(([name]: [string, number[]]) => name);
   }
 
-  reset() {
+  reset(): void {
     this.metrics = [];
   }
 }
@@ -84,7 +88,7 @@ export function usePerformanceMonitor({
   logToConsole = false,
 }: UsePerformanceMonitorOptions) {
   const renderStartTime = useRef<number>();
-  const renderCount = useRef(0);
+  const renderCount = useRef<number>(0);
 
   useEffect(() => {
     if (!enabled) return;
@@ -113,7 +117,7 @@ export function usePerformanceMonitor({
     }
   });
 
-  const logCurrentMetrics = useCallback(() => {
+  const logCurrentMetrics = useCallback((): void => {
     if (!enabled) return;
     
     const metrics = performanceTracker.getMetrics();
@@ -136,20 +140,22 @@ export function usePerformanceMonitor({
 }
 
 // Hook for monitoring component re-renders
-export function useRenderTracker(componentName: string, props?: any) {
-  const renderCount = useRef(0);
-  const prevProps = useRef(props);
+export function useRenderTracker(componentName: string, props?: unknown): number {
+  const renderCount = useRef<number>(0);
+  const prevProps = useRef<unknown>(props);
 
   useEffect(() => {
     renderCount.current += 1;
     
     if (process.env.NODE_ENV === "development") {
       // Check which props changed
-      if (prevProps.current && props) {
+      if (prevProps.current && props && typeof props === 'object' && props !== null) {
         const changedProps: string[] = [];
+        const currentProps = props as Record<string, unknown>;
+        const previousProps = prevProps.current as Record<string, unknown>;
         
-        Object.keys(props).forEach(key => {
-          if (prevProps.current[key] !== props[key]) {
+        Object.keys(currentProps).forEach((key: string) => {
+          if (previousProps?.[key] !== currentProps[key]) {
             changedProps.push(key);
           }
         });
@@ -170,15 +176,15 @@ export function useRenderTracker(componentName: string, props?: any) {
 }
 
 // Hook for detecting unnecessary re-renders
-export function useWhyDidYouUpdate(name: string, props: Record<string, any>) {
-  const previousProps = useRef<Record<string, any>>();
+export function useWhyDidYouUpdate(name: string, props: Record<string, unknown>): void {
+  const previousProps = useRef<Record<string, unknown>>();
 
   useEffect(() => {
     if (previousProps.current) {
       const allKeys = Object.keys({ ...previousProps.current, ...props });
-      const changedProps: Record<string, { from: any; to: any }> = {};
+      const changedProps: Record<string, { from: unknown; to: unknown }> = {};
 
-      allKeys.forEach(key => {
+      allKeys.forEach((key: string) => {
         if (previousProps.current![key] !== props[key]) {
           changedProps[key] = {
             from: previousProps.current![key],

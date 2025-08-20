@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
 import appConfig from "../config/app.config.js";
 
 export interface User {
@@ -30,7 +30,7 @@ export const authenticateToken = (
   }
 
   try {
-    const decoded = jwt.verify(token, appConfig.security.jwtSecret) as any;
+    const decoded = jwt.verify(token, appConfig?.security?.jwtSecret ?? '') as any;
 
     // Construct user object from JWT payload
     req.user = {
@@ -66,7 +66,7 @@ export const requireAuth = (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
-) => {
+): void | Response => {
   if (!req.user) {
     return res.status(401).json({
       error: "Authentication required",
@@ -82,7 +82,7 @@ export const requireAdmin = (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
-) => {
+): void | Response => {
   if (!req.user) {
     return res.status(401).json({
       error: "Authentication required",
@@ -90,7 +90,7 @@ export const requireAdmin = (
     });
   }
 
-  if (!req.user.isAdmin && req.user.role !== "admin") {
+  if (!req?.user?.isAdmin && req?.user?.role !== "admin") {
     return res.status(403).json({
       error: "Insufficient permissions",
       message: "Admin access required",
@@ -102,7 +102,7 @@ export const requireAdmin = (
 
 // Check specific permission middleware
 export const requirePermission = (permission: string) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void | Response => {
     if (!req.user) {
       return res.status(401).json({
         error: "Authentication required",
@@ -110,7 +110,7 @@ export const requirePermission = (permission: string) => {
       });
     }
 
-    if (!req.user.isAdmin && !req.user.permissions.includes(permission)) {
+    if (!req?.user?.isAdmin && !req?.user?.permissions.includes(permission)) {
       return res.status(403).json({
         error: "Insufficient permissions",
         message: `Permission '${permission}' required`,
@@ -136,7 +136,7 @@ export const generateToken = (user: Partial<User>): string => {
     exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // Expires in 24 hours
   };
 
-  return jwt.sign(payload, appConfig.security.jwtSecret, {
+  return jwt.sign(payload, appConfig?.security?.jwtSecret ?? '', {
     algorithm: "HS256",
   });
 };
@@ -144,7 +144,7 @@ export const generateToken = (user: Partial<User>): string => {
 // Verify and refresh token
 export const refreshToken = (token: string): string | null => {
   try {
-    const decoded = jwt.verify(token, appConfig.security.jwtSecret, {
+    const decoded = jwt.verify(token, appConfig?.security?.jwtSecret ?? '', {
       ignoreExpiration: true, // We'll check expiration manually
     }) as any;
 
@@ -165,7 +165,7 @@ export const refreshToken = (token: string): string | null => {
       lastLogin: new Date().toISOString(),
     };
 
-    return jwt.sign(newPayload, appConfig.security.jwtSecret, {
+    return jwt.sign(newPayload, appConfig?.security?.jwtSecret ?? '', {
       algorithm: "HS256",
     });
   } catch (error) {

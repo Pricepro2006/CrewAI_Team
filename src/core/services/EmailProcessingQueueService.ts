@@ -5,9 +5,10 @@
  * priority handling, and comprehensive monitoring.
  */
 
-import { Queue, Worker, QueueEvents, Job } from "bullmq";
-import type { JobsOptions } from "bullmq";
-import { Redis } from "ioredis";
+// @ts-expect-error - BullMQ v5 type definitions issue
+import { Queue, Worker, QueueEvents } from "bullmq";
+import type { Job, JobOptions } from "bullmq";
+import Redis from "ioredis";
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";
 import { z } from "zod";
@@ -143,12 +144,12 @@ export class EmailProcessingQueueService extends EventEmitter {
     logger.info("Initializing queue service...");
 
     // Create queues for each phase
-    for (const [phase, queueName] of Object.entries(this.config.queues)) {
+    for (const [phase, queueName] of Object.entries(this?.config?.queues)) {
       await this.createQueue(phase, queueName);
     }
 
     // Start monitoring if enabled
-    if (this.config.monitoring.enableMetrics) {
+    if (this?.config?.monitoring.enableMetrics) {
       this.startMetricsCollection();
     }
 
@@ -162,7 +163,7 @@ export class EmailProcessingQueueService extends EventEmitter {
   private async createQueue(phase: string, queueName: string): Promise<void> {
     // Create queue
     const queue = new Queue(queueName, {
-      connection: this.redisConnection.duplicate(),
+      connection: this?.redisConnection?.duplicate(),
       defaultJobOptions: {
         removeOnComplete: {
           age: 3600, // Keep completed jobs for 1 hour
@@ -172,29 +173,29 @@ export class EmailProcessingQueueService extends EventEmitter {
           age: 86400, // Keep failed jobs for 24 hours
           count: 5000, // Keep max 5000 failed jobs
         },
-        attempts: this.config.retryStrategy.attempts,
-        backoff: this.config.retryStrategy.backoff,
+        attempts: this?.config?.retryStrategy.attempts,
+        backoff: this?.config?.retryStrategy.backoff,
       },
     });
 
-    this.queues.set(phase, queue);
+    this?.queues?.set(phase, queue);
 
     // Note: QueueScheduler is deprecated in newer BullMQ versions
     // We'll remove the scheduler logic for now
-    // this.schedulers.set(phase, null);
+    // this?.schedulers?.set(phase, null);
 
     // Create queue events for monitoring
-    if (this.config.monitoring.enableEvents) {
+    if (this?.config?.monitoring.enableEvents) {
       const events = new QueueEvents(queueName, {
-        connection: this.redisConnection.duplicate(),
+        connection: this?.redisConnection?.duplicate(),
       });
 
       this.setupQueueEventHandlers(phase, events);
-      this.queueEvents.set(phase, events);
+      this?.queueEvents?.set(phase, events);
     }
 
     // Initialize metrics
-    this.metrics.set(phase, {
+    this?.metrics?.set(phase, {
       queueName,
       waiting: 0,
       active: 0,
@@ -264,7 +265,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     // Validate job data
     const validatedJob = EmailJobSchema.parse(job);
 
-    const queue = this.queues.get(phase);
+    const queue = this?.queues?.get(phase);
     if (!queue) {
       throw new Error(`Queue for ${phase} not found`);
     }
@@ -278,12 +279,12 @@ export class EmailProcessingQueueService extends EventEmitter {
       delay: 0,
       attempts:
         validatedJob.options?.retryAttempts ||
-        this.config.retryStrategy.attempts,
+        this?.config?.retryStrategy.attempts,
     });
 
     logger.debug(`Added job ${queueJob.id} to ${phase} queue`, undefined, {
       conversationId: validatedJob.conversationId,
-      emailCount: validatedJob.emails.length,
+      emailCount: validatedJob?.emails?.length,
       priority: validatedJob.priority,
     });
 
@@ -303,13 +304,13 @@ export class EmailProcessingQueueService extends EventEmitter {
     jobs: EmailJob[],
     phase: "phase1" | "phase2" | "phase3" = "phase1",
   ): Promise<Job[]> {
-    const queue = this.queues.get(phase);
+    const queue = this?.queues?.get(phase);
     if (!queue) {
       throw new Error(`Queue for ${phase} not found`);
     }
 
     // Validate and prepare jobs
-    const bulkJobs = jobs.map((job) => {
+    const bulkJobs = jobs?.map((job: any) => {
       const validatedJob = EmailJobSchema.parse(job);
       return {
         name: `process-${phase}`,
@@ -319,7 +320,7 @@ export class EmailProcessingQueueService extends EventEmitter {
           delay: 0,
           attempts:
             validatedJob.options?.retryAttempts ||
-            this.config.retryStrategy.attempts,
+            this?.config?.retryStrategy.attempts,
         },
       };
     });
@@ -327,10 +328,10 @@ export class EmailProcessingQueueService extends EventEmitter {
     // Add jobs in bulk
     const queueJobs = await queue.addBulk(bulkJobs);
 
-    logger.info(`Added ${queueJobs.length} jobs to ${phase} queue`);
+    logger.info(`Added ${queueJobs?.length || 0} jobs to ${phase} queue`);
     this.emit("jobs:bulk-added", {
       phase,
-      count: queueJobs.length,
+      count: queueJobs?.length || 0,
     });
 
     return queueJobs;
@@ -343,8 +344,8 @@ export class EmailProcessingQueueService extends EventEmitter {
     phase: "phase1" | "phase2" | "phase3",
     processor: (job: Job<EmailJob>) => Promise<JobResult>,
   ): Promise<any> {
-    const queueName = this.config.queues[phase];
-    const concurrency = this.config.concurrency[phase];
+    const queueName = this?.config?.queues[phase];
+    const concurrency = this?.config?.concurrency[phase];
 
     const worker = new Worker(
       queueName,
@@ -353,7 +354,10 @@ export class EmailProcessingQueueService extends EventEmitter {
 
         try {
           // Update progress
-          await job.updateProgress({ status: "processing", startTime });
+          // Update progress if method exists on job
+          if ('updateProgress' in job && typeof job.updateProgress === 'function') {
+            await job.updateProgress(50);
+          }
 
           // Process the job
           const result = await processor(job);
@@ -366,12 +370,12 @@ export class EmailProcessingQueueService extends EventEmitter {
           // Update metrics
           this.updateJobMetrics(phase, false, Date.now() - startTime);
 
-          logger.error(`Job ${job.id} failed in ${phase}:`, error);
+          logger.error(`Job ${job.id} failed in ${phase}:`, error as string);
           throw error;
         }
       },
       {
-        connection: this.redisConnection.duplicate(),
+        connection: this?.redisConnection?.duplicate(),
         concurrency,
         autorun: true,
       },
@@ -380,7 +384,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     // Set up worker event handlers
     this.setupWorkerEventHandlers(phase, worker);
 
-    this.workers.set(phase, worker);
+    this?.workers?.set(phase, worker);
     logger.info(`Started worker for ${phase} with concurrency ${concurrency}`);
 
     return worker;
@@ -395,15 +399,15 @@ export class EmailProcessingQueueService extends EventEmitter {
     });
 
     worker.on("failed", (job: any, error: any) => {
-      logger.error(`Worker failed job ${job?.id} in ${phase}:`, error);
+      logger.error(`Worker failed job ${job?.id} in ${phase}:`, error as string);
     });
 
-    worker.on("error", (error) => {
-      logger.error(`Worker error in ${phase}:`, error);
+    worker.on("error", (error: any) => {
+      logger.error(`Worker error in ${phase}:`, error as string);
       this.emit("worker:error", { phase, error });
     });
 
-    worker.on("stalled", (jobId) => {
+    worker.on("stalled", (jobId: any) => {
       logger.warn(`Job ${jobId} stalled in ${phase} worker`);
     });
   }
@@ -412,7 +416,7 @@ export class EmailProcessingQueueService extends EventEmitter {
    * Get job by ID
    */
   async getJob(jobId: string, phase: string): Promise<Job | undefined> {
-    const queue = this.queues.get(phase);
+    const queue = this?.queues?.get(phase);
     if (!queue) return undefined;
 
     return (queue as any).getJob(jobId);
@@ -427,7 +431,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     start = 0,
     end = -1,
   ): Promise<Job[]> {
-    const queue = this.queues.get(phase);
+    const queue = this?.queues?.get(phase);
     if (!queue) return [];
 
     switch (status) {
@@ -450,7 +454,7 @@ export class EmailProcessingQueueService extends EventEmitter {
    * Retry failed jobs
    */
   async retryFailedJobs(phase: string, limit = 100): Promise<number> {
-    const queue = this.queues.get(phase);
+    const queue = this?.queues?.get(phase);
     if (!queue) return 0;
 
     const failedJobs = await queue.getFailed(0, limit);
@@ -461,7 +465,7 @@ export class EmailProcessingQueueService extends EventEmitter {
         await job.retry();
         retryCount++;
       } catch (error) {
-        logger.error(`Failed to retry job ${job.id}:`, error);
+        logger.error(`Failed to retry job ${job.id}:`, error as string);
       }
     }
 
@@ -478,7 +482,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     limit = 1000,
     status: "completed" | "failed" = "completed",
   ): Promise<string[]> {
-    const queue = this.queues.get(phase);
+    const queue = this?.queues?.get(phase);
     if (!queue) return [];
 
     return queue.clean(grace, limit, status);
@@ -488,20 +492,20 @@ export class EmailProcessingQueueService extends EventEmitter {
    * Pause/resume queue
    */
   async pauseQueue(phase: string): Promise<void> {
-    const queue = this.queues.get(phase);
+    const queue = this?.queues?.get(phase);
     if (queue) {
       await queue.pause();
-      const metrics = this.metrics.get(phase);
+      const metrics = this?.metrics?.get(phase);
       if (metrics) metrics.paused = true;
       logger.info(`Paused ${phase} queue`);
     }
   }
 
   async resumeQueue(phase: string): Promise<void> {
-    const queue = this.queues.get(phase);
+    const queue = this?.queues?.get(phase);
     if (queue) {
       await queue.resume();
-      const metrics = this.metrics.get(phase);
+      const metrics = this?.metrics?.get(phase);
       if (metrics) metrics.paused = false;
       logger.info(`Resumed ${phase} queue`);
     }
@@ -520,9 +524,9 @@ export class EmailProcessingQueueService extends EventEmitter {
 
     // Get metrics for all queues
     const allMetrics = new Map<string, QueueMetrics>();
-    for (const [phase] of Array.from(this.queues.keys())) {
-      const metrics = await this.calculateQueueMetrics(phase);
-      allMetrics.set(phase, metrics);
+    for (const [phase] of Array.from(this?.queues?.keys() || [])) {
+      const metrics = await this.calculateQueueMetrics(phase!);
+      allMetrics.set(phase!, metrics);
     }
     return allMetrics;
   }
@@ -531,8 +535,8 @@ export class EmailProcessingQueueService extends EventEmitter {
    * Calculate metrics for a specific queue
    */
   private async calculateQueueMetrics(phase: string): Promise<QueueMetrics> {
-    const queue = this.queues.get(phase);
-    const metrics = this.metrics.get(phase);
+    const queue = this?.queues?.get(phase);
+    const metrics = this?.metrics?.get(phase);
 
     if (!queue || !metrics) {
       throw new Error(`Queue ${phase} not found`);
@@ -565,7 +569,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     success: boolean,
     processingTime: number,
   ): void {
-    const metrics = this.metrics.get(phase);
+    const metrics = this?.metrics?.get(phase);
     if (!metrics) return;
 
     if (success) {
@@ -602,7 +606,7 @@ export class EmailProcessingQueueService extends EventEmitter {
           );
         }
       }
-    }, this.config.monitoring.metricsInterval);
+    }, this?.config?.monitoring.metricsInterval);
   }
 
   /**
@@ -635,7 +639,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     const queueHealth: Record<string, { healthy: boolean; issues: string[] }> =
       {};
 
-    for (const [phase, queue] of Array.from(this.queues.entries())) {
+    for (const [phase, queue] of Array.from(this?.queues?.entries())) {
       const issues: string[] = [];
       let healthy = true;
 
@@ -649,7 +653,7 @@ export class EmailProcessingQueueService extends EventEmitter {
         }
 
         if (metrics.errorRate > 50) {
-          issues.push(`High error rate: ${metrics.errorRate.toFixed(1)}%`);
+          issues.push(`High error rate: ${metrics?.errorRate?.toFixed(1)}%`);
           healthy = false;
         }
 
@@ -664,7 +668,7 @@ export class EmailProcessingQueueService extends EventEmitter {
         }
 
         // Check if queue is responsive
-        await queue.client.ping();
+        await queue?.client?.ping();
       } catch (error) {
         issues.push(
           `Queue error: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -697,19 +701,19 @@ export class EmailProcessingQueueService extends EventEmitter {
     }
 
     // Close workers first
-    for (const [phase, worker] of Array.from(this.workers.entries())) {
+    for (const [phase, worker] of Array.from(this?.workers?.entries())) {
       logger.debug(`Closing worker for ${phase}...`);
       await worker.close();
     }
 
     // Close queue events
-    for (const [phase, events] of Array.from(this.queueEvents.entries())) {
+    for (const [phase, events] of Array.from(this?.queueEvents?.entries())) {
       logger.debug(`Closing events for ${phase}...`);
       await events.close();
     }
 
     // Close schedulers (deprecated in newer BullMQ versions)
-    for (const [phase, scheduler] of Array.from(this.schedulers.entries())) {
+    for (const [phase, scheduler] of Array.from(this?.schedulers?.entries())) {
       logger.debug(`Closing scheduler for ${phase}...`);
       if (scheduler && scheduler.close) {
         await scheduler.close();
@@ -717,13 +721,13 @@ export class EmailProcessingQueueService extends EventEmitter {
     }
 
     // Close queues
-    for (const [phase, queue] of Array.from(this.queues.entries())) {
+    for (const [phase, queue] of Array.from(this?.queues?.entries())) {
       logger.debug(`Closing queue for ${phase}...`);
       await queue.close();
     }
 
     // Close Redis connection
-    await this.redisConnection.quit();
+    await this?.redisConnection?.quit();
 
     logger.info("Queue service shutdown complete");
     this.emit("shutdown");

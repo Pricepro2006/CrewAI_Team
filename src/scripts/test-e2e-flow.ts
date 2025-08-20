@@ -46,7 +46,7 @@ async function main() {
 
     for (const service of services) {
       const response = await axios.get(service.url);
-      if (response.data.status !== "healthy") {
+      if (response?.data?.status !== "healthy") {
         throw new Error(`${service.name} service not healthy`);
       }
     }
@@ -59,9 +59,9 @@ async function main() {
       text: "Add 3 gallons of milk to my shopping list"
     });
 
-    return response.data.intent === "add_items" && 
-           response.data.items.includes("milk") &&
-           response.data.quantities.includes("3 gallons");
+    return response?.data?.intent === "add_items" && 
+           response?.data?.items.includes("milk") &&
+           response?.data?.quantities.includes("3 gallons");
   });
 
   // Test 3: NLP Intent Detection - Check Price
@@ -70,8 +70,8 @@ async function main() {
       text: "What's the price of Great Value milk?"
     });
 
-    return response.data.intent === "check_price" && 
-           response.data.items.includes("milk");
+    return response?.data?.intent === "check_price" && 
+           response?.data?.items.includes("milk");
   });
 
   // Test 4: Pricing Calculation
@@ -82,10 +82,10 @@ async function main() {
     });
 
     const expected = 3.98 * 2; // Base price * quantity
-    const hasDiscount = response.data.discount > 0;
-    const correctTotal = Math.abs(response.data.totalPrice - expected) < 0.01;
+    const hasDiscount = response?.data?.discount > 0;
+    const correctTotal = Math.abs(response?.data?.totalPrice - expected) < 0.01;
     
-    return hasDiscount && correctTotal && response.data.currency === "USD";
+    return hasDiscount && correctTotal && response?.data?.currency === "USD";
   });
 
   // Test 5: Bulk Pricing
@@ -97,16 +97,16 @@ async function main() {
       ]
     });
 
-    return response.data.items.length === 2 && 
-           response.data.items.every((item: any) => item.finalPrice > 0);
+    return (response?.data?.items?.length || 0) === 2 && 
+           response?.data?.items.every((item: any) => item.finalPrice > 0);
   });
 
   // Test 6: Active Promotions
   await runTest("Get active promotions", async () => {
     const response = await axios.get(`${PRICING_SERVICE}/promotions`);
     
-    return response.data.promotions.length > 0 &&
-           response.data.promotions.some((p: any) => p.id === "MILK_PROMO");
+    return response?.data?.promotions?.length || 0 > 0 &&
+           response?.data?.promotions.some((p: any) => p.id === "MILK_PROMO");
   });
 
   // Test 7: Cache Warming
@@ -115,15 +115,15 @@ async function main() {
       category: "popular"
     });
 
-    return response.data.itemsWarmed > 0;
+    return response?.data?.itemsWarmed > 0;
   });
 
   // Test 8: Cache Status
   await runTest("Cache status shows items", async () => {
     const response = await axios.get(`${CACHE_SERVICE}/status`);
     
-    return response.data.totalItems > 0 && 
-           response.data.active > 0;
+    return response?.data?.totalItems > 0 && 
+           response?.data?.active > 0;
   });
 
   // Test 9: Complete Flow - NLP to Pricing
@@ -133,7 +133,7 @@ async function main() {
       text: "I want to buy 5 gallons of milk"
     });
 
-    if (nlpResponse.data.intent !== "add_items") {
+    if (nlpResponse?.data?.intent !== "add_items") {
       throw new Error("Wrong intent detected");
     }
 
@@ -144,9 +144,9 @@ async function main() {
     });
 
     // Verify we got a price with bulk discount
-    return pricingResponse.data.quantity === 5 &&
-           pricingResponse.data.discount > 0 &&
-           pricingResponse.data.finalPrice < pricingResponse.data.totalPrice;
+    return pricingResponse?.data?.quantity === 5 &&
+           pricingResponse?.data?.discount > 0 &&
+           pricingResponse?.data?.finalPrice < pricingResponse?.data?.totalPrice;
   });
 
   // Test 10: Error Handling
@@ -176,32 +176,32 @@ async function main() {
 
   // Summary
   console.log("\n=== Test Summary ===");
-  const passed = tests.filter(t => t.passed).length;
-  const failed = tests.filter(t => !t.passed).length;
-  const totalDuration = tests.reduce((sum, t) => sum + t.duration, 0);
+  const passed = tests?.filter(t => t.passed).length;
+  const failed = tests?.filter(t => !t.passed).length;
+  const totalDuration = tests.reduce((sum: any, t: any) => sum + t.duration, 0);
 
-  console.log(`Total Tests: ${tests.length}`);
-  console.log(`Passed: ${passed} (${((passed/tests.length)*100).toFixed(1)}%)`);
+  console.log(`Total Tests: ${tests?.length || 0}`);
+  console.log(`Passed: ${passed} (${((passed/tests?.length || 0)*100).toFixed(1)}%)`);
   console.log(`Failed: ${failed}`);
   console.log(`Total Duration: ${totalDuration}ms`);
-  console.log(`Average: ${(totalDuration/tests.length).toFixed(1)}ms per test`);
+  console.log(`Average: ${(totalDuration/tests?.length || 0).toFixed(1)}ms per test`);
 
   if (failed > 0) {
     console.log("\n=== Failed Tests ===");
-    tests.filter(t => !t.passed).forEach(t => {
+    tests?.filter(t => !t.passed).forEach(t => {
       console.log(`❌ ${t.test}: ${t.details || "Failed"}`);
     });
   }
 
   // Performance metrics
   console.log("\n=== Performance Metrics ===");
-  const fastTests = tests.filter(t => t.duration < 100);
-  const slowTests = tests.filter(t => t.duration > 500);
+  const fastTests = tests?.filter(t => t.duration < 100);
+  const slowTests = tests?.filter(t => t.duration > 500);
   
-  console.log(`Fast (<100ms): ${fastTests.length} tests`);
-  console.log(`Slow (>500ms): ${slowTests.length} tests`);
+  console.log(`Fast (<100ms): ${fastTests?.length || 0} tests`);
+  console.log(`Slow (>500ms): ${slowTests?.length || 0} tests`);
   
-  if (slowTests.length > 0) {
+  if (slowTests?.length || 0 > 0) {
     console.log("\nSlow tests:");
     slowTests.forEach(t => {
       console.log(`  - ${t.test}: ${t.duration}ms`);

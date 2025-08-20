@@ -244,7 +244,7 @@ export class EmailWebSocketEmitter {
           results: {
             successful: results.successful,
             failed: results.failed,
-            total: emailIds.length,
+            total: emailIds?.length || 0,
             errors: results.errors,
           },
         },
@@ -253,7 +253,7 @@ export class EmailWebSocketEmitter {
       wsService.broadcastEmailBulkUpdate(
         action,
         emailIds,
-        event.data.results
+        event?.data?.results
       );
 
       // Update table and stats after bulk update
@@ -264,7 +264,7 @@ export class EmailWebSocketEmitter {
 
       logger.info('Email bulk update event emitted', 'EMAIL_WS', {
         action,
-        total: emailIds.length,
+        total: emailIds?.length || 0,
         successful: results.successful,
         failed: results.failed,
       });
@@ -479,7 +479,7 @@ export class EmailWebSocketEmitter {
       ]);
 
       logger.info('Email batch status updated event emitted', 'EMAIL_WS', {
-        emailCount: emailIds.length,
+        emailCount: emailIds?.length || 0,
         newStatus,
         successCount,
         errorCount,
@@ -528,7 +528,7 @@ export class EmailWebSocketEmitter {
       ]);
 
       logger.info('Email batch deleted event emitted', 'EMAIL_WS', {
-        emailCount: emailIds.length,
+        emailCount: emailIds?.length || 0,
         softDelete,
         successCount,
         errorCount,
@@ -543,7 +543,7 @@ export class EmailWebSocketEmitter {
    */
   async emitBatch(events: Array<() => Promise<void>>): Promise<void> {
     try {
-      await Promise.all(events.map(event => event()));
+      await Promise.all(events?.map(event => event()));
     } catch (error) {
       logger.error('Failed to emit batch events', 'EMAIL_WS', { error });
     }

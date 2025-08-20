@@ -12,18 +12,18 @@ import compression from 'compression';
 import { createServer } from 'http';
 import { logger } from '../../utils/logger.js';
 import { EmailQueueProcessor } from '../../core/processors/EmailQueueProcessor.js';
-import { EmailStorageService } from '../EmailStorageService.js';
-import { EmailProcessingService } from '../EmailProcessingService.js';
-import { createConnection } from '../../database/connection.js';
+import { EmailStorageService } from '../../api/services/EmailStorageService.js';
+import { OptimizedEmailProcessingService } from '../../api/services/OptimizedEmailProcessingService.js';
+import { getDatabaseConnection } from '../../database/connection.js';
 import { apiRateLimiter } from '../../api/middleware/rateLimiter.js';
 import { requestTracking } from '../../api/middleware/monitoring.js';
 
 const app = express();
-const PORT = process.env.EMAIL_PIPELINE_PORT || 3456;
+const PORT = parseInt(process.env.EMAIL_PIPELINE_PORT || '3456', 10);
 const HOST = process.env.EMAIL_PIPELINE_HOST || '0.0.0.0';
 
 // Global error handlers
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: any) => {
   logger.error('Uncaught Exception', 'PROCESS', { error: error.message, stack: error.stack });
   process.exit(1);
 });
@@ -36,7 +36,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // Services
 let queueProcessor: EmailQueueProcessor;
 let emailStorage: EmailStorageService;
-let emailProcessing: EmailProcessingService;
+let emailProcessing: OptimizedEmailProcessingService;
 let server: ReturnType<typeof createServer>;
 
 // Middleware setup
@@ -84,26 +84,36 @@ app.get('/health', async (req, res) => {
 
     // Check database
     try {
-      const db = await createConnection();
-      await db.get('SELECT 1');
-      health.checks.database = true;
+      const db = getDatabaseConnection();
+      const result = db.prepare('SELECT 1').get();
+      if (health.checks) {
+        health.checks.database = true;
+      }
     } catch (error) {
       logger.warn('Database health check failed', 'HEALTH', { error });
     }
 
     // Check queue processor
-    if (queueProcessor) {
+    if (queueProcessor && health.checks) {
       health.checks.queue = queueProcessor.isHealthy();
     }
 
     // Check Ollama (basic connectivity)
     try {
       const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch(`${ollamaUrl}/api/tags`, {
         method: 'GET',
-        timeout: 5000,
+        signal: controller.signal
       });
-      health.checks.ollama = response.ok;
+      
+      clearTimeout(timeoutId);
+      
+      if (health.checks) {
+        health.checks.ollama = response.ok;
+      }
     } catch (error) {
       logger.warn('Ollama health check failed', 'HEALTH', { error });
     }
@@ -186,10 +196,11 @@ app.post('/api/process-emails', async (req, res) => {
     const { batchSize = 50, priority = 'medium' } = req.body;
     
     if (!queueProcessor) {
-      return res.status(503).json({
+      res.status(503).json({
         error: 'Queue processor not initialized',
         timestamp: new Date().toISOString(),
       });
+      return;
     }
 
     const jobId = await queueProcessor.addEmailProcessingJob({
@@ -228,7 +239,7 @@ async function initializeServices() {
   try {
     // Initialize database connection
     logger.info('Connecting to database', 'STARTUP');
-    await createConnection();
+    getDatabaseConnection();
     logger.info('Database connected successfully', 'STARTUP');
 
     // Initialize storage service
@@ -238,12 +249,16 @@ async function initializeServices() {
 
     // Initialize processing service
     logger.info('Initializing email processing service', 'STARTUP');
-    emailProcessing = new EmailProcessingService();
+    emailProcessing = OptimizedEmailProcessingService.getInstance();
     logger.info('Email processing service initialized', 'STARTUP');
 
     // Initialize queue processor
     logger.info('Initializing queue processor', 'STARTUP');
-    queueProcessor = new EmailQueueProcessor(emailProcessing);
+    queueProcessor = new EmailQueueProcessor({
+      concurrency: parseInt(process.env.EMAIL_PROCESSING_CONCURRENT_LIMIT || '10'),
+      maxRetries: 3,
+      retryDelay: 5000,
+    });
     await queueProcessor.initialize();
     await queueProcessor.start();
     logger.info('Queue processor started successfully', 'STARTUP');
@@ -287,8 +302,8 @@ async function gracefulShutdown(signal: string) {
 }
 
 // Register shutdown handlers
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => void gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => void gracefulShutdown('SIGINT'));
 
 // Error handler middleware
 app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -321,7 +336,7 @@ async function startServer() {
       version: '2.2.1',
       environment: process.env.NODE_ENV,
       port: PORT,
-      host: HOST,
+      host: HOST as string,
     });
 
     // Initialize all services
@@ -330,7 +345,7 @@ async function startServer() {
     // Start HTTP server
     server = createServer(app);
     
-    server.listen(PORT, HOST, () => {
+    server.listen(PORT, HOST as any, () => {
       logger.info('Email pipeline service started successfully', 'STARTUP', {
         port: PORT,
         host: HOST,
@@ -344,7 +359,7 @@ async function startServer() {
       });
     });
 
-    server.on('error', (error) => {
+    server.on('error', (error: any) => {
       logger.error('Server error', 'SERVER', { error });
       process.exit(1);
     });

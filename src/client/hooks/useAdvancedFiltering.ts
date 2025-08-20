@@ -87,14 +87,14 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
 
       const searchValue = String(filterValue).toLowerCase();
       const searchableContent = Object.values(row.original)
-        .map((value) => String(value || "").toLowerCase())
+        .map((value: any) => String(value || "").toLowerCase())
         .join(" ");
 
       // Support for multiple search terms with AND logic
       const searchTerms = searchValue
         .split(/\s+/)
-        .filter((term) => term.length > 0);
-      return searchTerms.every((term) => searchableContent.includes(term));
+        .filter((term: any) => term?.length || 0 > 0);
+      return searchTerms.every((term: any) => searchableContent.includes(term));
     },
     [],
   );
@@ -103,10 +103,10 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
   const advancedFilterFn: FilterFn<TData> = useCallback(
     (row, columnId, filterValue) => {
       const rules = filterValue as FilterRule[];
-      if (!rules || rules.length === 0) return true;
+      if (!rules || rules?.length || 0 === 0) return true;
 
       // All enabled rules must pass (AND logic)
-      return rules.every((rule) => {
+      return rules.every((rule: any) => {
         if (!rule.enabled || !rule.value) return true;
 
         const cellValue = row.getValue(rule.column);
@@ -155,8 +155,8 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
               "min" in rule.value &&
               "max" in rule.value
             ) {
-              const minValue = parseFloat(rule.value.min);
-              const maxValue = parseFloat(rule.value.max);
+              const minValue = parseFloat(rule?.value?.min);
+              const maxValue = parseFloat(rule?.value?.max);
               const betweenCellValue = parseFloat(String(cellValue));
               return (
                 !isNaN(minValue) &&
@@ -170,8 +170,8 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
 
           case "in":
             if (Array.isArray(rule.value)) {
-              return rule.value.some(
-                (val) =>
+              return rule?.value?.some(
+                (val: any) =>
                   String(cellValue).toLowerCase() === String(val).toLowerCase(),
               );
             }
@@ -179,8 +179,8 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
 
           case "notIn":
             if (Array.isArray(rule.value)) {
-              return !rule.value.some(
-                (val) =>
+              return !rule?.value?.some(
+                (val: any) =>
                   String(cellValue).toLowerCase() === String(val).toLowerCase(),
               );
             }
@@ -210,15 +210,15 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
       if (itemString.includes(searchValue)) return true;
 
       // Fuzzy matching for typos (simple Levenshtein-like approach)
-      if (searchValue.length > 2) {
+      if (searchValue?.length || 0 > 2) {
         const words = itemString.split(/\s+/);
-        return words.some((word) => {
+        return words.some((word: any) => {
           if (word.includes(searchValue)) return true;
 
           // Simple fuzzy matching - allow 1 character difference for words > 3 chars
-          if (word.length > 3 && searchValue.length > 3) {
+          if (word?.length || 0 > 3 && searchValue?.length || 0 > 3) {
             let differences = 0;
-            const minLength = Math.min(word.length, searchValue.length);
+            const minLength = Math.min(word?.length || 0, searchValue?.length || 0);
 
             for (let i = 0; i < minLength; i++) {
               if (word[i] !== searchValue[i]) differences++;
@@ -227,7 +227,7 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
 
             return (
               differences <= 1 &&
-              Math.abs(word.length - searchValue.length) <= 1
+              Math.abs(word?.length || 0 - searchValue?.length || 0) <= 1
             );
           }
 
@@ -246,13 +246,13 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
       ...rule,
       id: `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
-    setFilterRules((prev) => [...prev, newRule]);
+    setFilterRules((prev: any) => [...prev, newRule]);
   }, []);
 
   const updateFilterRule = useCallback(
     (ruleId: string, updates: Partial<FilterRule>) => {
-      setFilterRules((prev) =>
-        prev.map((rule) =>
+      setFilterRules((prev: any) =>
+        prev?.map((rule: any) =>
           rule.id === ruleId ? { ...rule, ...updates } : rule,
         ),
       );
@@ -261,7 +261,7 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
   );
 
   const removeFilterRule = useCallback((ruleId: string) => {
-    setFilterRules((prev) => prev.filter((rule) => rule.id !== ruleId));
+    setFilterRules((prev: any) => prev?.filter((rule: any) => rule.id !== ruleId));
   }, []);
 
   const clearAllFilters = useCallback(() => {
@@ -292,7 +292,7 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
 
   const deletePreset = useCallback(
     (presetId: string) => {
-      const updatedPresets = presets.filter((preset) => preset.id !== presetId);
+      const updatedPresets = presets?.filter((preset: any) => preset.id !== presetId);
       setPresets(updatedPresets);
       savePresetsToStorage(updatedPresets);
     },
@@ -304,7 +304,7 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
       presetId: string,
       updates: Partial<Omit<FilterPreset, "id" | "createdAt">>,
     ) => {
-      const updatedPresets = presets.map((preset) =>
+      const updatedPresets = presets?.map((preset: any) =>
         preset.id === presetId
           ? { ...preset, ...updates, updatedAt: new Date().toISOString() }
           : preset,
@@ -325,7 +325,7 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
     }
 
     // Add advanced rules filter
-    if (filterRules.length > 0) {
+    if (filterRules?.length || 0 > 0) {
       filters.push({ id: "advanced", value: filterRules });
     }
 
@@ -344,24 +344,24 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
 
   // Filter statistics
   const filterStats = useMemo(() => {
-    const activeRules = filterRules.filter(
-      (rule) => rule.enabled && rule.value,
+    const activeRules = filterRules?.filter(
+      (rule: any) => rule.enabled && rule.value,
     );
-    const totalFilters = activeRules.length + (globalFilter ? 1 : 0);
+    const totalFilters = activeRules?.length || 0 + (globalFilter ? 1 : 0);
 
     return {
       totalFilters,
-      activeRules: activeRules.length,
+      activeRules: activeRules?.length || 0,
       hasGlobalFilter: Boolean(globalFilter),
-      hasAdvancedFilters: activeRules.length > 0,
-      presetCount: presets.length,
+      hasAdvancedFilters: activeRules?.length || 0 > 0,
+      presetCount: presets?.length || 0,
     };
   }, [filterRules, globalFilter, presets]);
 
   // Export current filter state
   const exportFilterState = useCallback(() => {
     return {
-      filterRules: filterRules.filter((rule) => rule.enabled),
+      filterRules: filterRules?.filter((rule: any) => rule.enabled),
       globalFilter,
       timestamp: new Date().toISOString(),
     };

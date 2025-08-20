@@ -112,7 +112,7 @@ TD SYNNEX Support Team`,
     },
   ];
 
-  const handleInputChange = (field: keyof EmailData, value: any) => {
+  const handleInputChange = (field: keyof EmailData, value: string | string[] | File[]) => {
     setEmailData((prev) => ({
       ...prev,
       [field]: value,
@@ -122,24 +122,24 @@ TD SYNNEX Support Team`,
   const handleToChange = (value: string) => {
     const emails = value
       .split(",")
-      .map((email) => email.trim())
-      .filter((email) => email);
+      .map((email: string) => email.trim())
+      .filter((email: string) => email);
     handleInputChange("to", emails);
   };
 
   const handleCcChange = (value: string) => {
     const emails = value
       .split(",")
-      .map((email) => email.trim())
-      .filter((email) => email);
+      .map((email: string) => email.trim())
+      .filter((email: string) => email);
     handleInputChange("cc", emails);
   };
 
   const handleBccChange = (value: string) => {
     const emails = value
       .split(",")
-      .map((email) => email.trim())
-      .filter((email) => email);
+      .map((email: string) => email.trim())
+      .filter((email: string) => email);
     handleInputChange("bcc", emails);
   };
 
@@ -166,15 +166,15 @@ TD SYNNEX Support Team`,
   const handleAttachmentRemove = (index: number) => {
     setEmailData((prev) => ({
       ...prev,
-      attachments: prev.attachments?.filter((_, i) => i !== index),
+      attachments: prev.attachments?.filter((_: File, i: number) => i !== index),
     }));
   };
 
   const handleSend = async () => {
     if (
-      !emailData.to.length ||
-      !emailData.subject.trim() ||
-      !emailData.body.trim()
+      !emailData?.to?.length ||
+      !emailData?.subject?.trim() ||
+      !emailData?.body?.trim()
     ) {
       alert("Please fill in all required fields");
       return;
@@ -198,10 +198,10 @@ TD SYNNEX Support Team`,
 
   const isValidForm = () => {
     return (
-      emailData.to.length > 0 &&
-      emailData.to.every((email) => validateEmail(email)) &&
-      emailData.subject.trim() &&
-      emailData.body.trim()
+      emailData?.to?.length > 0 &&
+      emailData?.to?.every((email: string) => validateEmail(email)) &&
+      emailData?.subject?.trim() &&
+      emailData?.body?.trim()
     );
   };
 
@@ -226,11 +226,11 @@ TD SYNNEX Support Team`,
             </label>
             <select
               value={emailData.template || ""}
-              onChange={(e) => handleTemplateSelect(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => handleTemplateSelect(e?.target?.value)}
               className="email-compose__select"
             >
               <option value="">Select Template</option>
-              {emailTemplates.map((template) => (
+              {emailTemplates?.map((template: { id: string; name: string; subject: string; body: string }) => (
                 <option key={template.id} value={template.id}>
                   {template.name}
                 </option>
@@ -247,8 +247,8 @@ TD SYNNEX Support Team`,
               </label>
               <input
                 type="text"
-                value={emailData.to.join(", ")}
-                onChange={(e) => handleToChange(e.target.value)}
+                value={emailData?.to?.join(", ")}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => handleToChange(e?.target?.value)}
                 placeholder="Enter email addresses separated by commas"
                 className="email-compose__input"
                 required
@@ -260,7 +260,7 @@ TD SYNNEX Support Team`,
               <input
                 type="text"
                 value={(emailData.cc || []).join(", ")}
-                onChange={(e) => handleCcChange(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => handleCcChange(e?.target?.value)}
                 placeholder="Enter CC email addresses"
                 className="email-compose__input"
               />
@@ -271,7 +271,7 @@ TD SYNNEX Support Team`,
               <input
                 type="text"
                 value={(emailData.bcc || []).join(", ")}
-                onChange={(e) => handleBccChange(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => handleBccChange(e?.target?.value)}
                 placeholder="Enter BCC email addresses"
                 className="email-compose__input"
               />
@@ -285,7 +285,7 @@ TD SYNNEX Support Team`,
               <input
                 type="text"
                 value={emailData.subject}
-                onChange={(e) => handleInputChange("subject", e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => handleInputChange("subject", e?.target?.value)}
                 placeholder="Enter email subject"
                 className="email-compose__input"
                 required
@@ -296,7 +296,7 @@ TD SYNNEX Support Team`,
               <label className="email-compose__label">Priority</label>
               <select
                 value={emailData.priority}
-                onChange={(e) => handleInputChange("priority", e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => handleInputChange("priority", e?.target?.value)}
                 className="email-compose__select"
               >
                 <option value="low">Low</option>
@@ -322,7 +322,7 @@ TD SYNNEX Support Team`,
             {showPreview ? (
               <div className="email-compose__preview">
                 <div className="email-compose__preview-content">
-                  {emailData.body.split("\n").map((line, index) => (
+                  {emailData?.body?.split("\n").map((line, index) => (
                     <p key={index}>{line}</p>
                   ))}
                 </div>
@@ -330,7 +330,7 @@ TD SYNNEX Support Team`,
             ) : (
               <textarea
                 value={emailData.body}
-                onChange={(e) => handleInputChange("body", e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => handleInputChange("body", e?.target?.value)}
                 placeholder="Enter your message here..."
                 className="email-compose__textarea"
                 rows={12}
@@ -350,8 +350,8 @@ TD SYNNEX Support Team`,
               <input
                 type="file"
                 multiple
-                onChange={(e) =>
-                  e.target.files && handleAttachmentAdd(e.target.files)
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  (e.target as HTMLInputElement).files && handleAttachmentAdd((e.target as HTMLInputElement).files!)
                 }
                 className="email-compose__file-input"
                 id="attachment-input"
@@ -364,9 +364,9 @@ TD SYNNEX Support Team`,
               </label>
             </div>
 
-            {emailData.attachments && emailData.attachments.length > 0 && (
+            {emailData.attachments && emailData?.attachments?.length > 0 && (
               <div className="email-compose__attachment-list">
-                {emailData.attachments.map((file, index) => (
+                {emailData?.attachments?.map((file, index) => (
                   <div key={index} className="email-compose__attachment-item">
                     <span className="email-compose__attachment-name">
                       {file.name}

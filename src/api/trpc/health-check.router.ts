@@ -5,9 +5,11 @@
 
 import { z } from "zod";
 import { router, publicProcedure } from "./enhanced-router.js";
-import { getHealthCheckService, HealthCheckLevel } from "../services/HealthCheckService.js";
+import { healthCheckService, type HealthCheckResult, type ServiceConfig } from "../../monitoring/HealthCheckService.js";
 import { TRPCError } from "@trpc/server";
 import { logger } from "../../utils/logger.js";
+
+type HealthCheckLevel = "basic" | "deep" | "full";
 
 export const healthCheckRouter = router({
   /**
@@ -18,7 +20,7 @@ export const healthCheckRouter = router({
       level: z.enum(["basic", "deep", "full"]).optional().default("basic"),
     }).optional())
     .query(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = healthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -29,7 +31,7 @@ export const healthCheckRouter = router({
 
       try {
         const level = (input?.level || "basic") as HealthCheckLevel;
-        const health = await service.performHealthCheck(level);
+        const health = await service.getAggregatedHealth();
         
         return {
           success: true,
@@ -52,7 +54,7 @@ export const healthCheckRouter = router({
       limit: z.number().min(1).max(100).default(10),
     }).optional())
     .query(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = healthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -62,7 +64,16 @@ export const healthCheckRouter = router({
       }
 
       try {
-        const history = service.getHealthHistory(input?.limit || 10);
+        // Get recent health results from all services
+        const allServices = service.getServiceConfigurations();
+        const history: HealthCheckResult[] = [];
+        
+        for (const serviceConfig of allServices.slice(0, input?.limit || 10)) {
+          const serviceHealth = service.getServiceHealth(serviceConfig.id);
+          if (serviceHealth) {
+            history.push(serviceHealth);
+          }
+        }
         
         return {
           success: true,
@@ -85,7 +96,7 @@ export const healthCheckRouter = router({
       serviceName: z.string(),
     }))
     .query(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = healthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -95,14 +106,14 @@ export const healthCheckRouter = router({
       }
 
       try {
-        const currentHealth = service.getCurrentHealth();
+        const currentHealth = service.getAggregatedHealth();
         
         if (!currentHealth) {
           throw new Error("No health data available");
         }
 
-        const serviceHealth = currentHealth.services.find(
-          s => s.name === input.serviceName
+        const serviceHealth = currentHealth?.services?.find(
+          (s: any) => s.serviceName === input.serviceName
         );
 
         if (!serviceHealth) {
@@ -130,7 +141,7 @@ export const healthCheckRouter = router({
       level: z.enum(["basic", "deep", "full"]).optional().default("basic"),
     }).optional())
     .mutation(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = healthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -141,7 +152,7 @@ export const healthCheckRouter = router({
 
       try {
         const level = (input?.level || "basic") as HealthCheckLevel;
-        const health = await service.performHealthCheck(level);
+        const health = await service.getAggregatedHealth();
         
         logger.info(`Manual health check triggered (level: ${level})`, "HEALTH");
         
@@ -166,7 +177,7 @@ export const healthCheckRouter = router({
       hours: z.number().min(1).max(24).default(1),
     }).optional())
     .query(async ({ input }) => {
-      const service = getHealthCheckService();
+      const service = healthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -176,26 +187,35 @@ export const healthCheckRouter = router({
       }
 
       try {
-        const history = service.getHealthHistory(100);
+        // Get recent health results
+        const allServices = service.getServiceConfigurations();
+        const history: HealthCheckResult[] = [];
+        
+        for (const serviceConfig of allServices) {
+          const serviceHealth = service.getServiceHealth(serviceConfig.id);
+          if (serviceHealth) {
+            history.push(serviceHealth);
+          }
+        }
         const hoursAgo = new Date(Date.now() - (input?.hours || 1) * 60 * 60 * 1000);
         
-        const recentHistory = history.filter(h => 
+        const recentHistory = history?.filter((h: any) => 
           new Date(h.timestamp) >= hoursAgo
         );
 
         // Calculate trends
         const trends = {
-          totalChecks: recentHistory.length,
-          healthyPercentage: (recentHistory.filter(h => h.status === "healthy").length / recentHistory.length) * 100,
-          degradedPercentage: (recentHistory.filter(h => h.status === "degraded").length / recentHistory.length) * 100,
-          unhealthyPercentage: (recentHistory.filter(h => h.status === "unhealthy").length / recentHistory.length) * 100,
-          averageResponseTime: recentHistory.reduce((sum, h) => sum + (h.metrics?.responseTime || 0), 0) / recentHistory.length,
+          totalChecks: recentHistory?.length || 0,
+          healthyPercentage: (recentHistory?.filter((h: any) => h.status === "healthy").length / recentHistory?.length || 0) * 100,
+          degradedPercentage: (recentHistory?.filter((h: any) => h.status === "degraded").length / recentHistory?.length || 0) * 100,
+          unhealthyPercentage: (recentHistory?.filter((h: any) => h.status === "unhealthy").length / recentHistory?.length || 0) * 100,
+          averageResponseTime: recentHistory.reduce((sum: any, h: any) => sum + (h.metrics?.responseTime || 0), 0) / recentHistory?.length || 0,
           serviceFailures: {} as Record<string, number>,
         };
 
         // Count service failures
-        recentHistory.forEach(h => {
-          h.services.forEach(s => {
+        recentHistory.forEach((h: any) => {
+          h?.services?.forEach((s: any) => {
             if (s.status === "unhealthy") {
               trends.serviceFailures[s.name] = (trends.serviceFailures[s.name] || 0) + 1;
             }
@@ -221,7 +241,7 @@ export const healthCheckRouter = router({
    */
   subscribeToHealth: publicProcedure
     .subscription(async function* () {
-      const service = getHealthCheckService();
+      const service = healthCheckService;
       
       if (!service) {
         throw new TRPCError({
@@ -233,9 +253,13 @@ export const healthCheckRouter = router({
       // This would typically use a pub/sub mechanism
       // For now, we'll yield the current health periodically
       while (true) {
-        const health = service.getCurrentHealth();
+        const health = service.getAggregatedHealth();
         if (health) {
-          yield health;
+          yield {
+            services: health.services,
+            timestamp: health.lastCheck.toISOString(),
+            overall: health.overall
+          };
         }
         
         // Wait 30 seconds before next update

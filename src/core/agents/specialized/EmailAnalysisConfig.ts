@@ -27,12 +27,12 @@ export interface TDSynnexPriorityRules {
 
 /**
  * Production configuration based on testing results
- * granite3.3:2b identified as best overall model
+ * Using llama3.2:3b as primary model (available and well-tested)
  */
 export const PRODUCTION_EMAIL_CONFIG: EmailAnalysisModelConfig = {
-  primaryModel: "granite3.3:2b", // 80% accuracy, 100% critical detection in tests
-  criticalBackup: "granite3.3:8b", // For critical validation if needed
-  entityExtraction: "qwen3:0.6b", // Fast entity-only extraction (optional)
+  primaryModel: "llama3.2:3b", // Available model, good accuracy for email analysis
+  criticalBackup: "llama3.2:3b", // Same model for consistency
+  entityExtraction: "llama3.2:3b", // Use same model for simplicity
   temperature: 0.1, // Low temperature for consistency
   maxTokens: 500, // Sufficient for email analysis
   timeout: 10000, // 10 second timeout
@@ -91,7 +91,7 @@ export const TD_SYNNEX_PRIORITY_RULES: TDSynnexPriorityRules = {
   workflowRules: [
     {
       workflow: "License Renewal",
-      condition: (email) => {
+      condition: (email: any) => {
         const daysUntilExpiry =
           email.daysUntilExpiry ||
           extractDaysFromText(email.subject + " " + email.summary);
@@ -106,7 +106,7 @@ export const TD_SYNNEX_PRIORITY_RULES: TDSynnexPriorityRules = {
     },
     {
       workflow: "Order Management",
-      condition: (email) => {
+      condition: (email: any) => {
         const text = (email.subject + " " + email.summary).toLowerCase();
         return text.includes("issue") || text.includes("problem");
       },
@@ -148,8 +148,8 @@ export function enhancePriorityDetection(
     const text = email.subject + " " + email.summary;
     const matches =
       typeof rule.pattern === "string"
-        ? text.toLowerCase().includes(rule.pattern.toLowerCase())
-        : rule.pattern.test(text);
+        ? text.toLowerCase().includes(rule?.pattern?.toLowerCase())
+        : rule?.pattern?.test(text);
 
     if (matches) {
       return {
@@ -166,7 +166,7 @@ export function enhancePriorityDetection(
       if (
         email.workflow_type
           .toLowerCase()
-          .includes(rule.workflow.toLowerCase()) &&
+          .includes(rule?.workflow?.toLowerCase()) &&
         rule.condition(email)
       ) {
         return {

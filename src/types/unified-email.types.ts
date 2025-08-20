@@ -1,5 +1,58 @@
 // Unified Email Dashboard Types
 
+// Database row type for emails
+export interface EmailRow {
+  id: string;
+  message_id: string;
+  subject: string;
+  from_email: string;
+  body_text: string;
+  body_html?: string;
+  received_at: string;
+  phase_1_results?: string;
+  phase_2_results?: string;
+  phase_3_results?: string;
+  workflow_state?: string;
+  workflow_type?: string;
+  is_complete_chain?: number;
+  chain_id?: string;
+  priority?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Email with analysis results
+export interface EmailWithAnalysis {
+  id: string;
+  subject: string;
+  from: string;
+  receivedDateTime: string;
+  body?: string;
+  analysis?: {
+    workflow?: {
+      primary: string;
+      secondary?: string[];
+    };
+    priority?: string;
+    confidence?: number;
+    entities?: {
+      poNumbers?: string[];
+      quoteNumbers?: string[];
+      partNumbers?: string[];
+    };
+    actionItems?: Array<{
+      type: string;
+      description: string;
+      priority: string;
+    }>;
+    businessImpact?: {
+      revenue?: number;
+      currency?: string;
+    };
+  };
+}
+
 export type ViewMode =
   | "dashboard"
   | "list"

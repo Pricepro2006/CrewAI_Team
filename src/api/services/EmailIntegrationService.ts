@@ -8,20 +8,22 @@
 import { EmailIngestionServiceImpl } from '../../core/services/EmailIngestionServiceImpl.js';
 import { EmailStorageService } from './EmailStorageService.js';
 import { EmailThreePhaseAnalysisService } from '../../core/services/EmailThreePhaseAnalysisService.js';
+import crypto from 'crypto';
 import { EmailRepository } from '../../database/repositories/EmailRepository.js';
 import { UnifiedEmailService } from './UnifiedEmailService.js';
 import { logger } from '../../utils/logger.js';
+import { databaseManager } from '../../core/database/DatabaseManager.js';
+import { WebSocketService } from './WebSocketService.js';
 import type { 
   EmailRecord, 
   EmailPriority
 } from '../../shared/types/email.js';
 import type { 
   RawEmailData, 
-  IngestionMode,
   EmailIngestionConfig,
   IngestionBatchResult
 } from '../../core/services/EmailIngestionService.js';
-import { IngestionSource } from '../../core/services/EmailIngestionService.js';
+import { IngestionSource, IngestionMode } from '../../core/services/EmailIngestionService.js';
 import type { Phase1Results, Phase2Results, Phase3Results } from '../../core/services/EmailThreePhaseAnalysisService.js';
 import type { EmailEntity, EmailRecipient } from '../../types/common.types.js';
 
@@ -84,10 +86,14 @@ export interface ExtractedEntities {
 
 // Action item types
 export type ActionItemSource = string | {
+  task?: string;
   description?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
   due_date?: string;
+  deadline?: string;
   assignee?: string;
+  owner?: string;
+  revenue_impact?: string;
 };
 
 export interface MappedActionItem {
@@ -96,6 +102,9 @@ export interface MappedActionItem {
   priority: 'low' | 'medium' | 'high' | 'critical';
   due_date?: string;
   assignee?: string;
+  slaHours?: number;
+  slaStatus?: 'on-track' | 'at-risk' | 'overdue';
+  estimatedCompletion?: string;
 }
 
 // Define IngestionProgress interface
@@ -151,51 +160,93 @@ export class EmailIntegrationService {
   private emailRepository: EmailRepository;
   private unifiedEmailService: UnifiedEmailService;
   private isProcessing: boolean = false;
+  private wsService: WebSocketService | null = null;
 
   private constructor() {
-    // TODO: Fix TypeScript compilation issues before enabling real service
-    // const { realEmailStorageService } = require('./RealEmailStorageService.js');
-    // this.emailStorage = realEmailStorageService;
-    this.emailStorage = new EmailStorageService(); // Temporary mock until TypeScript fixed
-    // this.emailRepository = new EmailRepository(); // TODO: Fix repository configuration
-    this.emailRepository = null as any; // Temporary fix
-    // this.unifiedEmailService = new UnifiedEmailService(this.emailRepository); // TODO: Fix service dependency
-    this.unifiedEmailService = null as any; // Temporary fix
+    this.emailStorage = new EmailStorageService();
+    // Use the DatabaseManager to get the main database connection
+    let db: any;
+    try {
+      if (typeof databaseManager?.getConnection === 'function') {
+        const connection = databaseManager.getConnection('main');
+        // Extract the raw database from the EnhancedDatabaseConnection
+        db = connection.getRawDatabase();
+        logger.info('[EmailIntegrationService] Using DatabaseManager main connection', 'EMAIL_INTEGRATION');
+      } else {
+        // Fallback to creating a direct database connection
+        const Database = require('better-sqlite3');
+        const dbPath = './data/crewai_enhanced.db';
+        db = new Database(dbPath);
+        logger.info('[EmailIntegrationService] Using fallback database connection', 'EMAIL_INTEGRATION', { dbPath });
+      }
+    } catch (error) {
+      logger.warn('[EmailIntegrationService] DatabaseManager failed, using direct connection', 'EMAIL_INTEGRATION', { error });
+      // Final fallback
+      try {
+        const Database = require('better-sqlite3');
+        const dbPath = './data/crewai_enhanced.db';
+        const fs = require('fs');
+        const path = require('path');
+        
+        // Ensure data directory exists
+        const dataDir = path.dirname(dbPath);
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        db = new Database(dbPath);
+        logger.info('[EmailIntegrationService] Using final fallback database connection', 'EMAIL_INTEGRATION', { dbPath });
+      } catch (fallbackError) {
+        logger.error('[EmailIntegrationService] All database connection attempts failed', 'EMAIL_INTEGRATION', { fallbackError });
+        throw new Error('Failed to establish database connection');
+      }
+    }
+    this.emailRepository = new EmailRepository({ db });
+    this.unifiedEmailService = new UnifiedEmailService(this.emailRepository);
     
-    // const config: EmailIngestionConfig = {
-    //   mode: IngestionMode.MANUAL,
-    //   redis: {
-    //     host: process.env.REDIS_HOST || 'localhost',
-    //     port: parseInt(process.env.REDIS_PORT || '6379'),
-    //     password: process.env.REDIS_PASSWORD
-    //   },
-    //   processing: {
-    //     batchSize: 50,
-    //     concurrency: 5,
-    //     maxRetries: 3,
-    //     retryDelay: 1000,
-    //     deduplicationWindow: 24,
-    //     priorityBoostKeywords: ['urgent', 'critical', 'asap', 'emergency']
-    //   }
-    // };
+    const config: EmailIngestionConfig = {
+      mode: IngestionMode.MANUAL,
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD
+      },
+      processing: {
+        batchSize: 50,
+        concurrency: 5,
+        maxRetries: 3,
+        retryDelay: 1000,
+        deduplicationWindow: 24,
+        priorityBoostKeywords: ['urgent', 'critical', 'asap', 'emergency']
+      }
+    };
     
-    // this.emailIngestion = new EmailIngestionServiceImpl(
-    //   config,
-    //   this.emailRepository,
-    //   this.unifiedEmailService
-    // );
-    this.emailIngestion = null as any; // Temporary fix
+    this.emailIngestion = new EmailIngestionServiceImpl(
+      config,
+      this.emailRepository,
+      this.unifiedEmailService
+    );
     
-    // this.analysisService = new EmailThreePhaseAnalysisService(); // TODO: Fix service dependency
-    this.analysisService = null as any; // Temporary fix
+    this.analysisService = new EmailThreePhaseAnalysisService();
 
-    // Initialize the ingestion service
-    // this.emailIngestion.initialize().catch(error => {
-    //   logger.error('Failed to initialize email ingestion service', 'EMAIL_INTEGRATION', { error });
-    // });
+    // Initialize the ingestion service with error handling
+    if (this.emailIngestion && typeof this.emailIngestion.initialize === 'function') {
+      this.emailIngestion.initialize().catch(error => {
+        logger.error('Failed to initialize email ingestion service', 'EMAIL_INTEGRATION', { error });
+      });
+    } else {
+      logger.warn('Email ingestion service does not have initialize method', 'EMAIL_INTEGRATION');
+    }
 
     // Set up event listeners
-    // this.setupEventListeners(); // TODO: Fix event listener setup
+    this.setupEventListeners();
+    
+    // Initialize WebSocket service if available
+    try {
+      this.wsService = WebSocketService.getInstance();
+    } catch (error) {
+      logger.warn('WebSocket service not available', 'EMAIL_INTEGRATION', { error });
+    }
   }
 
   public static getInstance(): EmailIntegrationService {
@@ -208,7 +259,7 @@ export class EmailIntegrationService {
   private setupEventListeners(): void {
     // TODO: EmailIngestionServiceImpl needs to extend EventEmitter
     // // Listen for ingestion completion events
-    // this.emailIngestion.on('email:processed', async (result: any) => {
+    // this?.emailIngestion?.on('email:processed', async (result: any) => {
     //   try {
     //     // The processed email is already stored, just log the event
     //     logger.info('Email processed event received', 'EMAIL_INTEGRATION', {
@@ -220,7 +271,7 @@ export class EmailIntegrationService {
     // });
 
     // // Listen for batch completion
-    // this.emailIngestion.on('batch:completed', async (progress: IngestionProgress) => {
+    // this?.emailIngestion?.on('batch:completed', async (progress: IngestionProgress) => {
     //   logger.info('Batch processing completed', 'EMAIL_INTEGRATION', {
     //     processed: progress.processed,
     //     failed: progress.failed,
@@ -238,12 +289,12 @@ export class EmailIntegrationService {
   ): Promise<void> {
     try {
       // Transform and store in the format expected by EmailStorageService
-      await this.emailStorage.createEmail({
+      await this?.emailStorage?.createEmail({
         messageId: email.messageId,
         emailAlias: email.to[0]?.address || 'unknown@email.com',
-        requestedBy: email.from.name || email.from.address,
+        requestedBy: email?.from?.name || email?.from?.address,
         subject: email.subject,
-        summary: analysisResult.phase1Analysis?.summary || email.body.content.substring(0, 200),
+        summary: analysisResult.phase1Analysis?.summary || email?.body?.content.substring(0, 200),
         status: this.mapPriorityToStatus(analysisResult.phase1Analysis?.priority || 'medium'),
         statusText: analysisResult.phase1Analysis?.intent || 'Email received',
         workflowState: this.mapWorkflowState(analysisResult),
@@ -254,7 +305,7 @@ export class EmailIntegrationService {
       });
 
       // Store the full analysis
-      await this.emailStorage.storeEmailAnalysis(email.messageId, {
+      await this?.emailStorage?.storeEmailAnalysis(email.messageId, {
         quick: {
           workflow: {
             primary: analysisResult.phase1Analysis?.workflow || 'unknown',
@@ -284,9 +335,9 @@ export class EmailIntegrationService {
         },
         actionSummary: analysisResult.phase2Analysis?.action_summary || '',
         processingMetadata: {
-          stage1Time: analysisResult.processingTime.phase1 || 0,
-          stage2Time: analysisResult.processingTime.phase2 || 0,
-          totalTime: analysisResult.processingTime.total || 0,
+          stage1Time: analysisResult?.processingTime?.phase1 || 0,
+          stage2Time: analysisResult?.processingTime?.phase2 || 0,
+          totalTime: analysisResult?.processingTime?.total || 0,
           models: {
             stage1: 'rule-based',
             stage2: analysisResult.llmUsed || 'none'
@@ -314,13 +365,13 @@ export class EmailIntegrationService {
       
       switch (source) {
         case 'json':
-          emails = this.parseJsonEmails(data);
+          emails = this.parseJsonEmails(data as JsonEmailData | string);
           break;
         case 'database':
-          emails = await this.fetchDatabaseEmails(data);
+          emails = await this.fetchDatabaseEmails(data as DatabaseEmailCriteria);
           break;
         case 'api':
-          emails = await this.fetchApiEmails(data);
+          emails = await this.fetchApiEmails(data as ApiEmailConfig);
           break;
       }
 
@@ -330,12 +381,42 @@ export class EmailIntegrationService {
         source === 'database' ? IngestionSource.DATABASE :
         IngestionSource.MICROSOFT_GRAPH;
 
+      // Notify WebSocket about processing start
+      if (this.wsService) {
+        this.wsService.broadcast({
+          type: 'email.ingestion.started',
+          source,
+          totalEmails: emails.length,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
       // Ingest emails through the pipeline
-      const result = await this.emailIngestion.ingestBatch(emails, ingestionSource);
+      const result = await this?.emailIngestion?.ingestBatch(emails, ingestionSource);
       
       // Handle Result type
       if (!result.success) {
+        if (this.wsService) {
+          this.wsService.broadcast({
+            type: 'email.ingestion.failed',
+            source,
+            error: result.error?.message || 'Unknown error',
+            timestamp: new Date().toISOString()
+          });
+        }
         throw result.error;
+      }
+      
+      // Notify WebSocket about completion
+      if (this.wsService && result.data) {
+        this.wsService.broadcast({
+          type: 'email.ingestion.completed',
+          source,
+          processed: result.data.processed,
+          failed: result.data.failed, 
+          total: result.data.totalEmails,
+          timestamp: new Date().toISOString()
+        });
       }
       
       return result.data;
@@ -350,8 +431,8 @@ export class EmailIntegrationService {
   public getProcessingStatus() {
     return {
       isProcessing: this.isProcessing,
-      queueStatus: this.emailIngestion.getQueueStatus(),
-      storageStats: this.emailStorage.getDashboardStats()
+      queueStatus: this?.emailIngestion?.getQueueStatus(),
+      storageStats: this?.emailStorage?.getDashboardStats()
     };
   }
 
@@ -405,8 +486,8 @@ export class EmailIntegrationService {
   /**
    * Extract entities from analysis result
    */
-  private extractEntities(analysis: AnalysisResult): Array<{ type: string; value: string }> {
-    const entities: Array<{ type: string; value: string }> = [];
+  private extractEntities(analysis: AnalysisResult): EmailEntity[] {
+    const entities: EmailEntity[] = [];
     
     // Get entities from the deepest analysis available
     const entitySource: ExtractedEntities | undefined = analysis.phase3Analysis?.entities || 
@@ -416,22 +497,43 @@ export class EmailIntegrationService {
     if (entitySource) {
       // Handle PO numbers
       if (entitySource.po_numbers && Array.isArray(entitySource.po_numbers)) {
-        entitySource.po_numbers.forEach((po: string | number) => {
-          entities.push({ type: 'PO_NUMBER', value: String(po) });
+        entitySource?.po_numbers?.forEach((po: string | number) => {
+          entities.push({
+            id: crypto.randomUUID(),
+            type: 'po_number',
+            value: String(po),
+            confidence: 0.9,
+            extractedAt: new Date().toISOString(),
+            source: 'email_integration'
+          });
         });
       }
       
       // Handle quote numbers
       if (entitySource.quote_numbers && Array.isArray(entitySource.quote_numbers)) {
-        entitySource.quote_numbers.forEach((quote: string | number) => {
-          entities.push({ type: 'QUOTE_NUMBER', value: String(quote) });
+        entitySource?.quote_numbers?.forEach((quote: string | number) => {
+          entities.push({
+            id: crypto.randomUUID(),
+            type: 'quote_number',
+            value: String(quote),
+            confidence: 0.9,
+            extractedAt: new Date().toISOString(),
+            source: 'email_integration'
+          });
         });
       }
       
       // Handle part numbers
       if (entitySource.part_numbers && Array.isArray(entitySource.part_numbers)) {
-        entitySource.part_numbers.forEach((part: string | number) => {
-          entities.push({ type: 'PART_NUMBER', value: String(part) });
+        entitySource?.part_numbers?.forEach((part: string | number) => {
+          entities.push({
+            id: crypto.randomUUID(),
+            type: 'part_number',
+            value: String(part),
+            confidence: 0.9,
+            extractedAt: new Date().toISOString(),
+            source: 'email_integration'
+          });
         });
       }
       
@@ -439,7 +541,14 @@ export class EmailIntegrationService {
       const companies = entitySource.companies || (entitySource as ExtractedEntities & { company_names?: (string | number)[] }).company_names;
       if (companies && Array.isArray(companies)) {
         companies.forEach((company: string | number) => {
-          entities.push({ type: 'COMPANY', value: String(company) });
+          entities.push({
+            id: crypto.randomUUID(),
+            type: 'customer',
+            value: String(company),
+            confidence: 0.9,
+            extractedAt: new Date().toISOString(),
+            source: 'email_integration'
+          });
         });
       }
     }
@@ -456,13 +565,13 @@ export class EmailIntegrationService {
     
     return {
       poNumbers: Array.isArray(phase1Entities.po_numbers) ? 
-        phase1Entities.po_numbers.map((po: string | number) => ({ value: String(po), format: 'standard', confidence: 0.9 })) : [],
+        phase1Entities?.po_numbers?.map((po: string | number) => ({ value: String(po), format: 'standard', confidence: 0.9 })) : [],
       quoteNumbers: Array.isArray(phase1Entities.quotes) ? 
-        phase1Entities.quotes.map((q: string | number) => ({ value: String(q), type: 'quote', confidence: 0.9 })) : [],
+        phase1Entities?.quotes?.map((q: string | number) => ({ value: String(q), type: 'quote', confidence: 0.9 })) : [],
       caseNumbers: Array.isArray(phase1Entities.cases) ?
-        phase1Entities.cases.map((c: string | number) => ({ value: String(c), confidence: 0.9 })) : [],
+        phase1Entities?.cases?.map((c: string | number) => ({ value: String(c), type: 'case', confidence: 0.9 })) : [],
       partNumbers: Array.isArray(phase1Entities.parts) ? 
-        phase1Entities.parts.map((p: string | number) => ({ value: String(p), confidence: 0.9 })) : [],
+        phase1Entities?.parts?.map((p: string | number) => ({ value: String(p), confidence: 0.9 })) : [],
       orderReferences: [],
       contacts: []
     };
@@ -471,8 +580,22 @@ export class EmailIntegrationService {
   /**
    * Map action items from analysis
    */
-  private mapActionItems(analysis: AnalysisResult): MappedActionItem[] {
-    const actionItems: MappedActionItem[] = [];
+  private mapActionItems(analysis: AnalysisResult): Array<{
+    type: string;
+    description: string;
+    priority: string;
+    slaHours: number;
+    slaStatus: "on-track" | "at-risk" | "overdue";
+    estimatedCompletion?: string;
+  }> {
+    const actionItems: Array<{
+      type: string;
+      description: string;
+      priority: string;
+      slaHours: number;
+      slaStatus: "on-track" | "at-risk" | "overdue";
+      estimatedCompletion?: string;
+    }> = [];
     
     const actionSource: ActionItemSource[] = analysis.phase3Analysis?.action_items || 
                         analysis.phase2Analysis?.action_items || [];
@@ -507,25 +630,25 @@ export class EmailIntegrationService {
       parsedData = [parsedData];
     }
     
-    return parsedData.map((email) => ({
+    return parsedData?.map((email: any) => ({
       messageId: email.id || email.messageId || `msg_${Date.now()}_${Math.random()}`,
       subject: email.subject || 'No Subject',
       body: {
-        content: email.body?.content || email.body || '',
+        content: typeof email.body === 'string' ? email.body : (email.body?.content || ''),
         contentType: (email.body?.contentType || 'text') as 'text' | 'html'
       },
       from: {
-        address: email.from?.emailAddress?.address || email.from?.address || 'unknown@email.com',
-        name: email.from?.emailAddress?.name || email.from?.name
+        address: (email.from as any)?.emailAddress?.address || (email.from as any)?.address || 'unknown@email.com',
+        name: (email.from as any)?.emailAddress?.name || (email.from as any)?.name || 'Unknown'
       },
       to: (email.to || []).map((recipient: any) => ({
         address: recipient.emailAddress?.address || recipient.address || 'unknown@email.com',
-        name: recipient.emailAddress?.name || recipient.name
+        name: recipient.emailAddress?.name || recipient.name || 'Unknown'
       })),
-      cc: email.cc,
-      receivedAt: new Date(email.receivedDateTime || email.receivedAt || Date.now()),
+      cc: (email as any).cc || [],
+      receivedDateTime: email.receivedDateTime || new Date((email as any).receivedAt || Date.now()).toISOString(),
       hasAttachments: email.hasAttachments || false,
-      attachments: email.attachments
+      attachments: (email as any).attachments || []
     }));
   }
 
@@ -551,21 +674,21 @@ export class EmailIntegrationService {
    * Start auto-pull mode for continuous email ingestion
    */
   public async startAutoPull(interval: number = 5): Promise<void> {
-    await this.emailIngestion.startAutoPull();
+    await this?.emailIngestion?.startAutoPull();
   }
 
   /**
    * Stop auto-pull mode
    */
   public async stopAutoPull(): Promise<void> {
-    await this.emailIngestion.stopAutoPull();
+    await this?.emailIngestion?.stopAutoPull();
   }
 
   /**
    * Clean up resources
    */
   public async shutdown(): Promise<void> {
-    await this.emailIngestion.shutdown();
+    await this?.emailIngestion?.shutdown();
     // EmailStorageService doesn't have a shutdown method, but we could add one if needed
   }
 
@@ -574,22 +697,20 @@ export class EmailIntegrationService {
    */
   public on(event: string, listener: (...args: unknown[]) => void): void {
     // TODO: Enable when EmailIngestionService extends EventEmitter
-    // this.emailIngestion.on(event, listener);
+    // this?.emailIngestion?.on(event, listener);
   }
 
   public off(event: string, listener: (...args: unknown[]) => void): void {
     // TODO: Enable when EmailIngrationService extends EventEmitter
-    // this.emailIngestion.off(event, listener);
+    // this?.emailIngestion?.off(event, listener);
   }
 
   public emit(event: string, ...args: unknown[]): boolean {
     // TODO: Enable when EmailIngestionService extends EventEmitter
-    // return this.emailIngestion.emit(event, ...args);
+    // return this?.emailIngestion?.emit(event, ...args);
     return false;
   }
 }
 
 // Export singleton instance
-// TODO: Fix database schema issues before enabling
-// export const emailIntegrationService = EmailIntegrationService.getInstance();
-export const emailIntegrationService = null as any; // Temporary disable until fixed
+export const emailIntegrationService = EmailIntegrationService.getInstance();

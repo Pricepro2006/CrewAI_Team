@@ -12,10 +12,11 @@ import ollamaConfig from "../../config/ollama.config.js";
 import { logger } from "../../utils/logger.js";
 import { mcpToolsService } from "../services/MCPToolsService.js";
 import { DealDataService } from "../services/DealDataService.js";
-import { EmailStorageService } from "../services/EmailStorageService.js";
+import { realEmailStorageService } from "../services/RealEmailStorageService.js";
+import type { RealEmailStorageService } from "../services/RealEmailStorageService.js";
 import { WalmartGroceryService } from "../services/WalmartGroceryService.js";
 import { getStoredCSRFToken } from "../middleware/security/csrf.js";
-// import { EmailIngestionServiceImpl } from "../../core/services/EmailIngestionServiceImpl.js";
+import type { EmailIngestionServiceImpl } from "../../core/services/EmailIngestionServiceImpl.js";
 import { EventEmitter } from "events";
 
 // Context User interface (extends PublicUser with runtime properties)
@@ -37,7 +38,7 @@ let maestroFramework: MaestroFramework;
 let taskService: TaskService;
 let userService: UserService;
 let dealDataService: DealDataService;
-let emailStorageService: EmailStorageService;
+let emailStorageService: RealEmailStorageService;
 let walmartGroceryService: WalmartGroceryService;
 // let emailIngestionService: EmailIngestionServiceImpl;
 let eventEmitter: EventEmitter;
@@ -96,10 +97,9 @@ async function initializeServices() {
     dealDataService = new DealDataService();
   }
 
-  // if (!emailStorageService) {
-  //   emailStorageService = new EmailStorageService(); // TODO: Fix database schema issues
-  // }
-  emailStorageService = null as any; // Temporary fix
+  if (!emailStorageService) {
+    emailStorageService = realEmailStorageService; // Use the enhanced email storage service
+  }
 
   if (!walmartGroceryService) {
     walmartGroceryService = WalmartGroceryService.getInstance();
@@ -202,8 +202,8 @@ function getPermissionsForRole(role: string): string[] {
 }
 
 // Security headers and request validation
-function validateRequest(req: any) {
-  const ip = req.ip || req.connection.remoteAddress || "unknown";
+function validateRequest(req: Request) {
+  const ip = req.ip || req?.connection?.remoteAddress || "unknown";
   const userAgent = req.headers["user-agent"] || "unknown";
 
   // Log security-relevant request info
@@ -212,7 +212,7 @@ function validateRequest(req: any) {
     userAgent,
     method: req.method,
     path: req.path,
-    hasAuth: !!req.headers.authorization,
+    hasAuth: !!req?.headers?.authorization,
   });
 
   // Basic security checks
@@ -223,14 +223,14 @@ function validateRequest(req: any) {
   return { ip, userAgent };
 }
 
-type TRPCContext = {
+export type TRPCContext = {
   req: Request;
   res: Response;
-  user: User;
+  user: User | null;
   requestId: string;
   timestamp: Date;
-  batchId: string | undefined;
-  validatedInput: unknown;
+  batchId?: string;
+  validatedInput?: unknown;
   csrfToken?: string;
   rateLimits?: Map<string, { count: number; resetTime: number }>;
   masterOrchestrator: MasterOrchestrator;
@@ -239,13 +239,24 @@ type TRPCContext = {
   maestroFramework: MaestroFramework;
   userService: UserService;
   dealDataService: DealDataService;
-  emailStorageService: EmailStorageService;
+  emailStorageService: RealEmailStorageService;
   walmartGroceryService: WalmartGroceryService;
-  // emailIngestionService: EmailIngestionServiceImpl;
+  emailIngestionService?: EmailIngestionServiceImpl;
   eventEmitter: EventEmitter;
-  agentRegistry: any;
-  ragSystem: any;
-  mcpTools: any;
+  agentRegistry: {
+    getAgent: (name: string) => Promise<unknown>;
+    listAgents: () => Promise<Array<{ name: string; status: string }>>;
+    registerAgent: (name: string, agent: unknown) => Promise<void>;
+  };
+  ragSystem: {
+    query: (query: string, options?: Record<string, unknown>) => Promise<unknown[]>;
+    addDocuments: (docs: unknown[]) => Promise<void>;
+    getStatus: () => Promise<{ status: string; documentCount: number }>;
+  };
+  mcpTools: {
+    callTool: (name: string, params: Record<string, unknown>) => Promise<unknown>;
+    listTools: () => Promise<Array<{ name: string; description: string }>>;
+  };
 };
 
 export async function createContext({
@@ -259,7 +270,7 @@ export async function createContext({
   const services = await initializeServices();
 
   // Extract and verify JWT if present
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const token = req?.headers?.authorization?.replace("Bearer ", "");
   let user: User | null = null;
 
   if (token) {
@@ -301,17 +312,19 @@ export async function createContext({
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  return {
+  const context: TRPCContext = {
     req,
     res,
     user,
     requestId: Math.random().toString(36).substring(7),
     timestamp: new Date(),
-    batchId: undefined as string | undefined, // Will be set by batch middleware when needed
-    validatedInput: undefined as unknown, // Will be set by input validation middleware when needed
-    csrfToken, // Properly extracted CSRF token from cookies
+    batchId: undefined,
+    validatedInput: undefined,
+    csrfToken,
     ...services,
   };
+  
+  return context;
 }
 
 export type Context = inferAsyncReturnType<typeof createContext>;

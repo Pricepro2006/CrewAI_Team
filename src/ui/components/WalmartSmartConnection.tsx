@@ -4,9 +4,14 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useSmartWebSocket } from '../hooks/useSmartWebSocket.js';
-import { ConnectionMonitor } from './ConnectionMonitor.js';
-import { toast } from 'react-hot-toast';
+import { useSmartWebSocket, ConnectionMode, ConnectionQuality } from '../hooks/useSmartWebSocket';
+import { ConnectionMonitor } from './ConnectionMonitor';
+// Using fallback toast implementation
+const toast = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  loading: (message: string) => console.log('Loading:', message),
+};
 import { 
   WifiIcon, 
   ArrowPathIcon,
@@ -17,7 +22,7 @@ import {
 interface WalmartSmartConnectionProps {
   userId?: string;
   sessionId?: string;
-  onDataReceived?: (data: any) => void;
+  onDataReceived?: (data: Record<string, unknown>) => void;
   children?: React.ReactNode;
 }
 
@@ -28,7 +33,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
   children
 }) => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [messageHistory, setMessageHistory] = useState<any[]>([]);
+  const [messageHistory, setMessageHistory] = useState<Record<string, unknown>[]>([]);
 
   const connection = useSmartWebSocket({
     wsUrl: `ws://localhost:3001/ws/walmart`,
@@ -41,46 +46,36 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
     fallbackThreshold: 3,
     pollingInterval: 5000,
     onConnect: () => {
-      toast.success('Connected to Walmart service', {
-        icon: <CheckCircleIcon className="w-5 h-5" />,
-        duration: 3000
-      });
+      toast.success('Connected to Walmart service');
     },
     onDisconnect: () => {
-      toast.error('Disconnected from Walmart service', {
-        icon: <ExclamationCircleIcon className="w-5 h-5" />,
-        duration: 3000
-      });
+      toast.error('Disconnected from Walmart service');
     },
-    onMessage: (message) => {
+    onMessage: (message: Record<string, unknown>) => {
       setLastUpdate(new Date());
       setMessageHistory(prev => [...prev.slice(-9), message]);
       onDataReceived?.(message);
     },
-    onModeChange: (mode) => {
-      const modeMessages = {
+    onModeChange: (mode: ConnectionMode) => {
+      const modeMessages: Record<ConnectionMode, string> = {
         websocket: 'Real-time connection established',
         polling: 'Switched to polling mode (fallback)',
+        hybrid: 'Hybrid mode active',
         offline: 'Connection lost'
-      };
-      
-      const modeIcons = {
-        websocket: <WifiIcon className="w-5 h-5" />,
-        polling: <ArrowPathIcon className="w-5 h-5" />,
-        offline: <ExclamationCircleIcon className="w-5 h-5" />
       };
 
       if (mode !== 'offline') {
-        toast(modeMessages[mode] || 'Connection mode changed', {
-          icon: modeIcons[mode],
-          duration: 4000
-        });
+        if (mode === 'websocket') {
+          toast.success(modeMessages[mode] || 'Connection mode changed');
+        } else {
+          toast.loading(modeMessages[mode] || 'Connection mode changed');
+        }
       }
     }
   });
 
   // Send test message
-  const sendTestMessage = () => {
+  const sendTestMessage = (): void => {
     const success = connection.sendMessage({
       type: 'ping',
       timestamp: Date.now()
@@ -94,14 +89,14 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
   };
 
   // Connection status indicator
-  const getStatusColor = () => {
+  const getStatusColor = (): string => {
     if (!connection.isConnected) return 'bg-red-500';
     if (connection.mode === 'websocket') return 'bg-green-500';
     if (connection.mode === 'polling') return 'bg-yellow-500';
     return 'bg-gray-500';
   };
 
-  const getStatusText = () => {
+  const getStatusText = (): string => {
     if (connection.isConnecting) return 'Connecting...';
     if (!connection.isConnected) return 'Offline';
     if (connection.mode === 'websocket') return 'Real-time';
@@ -164,7 +159,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
         {/* Connection Actions */}
         <div className="mt-3 flex gap-2">
           <button
-            onClick={() => connection.reconnect()}
+            onClick={(): void => connection.reconnect()}
             className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
             disabled={connection.isConnecting}
           >
@@ -172,7 +167,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
           </button>
           
           <button
-            onClick={() => connection.switchMode('websocket')}
+            onClick={(): void => connection.switchMode('websocket')}
             className={`px-3 py-1 text-sm rounded transition-colors ${
               connection.mode === 'websocket' 
                 ? 'bg-green-500 text-white' 
@@ -184,7 +179,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
           </button>
           
           <button
-            onClick={() => connection.switchMode('polling')}
+            onClick={(): void => connection.switchMode('polling')}
             className={`px-3 py-1 text-sm rounded transition-colors ${
               connection.mode === 'polling' 
                 ? 'bg-yellow-500 text-white' 
@@ -246,7 +241,7 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
                 Attempting to reconnect...
               </p>
               <button
-                onClick={() => connection.reconnect()}
+                onClick={(): void => connection.reconnect()}
                 className="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
               >
                 Retry Now
@@ -262,6 +257,9 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
         sessionId={sessionId}
         position="bottom-right"
         expanded={false}
+        onModeChange={(mode: ConnectionMode) => {
+          connection.switchMode(mode);
+        }}
       />
     </div>
   );

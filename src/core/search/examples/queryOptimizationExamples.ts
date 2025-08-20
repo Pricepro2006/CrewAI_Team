@@ -34,7 +34,7 @@ const exampleQueries = [
 
   // Queries with location variations
   "ac repair Alberquerque New Mexico",
-  "heating service in N.Y.C.",
+  "heating service in N?.Y?.C.",
   "locksmith SF California",
 
   // Regional queries
@@ -53,11 +53,11 @@ exampleQueries.forEach((query, index) => {
   const optimizationResult = BusinessQueryOptimizer.optimize(query);
 
   // Check for security issues
-  if (optimizationResult.securityFlags.length > 0) {
+  if (optimizationResult?.securityFlags?.length > 0) {
     console.log("\n⚠️  SECURITY ISSUES DETECTED:");
-    optimizationResult.securityFlags.forEach((flag) => {
+    optimizationResult?.securityFlags?.forEach((flag: any) => {
       console.log(
-        `  - [${flag.severity.toUpperCase()}] ${flag.type}: ${flag.detail}`,
+        `  - [${flag?.severity?.toUpperCase()}] ${flag.type}: ${flag.detail}`,
       );
     });
     console.log("\nQuery rejected for security reasons.\n");
@@ -68,41 +68,41 @@ exampleQueries.forEach((query, index) => {
   const enhanced = QueryEnhancer.enhance(query);
 
   console.log("\nOptimization Results:");
-  console.log(`  Service Type: ${optimizationResult.components.serviceType}`);
+  console.log(`  Service Type: ${optimizationResult?.components?.serviceType}`);
   console.log(
-    `  Location: ${optimizationResult.components.location.rawLocation || "Not specified"}`,
+    `  Location: ${optimizationResult?.components?.location.rawLocation || "Not specified"}`,
   );
-  console.log(`  Urgency: ${optimizationResult.components.urgency}`);
+  console.log(`  Urgency: ${optimizationResult?.components?.urgency}`);
   console.log(
     `  Confidence: ${(optimizationResult.confidence * 100).toFixed(0)}%`,
   );
 
-  if (optimizationResult.components.location.city) {
+  if (optimizationResult?.components?.location.city) {
     const correction = LocationDatabase.correctLocation(
-      optimizationResult.components.location.city,
+      optimizationResult?.components?.location.city,
     );
-    if (correction.corrected !== optimizationResult.components.location.city) {
+    if (correction.corrected !== optimizationResult?.components?.location.city) {
       console.log(
-        `  Location Correction: ${optimizationResult.components.location.city} → ${correction.corrected}`,
+        `  Location Correction: ${optimizationResult?.components?.location.city} → ${correction.corrected}`,
       );
     }
   }
 
   console.log("\nEnhanced Queries:");
   console.log(`  Primary: "${enhanced.primary}"`);
-  if (enhanced.alternatives.length > 0) {
+  if (enhanced?.alternatives?.length > 0) {
     console.log("  Alternatives:");
-    enhanced.alternatives.forEach((alt, i) => {
+    enhanced?.alternatives?.forEach((alt, i) => {
       console.log(`    ${i + 1}. "${alt}"`);
     });
   }
 
   console.log("\nMetadata:");
-  console.log(`  Has Location: ${enhanced.metadata.hasLocation}`);
-  console.log(`  Has Time Constraint: ${enhanced.metadata.hasTimeConstraint}`);
-  console.log(`  Service Category: ${enhanced.metadata.serviceCategory}`);
+  console.log(`  Has Location: ${enhanced?.metadata?.hasLocation}`);
+  console.log(`  Has Time Constraint: ${enhanced?.metadata?.hasTimeConstraint}`);
+  console.log(`  Service Category: ${enhanced?.metadata?.serviceCategory}`);
   console.log(
-    `  Search Operators: ${enhanced.metadata.searchOperators.join(", ") || "None"}`,
+    `  Search Operators: ${enhanced?.metadata?.searchOperators.join(", ") || "None"}`,
   );
 
   // Format for different search engines
@@ -126,11 +126,11 @@ const locationExamples = [
   "Los Angelos",
   "Cincinatti",
   "Alberquerque",
-  "N.Y.C.",
+  "N?.Y?.C.",
   "SF",
 ];
 
-locationExamples.forEach((location) => {
+locationExamples.forEach((location: any) => {
   const correction = LocationDatabase.correctLocation(location);
   console.log(
     `"${location}" → "${correction.corrected}" (confidence: ${(correction.confidence * 100).toFixed(0)}%)`,
@@ -148,7 +148,7 @@ locationExamples.forEach((location) => {
 console.log("\n\n=== State Abbreviation Examples ===\n");
 
 const stateExamples = ["California", "New York", "Texas", "Penn", "Mass"];
-stateExamples.forEach((state) => {
+stateExamples.forEach((state: any) => {
   const abbr = LocationDatabase.getStateAbbreviation(state);
   console.log(`"${state}" → ${abbr || "Not found"}`);
 });
@@ -159,7 +159,7 @@ console.log("\n\n=== Regional Service Terminology ===\n");
 const regions = ["Northeast", "South", "Midwest", "West", "Southwest"];
 const service = "plumbing";
 
-regions.forEach((region) => {
+regions.forEach((region: any) => {
   const terms = LocationDatabase.getRegionalTerms(region, service);
   console.log(`${region} terms for "${service}": ${terms.join(", ")}`);
 });
@@ -171,7 +171,7 @@ const startTime = Date.now();
 const iterations = 1000;
 
 for (let i = 0; i < iterations; i++) {
-  const query = exampleQueries[i % exampleQueries.length];
+  const query = exampleQueries[i % exampleQueries?.length || 0];
   if (query) {
     BusinessQueryOptimizer.optimize(query);
     QueryEnhancer.enhance(query);

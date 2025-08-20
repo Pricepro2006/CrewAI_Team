@@ -1,4 +1,4 @@
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../../utils/logger";
 import { WalmartAgentOrchestrator } from "../walmart/WalmartAgentOrchestrator.js";
 import type { 
   ProcessMessageRequest, 
@@ -40,7 +40,7 @@ export class WalmartChatAgent {
     // Initialize the new orchestrator with all services
     this.orchestrator = new WalmartAgentOrchestrator();
     
-    logger.info("WalmartChatAgent initialized with new microservices architecture", {
+    logger.info("WalmartChatAgent initialized with new microservices architecture", "WALMART_CHAT", {
       services: [
         "NLPParsingService",
         "ProductMatchingService", 
@@ -88,7 +88,7 @@ export class WalmartChatAgent {
         location
       };
 
-      const result = await this.orchestrator.processMessage(request);
+      const result = await this?.orchestrator?.processMessage(request);
       
       // Map response to legacy format for backward compatibility
       return {
@@ -99,7 +99,7 @@ export class WalmartChatAgent {
         alternatives: result.alternatives
       };
     } catch (error) {
-      logger.error("WalmartChatAgent processMessage error", { error, conversationId });
+      logger.error("WalmartChatAgent processMessage error", "WALMART_CHAT", { error, conversationId });
       return {
         response: "I'm sorry, I encountered an error processing your message. Please try again."
       };
@@ -119,7 +119,7 @@ export class WalmartChatAgent {
     reason?: string
   ): Promise<string> {
     try {
-      return await this.orchestrator.handleDealInteraction(
+      return await this?.orchestrator?.handleDealInteraction(
         conversationId,
         userId,
         dealId,
@@ -127,7 +127,7 @@ export class WalmartChatAgent {
         reason
       );
     } catch (error) {
-      logger.error("WalmartChatAgent handleDealInteraction error", { error, dealId });
+      logger.error("WalmartChatAgent handleDealInteraction error", "WALMART_CHAT", { error, dealId });
       return "Sorry, I had trouble processing that deal interaction. Please try again.";
     }
   }
@@ -147,13 +147,13 @@ export class WalmartChatAgent {
     }
   ): Promise<void> {
     try {
-      await this.orchestrator.completePurchase(
+      await this?.orchestrator?.completePurchase(
         conversationId,
         userId,
         purchaseDetails
       );
     } catch (error) {
-      logger.error("WalmartChatAgent completePurchase error", { error, userId });
+      logger.error("WalmartChatAgent completePurchase error", "WALMART_CHAT", { error, userId });
     }
   }
 
@@ -164,9 +164,9 @@ export class WalmartChatAgent {
    */
   async getUserPreferences(userId: string) {
     try {
-      return await this.orchestrator.getUserPreferences(userId);
+      return await this?.orchestrator?.getUserPreferences(userId);
     } catch (error) {
-      logger.error("WalmartChatAgent getUserPreferences error", { error, userId });
+      logger.error("WalmartChatAgent getUserPreferences error", "WALMART_CHAT", { error, userId });
       return null;
     }
   }
@@ -178,9 +178,9 @@ export class WalmartChatAgent {
    */
   clearConversation(conversationId: string): void {
     try {
-      this.orchestrator.clearConversation(conversationId);
+      this?.orchestrator?.clearConversation(conversationId);
     } catch (error) {
-      logger.error("WalmartChatAgent clearConversation error", { error, conversationId });
+      logger.error("WalmartChatAgent clearConversation error", "WALMART_CHAT", { error, conversationId });
     }
   }
 
@@ -203,9 +203,9 @@ export class WalmartChatAgent {
    */
   getHealthStatus() {
     try {
-      return this.orchestrator.getHealthStatus();
+      return this?.orchestrator?.getHealthStatus();
     } catch (error) {
-      logger.error("WalmartChatAgent getHealthStatus error", { error });
+      logger.error("WalmartChatAgent getHealthStatus error", "WALMART_CHAT", { error });
       return {
         status: 'unhealthy' as const,
         services: {},
@@ -221,10 +221,10 @@ export class WalmartChatAgent {
    */
   shutdown(): void {
     try {
-      this.orchestrator.shutdown();
-      logger.info("WalmartChatAgent shutdown completed");
+      this?.orchestrator?.shutdown();
+      logger.info("WalmartChatAgent shutdown completed", "WALMART_CHAT");
     } catch (error) {
-      logger.error("WalmartChatAgent shutdown error", { error });
+      logger.error("WalmartChatAgent shutdown error", "WALMART_CHAT", { error });
     }
   }
 }

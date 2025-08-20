@@ -3,9 +3,9 @@
  * Tests button functionality and variants
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock Button component
@@ -84,7 +84,7 @@ describe("Button Component", () => {
   it("should render different variants", () => {
     const variants = ["primary", "secondary", "danger", "ghost"] as const;
 
-    variants.forEach((variant) => {
+    variants.forEach((variant: any) => {
       const { rerender } = render(
         <Button variant={variant} data-testid="test-button">
           {variant}
@@ -101,7 +101,7 @@ describe("Button Component", () => {
   it("should render different sizes", () => {
     const sizes = ["small", "medium", "large"] as const;
 
-    sizes.forEach((size) => {
+    sizes.forEach((size: any) => {
       const { rerender } = render(
         <Button size={size} data-testid="test-button">
           {size}
@@ -167,7 +167,7 @@ describe("Button Component", () => {
   it("should render different button types", () => {
     const types = ["button", "submit", "reset"] as const;
 
-    types.forEach((type) => {
+    types.forEach((type: any) => {
       const { rerender } = render(
         <Button type={type} data-testid="test-button">
           {type}

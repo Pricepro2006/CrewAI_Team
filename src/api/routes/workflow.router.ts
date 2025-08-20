@@ -5,6 +5,36 @@ import { logger } from "../../utils/logger.js";
 import Database from "better-sqlite3";
 import { TRPCError } from "@trpc/server";
 import { WorkflowWebSocketHandler } from "../../core/websocket/WorkflowWebSocketHandler.js";
+import type { DatabaseRow, QueryParameters } from "../../shared/types/api.types.js";
+
+// Database interfaces
+interface WorkflowTaskRow extends DatabaseRow {
+  task_id: string;
+  email_id: string;
+  workflow_category: string;
+  workflow_state: string;
+  task_status: string;
+  title: string;
+  description?: string;
+  priority: string;
+  current_owner?: string;
+  owner_email?: string;
+  dollar_value: number;
+  sla_deadline: string;
+  created_at: string;
+  updated_at: string;
+  completion_date?: string;
+  confidence_score?: number;
+  entities?: string; // JSON string
+}
+
+interface WorkflowStatsRow extends DatabaseRow {
+  status: string;
+  count: number;
+  avg_dollar_value: number;
+}
+
+type WorkflowQueryParams = string | number | boolean | null;
 
 // Zod schemas for workflow data
 const WorkflowCategory = z.enum([
@@ -48,7 +78,7 @@ const WorkflowTaskSchema = z.object({
     .optional(),
 });
 
-export const workflowRouter: Router<any> = router({
+export const workflowRouter = router({
   // Get all workflow tasks
   list: publicProcedure
     .input(
@@ -84,41 +114,41 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         let query = "SELECT * FROM workflow_tasks WHERE 1=1";
-        const params: any[] = [];
+        const params: WorkflowQueryParams[] = [];
 
         // Apply filters
         if (input.filter?.status) {
           query += " AND task_status = ?";
-          params.push(input.filter.status);
+          params.push(input?.filter?.status);
         }
 
         if (input.filter?.category) {
           query += " AND workflow_category = ?";
-          params.push(input.filter.category);
+          params.push(input?.filter?.category);
         }
 
         if (input.filter?.owner) {
           query += " AND current_owner = ?";
-          params.push(input.filter.owner);
+          params.push(input?.filter?.owner);
         }
 
         if (input.filter?.priority) {
           query += " AND priority = ?";
-          params.push(input.filter.priority);
+          params.push(input?.filter?.priority);
         }
 
         if (input.filter?.dateRange?.start) {
           query += " AND created_at >= ?";
-          params.push(input.filter.dateRange.start);
+          params.push(input?.filter?.dateRange.start);
         }
 
         if (input.filter?.dateRange?.end) {
           query += " AND created_at <= ?";
-          params.push(input.filter.dateRange.end);
+          params.push(input?.filter?.dateRange.end);
         }
 
         // Add sorting
@@ -134,7 +164,7 @@ export const workflowRouter: Router<any> = router({
         params.push(limit, offset);
 
         // Execute query
-        const tasks = db.prepare(query).all(...params) as any[];
+        const tasks = db.prepare(query).all(...params) as WorkflowTaskRow[];
 
         // Get total count
         let countQuery =
@@ -153,7 +183,7 @@ export const workflowRouter: Router<any> = router({
         };
 
         // Parse entities JSON
-        const parsedTasks = tasks.map((task: any) => ({
+        const parsedTasks = tasks?.map((task: WorkflowTaskRow) => ({
           ...task,
           entities:
             task.po_numbers || task.quote_numbers || task.customers
@@ -191,12 +221,12 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         const task = db
           .prepare("SELECT * FROM workflow_tasks WHERE task_id = ?")
-          .get(input.taskId) as any;
+          .get(input.taskId) as WorkflowTaskRow | undefined;
 
         if (!task) {
           throw new TRPCError({
@@ -253,13 +283,13 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         // Get current task
         const currentTask = db
           .prepare("SELECT * FROM workflow_tasks WHERE task_id = ?")
-          .get(input.taskId) as any;
+          .get(input.taskId) as WorkflowTaskRow | undefined;
 
         if (!currentTask) {
           throw new TRPCError({
@@ -270,7 +300,7 @@ export const workflowRouter: Router<any> = router({
 
         // Build update query
         const updates: string[] = [];
-        const params: any[] = [];
+        const params: WorkflowQueryParams[] = [];
 
         Object.entries(input.updates).forEach(([key, value]) => {
           if (value !== undefined) {
@@ -279,7 +309,7 @@ export const workflowRouter: Router<any> = router({
           }
         });
 
-        if (updates.length === 0) {
+        if (updates?.length || 0 === 0) {
           return { success: false, message: "No updates provided" };
         }
 
@@ -298,8 +328,8 @@ export const workflowRouter: Router<any> = router({
 
         // Log status change if applicable
         if (
-          input.updates.task_status &&
-          input.updates.task_status !== currentTask.task_status
+          input?.updates?.task_status &&
+          input?.updates?.task_status !== currentTask.task_status
         ) {
           db.prepare(
             `
@@ -310,8 +340,8 @@ export const workflowRouter: Router<any> = router({
           ).run(
             input.taskId,
             currentTask.task_status,
-            input.updates.task_status,
-            input.updates.current_owner || "system",
+            input?.updates?.task_status,
+            input?.updates?.current_owner || "system",
             "Status updated via API",
           );
         }
@@ -355,7 +385,7 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         const taskId = `TASK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -384,7 +414,7 @@ export const workflowRouter: Router<any> = router({
           input.priority,
           input.current_owner,
           input.owner_email ||
-            `${input.current_owner.toLowerCase().replace(/\s+/g, ".")}@tdsynnex.com`,
+            `${input?.current_owner?.toLowerCase().replace(/\s+/g, ".")}@tdsynnex.com`,
           input.dollar_value,
           now,
           now,
@@ -432,13 +462,13 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         // Check if task exists
         const task = db
           .prepare("SELECT * FROM workflow_tasks WHERE task_id = ?")
-          .get(input.taskId) as any;
+          .get(input.taskId) as WorkflowTaskRow | undefined;
 
         if (!task) {
           throw new TRPCError({
@@ -467,7 +497,7 @@ export const workflowRouter: Router<any> = router({
 
   // Get executive metrics
   metrics: publicProcedure.query(async ({ ctx }) => {
-    const db = new Database("./data/crewai.db");
+    const db = new Database("./data/crewai_enhanced.db");
 
     try {
       const metrics = db
@@ -486,7 +516,7 @@ export const workflowRouter: Router<any> = router({
           WHERE created_at > datetime('now', '-7 days')
         `,
         )
-        .get() as any;
+        .get() as WorkflowStatsRow | undefined;
 
       const categoryBreakdown = db
         .prepare(
@@ -539,7 +569,7 @@ export const workflowRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const db = new Database("./data/crewai.db");
+      const db = new Database("./data/crewai_enhanced.db");
 
       try {
         let dateFormat: string;

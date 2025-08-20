@@ -1,15 +1,5 @@
-declare module "@microsoft/microsoft-graph-client" {
-  export class Client {
-    static init(config: any): Client;
-    api(path: string): any;
-  }
-}
-
-declare module "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials" {
-  export class TokenCredentialAuthenticationProvider {
-    constructor(credentials: any, options: any);
-  }
-}
+// Microsoft Graph Client types are declared in microsoft-graph-client.d.ts
+// This file focuses on Azure Identity types
 
 declare module "@azure/identity" {
   export class ClientSecretCredential {
@@ -17,16 +7,4 @@ declare module "@azure/identity" {
   }
 }
 
-declare module "cron" {
-  export class CronJob {
-    constructor(
-      pattern: string,
-      callback: () => void,
-      onComplete?: null,
-      start?: boolean,
-      timezone?: string,
-    );
-    start(): void;
-    stop(): void;
-  }
-}
+

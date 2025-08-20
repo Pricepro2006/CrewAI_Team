@@ -69,23 +69,23 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Analyze an email chain for completeness and patterns
    */
   async analyzeChain(email: EmailWithThread): Promise<ChainAnalysisResult> {
-    return withUnitOfWork(async (uow) => {
+    return withUnitOfWork(async (uow: any) => {
       try {
         const startTime = Date.now();
 
         // Get thread emails from repository if not provided
         let threadEmails = email.thread_emails || [];
 
-        if (threadEmails.length === 0 && email.id) {
-          const emailRecord = await uow.emails.findById(email.id);
+        if (threadEmails?.length || 0 === 0 && email.id) {
+          const emailRecord = await uow?.emails?.findById(email.id);
           if (emailRecord?.conversation_id) {
-            threadEmails = await uow.emails.findByConversationId(
+            threadEmails = await uow?.emails?.findByConversationId(
               emailRecord.conversation_id,
             );
           }
         }
 
-        if (threadEmails.length === 0) {
+        if (threadEmails?.length || 0 === 0) {
           // Single email, not part of a chain
           return this.createSingleEmailResult(email);
         }
@@ -114,8 +114,8 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
         // Check for existing chain in repository
         const conversationId = threadEmails[0]?.conversation_id || email.id;
-        const existingChains = await uow.chains.findAll({ conversation_id: conversationId } as Partial<EmailChain>);
-        const existingChain = existingChains.length > 0 ? existingChains[0] : null;
+        const existingChains = await uow?.chains?.findAll({ conversation_id: conversationId } as Partial<EmailChain>);
+        const existingChain = existingChains?.length || 0 > 0 ? existingChains[0] : null;
 
         const result: ChainAnalysisResult = {
           chain_id: existingChain?.chain_id || this.generateChainId(),
@@ -130,14 +130,14 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
         // Update or create chain in repository
         const firstEmail = threadEmails[0];
-        const lastEmail = threadEmails[threadEmails.length - 1];
+        const lastEmail = threadEmails[threadEmails?.length || 0 - 1];
 
         const chainData: EmailChain = {
           id: existingChain?.id || "",
           chain_id: result.chain_id,
           conversation_id: conversationId,
-          email_ids: threadEmails.map((e) => e.id),
-          email_count: threadEmails.length,
+          email_ids: threadEmails?.map((e: any) => e.id),
+          email_count: threadEmails?.length || 0,
           chain_type: chainType,
           completeness_score: completeness.score,
           is_complete: completeness.is_complete,
@@ -154,11 +154,11 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
         // Calculate duration
         chainData.duration_hours =
-          (chainData.end_time.getTime() - chainData.start_time.getTime()) /
+          (chainData?.end_time?.getTime() - chainData?.start_time?.getTime()) /
           (1000 * 60 * 60);
 
         // Upsert chain
-        await uow.chains.upsert(chainData);
+        await uow?.chains?.upsert(chainData);
 
         // Emit analysis complete event
         const analysisTime = Date.now() - startTime;
@@ -203,7 +203,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    */
   private detectChainType(emails: EmailRecord[]): ChainType {
     const allText = emails
-      .map((e) => `${e.subject} ${e.body_text || ""}`)
+      .map((e: any) => `${e.subject} ${e.body_text || ""}`)
       .join(" ")
       .toLowerCase();
 
@@ -256,7 +256,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
       }
 
       // IN_PROGRESS stage - middle communications
-      if (index > 0 && index < emails.length - 1) {
+      if (index > 0 && index < emails?.length || 0 - 1) {
         stages.add(ChainStage.IN_PROGRESS);
       }
 
@@ -285,20 +285,20 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
     const requiredStages = this.getRequiredStages(chainType);
 
     // Calculate what percentage of required stages are present
-    const presentCount = presentStages.filter((stage) =>
+    const presentCount = presentStages?.filter((stage: any) =>
       requiredStages.includes(stage),
     ).length;
 
-    const score = Math.round((presentCount / requiredStages.length) * 100);
+    const score = Math.round((presentCount / requiredStages?.length || 0) * 100);
 
     // Find missing stages
-    const missingStages = requiredStages.filter(
-      (stage) => !presentStages.includes(stage),
+    const missingStages = requiredStages?.filter(
+      (stage: any) => !presentStages.includes(stage),
     );
 
     return {
       score,
-      is_complete: missingStages.length === 0,
+      is_complete: (missingStages?.length || 0) === 0,
       missing_stages: missingStages,
       confidence: score / 100,
     };
@@ -359,19 +359,19 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
       }
     >();
 
-    emails.forEach((email) => {
+    emails.forEach((email: any) => {
       const text = `${email.subject} ${email.body_text || ""}`;
 
       // Extract PO numbers
       const poNumbers = text.match(/\b(PO|P\.O\.|po)[\s#-]?\d{4,}/gi) || [];
-      poNumbers.forEach((po) => {
+      poNumbers.forEach((po: any) => {
         const key = `po:${po}`;
         this.updateEntityMap(entityMap, key, "po_number", this.getDateValue(email.received_time));
       });
 
       // Extract quote numbers
       const quotes = text.match(/\b(quote|QT|qt)[\s#-]?\d{4,}/gi) || [];
-      quotes.forEach((quote) => {
+      quotes.forEach((quote: any) => {
         const key = `quote:${quote}`;
         this.updateEntityMap(
           entityMap,
@@ -383,7 +383,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
       // Extract case numbers
       const cases = text.match(/\b(case|CS|cs)[\s#-]?\d{4,}/gi) || [];
-      cases.forEach((caseNum) => {
+      cases.forEach((caseNum: any) => {
         const key = `case:${caseNum}`;
         this.updateEntityMap(
           entityMap,
@@ -433,14 +433,14 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   private extractParticipants(emails: EmailRecord[]): string[] {
     const participants = new Set<string>();
 
-    emails.forEach((email) => {
+    emails.forEach((email: any) => {
       participants.add(email.from_address);
 
       // Add recipients
       if (email.to_addresses) {
         email.to_addresses
           .split(",")
-          .forEach((addr) => participants.add(addr.trim()));
+          .forEach((addr: any) => participants.add(addr.trim()));
       }
     });
 
@@ -497,8 +497,8 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Get chain statistics from repository
    */
   async getChainStatistics(): Promise<any> {
-    return withUnitOfWork(async (uow) => {
-      return await uow.chains.getChainStatistics();
+    return withUnitOfWork(async (uow: any) => {
+      return await uow?.chains?.getChainStatistics();
     });
   }
 
@@ -508,11 +508,11 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   async findChainsNeedingReanalysis(
     hoursOld: number = 24,
   ): Promise<EmailChain[]> {
-    return withUnitOfWork(async (uow) => {
+    return withUnitOfWork(async (uow: any) => {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
 
-      return await uow.chains.findChainsNeedingReanalysis(cutoffDate);
+      return await uow?.chains?.findChainsNeedingReanalysis(cutoffDate);
     });
   }
 }

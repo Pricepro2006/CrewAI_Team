@@ -7,11 +7,11 @@ export const queryClient = new QueryClient({
       // Cache data for 5 minutes by default
       staleTime: 5 * 60 * 1000,
       // Keep data in cache for 10 minutes
-      gcTime: 10 * 60 * 1000,
+      cacheTime: 10 * 60 * 1000,
       // Retry failed requests 3 times
       retry: 3,
       // Retry with exponential backoff
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
       // Don't refetch on window focus by default (can be overridden per query)
       refetchOnWindowFocus: false,
       // Don't refetch on mount if data is fresh
@@ -37,12 +37,12 @@ export const queryMetrics = {
   
   trackSlowQuery: (queryKey: string, duration: number) => {
     if (duration > 2000) { // Track queries slower than 2 seconds
-      queryMetrics.slowQueries.set(queryKey, duration);
+      queryMetrics?.slowQueries?.set(queryKey, duration);
       console.warn(`🐌 Slow query detected: ${queryKey} took ${duration}ms`);
     }
   },
   
-  trackFailedQuery: (queryKey: string, error: any) => {
+  trackFailedQuery: (queryKey: string, error: unknown) => {
     const count = queryMetrics.failedQueries.get(queryKey) || 0;
     queryMetrics.failedQueries.set(queryKey, count + 1);
     console.error(`❌ Query failed: ${queryKey}`, error);
@@ -59,7 +59,7 @@ export const queryMetrics = {
 
 // Add global error handling and performance monitoring
 queryClient.getQueryCache().subscribe((event) => {
-  if (event.type === "observerResultsUpdated") {
+  if (event.type === "observerResultsUpdated" && 'query' in event) {
     const query = event.query;
     const queryKey = JSON.stringify(query.queryKey);
     
@@ -171,9 +171,9 @@ export const cacheUtils = {
     
     return {
       totalQueries: queries.length,
-      activeQueries: queries.filter(q => q.getObserversCount() > 0).length,
-      staleQueries: queries.filter(q => q.isStale()).length,
-      errorQueries: queries.filter(q => q.state.error).length,
+      activeQueries: queries.filter(q => q.getObserversCount() > 0).length || 0,
+      staleQueries: queries.filter(q => q.isStale()).length || 0,
+      errorQueries: queries.filter(q => q.state.error !== null).length || 0,
       cacheSize: queries.reduce((size, query) => {
         const dataSize = JSON.stringify(query.state.data || {}).length;
         return size + dataSize;

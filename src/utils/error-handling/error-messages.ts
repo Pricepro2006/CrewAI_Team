@@ -8,7 +8,7 @@ export interface UserFriendlyError {
 }
 
 const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
-  [ErrorCode.BAD_REQUEST]: (details) => ({
+  [ErrorCode.BAD_REQUEST]: (details: any) => ({
     title: "Invalid Request",
     message:
       "The request contains invalid data. Please check your input and try again.",
@@ -29,7 +29,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
     action: "Contact your administrator if you believe you should have access.",
   }),
 
-  [ErrorCode.NOT_FOUND]: (details) => ({
+  [ErrorCode.NOT_FOUND]: (details: any) => ({
     title: "Not Found",
     message: details?.resource
       ? `The requested ${details.resource} could not be found.`
@@ -44,7 +44,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
     action: "Refresh the page and try again.",
   }),
 
-  [ErrorCode.VALIDATION_ERROR]: (details) => ({
+  [ErrorCode.VALIDATION_ERROR]: (details: any) => ({
     title: "Validation Error",
     message: details?.fields
       ? "Some fields contain invalid values."
@@ -53,7 +53,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
     technical: details?.fields,
   }),
 
-  [ErrorCode.RATE_LIMIT_EXCEEDED]: (details) => ({
+  [ErrorCode.RATE_LIMIT_EXCEEDED]: (details: any) => ({
     title: "Too Many Requests",
     message: "You've made too many requests. Please slow down.",
     action: details?.retryAfter
@@ -67,7 +67,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
     action: "Please try again later. If the problem persists, contact support.",
   }),
 
-  [ErrorCode.SERVICE_UNAVAILABLE]: (details) => ({
+  [ErrorCode.SERVICE_UNAVAILABLE]: (details: any) => ({
     title: "Service Temporarily Unavailable",
     message: details?.service
       ? `The ${details.service} service is temporarily unavailable.`
@@ -81,7 +81,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
     action: "Please try again. If the issue continues, contact support.",
   }),
 
-  [ErrorCode.EXTERNAL_SERVICE_ERROR]: (details) => ({
+  [ErrorCode.EXTERNAL_SERVICE_ERROR]: (details: any) => ({
     title: "External Service Error",
     message: details?.service
       ? `We couldn't connect to ${details.service}.`
@@ -101,7 +101,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
     action: "Purchase more credits or upgrade your plan.",
   }),
 
-  [ErrorCode.QUOTA_EXCEEDED]: (details) => ({
+  [ErrorCode.QUOTA_EXCEEDED]: (details: any) => ({
     title: "Quota Exceeded",
     message: details?.quotaType
       ? `You've exceeded your ${details.quotaType} quota.`
@@ -116,7 +116,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
       "Ensure Ollama is running and accessible. Check your connection settings.",
   }),
 
-  [ErrorCode.OLLAMA_MODEL_NOT_FOUND]: (details) => ({
+  [ErrorCode.OLLAMA_MODEL_NOT_FOUND]: (details: any) => ({
     title: "AI Model Not Found",
     message: details?.model
       ? `The AI model '${details.model}' is not available.`
@@ -138,7 +138,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
       "Check your internet connection. The page will automatically reconnect.",
   }),
 
-  [ErrorCode.FILE_NOT_FOUND]: (details) => ({
+  [ErrorCode.FILE_NOT_FOUND]: (details: any) => ({
     title: "File Not Found",
     message: details?.filename
       ? `The file '${details.filename}' could not be found.`
@@ -146,7 +146,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
     action: "Check the file path and ensure the file exists.",
   }),
 
-  [ErrorCode.FILE_ACCESS_DENIED]: (details) => ({
+  [ErrorCode.FILE_ACCESS_DENIED]: (details: any) => ({
     title: "File Access Denied",
     message: details?.filename
       ? `Cannot access '${details.filename}'.`

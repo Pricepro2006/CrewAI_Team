@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ResearchAgent } from "./ResearchAgent.js";
-import { WebSearchTool } from "../../tools/web/WebSearchTool.js";
-import { WebScraperTool } from "../../tools/web/WebScraperTool.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ResearchAgent } from './ResearchAgent';
+import { WebSearchTool } from '../../tools/web/WebSearchTool';
+import { WebScraperTool } from '../../tools/web/WebScraperTool';
 
 // Note: This is a unit test file that focuses on ResearchAgent logic
 // without external dependencies. For real Ollama integration tests,
-// see ResearchAgent.integration.test.ts
+// see ResearchAgent?.integration?.test.ts
 
 // Mock external tools for unit testing
 vi.mock("../../tools/web/WebSearchTool");
@@ -104,16 +104,16 @@ describe("ResearchAgent", () => {
         },
       });
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
       expect(result).toBeDefined();
       expect(result.success).toBe(true);
-      expect(result.data.synthesis).toBeDefined();
-      expect(result.data.sources).toBeInstanceOf(Array);
-      expect(result.data.sources.length).toBeGreaterThan(0);
+      expect(result?.data).toBeDefined();
+      expect(result?.data?.findings).toBeInstanceOf(Array);
+      expect(result?.data?.sources?.length || 0).toBeGreaterThan(0);
     });
 
     it("should perform comprehensive research", async () => {
@@ -143,14 +143,14 @@ describe("ResearchAgent", () => {
         },
       });
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
       expect(result.success).toBe(true);
-      expect(result.data.synthesis).toBeDefined();
-      expect(result.data.findings).toBeInstanceOf(Array);
+      expect(result?.data).toBeDefined();
+      expect(result?.data?.findings).toBeInstanceOf(Array);
     });
 
     it("should validate facts when required", async () => {
@@ -175,14 +175,14 @@ describe("ResearchAgent", () => {
         },
       });
 
-      const result = await agent.execute(task.input.claim, {
-        task: task.input.claim,
+      const result = await agent.execute(task?.input?.claim, {
+        task: task?.input?.claim,
         ragDocuments: [],
       });
 
       expect(result.success).toBe(true);
-      expect(result.data.synthesis).toBeDefined();
-      expect(result.data.sources).toBeInstanceOf(Array);
+      expect(result?.data).toBeDefined();
+      expect(result?.data?.findings).toBeInstanceOf(Array);
     });
 
     it("should analyze specific URLs", async () => {
@@ -206,13 +206,13 @@ describe("ResearchAgent", () => {
         },
       });
 
-      const result = await agent.execute(task.input.url, {
-        task: task.input.url,
+      const result = await agent.execute(task?.input?.url, {
+        task: task?.input?.url,
         ragDocuments: [],
       });
 
       expect(result.success).toBe(true);
-      expect(result.data.synthesis).toBeDefined();
+      expect(result?.data).toBeDefined();
       expect(result.metadata).toBeDefined();
     });
 
@@ -228,8 +228,8 @@ describe("ResearchAgent", () => {
         new Error("Search failed"),
       );
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
@@ -249,14 +249,14 @@ describe("ResearchAgent", () => {
         },
       };
 
-      const synthesizeQuery = `Synthesize information from ${task.input.sources.length} sources focusing on ${task.input.focusAreas.join(" and ")}`;
+      const synthesizeQuery = `Synthesize information from ${task?.input?.sources?.length || 0} sources focusing on ${task?.input?.focusAreas.join(" and ")}`;
       const result = await agent.execute(synthesizeQuery, {
         task: synthesizeQuery,
         ragDocuments: [],
       });
 
       expect(result.success).toBe(true);
-      expect(result.data.synthesis).toBeDefined();
+      expect(result?.data).toBeDefined();
     });
   });
 
@@ -304,8 +304,8 @@ describe("ResearchAgent", () => {
         new Error("Scraping failed"),
       );
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 

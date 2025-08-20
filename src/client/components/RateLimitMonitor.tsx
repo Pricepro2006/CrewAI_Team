@@ -39,7 +39,7 @@ export const RateLimitMonitor: React.FC = () => {
   // Fetch metrics using tRPC
   const { data, refetch, isLoading, error } = (
     trpc as any
-  ).metrics.getRateLimitMetrics.useQuery(undefined, {
+  ).metrics?.getRateLimitMetrics?.useQuery(undefined, {
     refetchInterval: autoRefresh ? 5000 : false,
     refetchIntervalInBackground: true,
   });
@@ -124,7 +124,7 @@ export const RateLimitMonitor: React.FC = () => {
             <input
               type="checkbox"
               checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
+              onChange={(e: any) => setAutoRefresh(e?.target?.checked)}
               className="rounded"
             />
             <span className="text-sm text-gray-600">Auto-refresh</span>
@@ -161,7 +161,7 @@ export const RateLimitMonitor: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics.totalRequests.toLocaleString()}
+              {metrics?.totalRequests?.toLocaleString()}
             </div>
             <p className="text-xs text-gray-500 mt-1">All WebSearch requests</p>
           </CardContent>
@@ -176,7 +176,7 @@ export const RateLimitMonitor: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {metrics.rateLimitedRequests.toLocaleString()}
+              {metrics?.rateLimitedRequests?.toLocaleString()}
             </div>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant={getRateLimitSeverity(rateLimitPercentage)}>
@@ -200,7 +200,7 @@ export const RateLimitMonitor: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics.averageLatency.toFixed(0)}ms
+              {metrics?.averageLatency?.toFixed(0)}ms
             </div>
             <Progress
               value={Math.min((metrics.averageLatency / 2000) * 100, 100)}
@@ -244,7 +244,7 @@ export const RateLimitMonitor: React.FC = () => {
             <div className="space-y-1">
               <p className="text-sm font-medium text-gray-600">Web Search</p>
               <p className="text-xs text-gray-500">
-                Resets: {metrics.windowResets.webSearch}
+                Resets: {metrics?.windowResets?.webSearch}
               </p>
               <Progress value={75} className="h-2" />
               <p className="text-xs text-gray-400">100 requests / 15 min</p>
@@ -254,7 +254,7 @@ export const RateLimitMonitor: React.FC = () => {
                 Business Search
               </p>
               <p className="text-xs text-gray-500">
-                Resets: {metrics.windowResets.businessSearch}
+                Resets: {metrics?.windowResets?.businessSearch}
               </p>
               <Progress value={50} className="h-2" />
               <p className="text-xs text-gray-400">30 requests / 5 min</p>
@@ -262,7 +262,7 @@ export const RateLimitMonitor: React.FC = () => {
             <div className="space-y-1">
               <p className="text-sm font-medium text-gray-600">Premium</p>
               <p className="text-xs text-gray-500">
-                Resets: {metrics.windowResets.premium}
+                Resets: {metrics?.windowResets?.premium}
               </p>
               <Progress value={20} className="h-2" />
               <p className="text-xs text-gray-400">500 requests / 15 min</p>
@@ -299,7 +299,7 @@ export const RateLimitMonitor: React.FC = () => {
               <div className="flex items-center gap-2 text-sm">
                 <AlertCircle className="w-4 h-4 text-orange-500" />
                 <span className="text-gray-600">
-                  High latency detected: {metrics.averageLatency.toFixed(0)}ms
+                  High latency detected: {metrics?.averageLatency?.toFixed(0)}ms
                   average
                 </span>
               </div>

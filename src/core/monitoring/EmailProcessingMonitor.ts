@@ -137,13 +137,13 @@ export class EmailProcessingMonitor extends EventEmitter {
     // Start metrics collection
     this.sampleInterval = setInterval(() => {
       this.collectMetrics();
-    }, this.config.sampleInterval);
+    }, this?.config?.sampleInterval);
 
     // Start dashboard updates
-    if (this.config.enableDashboard) {
+    if (this?.config?.enableDashboard) {
       this.dashboardInterval = setInterval(() => {
         this.updateDashboard();
-      }, this.config.dashboardUpdateInterval);
+      }, this?.config?.dashboardUpdateInterval);
     }
 
     this.emit("started");
@@ -171,11 +171,11 @@ export class EmailProcessingMonitor extends EventEmitter {
    */
   recordJobCompletion(emailCount: number, processingTime: number): void {
     this.totalProcessed += emailCount;
-    this.latencySamples.push(processingTime / emailCount); // Average per email
+    this?.latencySamples?.push(processingTime / emailCount); // Average per email
 
     // Keep only recent samples
-    if (this.latencySamples.length > 1000) {
-      this.latencySamples = this.latencySamples.slice(-1000);
+    if (this?.latencySamples?.length > 1000) {
+      this.latencySamples = this?.latencySamples?.slice(-1000);
     }
   }
 
@@ -191,8 +191,8 @@ export class EmailProcessingMonitor extends EventEmitter {
     this.totalErrors++;
 
     // Track error types
-    const currentCount = this.errorTypes.get(errorType) || 0;
-    this.errorTypes.set(errorType, currentCount + 1);
+    const currentCount = this?.errorTypes?.get(errorType) || 0;
+    this?.errorTypes?.set(errorType, currentCount + 1);
 
     // Add to recent errors
     const errorInfo: ErrorInfo = {
@@ -205,10 +205,10 @@ export class EmailProcessingMonitor extends EventEmitter {
 
     const currentMetrics = this.getCurrentMetrics();
     if (currentMetrics) {
-      currentMetrics.errors.recent.push(errorInfo);
+      currentMetrics?.errors?.recent.push(errorInfo);
 
       // Keep only last 100 errors
-      if (currentMetrics.errors.recent.length > 100) {
+      if (currentMetrics?.errors?.recent?.length && currentMetrics.errors.recent.length > 100) {
         currentMetrics.errors.recent = currentMetrics.errors.recent.slice(-100);
       }
     }
@@ -238,15 +238,15 @@ export class EmailProcessingMonitor extends EventEmitter {
     workerMetrics: WorkerMetrics[],
   ): void {
     const currentMetrics = this.getCurrentMetrics();
-    if (currentMetrics) {
+    if (currentMetrics && currentMetrics.workers) {
       currentMetrics.workers.pool = poolMetrics;
       currentMetrics.workers.instances = workerMetrics;
     }
 
     // Update throughput samples
-    this.throughputSamples.push(poolMetrics.throughput);
-    if (this.throughputSamples.length > 100) {
-      this.throughputSamples = this.throughputSamples.slice(-100);
+    this?.throughputSamples?.push(poolMetrics.throughput);
+    if (this?.throughputSamples?.length > 100) {
+      this.throughputSamples = this?.throughputSamples?.slice(-100);
     }
   }
 
@@ -301,7 +301,7 @@ export class EmailProcessingMonitor extends EventEmitter {
       peakThroughput,
       averageLatency,
       errorRate,
-      activeAlerts: this.alerts.filter((a) => a.severity !== "info").length,
+      activeAlerts: this?.alerts?.filter((a: any) => a.severity !== "info").length,
     };
   }
 
@@ -317,22 +317,22 @@ export class EmailProcessingMonitor extends EventEmitter {
     // Summary
     report += chalk.bold("Summary:\n");
     report += `  Uptime: ${summary.uptime}\n`;
-    report += `  Total Processed: ${summary.totalProcessed.toLocaleString()} emails\n`;
-    report += `  Error Rate: ${summary.errorRate.toFixed(2)}%\n\n`;
+    report += `  Total Processed: ${summary?.totalProcessed?.toLocaleString()} emails\n`;
+    report += `  Error Rate: ${summary?.errorRate?.toFixed(2)}%\n\n`;
 
     // Throughput
     report += chalk.bold("Throughput:\n");
-    report += `  Current: ${summary.currentThroughput.toFixed(1)} emails/min\n`;
-    report += `  Average: ${summary.averageThroughput.toFixed(1)} emails/min\n`;
-    report += `  Peak: ${summary.peakThroughput.toFixed(1)} emails/min\n\n`;
+    report += `  Current: ${summary?.currentThroughput?.toFixed(1)} emails/min\n`;
+    report += `  Average: ${summary?.averageThroughput?.toFixed(1)} emails/min\n`;
+    report += `  Peak: ${summary?.peakThroughput?.toFixed(1)} emails/min\n\n`;
 
     // Latency
     report += chalk.bold("Latency:\n");
-    report += `  Average: ${summary.averageLatency.toFixed(0)}ms per email\n`;
+    report += `  Average: ${summary?.averageLatency?.toFixed(0)}ms per email\n`;
     if (currentMetrics) {
-      report += `  P50: ${currentMetrics.latency.p50.toFixed(0)}ms\n`;
-      report += `  P95: ${currentMetrics.latency.p95.toFixed(0)}ms\n`;
-      report += `  P99: ${currentMetrics.latency.p99.toFixed(0)}ms\n`;
+      report += `  P50: ${currentMetrics?.latency?.p50.toFixed(0)}ms\n`;
+      report += `  P95: ${currentMetrics?.latency?.p95.toFixed(0)}ms\n`;
+      report += `  P99: ${currentMetrics?.latency?.p99.toFixed(0)}ms\n`;
     }
     report += "\n";
 
@@ -350,34 +350,34 @@ export class EmailProcessingMonitor extends EventEmitter {
 
       // Worker Status
       report += chalk.bold("Worker Status:\n");
-      report += `  Active: ${currentMetrics.workers.pool.activeWorkers}\n`;
-      report += `  Idle: ${currentMetrics.workers.pool.idleWorkers}\n`;
-      report += `  Total: ${currentMetrics.workers.pool.activeWorkers + currentMetrics.workers.pool.idleWorkers}\n\n`;
+      report += `  Active: ${currentMetrics?.workers?.pool.activeWorkers}\n`;
+      report += `  Idle: ${currentMetrics?.workers?.pool.idleWorkers}\n`;
+      report += `  Total: ${currentMetrics?.workers?.pool.activeWorkers + currentMetrics?.workers?.pool.idleWorkers}\n\n`;
 
       // System Resources
       report += chalk.bold("System Resources:\n");
-      report += `  CPU: ${currentMetrics.system.cpuUsage.toFixed(1)}%\n`;
-      report += `  Memory: ${currentMetrics.system.memoryUsage.toFixed(0)}MB\n`;
-      report += `  Disk I/O: ${currentMetrics.system.diskIO.toFixed(1)}MB/s\n\n`;
+      report += `  CPU: ${currentMetrics?.system?.cpuUsage.toFixed(1)}%\n`;
+      report += `  Memory: ${currentMetrics?.system?.memoryUsage.toFixed(0)}MB\n`;
+      report += `  Disk I/O: ${currentMetrics?.system?.diskIO.toFixed(1)}MB/s\n\n`;
     }
 
     // Active Alerts
-    const activeAlerts = this.alerts.filter((a) => a.severity !== "info");
-    if (activeAlerts.length > 0) {
+    const activeAlerts = this?.alerts?.filter((a: any) => a.severity !== "info");
+    if (activeAlerts?.length || 0 > 0) {
       report += chalk.bold("Active Alerts:\n");
-      activeAlerts.forEach((alert) => {
+      activeAlerts.forEach((alert: any) => {
         const color = alert.severity === "critical" ? chalk.red : chalk.yellow;
         report += color(
-          `  [${alert.severity.toUpperCase()}] ${alert.message}\n`,
+          `  [${alert?.severity?.toUpperCase()}] ${alert.message}\n`,
         );
       });
       report += "\n";
     }
 
     // Top Errors
-    if (this.errorTypes.size > 0) {
+    if (this?.errorTypes?.size > 0) {
       report += chalk.bold("Top Error Types:\n");
-      const sortedErrors = Array.from(this.errorTypes.entries())
+      const sortedErrors = Array.from(this?.errorTypes?.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5);
 
@@ -435,15 +435,15 @@ export class EmailProcessingMonitor extends EventEmitter {
     };
 
     // Add to history
-    this.metrics.push(metrics);
+    this?.metrics?.push(metrics);
 
     // Trim history
-    if (this.metrics.length > this.config.historySize) {
-      this.metrics = this.metrics.slice(-this.config.historySize);
+    if (this?.metrics?.length > this?.config?.historySize) {
+      this.metrics = this?.metrics?.slice(-this?.config?.historySize);
     }
 
     // Check for alerts
-    if (this.config.enableAlerts) {
+    if (this?.config?.enableAlerts) {
       this.checkAlerts(metrics);
     }
 
@@ -459,12 +459,12 @@ export class EmailProcessingMonitor extends EventEmitter {
     average: number;
     peak: number;
   } {
-    if (this.throughputSamples.length === 0) {
+    if (this?.throughputSamples?.length === 0) {
       return { current: 0, average: 0, peak: 0 };
     }
 
     const current =
-      this.throughputSamples[this.throughputSamples.length - 1] || 0;
+      this.throughputSamples[this?.throughputSamples?.length - 1] || 0;
     const average = this.calculateAverage(this.throughputSamples);
     const peak = Math.max(...this.throughputSamples);
 
@@ -480,7 +480,7 @@ export class EmailProcessingMonitor extends EventEmitter {
     p99: number;
     average: number;
   } {
-    if (this.latencySamples.length === 0) {
+    if (this?.latencySamples?.length === 0) {
       return { p50: 0, p95: 0, p99: 0, average: 0 };
     }
 
@@ -508,29 +508,29 @@ export class EmailProcessingMonitor extends EventEmitter {
     const { alertThresholds } = this.config;
 
     // Throughput alert
-    if (metrics.throughput.current < alertThresholds.throughputMin) {
+    if (metrics?.throughput?.current < alertThresholds.throughputMin) {
       this.addAlert(
         "warning",
         "low-throughput",
-        `Throughput below threshold: ${metrics.throughput.current.toFixed(1)} emails/min`,
+        `Throughput below threshold: ${metrics?.throughput?.current.toFixed(1)} emails/min`,
       );
     }
 
     // Latency alert
-    if (metrics.latency.p95 > alertThresholds.latencyMax) {
+    if (metrics?.latency?.p95 > alertThresholds.latencyMax) {
       this.addAlert(
         "warning",
         "high-latency",
-        `P95 latency above threshold: ${metrics.latency.p95.toFixed(0)}ms`,
+        `P95 latency above threshold: ${metrics?.latency?.p95.toFixed(0)}ms`,
       );
     }
 
     // Error rate alert
-    if (metrics.errors.rate > alertThresholds.errorRateMax) {
+    if (metrics?.errors?.rate > alertThresholds.errorRateMax) {
       this.addAlert(
         "critical",
         "high-error-rate",
-        `Error rate above threshold: ${metrics.errors.rate.toFixed(2)}%`,
+        `Error rate above threshold: ${metrics?.errors?.rate.toFixed(2)}%`,
       );
     }
 
@@ -551,7 +551,7 @@ export class EmailProcessingMonitor extends EventEmitter {
    */
   private checkErrorRate(): void {
     const errorRate = this.calculateErrorRate();
-    if (errorRate > this.config.alertThresholds.errorRateMax) {
+    if (errorRate > this?.config?.alertThresholds.errorRateMax) {
       this.addAlert(
         "critical",
         "high-error-rate",
@@ -564,7 +564,7 @@ export class EmailProcessingMonitor extends EventEmitter {
    * Check system resources for alerts
    */
   private checkSystemResources(cpu: number, memory: number): void {
-    if (cpu > this.config.alertThresholds.cpuUsageMax) {
+    if (cpu > this?.config?.alertThresholds.cpuUsageMax) {
       this.addAlert(
         "warning",
         "high-cpu",
@@ -572,7 +572,7 @@ export class EmailProcessingMonitor extends EventEmitter {
       );
     }
 
-    if (memory > this.config.alertThresholds.memoryUsageMax) {
+    if (memory > this?.config?.alertThresholds.memoryUsageMax) {
       this.addAlert(
         "warning",
         "high-memory",
@@ -597,15 +597,15 @@ export class EmailProcessingMonitor extends EventEmitter {
       message,
     };
 
-    this.alerts.push(alert);
+    this?.alerts?.push(alert);
 
     // Keep only recent alerts
-    if (this.alerts.length > 100) {
-      this.alerts = this.alerts.slice(-100);
+    if (this?.alerts?.length > 100) {
+      this.alerts = this?.alerts?.slice(-100);
     }
 
     // Log alert
-    if (this.config.enableLogging) {
+    if (this?.config?.enableLogging) {
       const logFn =
         severity === "critical"
           ? logger.error
@@ -623,7 +623,7 @@ export class EmailProcessingMonitor extends EventEmitter {
    * Update dashboard display
    */
   private updateDashboard(): void {
-    if (!process.stdout.isTTY) return;
+    if (!process?.stdout?.isTTY) return;
 
     const summary = this.getPerformanceSummary();
     const currentMetrics = this.getCurrentMetrics();
@@ -632,7 +632,7 @@ export class EmailProcessingMonitor extends EventEmitter {
     console.clear();
 
     // Header
-    console.log(chalk.cyan.bold("\n📊 Email Processing Monitor\n"));
+    console.log(chalk?.cyan?.bold("\n📊 Email Processing Monitor\n"));
 
     // Status bar
     const statusColor = summary.activeAlerts > 0 ? chalk.red : chalk.green;
@@ -651,22 +651,22 @@ export class EmailProcessingMonitor extends EventEmitter {
     this.drawGauge(
       "Throughput",
       throughputPercent,
-      `${summary.currentThroughput.toFixed(1)} emails/min`,
+      `${summary?.currentThroughput?.toFixed(1)} emails/min`,
     );
 
     // Processing stats
     console.log(chalk.bold("\nProcessing:"));
-    console.log(`  Total: ${summary.totalProcessed.toLocaleString()} emails`);
+    console.log(`  Total: ${summary?.totalProcessed?.toLocaleString()} emails`);
     console.log(
-      `  Average: ${summary.averageThroughput.toFixed(1)} emails/min`,
+      `  Average: ${summary?.averageThroughput?.toFixed(1)} emails/min`,
     );
-    console.log(`  Peak: ${summary.peakThroughput.toFixed(1)} emails/min`);
+    console.log(`  Peak: ${summary?.peakThroughput?.toFixed(1)} emails/min`);
 
     // Latency stats
     console.log(chalk.bold("\nLatency:"));
-    console.log(`  Average: ${summary.averageLatency.toFixed(0)}ms`);
+    console.log(`  Average: ${summary?.averageLatency?.toFixed(0)}ms`);
     if (currentMetrics) {
-      console.log(`  P95: ${currentMetrics.latency.p95.toFixed(0)}ms`);
+      console.log(`  P95: ${currentMetrics?.latency?.p95.toFixed(0)}ms`);
     }
 
     // Queue status
@@ -687,22 +687,22 @@ export class EmailProcessingMonitor extends EventEmitter {
 
       // Worker status
       console.log(chalk.bold("\nWorkers:"));
-      console.log(`  Active: ${currentMetrics.workers.pool.activeWorkers}`);
-      console.log(`  Idle: ${currentMetrics.workers.pool.idleWorkers}`);
+      console.log(`  Active: ${currentMetrics?.workers?.pool.activeWorkers}`);
+      console.log(`  Idle: ${currentMetrics?.workers?.pool.idleWorkers}`);
 
       // System resources
       console.log(chalk.bold("\nSystem:"));
       const cpuColor =
-        currentMetrics.system.cpuUsage > 80
+        currentMetrics?.system?.cpuUsage > 80
           ? chalk.red
-          : currentMetrics.system.cpuUsage > 60
+          : currentMetrics?.system?.cpuUsage > 60
             ? chalk.yellow
             : chalk.green;
       console.log(
-        `  CPU: ${cpuColor(currentMetrics.system.cpuUsage.toFixed(1) + "%")}`,
+        `  CPU: ${cpuColor(currentMetrics?.system?.cpuUsage.toFixed(1) + "%")}`,
       );
       console.log(
-        `  Memory: ${currentMetrics.system.memoryUsage.toFixed(0)}MB`,
+        `  Memory: ${currentMetrics?.system?.memoryUsage.toFixed(0)}MB`,
       );
     }
 
@@ -714,15 +714,15 @@ export class EmailProcessingMonitor extends EventEmitter {
           ? chalk.yellow
           : chalk.green;
     console.log(chalk.bold("\nErrors:"));
-    console.log(`  Rate: ${errorColor(summary.errorRate.toFixed(2) + "%")}`);
+    console.log(`  Rate: ${errorColor(summary?.errorRate?.toFixed(2) + "%")}`);
 
     // Active alerts
     const activeAlerts = this.alerts
-      .filter((a) => a.severity !== "info")
+      .filter((a: any) => a.severity !== "info")
       .slice(-3);
-    if (activeAlerts.length > 0) {
+    if (activeAlerts?.length || 0 > 0) {
       console.log(chalk.bold("\nRecent Alerts:"));
-      activeAlerts.forEach((alert) => {
+      activeAlerts.forEach((alert: any) => {
         const icon = alert.severity === "critical" ? "🔴" : "🟡";
         console.log(`  ${icon} ${alert.message}`);
       });
@@ -751,20 +751,20 @@ export class EmailProcessingMonitor extends EventEmitter {
    * Helper methods
    */
   private getCurrentMetrics(): PerformanceMetrics | undefined {
-    return this.metrics[this.metrics.length - 1];
+    return this.metrics[this?.metrics?.length - 1];
   }
 
   private calculateAverage(samples: number[]): number {
-    if (samples.length === 0) return 0;
-    return samples.reduce((sum, val) => sum + val, 0) / samples.length;
+    if (samples?.length || 0 === 0) return 0;
+    return samples.reduce((sum: any, val: any) => sum + val, 0) / samples?.length || 0;
   }
 
   private calculatePercentile(
     sortedSamples: number[],
     percentile: number,
   ): number {
-    if (sortedSamples.length === 0) return 0;
-    const index = Math.ceil((percentile / 100) * sortedSamples.length) - 1;
+    if (sortedSamples?.length || 0 === 0) return 0;
+    const index = Math.ceil((percentile / 100) * sortedSamples?.length || 0) - 1;
     return sortedSamples[Math.max(0, index)] || 0;
   }
 

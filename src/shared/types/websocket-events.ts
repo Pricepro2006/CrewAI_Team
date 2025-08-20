@@ -491,24 +491,24 @@ export interface WebSocketEventHandlers {
 // =====================================================
 
 export const isEmailEvent = (event: WebSocketEvent): event is EmailWebSocketEvent => {
-  return event.type.startsWith('email:');
+  return event?.type?.startsWith('email:');
 };
 
 export const isWorkflowEvent = (event: WebSocketEvent): event is WorkflowWebSocketEvent => {
-  return event.type.startsWith('workflow:');
+  return event?.type?.startsWith('workflow:');
 };
 
 export const isSystemEvent = (event: WebSocketEvent): event is SystemWebSocketEvent => {
-  return event.type.startsWith('system:');
+  return event?.type?.startsWith('system:');
 };
 
 export const isAgentEvent = (event: WebSocketEvent): event is AgentWebSocketEvent => {
-  return event.type.startsWith('agent:');
+  return event?.type?.startsWith('agent:');
 };
 
 export const isConnectionEvent = (event: WebSocketEvent): event is ConnectionWebSocketEvent => {
   return ['connect', 'disconnect', 'reconnect', 'subscribe', 'unsubscribe'].includes(event.type) ||
-    event.type.startsWith('subscription:');
+    event?.type?.startsWith('subscription:');
 };
 
 // =====================================================

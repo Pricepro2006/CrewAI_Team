@@ -3,7 +3,7 @@
  * Handles product information, pricing, and substitutions
  */
 
-import type Database from "better-sqlite3";
+type DatabaseInstance = any;
 import { BaseRepository, type BaseEntity } from "./BaseRepository.js";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger.js";
@@ -100,12 +100,12 @@ export interface UserPreferences extends BaseEntity {
 }
 
 export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "walmart_products");
   }
 
   async upsertProduct(data: WalmartProduct): Promise<WalmartProduct> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO walmart_products (
         product_id, name, brand, description, category_path, department,
         current_price, regular_price, unit_price, unit_measure,
@@ -228,7 +228,7 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
         limit,
       ) as any[];
 
-    return rows.map((row) => this.mapRowToProduct(row));
+    return rows?.map((row: any) => this.mapRowToProduct(row));
   }
 
   async getProductsByCategory(
@@ -244,8 +244,8 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
 
     query += " ORDER BY average_rating DESC";
 
-    const rows = this.db.prepare(query).all(...params) as any[];
-    return rows.map((row) => this.mapRowToProduct(row));
+    const rows = this?.db?.prepare(query).all(...params) as any[];
+    return rows?.map((row: any) => this.mapRowToProduct(row));
   }
 
   async recordPriceHistory(
@@ -259,7 +259,7 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
         ? Math.round((1 - price / product.regular_price) * 100)
         : null;
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO price_history (
         id, product_id, price, was_on_sale, sale_percentage
       ) VALUES (?, ?, ?, ?, ?)
@@ -283,7 +283,7 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
       )
       .all(productId) as any[];
 
-    return rows.map((row) => ({
+    return rows?.map((row: any) => ({
       ...row,
       was_on_sale: !!row.was_on_sale,
     }));
@@ -336,7 +336,7 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
         limit,
       ) as any[];
 
-    return rows.map((row) => this.mapRowToProduct(row));
+    return rows?.map((row: any) => this.mapRowToProduct(row));
   }
 
   async findByProductId(productId: string): Promise<WalmartProduct | null> {
@@ -352,14 +352,14 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
   }
 
   async findByIds(productIds: string[]): Promise<WalmartProduct[]> {
-    if (productIds.length === 0) return [];
+    if (!productIds?.length || productIds.length === 0) return [];
     
-    const placeholders = productIds.map(() => '?').join(',');
+    const placeholders = productIds?.map(() => '?').join(',');
     const rows = this.db
       .prepare(`SELECT * FROM walmart_products WHERE product_id IN (${placeholders})`)
       .all(...productIds) as any[];
     
-    return rows.map((row) => this.mapRowToProduct(row));
+    return rows?.map((row: any) => this.mapRowToProduct(row));
   }
 
   entityToProduct(entity: any): WalmartProduct {
@@ -373,24 +373,32 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
   }
 
   private mapRowToProduct(row: any): WalmartProduct {
+    // Helper function to safely parse JSON
+    const safeJsonParse = (jsonString: any, defaultValue: any) => {
+      if (!jsonString || typeof jsonString !== 'string' || jsonString.trim() === '') return defaultValue;
+      try {
+        return JSON.parse(jsonString);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.warn("Failed to parse JSON field", "WALMART_REPO", { jsonString, error: errorMessage });
+        return defaultValue;
+      }
+    };
+
     return {
       ...row,
       in_stock: !!row.in_stock,
       online_only: !!row.online_only,
       store_only: !!row.store_only,
-      nutritional_info: row.nutritional_info
-        ? JSON.parse(row.nutritional_info)
-        : null,
-      allergens: row.allergens ? JSON.parse(row.allergens) : [],
-      product_attributes: row.product_attributes
-        ? JSON.parse(row.product_attributes)
-        : null,
+      nutritional_info: safeJsonParse(row.nutritional_info, null),
+      allergens: safeJsonParse(row.allergens, []),
+      product_attributes: safeJsonParse(row.product_attributes, null),
     };
   }
 }
 
 export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "grocery_substitutions");
   }
 
@@ -404,7 +412,7 @@ export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> 
       created_at: data.created_at || new Date().toISOString(),
     };
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO grocery_substitutions (
         id, original_product_id, substitute_product_id, reason,
         similarity_score, price_difference, user_id, accepted,
@@ -442,7 +450,7 @@ export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> 
       )
       .all(productId, productId) as any[];
 
-    return rows.map((row) => ({
+    return rows?.map((row: any) => ({
       ...row,
       accepted: !!row.accepted,
     }));
@@ -461,7 +469,7 @@ export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> 
       )
       .all(userId) as any[];
 
-    return rows.map((row) => ({
+    return rows?.map((row: any) => ({
       ...row,
       accepted: true,
     }));
@@ -473,7 +481,7 @@ export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> 
     rating?: number,
     feedback?: string,
   ): Promise<void> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE grocery_substitutions 
       SET accepted = ?, rating = ?, feedback = ?
       WHERE id = ?
@@ -484,7 +492,7 @@ export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> 
 }
 
 export class UserPreferencesRepository extends BaseRepository<UserPreferences> {
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     super(db, "grocery_user_preferences");
   }
 
@@ -502,7 +510,7 @@ export class UserPreferencesRepository extends BaseRepository<UserPreferences> {
       onboarding_completed: data.onboarding_completed ?? false,
     };
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO grocery_user_preferences (
         id, user_id, default_store_id, preferred_brands, avoided_brands,
         dietary_restrictions, allergens, preferred_organic, preferred_local,

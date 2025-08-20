@@ -195,7 +195,7 @@ export class DealPipelineMonitor extends EventEmitter {
       // Start health checks
       this.healthCheckTimer = setInterval(
         () => this.performHealthCheck(),
-        this.config.healthCheckIntervalMs
+        this.config?.healthCheckIntervalMs
       );
       
       // Start metrics collection
@@ -262,7 +262,7 @@ export class DealPipelineMonitor extends EventEmitter {
       await this.saveConfiguration();
       
       // Update pipeline service configuration
-      this.pipelineService.updateConfig(this.config);
+      this.pipelineService?.updateConfig(this.config);
       
       // Restart timers if intervals changed
       if (newConfig.healthCheckIntervalMs && 
@@ -301,7 +301,7 @@ export class DealPipelineMonitor extends EventEmitter {
    */
   getMetricsHistory(hours: number = 24): Array<PerformanceMetrics & { timestamp: string }> {
     const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-    return this.metricsHistory.filter(m => m.timestamp >= cutoffTime);
+    return this.metricsHistory?.filter(m => m.timestamp >= cutoffTime);
   }
 
   /**
@@ -315,14 +315,14 @@ export class DealPipelineMonitor extends EventEmitter {
    * Get active alerts
    */
   getActiveAlerts(): Alert[] {
-    return Array.from(this.activeAlerts.values()).filter(alert => alert.isActive);
+    return Array.from(this.activeAlerts?.values()).filter(alert => alert.isActive);
   }
 
   /**
    * Acknowledge an alert
    */
   async acknowledgeAlert(alertId: string): Promise<void> {
-    const alert = this.activeAlerts.get(alertId);
+    const alert = this.activeAlerts?.get(alertId);
     if (alert) {
       alert.acknowledgedAt = new Date().toISOString();
       await this.saveAlert(alert);
@@ -336,7 +336,7 @@ export class DealPipelineMonitor extends EventEmitter {
    * Resolve an alert
    */
   async resolveAlert(alertId: string): Promise<void> {
-    const alert = this.activeAlerts.get(alertId);
+    const alert = this.activeAlerts?.get(alertId);
     if (alert) {
       alert.isActive = false;
       alert.resolvedAt = new Date().toISOString();
@@ -389,13 +389,13 @@ export class DealPipelineMonitor extends EventEmitter {
       await this.checkThresholds();
       
       // Send health status to WebSocket clients
-      this.webSocketService.sendPipelineStatus({
-        isRunning: this.pipelineService.getMetrics().isHealthy,
-        queueSize: this.currentMetrics.currentQueueSize,
-        dealsDetectedLastHour: this.currentMetrics.dealsDetectedLastHour,
-        pricesUpdatedLastHour: this.currentMetrics.pricesUpdatedLastHour,
-        avgDealScore: this.currentMetrics.avgDealScore,
-        successRate: this.currentMetrics.successRate
+      this.webSocketService?.sendPipelineStatus({
+        isRunning: this.pipelineService?.getMetrics().isHealthy,
+        queueSize: this.currentMetrics?.currentQueueSize,
+        dealsDetectedLastHour: this.currentMetrics?.dealsDetectedLastHour,
+        pricesUpdatedLastHour: this.currentMetrics?.pricesUpdatedLastHour,
+        avgDealScore: this.currentMetrics?.avgDealScore,
+        successRate: this.currentMetrics?.successRate
       });
       
       return this.healthStatus;
@@ -403,8 +403,10 @@ export class DealPipelineMonitor extends EventEmitter {
     } catch (error) {
       logger.error("Health check failed", "DEAL_MONITOR", { error });
       
-      this.healthStatus.overall = 'critical';
-      this.healthStatus.errors.push(error instanceof Error ? error.message : 'Unknown error');
+      if (this.healthStatus) {
+        this.healthStatus.overall = 'critical';
+        this.healthStatus.errors.push(error instanceof Error ? error.message : 'Unknown error');
+      }
       
       return this.healthStatus;
     }
@@ -415,12 +417,12 @@ export class DealPipelineMonitor extends EventEmitter {
    */
   async collectMetrics(): Promise<PerformanceMetrics> {
     try {
-      const pipelineMetrics = this.pipelineService.getMetrics();
-      const webSocketStats = this.webSocketService.getStatistics();
+      const pipelineMetrics = this?.pipelineService?.getMetrics();
+      const webSocketStats = this?.webSocketService?.getStatistics();
       
       // Calculate derived metrics
-      const successRate = this.performanceCounters.successes + this.performanceCounters.errors > 0 ?
-        (this.performanceCounters.successes / (this.performanceCounters.successes + this.performanceCounters.errors)) * 100 : 100;
+      const successRate = this?.performanceCounters?.successes + this?.performanceCounters?.errors > 0 ?
+        (this?.performanceCounters?.successes / (this?.performanceCounters?.successes + this?.performanceCounters?.errors)) * 100 : 100;
       
       const errorRate = 100 - successRate;
       
@@ -437,7 +439,7 @@ export class DealPipelineMonitor extends EventEmitter {
         
         avgPriceUpdateTimeMs: pipelineMetrics.avgPriceUpdateTime,
         avgDealDetectionTimeMs: pipelineMetrics.avgDealDetectionTime,
-        avgAlertProcessingTimeMs: this.calculateAvgTime(this.performanceCounters.alertProcessing),
+        avgAlertProcessingTimeMs: this.calculateAvgTime(this?.performanceCounters?.alertProcessing),
         successRate,
         errorRate,
         
@@ -454,14 +456,14 @@ export class DealPipelineMonitor extends EventEmitter {
       };
       
       // Store metrics history
-      this.metricsHistory.push({
+      this?.metricsHistory?.push({
         ...this.currentMetrics,
         timestamp: new Date().toISOString()
       });
       
       // Keep only recent history
-      const cutoffTime = new Date(Date.now() - this.config.metricsRetentionDays * 24 * 60 * 60 * 1000).toISOString();
-      this.metricsHistory = this.metricsHistory.filter(m => m.timestamp >= cutoffTime);
+      const cutoffTime = new Date(Date.now() - this?.config?.metricsRetentionDays * 24 * 60 * 60 * 1000).toISOString();
+      this.metricsHistory = this?.metricsHistory?.filter(m => m.timestamp >= cutoffTime);
       
       return this.currentMetrics;
       
@@ -550,7 +552,7 @@ export class DealPipelineMonitor extends EventEmitter {
   private initializeDatabase(): void {
     try {
       // Configuration table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS pipeline_configuration (
           key TEXT PRIMARY KEY,
           value TEXT NOT NULL,
@@ -559,7 +561,7 @@ export class DealPipelineMonitor extends EventEmitter {
       `);
 
       // Metrics history table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS pipeline_metrics_history (
           id TEXT PRIMARY KEY,
           metrics_data TEXT NOT NULL,
@@ -568,7 +570,7 @@ export class DealPipelineMonitor extends EventEmitter {
       `);
 
       // Alerts table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS pipeline_alerts (
           id TEXT PRIMARY KEY,
           type TEXT NOT NULL,
@@ -585,12 +587,12 @@ export class DealPipelineMonitor extends EventEmitter {
       `);
 
       // Create indexes
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_pipeline_metrics_timestamp 
         ON pipeline_metrics_history(timestamp DESC)
       `);
 
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_pipeline_alerts_active 
         ON pipeline_alerts(is_active, created_at DESC)
       `);
@@ -605,7 +607,7 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private async loadConfiguration(): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT key, value FROM pipeline_configuration
       `);
 
@@ -632,8 +634,8 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private async saveConfiguration(): Promise<void> {
     try {
-      const transaction = this.db.transaction(() => {
-        const stmt = this.db.prepare(`
+      const transaction = this?.db?.transaction(() => {
+        const stmt = this?.db?.prepare(`
           INSERT OR REPLACE INTO pipeline_configuration (key, value, updated_at)
           VALUES (?, ?, ?)
         `);
@@ -654,16 +656,22 @@ export class DealPipelineMonitor extends EventEmitter {
   }
 
   private setupEventHandlers(): void {
-    this.pipelineService.on('price_updated', (data) => {
-      this.performanceCounters.successes++;
+    this?.pipelineService?.on('price_updated', (data: any) => {
+      if (this?.performanceCounters) {
+        this.performanceCounters.successes++;
+      }
     });
 
-    this.pipelineService.on('deal_detected', (deal) => {
-      this.performanceCounters.successes++;
+    this?.pipelineService?.on('deal_detected', (deal: any) => {
+      if (this?.performanceCounters) {
+        this.performanceCounters.successes++;
+      }
     });
 
-    this.pipelineService.on('error', (data) => {
-      this.performanceCounters.errors++;
+    this?.pipelineService?.on('error', (data: any) => {
+      if (this?.performanceCounters) {
+        this.performanceCounters.errors++;
+      }
     });
   }
 
@@ -674,7 +682,7 @@ export class DealPipelineMonitor extends EventEmitter {
     
     this.healthCheckTimer = setInterval(
       () => this.performHealthCheck(),
-      this.config.healthCheckIntervalMs
+      this?.config?.healthCheckIntervalMs
     );
   }
 
@@ -682,7 +690,7 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private async checkPipelineServiceHealth(): Promise<'healthy' | 'warning' | 'critical' | 'down'> {
     try {
-      const metrics = this.pipelineService.getMetrics();
+      const metrics = this?.pipelineService?.getMetrics();
       
       if (!metrics.isHealthy) return 'critical';
       if (metrics.errorRate > 10) return 'warning';
@@ -696,7 +704,7 @@ export class DealPipelineMonitor extends EventEmitter {
   private async checkPriceTrackingHealth(): Promise<'healthy' | 'warning' | 'critical' | 'down'> {
     try {
       // Check if prices have been updated recently
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT COUNT(*) as count FROM price_history_enhanced 
         WHERE recorded_at > datetime('now', '-2 hours')
       `);
@@ -713,7 +721,7 @@ export class DealPipelineMonitor extends EventEmitter {
   private async checkDealDetectionHealth(): Promise<'healthy' | 'warning' | 'critical' | 'down'> {
     try {
       // Check if deals have been detected recently
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT COUNT(*) as count FROM detected_deals 
         WHERE detected_at > datetime('now', '-4 hours')
       `);
@@ -729,7 +737,7 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private async checkNotificationHealth(): Promise<'healthy' | 'warning' | 'critical' | 'down'> {
     try {
-      const stats = this.webSocketService.getStatistics();
+      const stats = this?.webSocketService?.getStatistics();
       
       if (stats.messagesFailed > stats.messagesSent * 0.1) return 'warning'; // >10% failure rate
       return 'healthy';
@@ -741,7 +749,7 @@ export class DealPipelineMonitor extends EventEmitter {
   private async checkDatabaseHealth(): Promise<'healthy' | 'warning' | 'critical' | 'down'> {
     try {
       // Test database connectivity
-      this.db.prepare('SELECT 1').get();
+      this?.db?.prepare('SELECT 1').get();
       return 'healthy';
     } catch (error) {
       return 'down';
@@ -749,49 +757,49 @@ export class DealPipelineMonitor extends EventEmitter {
   }
 
   private async checkThresholds(): Promise<void> {
-    const thresholds = this.config.alertThresholds;
+    const thresholds = this?.config?.alertThresholds;
     
     // Check error rate
-    if (this.currentMetrics.errorRate > thresholds.errorRatePercent) {
+    if (this?.currentMetrics?.errorRate > thresholds.errorRatePercent) {
       await this.createAlert('error', 'pipeline', 
-        `Error rate exceeds threshold: ${this.currentMetrics.errorRate.toFixed(1)}%`, 
-        { errorRate: this.currentMetrics.errorRate },
+        `Error rate exceeds threshold: ${this?.currentMetrics?.errorRate.toFixed(1)}%`, 
+        { errorRate: this?.currentMetrics?.errorRate },
         thresholds.errorRatePercent,
-        this.currentMetrics.errorRate
+        this?.currentMetrics?.errorRate
       );
     }
     
     // Check queue size
-    if (this.currentMetrics.currentQueueSize > thresholds.queueSizeCritical) {
+    if (this?.currentMetrics?.currentQueueSize > thresholds.queueSizeCritical) {
       await this.createAlert('error', 'pipeline',
-        `Queue size critical: ${this.currentMetrics.currentQueueSize} items`,
-        { queueSize: this.currentMetrics.currentQueueSize },
+        `Queue size critical: ${this?.currentMetrics?.currentQueueSize} items`,
+        { queueSize: this?.currentMetrics?.currentQueueSize },
         thresholds.queueSizeCritical,
-        this.currentMetrics.currentQueueSize
+        this?.currentMetrics?.currentQueueSize
       );
-    } else if (this.currentMetrics.currentQueueSize > thresholds.queueSizeWarning) {
+    } else if (this?.currentMetrics?.currentQueueSize > thresholds.queueSizeWarning) {
       await this.createAlert('warning', 'pipeline',
-        `Queue size warning: ${this.currentMetrics.currentQueueSize} items`,
-        { queueSize: this.currentMetrics.currentQueueSize },
+        `Queue size warning: ${this?.currentMetrics?.currentQueueSize} items`,
+        { queueSize: this?.currentMetrics?.currentQueueSize },
         thresholds.queueSizeWarning,
-        this.currentMetrics.currentQueueSize
+        this?.currentMetrics?.currentQueueSize
       );
     }
     
     // Check response times
-    if (this.currentMetrics.avgPriceUpdateTimeMs > thresholds.responseTimeCriticalMs) {
+    if (this?.currentMetrics?.avgPriceUpdateTimeMs > thresholds.responseTimeCriticalMs) {
       await this.createAlert('error', 'price_tracking',
-        `Price update response time critical: ${this.currentMetrics.avgPriceUpdateTimeMs}ms`,
-        { responseTime: this.currentMetrics.avgPriceUpdateTimeMs },
+        `Price update response time critical: ${this?.currentMetrics?.avgPriceUpdateTimeMs}ms`,
+        { responseTime: this?.currentMetrics?.avgPriceUpdateTimeMs },
         thresholds.responseTimeCriticalMs,
-        this.currentMetrics.avgPriceUpdateTimeMs
+        this?.currentMetrics?.avgPriceUpdateTimeMs
       );
-    } else if (this.currentMetrics.avgPriceUpdateTimeMs > thresholds.responseTimeWarningMs) {
+    } else if (this?.currentMetrics?.avgPriceUpdateTimeMs > thresholds.responseTimeWarningMs) {
       await this.createAlert('warning', 'price_tracking',
-        `Price update response time warning: ${this.currentMetrics.avgPriceUpdateTimeMs}ms`,
-        { responseTime: this.currentMetrics.avgPriceUpdateTimeMs },
+        `Price update response time warning: ${this?.currentMetrics?.avgPriceUpdateTimeMs}ms`,
+        { responseTime: this?.currentMetrics?.avgPriceUpdateTimeMs },
         thresholds.responseTimeWarningMs,
-        this.currentMetrics.avgPriceUpdateTimeMs
+        this?.currentMetrics?.avgPriceUpdateTimeMs
       );
     }
   }
@@ -819,7 +827,7 @@ export class DealPipelineMonitor extends EventEmitter {
       isActive: true
     };
     
-    this.activeAlerts.set(alertId, alert);
+    this?.activeAlerts?.set(alertId, alert);
     await this.saveAlert(alert);
     
     logger.warn("Pipeline alert created", "DEAL_MONITOR", {
@@ -834,7 +842,7 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private async saveAlert(alert: Alert): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO pipeline_alerts (
           id, type, service, message, details, threshold, current_value,
           created_at, acknowledged_at, resolved_at, is_active
@@ -879,7 +887,7 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private async getPricesUpdated24h(): Promise<number> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT COUNT(*) as count FROM price_history_enhanced 
         WHERE recorded_at > datetime('now', '-24 hours')
       `);
@@ -892,7 +900,7 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private async getDealsDetected24h(): Promise<number> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT COUNT(*) as count FROM detected_deals 
         WHERE detected_at > datetime('now', '-24 hours')
       `);
@@ -905,7 +913,7 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private async getAlertsTriggered24h(): Promise<number> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT COUNT(*) as count FROM deal_notifications 
         WHERE created_at > datetime('now', '-24 hours')
       `);
@@ -919,13 +927,13 @@ export class DealPipelineMonitor extends EventEmitter {
   private async getAvgQueueSize(): Promise<number> {
     // This would track average queue size over time
     // For now, return current queue size
-    return this.currentMetrics.currentQueueSize;
+    return this?.currentMetrics?.currentQueueSize;
   }
 
   private async getMaxQueueSize(): Promise<number> {
     // This would track maximum queue size
     // For now, return current queue size
-    return this.currentMetrics.currentQueueSize;
+    return this?.currentMetrics?.currentQueueSize;
   }
 
   private async collectBusinessMetrics(): Promise<{
@@ -941,7 +949,7 @@ export class DealPipelineMonitor extends EventEmitter {
   }> {
     try {
       // Top performing categories
-      const categoryStmt = this.db.prepare(`
+      const categoryStmt = this?.db?.prepare(`
         SELECT 
           category,
           COUNT(*) as deal_count,
@@ -958,7 +966,7 @@ export class DealPipelineMonitor extends EventEmitter {
       const topCategories = categoryStmt.all() as any[];
 
       // Deal type distribution
-      const typeStmt = this.db.prepare(`
+      const typeStmt = this?.db?.prepare(`
         SELECT 
           deal_type,
           COUNT(*) as count
@@ -974,7 +982,7 @@ export class DealPipelineMonitor extends EventEmitter {
       }
 
       // Overall metrics
-      const overallStmt = this.db.prepare(`
+      const overallStmt = this?.db?.prepare(`
         SELECT 
           AVG(deal_score) as avg_score,
           SUM(savings_amount) as total_savings
@@ -985,7 +993,7 @@ export class DealPipelineMonitor extends EventEmitter {
       const overall = overallStmt.get() as any;
 
       return {
-        topPerformingCategories: topCategories.map(cat => ({
+        topPerformingCategories: topCategories?.map(cat => ({
           category: cat.category,
           dealCount: cat.deal_count,
           avgSavings: cat.avg_savings || 0,

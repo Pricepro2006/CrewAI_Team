@@ -2,7 +2,7 @@
  * Test suite to verify foreign key enforcement in the database
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Database from "better-sqlite3";
 import { join } from "path";
 import { mkdtempSync, rmSync } from "fs";

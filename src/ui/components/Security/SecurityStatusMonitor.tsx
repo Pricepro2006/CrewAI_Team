@@ -8,7 +8,7 @@ import {
   Lock,
   Key,
 } from "lucide-react";
-import { useCSRFStatus } from "../../hooks/useTRPCWithCSRF";
+import { useCSRFStatus } from "../../hooks/useTRPCWithCSRF.js";
 import { api } from "../../../lib/trpc.js";
 
 interface SecurityStatus {
@@ -39,7 +39,7 @@ export const SecurityStatusMonitor: React.FC = () => {
     const checkSecurity = async () => {
       try {
         // Test CORS by making a request
-        const response = await fetch(`${window.location.origin}/api/health`, {
+        const response = await fetch(`${window?.location?.origin}/api/health`, {
           credentials: "include",
         });
 
@@ -48,18 +48,18 @@ export const SecurityStatusMonitor: React.FC = () => {
           csp:
             !!document.querySelector(
               'meta[http-equiv="Content-Security-Policy"]',
-            ) || response.headers.get("content-security-policy") !== null,
+            ) || response?.headers?.get("content-security-policy") !== null,
           csrf: csrfStatus.hasToken,
           websocket: false, // Will be updated by WebSocket check
           authentication: !!localStorage.getItem("token"),
           headers: {
-            "X-Frame-Options": response.headers.get("x-frame-options"),
-            "X-Content-Type-Options": response.headers.get(
+            "X-Frame-Options": response?.headers?.get("x-frame-options"),
+            "X-Content-Type-Options": response?.headers?.get(
               "x-content-type-options",
             ),
-            "X-XSS-Protection": response.headers.get("x-xss-protection"),
-            "Referrer-Policy": response.headers.get("referrer-policy"),
-            "Permissions-Policy": response.headers.get("permissions-policy"),
+            "X-XSS-Protection": response?.headers?.get("x-xss-protection"),
+            "Referrer-Policy": response?.headers?.get("referrer-policy"),
+            "Permissions-Policy": response?.headers?.get("permissions-policy"),
           },
         };
 
@@ -76,13 +76,13 @@ export const SecurityStatusMonitor: React.FC = () => {
   }, [csrfStatus.hasToken]);
 
   // Check WebSocket status
-  const { data: wsStatus } = api.websocket.status.useQuery(undefined, {
+  const { data: wsStatus } = (api?.ws?.status as any)?.useQuery?.(undefined, {
     refetchInterval: 30000,
-  });
+  }) || { data: null };
 
   useEffect(() => {
     if (wsStatus) {
-      setSecurityStatus((prev) => ({ ...prev, websocket: wsStatus.connected }));
+      setSecurityStatus((prev: any) => ({ ...prev, websocket: wsStatus.connected }));
     }
   }, [wsStatus]);
 
@@ -92,14 +92,14 @@ export const SecurityStatusMonitor: React.FC = () => {
       securityStatus.csp,
       securityStatus.csrf,
       securityStatus.websocket,
-      Object.values(securityStatus.headers).filter((h) => h !== null).length >=
+      Object.values(securityStatus.headers).filter((h: any) => h !== null).length >=
         3,
     ];
 
-    const passedChecks = checks.filter((c) => c).length;
+    const passedChecks = checks?.filter((c: any) => c).length;
 
-    if (passedChecks === checks.length) return "secure";
-    if (passedChecks >= checks.length * 0.7) return "warning";
+    if (passedChecks === (checks?.length || 0)) return "secure";
+    if (passedChecks >= (checks?.length || 0) * 0.7) return "warning";
     return "error";
   };
 
@@ -197,7 +197,7 @@ export const SecurityStatusMonitor: React.FC = () => {
                 <div>CSRF Token Age: {csrfStatus.tokenAge}</div>
                 {csrfStatus.lastRefresh && (
                   <div>
-                    Last Refresh: {csrfStatus.lastRefresh.toLocaleTimeString()}
+                    Last Refresh: {typeof csrfStatus?.lastRefresh === 'object' && csrfStatus?.lastRefresh instanceof Date ? csrfStatus?.lastRefresh?.toLocaleTimeString() : 'Unknown'}
                   </div>
                 )}
               </div>

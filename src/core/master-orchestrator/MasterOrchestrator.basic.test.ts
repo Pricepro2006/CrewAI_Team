@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, beforeAll, afterEach } from "vitest";
-import { MasterOrchestrator } from "./MasterOrchestrator.js";
-import { createTestDatabase } from "../../test/utils/test-helpers.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { MasterOrchestrator } from './MasterOrchestrator';
+import { createTestDatabase } from '../../test/utils/test-helpers';
 import {
   isOllamaRunning,
   skipIfNoOllama,
   generateWithTimeout,
-} from "../../test/utils/ollama-test-helper.js";
-import type { Plan, Task } from "./types.js";
+} from '../../test/utils/ollama-test-helper';
+import type { Plan, Task } from './types';
 
 // No mocking - use real Ollama per guardrails
 
@@ -108,9 +108,9 @@ describe("MasterOrchestrator Basic Tests", () => {
       expect(response).toBeDefined();
       expect(response.success).toBe(true);
       expect(response.summary).toBeDefined();
-      expect(response.summary.toLowerCase()).toContain("hello");
+      expect(response?.summary?.toLowerCase()).toContain("hello");
       expect(response.results).toBeDefined();
-      expect(response.results.length).toBeGreaterThan(0);
+      expect(response?.results?.length).toBeGreaterThan(0);
     });
 
     it("should handle query metadata", async () => {
@@ -178,10 +178,10 @@ describe("MasterOrchestrator Basic Tests", () => {
 
       expect(plan).toBeDefined();
       expect(plan.id).toMatch(/^plan-/);
-      expect(plan.metadata?.goal).toBe(query.text);
+      expect(plan.metadata?.length).toBe(query.text);
       expect(plan.steps).toBeInstanceOf(Array);
-      expect(plan.steps.length).toBeGreaterThan(0);
-      expect(plan.metadata?.status).toBe("pending");
+      expect(plan?.steps?.length).toBeGreaterThan(0);
+      expect(plan.metadata?.length).toBe("pending");
 
       // Verify task structure
       const firstTask = plan.steps[0];
@@ -194,7 +194,7 @@ describe("MasterOrchestrator Basic Tests", () => {
   describe("Agent Registry", () => {
     it("should have access to agent registry", () => {
       expect(orchestrator.agentRegistry).toBeDefined();
-      expect(orchestrator.agentRegistry.getAgent).toBeDefined();
+      expect(orchestrator?.agentRegistry?.length).toBeDefined();
     });
   });
 
@@ -215,7 +215,7 @@ describe("MasterOrchestrator Basic Tests", () => {
       const allTables = tables.rows || [];
 
       expect(allTables).toBeDefined();
-      expect(allTables.length).toBeGreaterThanOrEqual(0);
+      expect(allTables?.length || 0).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -279,7 +279,7 @@ describe("MasterOrchestrator Basic Tests", () => {
 
       expect(response).toBeDefined();
       expect(response.success).toBeDefined();
-      expect(response.summary.toLowerCase()).toContain("test");
+      expect(response?.summary?.toLowerCase()).toContain("test");
     });
   });
 });

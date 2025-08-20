@@ -1,9 +1,9 @@
 import React from "react";
-import { useErrorReporter, useErrorContext } from "../../contexts/ErrorContext";
-import { useToast } from "../Toast/useToast";
-import { useRetryMechanism, useCircuitBreaker } from "../../hooks/useRetryMechanism";
-import { useApiErrorRecovery } from "../../hooks/useApiErrorRecovery";
-import { useTRPCWithErrorHandling } from "../../hooks/useTRPCWithErrorHandling";
+import { useErrorReporter, useErrorContext } from "../../contexts/ErrorContext.js";
+import { useToast } from "../Toast/useToast.js";
+import { useRetryMechanism, useCircuitBreaker } from "../../hooks/useRetryMechanism.js";
+import { useApiErrorRecovery } from "../../hooks/useApiErrorRecovery.js";
+import { useTRPCWithErrorHandling } from "../../hooks/useTRPCWithErrorHandling.js";
 
 /**
  * Example component demonstrating all error handling features
@@ -41,7 +41,7 @@ export const ErrorHandlingExample: React.FC = () => {
     {
       maxAttempts: 3,
       onSuccess: () => success("Data loaded successfully!"),
-      onFailure: (err) => error(`Failed after retries: ${err.message}`),
+      onFailure: (err: any) => error(`Failed after retries: ${err.message}`),
     }
   );
 
@@ -118,8 +118,8 @@ export const ErrorHandlingExample: React.FC = () => {
         successMessage: "Data updated successfully!",
         errorMessage: "Failed to update data",
         context: "Update Operation",
-        onSuccess: (data) => console.log("Success:", data),
-        onError: (err) => console.error("Error:", err),
+        onSuccess: (data: any) => console.log("Success:", data),
+        onError: (err: any) => console.error("Error:", err),
       }
     );
   };
@@ -131,11 +131,11 @@ export const ErrorHandlingExample: React.FC = () => {
       {/* Error Status Display */}
       {hasErrors && (
         <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-          <h3 className="font-semibold mb-2">Current Errors ({errors.length})</h3>
+          <h3 className="font-semibold mb-2">Current Errors ({errors?.length || 0})</h3>
           <div className="space-y-2">
-            {errors.slice(0, 3).map((error) => (
+            {errors.slice(0, 3).map((error: any) => (
               <div key={error.id} className="flex justify-between items-center">
-                <span className="text-sm">{error.error.message}</span>
+                <span className="text-sm">{error?.error?.message}</span>
                 {error.recoverable && (
                   <button
                     onClick={() => retryError(error.id)}

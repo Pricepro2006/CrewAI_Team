@@ -14,12 +14,13 @@
  */
 
 import { z } from "zod";
-import * as DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "isomorphic-dompurify";
+import { NodeSanitizer } from "../../../utils/node-sanitizer.js";
 import validator from "validator";
 import { createHash } from "crypto";
 import * as path from "path";
-import { logger } from "../../../utils/logger.js";
 import type { Request, Response, NextFunction } from "express";
+import { logger } from "../../../utils/logger.js";
 
 // Validation constants
 const MAX_STRING_LENGTH = 10000;
@@ -28,7 +29,7 @@ const MAX_OBJECT_DEPTH = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_FILE_TYPES = {
   image: ["image/jpeg", "image/png", "image/gif", "image/webp"],
-  document: ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+  document: ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument?.wordprocessingml?.document"],
   receipt: ["image/jpeg", "image/png", "application/pdf"],
 };
 
@@ -97,24 +98,34 @@ export function sanitizeString(
   }
 
   // Enforce max length
-  if (sanitized.length > maxLength) {
+  if ((sanitized?.length || 0) > maxLength) {
     sanitized = sanitized.substring(0, maxLength);
   }
 
-  // Remove HTML if not allowed
-  if (!allowHtml) {
-    sanitized = DOMPurify.sanitize(sanitized, { 
-      ALLOWED_TAGS: [],
-      ALLOWED_ATTR: [],
-      KEEP_CONTENT: true,
+  // Remove HTML if not allowed - use fallback for Node.js compatibility
+  try {
+    if (!allowHtml) {
+      sanitized = DOMPurify.sanitize(sanitized, { 
+        ALLOWED_TAGS: [],
+        ALLOWED_ATTR: [],
+        KEEP_CONTENT: true,
+      });
+    } else {
+      // Allow safe HTML only
+      sanitized = DOMPurify.sanitize(sanitized, {
+        ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
+        ALLOWED_ATTR: ["href", "title"],
+        ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+      });
+    }
+  } catch (error) {
+    logger.warn("DOMPurify failed, using fallback sanitizer", "VALIDATION", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      allowHtml,
     });
-  } else {
-    // Allow safe HTML only
-    sanitized = DOMPurify.sanitize(sanitized, {
-      ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
-      ALLOWED_ATTR: ["href", "title"],
-      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
-    });
+    
+    // Fallback to Node.js compatible sanitizer
+    sanitized = NodeSanitizer.sanitize(sanitized, { allowHtml });
   }
 
   // Remove special characters if not allowed
@@ -203,35 +214,30 @@ export function sanitizePhoneNumber(phone: string): string {
 }
 
 /**
- * Validate and sanitize file path
+ * Validate and sanitize file path with comprehensive protection
  */
 export function sanitizeFilePath(filePath: string, basePath?: string): string {
-  // Remove null bytes
-  let sanitized = filePath.replace(/\0/g, "");
+  // Import enhanced path validator
+  const { PathValidator } = require('../../../utils/security/path-validation.js');
+  const validator = new PathValidator({
+    basePath: basePath || process.cwd(),
+    strict: true,
+    allowSymlinks: false
+  });
   
-  // Check for path traversal
-  for (const pattern of DANGEROUS_PATTERNS.pathTraversal) {
-    if (pattern.test(sanitized)) {
-      throw new Error("Path traversal detected");
-    }
+  // Validate path with comprehensive checks
+  const result = validator.validatePath(filePath);
+  
+  if (!result.valid) {
+    logger.warn("Path validation failed", "SECURITY", {
+      filePath,
+      error: result.error,
+      inputHash: createHash("sha256").update(filePath).digest("hex").substring(0, 8)
+    });
+    throw new Error(result.error || "Path validation failed");
   }
   
-  // Normalize the path
-  const normalized = path.normalize(sanitized);
-  
-  // If base path provided, ensure file is within it
-  if (basePath) {
-    const resolvedPath = path.resolve(basePath, normalized);
-    const resolvedBase = path.resolve(basePath);
-    
-    if (!resolvedPath.startsWith(resolvedBase)) {
-      throw new Error("Path outside allowed directory");
-    }
-    
-    return resolvedPath;
-  }
-  
-  return normalized;
+  return result.sanitized!;
 }
 
 /**
@@ -248,7 +254,7 @@ export function detectDangerousPatterns(
       logger.warn("Dangerous pattern detected", "SECURITY", {
         patternType,
         pattern: pattern.toString(),
-        inputLength: input.length,
+        inputLength: input?.length || 0,
         inputHash: createHash("sha256").update(input).digest("hex").substring(0, 8),
       });
       return true;
@@ -286,17 +292,17 @@ export function sanitizeObject(
   }
   
   if (Array.isArray(obj)) {
-    if (obj.length > MAX_ARRAY_LENGTH) {
+    if ((obj?.length || 0) > MAX_ARRAY_LENGTH) {
       throw new Error("Array length exceeds maximum allowed");
     }
-    return obj.map(item => sanitizeObject(item, depth + 1));
+    return obj?.map(item => sanitizeObject(item, depth + 1));
   }
   
   if (typeof obj === "object") {
     const sanitized: any = {};
     const keys = Object.keys(obj);
     
-    if (keys.length > MAX_ARRAY_LENGTH) {
+    if ((keys?.length || 0) > MAX_ARRAY_LENGTH) {
       throw new Error("Object has too many properties");
     }
     
@@ -322,14 +328,14 @@ export function sanitizeObject(
 /**
  * Validate file upload
  */
-export function validateFileUpload(
+export async function validateFileUpload(
   file: Express.Multer.File,
   options: {
     allowedTypes?: string[];
     maxSize?: number;
     scanForVirus?: boolean;
   } = {}
-): { valid: boolean; error?: string } {
+): Promise<{ valid: boolean; error?: string }> {
   const {
     allowedTypes = ALLOWED_FILE_TYPES.image,
     maxSize = MAX_FILE_SIZE,
@@ -393,13 +399,40 @@ export function validateFileUpload(
     }
   }
   
-  // TODO: Implement virus scanning
+  // Implement comprehensive file scanning
   if (scanForVirus) {
-    // In production, integrate with antivirus service
-    // const scanResult = await antivirusService.scan(file.buffer);
-    // if (scanResult.infected) {
-    //   return { valid: false, error: "Virus detected" };
-    // }
+    try {
+      const { FileUploadScanner } = require('../../../utils/security/file-upload-scanner.js');
+      const scanner = new FileUploadScanner({
+        maxFileSize: maxSize,
+        allowedMimeTypes: allowedTypes,
+        scanForVirus: true,
+        deepScan: true
+      });
+      
+      // Create temporary file for scanning if buffer provided
+      if (file.buffer) {
+        const tempPath = path.join('/tmp', `upload_${Date.now()}_${file.originalname}`);
+        require('fs').writeFileSync(tempPath, file.buffer);
+        
+        const scanResult = await scanner.scanFile(tempPath, file.originalname);
+        
+        // Clean up temp file
+        require('fs').unlinkSync(tempPath);
+        
+        if (!scanResult.safe) {
+          return { 
+            valid: false, 
+            error: `Security threats detected: ${scanResult.threats.join(', ')}`
+          };
+        }
+      }
+    } catch (error) {
+      logger.warn("File scanning failed", "VALIDATION", { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+      // Don't block if scanner fails, but log the issue
+    }
   }
   
   return { valid: true };
@@ -475,7 +508,7 @@ export const enhancedSchemas = {
     .transform(val => {
       // Never log credit card numbers
       // Return masked version for display
-      return val.substring(0, 4) + "****" + val.substring(val.length - 4);
+      return val.substring(0, 4) + "****" + val.substring((val?.length || 0) - 4);
     }),
   
   // Price validation
@@ -521,7 +554,7 @@ export function validateInput(schema: z.ZodSchema) {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {
+  ) => {
     try {
       // Validate and sanitize input
       const validated = await schema.parseAsync(req.body);
@@ -541,8 +574,8 @@ export function validateInput(schema: z.ZodSchema) {
         res.status(400).json({
           error: "Validation failed",
           code: "VALIDATION_ERROR",
-          details: error.errors.map(e => ({
-            field: e.path.join("."),
+          details: error?.errors?.map(e => ({
+            field: e?.path?.join("."),
             message: e.message,
           })),
         });
@@ -566,7 +599,7 @@ export function validateQuery(schema: z.ZodSchema) {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {
+  ) => {
     try {
       const validated = await schema.parseAsync(req.query);
       req.query = validated as any;
@@ -598,7 +631,7 @@ export class SafeQueryBuilder {
   
   select(columns: string[]): this {
     // Validate column names
-    const safe = columns.map(col => {
+    const safe = columns?.map(col => {
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(col)) {
         throw new Error(`Invalid column name: ${col}`);
       }
@@ -677,7 +710,7 @@ export function monitorSuspiciousInput(
     }
   }
   
-  if (suspicious.length > 0) {
+  if ((suspicious?.length || 0) > 0) {
     logger.warn("Suspicious input detected", "SECURITY", {
       source,
       patterns: suspicious,

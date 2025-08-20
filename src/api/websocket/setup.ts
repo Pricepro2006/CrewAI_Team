@@ -25,7 +25,7 @@ export function setupAuthenticatedWebSocketServer(
   // Handle new connections
   wss.on("connection", async (ws: AuthenticatedWebSocket, req: any) => {
     logger.info("New WebSocket connection", "WS_SETUP", {
-      ip: req.socket.remoteAddress,
+      ip: req?.socket?.remoteAddress,
       headers: req.headers,
     });
 
@@ -45,13 +45,13 @@ export function setupAuthenticatedWebSocketServer(
 
       // Subscribe to default channels based on permissions
       const defaultSubscriptions = getDefaultSubscriptions(ws);
-      if (defaultSubscriptions.length > 0) {
+      if (defaultSubscriptions?.length || 0 > 0) {
         wsService.subscribe(ws.clientId, defaultSubscriptions);
       }
     }
 
     // Handle incoming messages
-    ws.on("message", async (data) => {
+    ws.on("message", async (data: any) => {
       try {
         const message = JSON.parse(data.toString());
 
@@ -72,7 +72,7 @@ export function setupAuthenticatedWebSocketServer(
             message.channels || [],
             ws,
           );
-          if (allowed.length > 0) {
+          if (allowed?.length || 0 > 0) {
             wsService.subscribe(ws.clientId, allowed);
             ws.send(
               JSON.stringify({
@@ -118,7 +118,7 @@ export function setupAuthenticatedWebSocketServer(
   });
 
   // Handle server errors
-  wss.on("error", (error) => {
+  wss.on("error", (error: any) => {
     logger.error(`WebSocket server error: ${error}`, "WS_SETUP");
   });
 
@@ -158,19 +158,19 @@ function getDefaultSubscriptions(ws: AuthenticatedWebSocket): string[] {
   }
 
   // Read permission gets email updates
-  if (ws.permissions.includes("read")) {
+  if (ws?.permissions?.includes("read")) {
     subscriptions.push("email.analyzed");
     subscriptions.push("email.state_changed");
     subscriptions.push("email.sla_alert");
   }
 
   // Write permission gets additional updates
-  if (ws.permissions.includes("write")) {
+  if (ws?.permissions?.includes("write")) {
     subscriptions.push("email.batch_state_changed");
   }
 
   // Admin permission gets all updates
-  if (ws.permissions.includes("admin")) {
+  if (ws?.permissions?.includes("admin")) {
     subscriptions.push("*"); // Subscribe to everything
   }
 
@@ -187,7 +187,7 @@ function filterAllowedSubscriptions(
   if (!ws.permissions) return [];
 
   // Admins can subscribe to anything
-  if (ws.permissions.includes("admin")) {
+  if (ws?.permissions?.includes("admin")) {
     return requested;
   }
 
@@ -195,23 +195,23 @@ function filterAllowedSubscriptions(
 
   for (const channel of requested) {
     // Check channel-specific permissions
-    if (channel.startsWith("email.") && ws.permissions.includes("read")) {
+    if (channel.startsWith("email.") && ws?.permissions?.includes("read")) {
       allowed.push(channel);
     } else if (channel === "system.health" && ws.isAuthenticated) {
       allowed.push(channel);
     } else if (
       channel.startsWith("agent.") &&
-      ws.permissions.includes("write")
+      ws?.permissions?.includes("write")
     ) {
       allowed.push(channel);
     } else if (
       channel.startsWith("task.") &&
-      ws.permissions.includes("write")
+      ws?.permissions?.includes("write")
     ) {
       allowed.push(channel);
     } else if (
       channel.startsWith("grocery-nlp.") &&
-      ws.permissions.includes("read")
+      ws?.permissions?.includes("read")
     ) {
       allowed.push(channel);
     }
@@ -259,18 +259,18 @@ export function createAuthenticatedWebSocketServer(
     // Connection verification
     verifyClient: (info: any) => {
       // Could add IP filtering, origin checks, etc.
-      const origin = info.origin || info.req.headers.origin;
+      const origin = info.origin || info?.req?.headers.origin;
 
       // In production, check against allowed origins
       if (process.env.NODE_ENV === "production") {
         const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",");
-        if (allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
+        if (allowedOrigins?.length || 0 > 0 && !allowedOrigins.includes(origin)) {
           logger.warn(
             "WebSocket connection rejected - invalid origin",
             "WS_SETUP",
             {
               origin,
-              ip: info.req.socket.remoteAddress,
+              ip: info?.req?.socket.remoteAddress,
             },
           );
           return false;

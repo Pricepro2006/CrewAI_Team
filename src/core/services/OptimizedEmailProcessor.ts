@@ -7,9 +7,9 @@
 import { EventEmitter } from "events";
 import PQueue from "p-queue";
 import { logger } from "../../utils/logger.js";
-import { OllamaOptimizer } from "./OllamaOptimizer.js";
 import { EmailAnalysisCache } from "../cache/EmailAnalysisCache.js";
 import { performance } from "perf_hooks";
+import { LlamaCppHttpProvider, type LlamaCppRequestContext } from "../llm/LlamaCppHttpProvider.js";
 
 interface EmailInput {
   id: string;
@@ -61,18 +61,25 @@ interface ProcessingMetrics {
 }
 
 export class OptimizedEmailProcessor extends EventEmitter {
-  private optimizer: OllamaOptimizer;
+  private llamaProvider: LlamaCppHttpProvider;
   private cache: EmailAnalysisCache;
   private processingQueue: PQueue;
   private options: ProcessingOptions;
   private metrics: ProcessingMetrics;
   private latencyHistory: number[] = [];
+  private isProviderInitialized = false;
+  private requestContext?: LlamaCppRequestContext;
 
-  constructor(optimizer?: OllamaOptimizer, options?: Partial<ProcessingOptions>) {
+  constructor(options?: Partial<ProcessingOptions> & { context?: LlamaCppRequestContext }) {
     super();
     
-    this.optimizer = optimizer || new OllamaOptimizer();
+    this.llamaProvider = new LlamaCppHttpProvider('http://localhost:8081');
     this.cache = new EmailAnalysisCache({ maxSize: 5000, ttl: 7200000 }); // 2 hour TTL
+    
+    // Extract context for request identification
+    this.requestContext = options?.context;
+    const cleanOptions = { ...options };
+    delete cleanOptions.context;
     
     // Default options optimized for throughput
     this.options = {
@@ -88,7 +95,7 @@ export class OptimizedEmailProcessor extends EventEmitter {
       phase3Timeout: 10000, // 10 seconds
       minConfidence: 0.6,
       maxRetries: 1,
-      ...options
+      ...cleanOptions
     };
 
     // Initialize metrics
@@ -116,10 +123,11 @@ export class OptimizedEmailProcessor extends EventEmitter {
    * Create processing queue with mode-specific settings
    */
   private createProcessingQueue(): PQueue {
+    const concurrency = this.options?.concurrency ?? 20;
     const queueConfig = {
-      concurrency: this.options.concurrency,
+      concurrency,
       interval: 50, // Process every 50ms
-      intervalCap: Math.floor(this.options.concurrency * 0.8), // 80% of concurrency
+      intervalCap: Math.floor(concurrency * 0.8), // 80% of concurrency
       timeout: 30000, // 30 second timeout per email
       throwOnTimeout: false
     };
@@ -131,7 +139,8 @@ export class OptimizedEmailProcessor extends EventEmitter {
    * Apply mode-specific optimizations
    */
   private applyModeOptimizations(): void {
-    switch (this.options.mode) {
+    const mode = this.options?.mode ?? "balanced";
+    switch (mode) {
       case "speed":
         // Maximum speed - sacrifice some quality
         this.options.useSmallModels = true;
@@ -140,8 +149,7 @@ export class OptimizedEmailProcessor extends EventEmitter {
         this.options.minConfidence = 0.5;
         this.options.maxRetries = 0;
         
-        // Configure optimizer for speed
-        this.optimizer.optimizeForWorkload("batch");
+        // Speed mode configuration applied
         logger.info("Configured for SPEED mode", "OPTIMIZED_PROCESSOR");
         break;
         
@@ -154,15 +162,13 @@ export class OptimizedEmailProcessor extends EventEmitter {
         this.options.minConfidence = 0.8;
         this.options.maxRetries = 2;
         
-        // Configure optimizer for quality
-        this.optimizer.optimizeForWorkload("realtime");
+        // Quality mode configuration applied
         logger.info("Configured for QUALITY mode", "OPTIMIZED_PROCESSOR");
         break;
         
       case "balanced":
       default:
-        // Balanced approach
-        this.optimizer.optimizeForWorkload("mixed");
+        // Balanced mode configuration applied
         logger.info("Configured for BALANCED mode", "OPTIMIZED_PROCESSOR");
         break;
     }
@@ -173,53 +179,61 @@ export class OptimizedEmailProcessor extends EventEmitter {
    */
   async processEmails(emails: EmailInput[]): Promise<void> {
     const startTime = performance.now();
-    this.metrics.totalEmails = emails.length;
+    const emailCount = emails?.length ?? 0;
     
-    logger.info(`Starting optimized processing of ${emails.length} emails`, "OPTIMIZED_PROCESSOR", {
-      mode: this.options.mode,
-      concurrency: this.options.concurrency,
-      batchSize: this.options.batchSize
+    this.metrics.totalEmails = emailCount;
+    
+    logger.info(`Starting optimized processing of ${emailCount} emails`, "OPTIMIZED_PROCESSOR", {
+      mode: this.options?.mode,
+      concurrency: this.options?.concurrency,
+      batchSize: this.options?.batchSize
     });
 
     // Emit start event
-    this.emit("processing:start", { total: emails.length });
+    this.emit("processing:start", { total: emailCount });
 
     // Process in batches for better throughput
-    const batches = this.createBatches(emails, this.options.batchSize);
+    const batchSize = this.options?.batchSize ?? 10;
+    const batches = this.createBatches(emails, batchSize);
+    const batchCount = batches?.length ?? 0;
     
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
+    for (let i = 0; i < batchCount; i++) {
+      const batch = batches?.[i];
+      if (!batch) continue;
+      
       const batchPromises = batch.map(email => 
-        this.processingQueue.add(() => this.processEmail(email))
-      );
+        this.processingQueue?.add(() => this.processEmail(email))
+      ).filter(Boolean);
 
       // Wait for batch to complete
       await Promise.allSettled(batchPromises);
 
       // Emit progress
-      const processed = Math.min((i + 1) * this.options.batchSize, emails.length);
+      const processed = Math.min((i + 1) * batchSize, emailCount);
       this.emit("processing:progress", {
         processed,
-        total: emails.length,
-        percentage: (processed / emails.length) * 100
+        total: emailCount,
+        percentage: emailCount > 0 ? (processed / emailCount) * 100 : 0
       });
 
       // Brief pause between batches to prevent overload
-      if (i < batches.length - 1) {
+      if (i < batchCount - 1) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
     // Calculate final metrics
     const totalTime = performance.now() - startTime;
-    this.metrics.throughput = (this.metrics.processedEmails / totalTime) * 1000; // per second
+    const processedEmails = this.metrics?.processedEmails ?? 0;
+    
+    this.metrics.throughput = totalTime > 0 ? (processedEmails / totalTime) * 1000 : 0;
 
     logger.info("Processing complete", "OPTIMIZED_PROCESSOR", {
-      totalEmails: this.metrics.totalEmails,
-      successful: this.metrics.successfulEmails,
-      failed: this.metrics.failedEmails,
-      cacheHits: this.metrics.cacheHits,
-      throughput: `${this.metrics.throughput.toFixed(2)} emails/second`,
+      totalEmails: this.metrics?.totalEmails,
+      successful: this.metrics?.successfulEmails,
+      failed: this.metrics?.failedEmails,
+      cacheHits: this.metrics?.cacheHits,
+      throughput: `${this.metrics?.throughput?.toFixed(2) ?? '0.00'} emails/second`,
       totalTime: `${(totalTime / 1000).toFixed(2)} seconds`
     });
 
@@ -236,12 +250,12 @@ export class OptimizedEmailProcessor extends EventEmitter {
 
     try {
       // Check cache first
-      if (this.options.enableCache) {
-        const cached = this.cache.get(email.id);
+      if (this?.options?.enableCache) {
+        const cached = this?.cache?.get(email.id);
         if (cached) {
-          this.metrics.cacheHits++;
-          this.metrics.successfulEmails++;
-          this.metrics.processedEmails++;
+          if (this.metrics.cacheHits) { this.metrics.cacheHits++ };
+          if (this.metrics.successfulEmails) { this.metrics.successfulEmails++ };
+          if (this.metrics.processedEmails) { this.metrics.processedEmails++ };
           this.recordLatency(performance.now() - startTime);
           
           this.emit("email:complete", {
@@ -254,9 +268,9 @@ export class OptimizedEmailProcessor extends EventEmitter {
       }
 
       // Skip processing if cache-only mode
-      if (this.options.cacheOnly) {
-        this.metrics.failedEmails++;
-        this.metrics.processedEmails++;
+      if (this?.options?.cacheOnly) {
+        if (this.metrics.failedEmails) { this.metrics.failedEmails++ };
+        if (this.metrics.processedEmails) { this.metrics.processedEmails++ };
         return;
       }
 
@@ -270,7 +284,7 @@ export class OptimizedEmailProcessor extends EventEmitter {
       // Determine if we should continue to Phase 2
       if (this.shouldSkipPhase2(phase1Results, email)) {
         // Use Phase 1 results only
-        this.cache.set(email.id, phase1Results);
+        this.cache?.set(email.id, phase1Results);
         this.metrics.successfulEmails++;
         this.metrics.processedEmails++;
         this.recordLatency(performance.now() - startTime);
@@ -291,8 +305,9 @@ export class OptimizedEmailProcessor extends EventEmitter {
       this.updatePhaseMetrics("phase2", phase2Time);
 
       // Check if we should skip Phase 3
-      if (this.options.skipPhase3 || this.shouldSkipPhase3(phase2Results)) {
-        this.cache.set(email.id, phase2Results);
+      const skipPhase3 = this.options?.skipPhase3 ?? false;
+      if (skipPhase3 || this.shouldSkipPhase3(phase2Results)) {
+        this.cache?.set(email.id, phase2Results);
         this.metrics.successfulEmails++;
         this.metrics.processedEmails++;
         this.recordLatency(performance.now() - startTime);
@@ -313,7 +328,7 @@ export class OptimizedEmailProcessor extends EventEmitter {
       this.updatePhaseMetrics("phase3", phase3Time);
 
       // Cache and complete
-      this.cache.set(email.id, phase3Results);
+      this.cache?.set(email.id, phase3Results);
       this.metrics.successfulEmails++;
       this.metrics.processedEmails++;
       this.recordLatency(performance.now() - startTime);
@@ -361,19 +376,22 @@ export class OptimizedEmailProcessor extends EventEmitter {
    * Phase 2: Optimized LLM enhancement
    */
   private async runPhase2Optimized(email: EmailInput, phase1Results: any): Promise<any> {
-    const model = this.options.useSmallModels ? "qwen3:0.6b" : "llama3.2:3b";
+    const useSmallModels = this.options?.useSmallModels ?? false;
+    const model = useSmallModels ? "qwen3:0.6b" : "llama3.2:3b";
     
     const prompt = this.buildOptimizedPrompt(email, phase1Results);
     
     try {
+      const phase2Timeout = this.options?.phase2Timeout ?? 5000;
       const response = await Promise.race([
-        this.optimizer.generate(prompt, model, {
+        this.llamaProvider.generate(prompt, {
           temperature: 0.1,
-          num_predict: 800, // Reduced for speed
-          format: "json"
+          maxTokens: 800, // Reduced for speed
+          format: "json",
+          context: this.requestContext // Pass request context for proper client identification
         }),
         new Promise<string>((_, reject) => 
-          setTimeout(() => reject(new Error("Phase 2 timeout")), this.options.phase2Timeout)
+          setTimeout(() => reject(new Error("Phase 2 timeout")), phase2Timeout)
         )
       ]);
 
@@ -407,14 +425,16 @@ export class OptimizedEmailProcessor extends EventEmitter {
     const prompt = this.buildStrategicPrompt(email, phase1Results, phase2Results);
     
     try {
+      const phase3Timeout = this.options?.phase3Timeout ?? 10000;
       const response = await Promise.race([
-        this.optimizer.generate(prompt, model, {
+        this.llamaProvider.generate(prompt, {
           temperature: 0.2,
-          num_predict: 600, // Reduced for speed
-          format: "json"
+          maxTokens: 600, // Reduced for speed
+          format: "json",
+          context: this.requestContext // Pass request context for proper client identification
         }),
         new Promise<string>((_, reject) => 
-          setTimeout(() => reject(new Error("Phase 3 timeout")), this.options.phase3Timeout)
+          setTimeout(() => reject(new Error("Phase 3 timeout")), phase3Timeout)
         )
       ]);
 
@@ -439,7 +459,8 @@ export class OptimizedEmailProcessor extends EventEmitter {
    */
   private createBatches<T>(items: T[], batchSize: number): T[][] {
     const batches: T[][] = [];
-    for (let i = 0; i < items.length; i += batchSize) {
+    const itemLength = items?.length ?? 0;
+    for (let i = 0; i < itemLength; i += batchSize) {
       batches.push(items.slice(i, i + batchSize));
     }
     return batches;
@@ -449,12 +470,13 @@ export class OptimizedEmailProcessor extends EventEmitter {
     // Skip Phase 2 for very simple emails
     return phase1Results.urgency_score < 2 && 
            phase1Results.priority === "low" &&
-           Object.values(phase1Results.entities).every((arr: any) => arr.length === 0);
+           Object.values(phase1Results.entities).every((arr: any) => (arr?.length ?? 0) === 0);
   }
 
   private shouldSkipPhase3(phase2Results: any): boolean {
     // Skip Phase 3 for low-confidence or simple emails
-    return phase2Results.confidence < this.options.minConfidence ||
+    const minConfidence = this.options?.minConfidence ?? 0.6;
+    return phase2Results.confidence < minConfidence ||
            phase2Results.priority !== "critical";
   }
 
@@ -529,30 +551,34 @@ JSON only, maximum 100 words total.`;
   }
 
   private recordLatency(latency: number): void {
-    this.latencyHistory.push(latency);
-    if (this.latencyHistory.length > 1000) {
-      this.latencyHistory = this.latencyHistory.slice(-1000);
+    this.latencyHistory?.push(latency);
+    const historyLength = this.latencyHistory?.length ?? 0;
+    if (historyLength > 1000) {
+      this.latencyHistory = this.latencyHistory?.slice(-1000) ?? [];
     }
-    this.metrics.averageLatency = 
-      this.latencyHistory.reduce((a, b) => a + b, 0) / this.latencyHistory.length;
+    
+    if (historyLength > 0) {
+      const sum = this.latencyHistory?.reduce((a: number, b: number) => a + b, 0) ?? 0;
+      this.metrics.averageLatency = sum / historyLength;
+    }
   }
 
   private updatePhaseMetrics(phase: string, time: number): void {
+    const processedEmails = this.metrics?.processedEmails ?? 0;
+    if (processedEmails === 0) return;
+    
     switch (phase) {
       case "phase1":
-        this.metrics.phase1AvgTime = 
-          (this.metrics.phase1AvgTime * (this.metrics.processedEmails - 1) + time) / 
-          this.metrics.processedEmails;
+        const phase1Avg = this.metrics?.phase1AvgTime ?? 0;
+        this.metrics.phase1AvgTime = (phase1Avg * (processedEmails - 1) + time) / processedEmails;
         break;
       case "phase2":
-        this.metrics.phase2AvgTime = 
-          (this.metrics.phase2AvgTime * (this.metrics.processedEmails - 1) + time) / 
-          this.metrics.processedEmails;
+        const phase2Avg = this.metrics?.phase2AvgTime ?? 0;
+        this.metrics.phase2AvgTime = (phase2Avg * (processedEmails - 1) + time) / processedEmails;
         break;
       case "phase3":
-        this.metrics.phase3AvgTime = 
-          (this.metrics.phase3AvgTime * (this.metrics.processedEmails - 1) + time) / 
-          this.metrics.processedEmails;
+        const phase3Avg = this.metrics?.phase3AvgTime ?? 0;
+        this.metrics.phase3AvgTime = (phase3Avg * (processedEmails - 1) + time) / processedEmails;
         break;
     }
   }
@@ -563,7 +589,7 @@ JSON only, maximum 100 words total.`;
   getMetrics(): ProcessingMetrics & { ollamaMetrics: any } {
     return {
       ...this.metrics,
-      ollamaMetrics: this.optimizer.getMetrics()
+      providerInfo: this.llamaProvider?.getModelInfo ? this.llamaProvider.getModelInfo() : null
     };
   }
 
@@ -581,11 +607,13 @@ JSON only, maximum 100 words total.`;
    */
   async shutdown(): Promise<void> {
     logger.info("Shutting down optimized processor", "OPTIMIZED_PROCESSOR");
-    await this.processingQueue.onEmpty();
-    await this.optimizer.shutdown();
+    await this.processingQueue?.onEmpty();
+    if (this.llamaProvider?.cleanup) {
+      await this.llamaProvider.cleanup();
+    }
     this.removeAllListeners();
   }
 }
 
-// Export singleton
+// Export singleton - no longer takes optimizer parameter
 export const optimizedProcessor = new OptimizedEmailProcessor();

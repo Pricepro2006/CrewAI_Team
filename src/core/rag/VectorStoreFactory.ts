@@ -36,25 +36,26 @@ export class VectorStoreFactory {
         );
 
       default:
-        logger.warn(`Unknown vector store type: ${config.type}. Using resilient ChromaDB with advanced fallback.`, "VECTOR_STORE_FACTORY");
-        return new ResilientVectorStore(config);
+        logger.warn(`Unknown vector store type: ${config.type}. Using adaptive ChromaDB with fallback.`, "VECTOR_STORE_FACTORY");
+        // For unknown types, use adaptive store which provides better fallback for email processing
+        return new AdaptiveVectorStore(config);
     }
   }
 
   static async createMultiple(
     configs: VectorStoreConfig[],
   ): Promise<IVectorStore[]> {
-    const stores = configs.map((config) => this.create(config));
+    const stores = configs?.map((config: any) => this.create(config));
 
     // Initialize all stores in parallel with better error handling
     const initResults = await Promise.allSettled(
-      stores.map(async (store) => {
+      stores?.map(async (store: any) => {
         try {
           await store.initialize();
           return store;
         } catch (error) {
           logger.error(
-            `Failed to initialize ${store.constructor.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            `Failed to initialize ${store?.constructor?.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
             "VECTOR_STORE_FACTORY"
           );
           return null;
@@ -64,11 +65,11 @@ export class VectorStoreFactory {
 
     // Filter out failed stores and log results
     const successfulStores = initResults
-      .map((result) => result.status === "fulfilled" ? result.value : null)
-      .filter((store): store is IVectorStore => store !== null);
+      .map((result: any) => result.status === "fulfilled" ? result.value : null)
+      .filter((store: any): store is IVectorStore => store !== null);
 
     logger.info(
-      `Initialized ${successfulStores.length}/${stores.length} vector stores successfully`,
+      `Initialized ${successfulStores?.length || 0}/${stores?.length || 0} vector stores successfully`,
       "VECTOR_STORE_FACTORY"
     );
 

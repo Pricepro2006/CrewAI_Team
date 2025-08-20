@@ -6,52 +6,59 @@
  */
 
 import { circuitBreakerService } from './CircuitBreakerService.js';
-import { OllamaProvider, OllamaGenerateOptions } from '../llm/OllamaProvider.js';
+import { LlamaCppHttpProvider, LlamaCppGenerateOptions } from '../llm/LlamaCppHttpProvider.js';
 import { cacheManager } from '../cache/RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import axios from 'axios';
 
 /**
- * Enhanced Ollama Provider with Circuit Breaker
+ * Enhanced Llama.cpp Provider with Circuit Breaker
  */
-export class CircuitBreakerOllamaProvider extends OllamaProvider {
-  async generate(prompt: string, options?: OllamaGenerateOptions): Promise<string> {
-    return circuitBreakerService.executeOllamaRequest(
+export class CircuitBreakerLlamaCppProvider extends LlamaCppHttpProvider {
+  override async generate(prompt: string, options?: LlamaCppGenerateOptions): Promise<any> {
+    return circuitBreakerService.executeLlamaRequest(
       'generate',
       () => super.generate(prompt, options),
       async () => {
-        // Fallback: return a simple response when Ollama is down
-        logger.warn('Ollama circuit breaker activated, using fallback', 'OLLAMA_CIRCUIT_BREAKER');
-        return "I apologize, but I'm experiencing technical difficulties with the AI model. Please try again in a moment.";
-      }
-    );
-  }
-
-  async generateWithLogProbs(
-    prompt: string, 
-    options?: OllamaGenerateOptions
-  ): Promise<any> {
-    return circuitBreakerService.executeOllamaRequest(
-      'generateWithLogProbs',
-      () => super.generateWithLogProbs(prompt, options),
-      async () => {
-        // Fallback: return basic response structure
+        // Fallback: return a simple response when llama-server is down
+        logger.warn('Llama.cpp circuit breaker activated, using fallback', 'LLAMA_CIRCUIT_BREAKER');
         return {
-          text: "I apologize, but I'm experiencing technical difficulties with confidence scoring. Please try again in a moment.",
-          tokens: undefined,
-          logProbs: undefined,
+          text: "I apologize, but I'm experiencing technical difficulties with the AI model. Please try again in a moment.",
           metadata: {
             model: 'fallback',
-            duration: 0,
-            tokenCount: 0,
-          },
+            tokensPerSecond: 0,
+            totalTokens: 0,
+            promptTokens: 0,
+            completionTokens: 0,
+          }
         };
       }
     );
   }
 
-  async embed(text: string): Promise<number[]> {
-    return circuitBreakerService.executeOllamaRequest(
+  override async generateStreaming(
+    prompt: string, 
+    options?: LlamaCppGenerateOptions
+  ): AsyncGenerator<string, void, unknown> {
+    const fallbackGenerator = async function* () {
+      yield "I apologize, but I'm experiencing technical difficulties with streaming. Please try again in a moment.";
+    };
+
+    try {
+      const generator = await circuitBreakerService.executeLlamaRequest(
+        'generateStreaming',
+        () => super.generateStreaming(prompt, options),
+        async () => fallbackGenerator()
+      );
+      return generator;
+    } catch (error) {
+      logger.error('Circuit breaker streaming error', 'LLAMA_CIRCUIT_BREAKER', { error });
+      return fallbackGenerator();
+    }
+  }
+
+  override async embed(text: string): Promise<number[]> {
+    return circuitBreakerService.executeLlamaRequest(
       'embed',
       () => super.embed(text),
       async () => {
@@ -62,8 +69,8 @@ export class CircuitBreakerOllamaProvider extends OllamaProvider {
     );
   }
 
-  async listModels(): Promise<any[]> {
-    return circuitBreakerService.executeOllamaRequest(
+  override async listModels(): Promise<any[]> {
+    return circuitBreakerService.executeLlamaRequest(
       'listModels',
       () => super.listModels(),
       async () => {
@@ -140,7 +147,9 @@ export class CircuitBreakerCacheManager {
     // Prevent memory leaks
     if (this.inMemoryCache.size >= this.MAX_MEMORY_CACHE_SIZE) {
       const oldestKey = this.inMemoryCache.keys().next().value;
-      this.inMemoryCache.delete(oldestKey);
+      if (oldestKey) {
+        this.inMemoryCache.delete(oldestKey);
+      }
     }
     
     this.inMemoryCache.set(fullKey, {
@@ -164,7 +173,7 @@ export class CircuitBreakerDatabaseService {
   async query<T>(sql: string, params: any[] = []): Promise<T[]> {
     return circuitBreakerService.executeDatabaseQuery(
       'query',
-      () => this.db.prepare(sql).all(params) as T[],
+      async () => this.db.prepare(sql).all(params) as T[],
       [] as T[] // Empty array fallback
     );
   }
@@ -172,7 +181,7 @@ export class CircuitBreakerDatabaseService {
   async get<T>(sql: string, params: any[] = []): Promise<T | undefined> {
     return circuitBreakerService.executeDatabaseQuery(
       'get',
-      () => this.db.prepare(sql).get(params) as T | undefined,
+      async () => this.db.prepare(sql).get(params) as T | undefined,
       undefined
     );
   }
@@ -366,16 +375,17 @@ export class CircuitBreakerIntegrationExamples {
   async processGroceryList(userInput: string, userId: string): Promise<any> {
     try {
       // Step 1: Use LLM to parse grocery list (with circuit breaker)
-      const parsedList = await this.llamaCppProvider.generate(
+      const parsedList = await this.ollamaProvider.generate(
         `Parse this grocery list and extract items with quantities: ${userInput}`,
         { format: 'json', temperature: 0.1 }
       );
 
       // Step 2: Cache the parsed result (with circuit breaker)
-      await this.cacheService.set(`grocery_list_${userId}`, parsedList, { ttl: 3600 });
+      const parsedResult = typeof parsedList === 'string' ? parsedList : parsedList.response;
+      await this.cacheService.set(`grocery_list_${userId}`, parsedResult, { ttl: 3600 });
 
       // Step 3: Get pricing information (with circuit breaker)
-      const products = JSON.parse(parsedList).items || [];
+      const products = JSON.parse(parsedResult).items || [];
       const pricePromises = products.map((product: any) => 
         this.walmartAPI.getProductPrice(product.id)
       );
@@ -392,7 +402,7 @@ export class CircuitBreakerIntegrationExamples {
 
       return {
         success: true,
-        parsedList: JSON.parse(parsedList),
+        parsedList: JSON.parse(parsedResult),
         prices,
         inventory,
         timestamp: new Date().toISOString(),
@@ -471,9 +481,9 @@ export class CircuitBreakerIntegrationExamples {
     }
 
     logger.info('Dead letter queue processing completed', 'DLQ_PROCESSOR', {
-      totalItems: deadLetters.length,
+      totalItems: deadLetters?.length || 0,
       processedCount,
-      remainingCount: deadLetters.length - processedCount,
+      remainingCount: (deadLetters.length || 0) - processedCount,
     });
 
     return processedCount;

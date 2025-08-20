@@ -148,22 +148,22 @@ export class CacheMonitor extends EventEmitter {
       const recommendations: string[] = [];
 
       // Check hit rate
-      if (stats.hitRate < this.thresholds.hitRate) {
-        issues.push(`Low cache hit rate: ${stats.hitRate.toFixed(1)}%`);
+      if (stats.hitRate < this?.thresholds?.hitRate) {
+        issues.push(`Low cache hit rate: ${stats?.hitRate?.toFixed(1)}%`);
         recommendations.push('Consider cache warming or increasing TTL for frequently accessed data');
       }
 
       // Check memory usage (if available)
       if (stats.memoryUsage > 0) {
         const memoryPercentage = (stats.memoryUsage / (1024 * 1024 * 1024)) * 100; // Convert to GB percentage
-        if (memoryPercentage > this.thresholds.memoryUsage) {
+        if (memoryPercentage > this?.thresholds?.memoryUsage) {
           issues.push(`High memory usage: ${memoryPercentage.toFixed(1)}%`);
           recommendations.push('Consider implementing cache eviction policies or increasing memory');
         }
       }
 
       // Check response time
-      if (responseTime > this.thresholds.responseTime) {
+      if (responseTime > this?.thresholds?.responseTime) {
         issues.push(`Slow cache response time: ${responseTime}ms`);
         recommendations.push('Check Redis server performance and network connectivity');
       }
@@ -174,7 +174,7 @@ export class CacheMonitor extends EventEmitter {
       }
 
       const healthStatus: CacheHealthStatus = {
-        healthy: issues.length === 0,
+        healthy: (issues?.length || 0) === 0,
         issues,
         recommendations,
         stats: {
@@ -187,9 +187,9 @@ export class CacheMonitor extends EventEmitter {
       };
 
       // Store in history
-      this.healthHistory.push(healthStatus);
-      if (this.healthHistory.length > this.maxHistorySize) {
-        this.healthHistory.shift();
+      this?.healthHistory?.push(healthStatus);
+      if (this?.healthHistory?.length > this.maxHistorySize) {
+        this?.healthHistory?.shift();
       }
 
       // Emit health check event
@@ -197,8 +197,8 @@ export class CacheMonitor extends EventEmitter {
 
       logger.debug('Cache health check completed', 'CACHE_MONITOR', {
         healthy: healthStatus.healthy,
-        issueCount: issues.length,
-        recommendationCount: recommendations.length,
+        issueCount: issues?.length || 0,
+        recommendationCount: recommendations?.length || 0,
         responseTime,
       });
 
@@ -247,11 +247,11 @@ export class CacheMonitor extends EventEmitter {
 
       // Report service-specific metrics
       if (emailStats) {
-        metrics.gauge('cache_monitor.email.hit_rate', emailStats.hitRate || 0);
+        metrics.gauge('cache_monitor?.email?.hit_rate', emailStats.hitRate || 0);
       }
 
       if (llmStats) {
-        metrics.gauge('cache_monitor.llm.hit_rate', llmStats.hitRate || 0);
+        metrics.gauge('cache_monitor?.llm?.hit_rate', llmStats.hitRate || 0);
       }
 
       logger.debug('Cache metrics collected', 'CACHE_MONITOR', {
@@ -274,12 +274,12 @@ export class CacheMonitor extends EventEmitter {
       const stats = await cacheManager.getStats();
 
       // Check hit rate threshold
-      if (stats.hitRate < this.thresholds.hitRate) {
+      if (stats.hitRate < this?.thresholds?.hitRate) {
         await this.createAlert({
           type: 'performance',
           severity: 'medium',
-          message: `Cache hit rate (${stats.hitRate.toFixed(1)}%) is below threshold (${this.thresholds.hitRate}%)`,
-          metadata: { hitRate: stats.hitRate, threshold: this.thresholds.hitRate },
+          message: `Cache hit rate (${stats?.hitRate?.toFixed(1)}%) is below threshold (${this?.thresholds?.hitRate}%)`,
+          metadata: { hitRate: stats.hitRate, threshold: this?.thresholds?.hitRate },
         });
       }
 
@@ -297,17 +297,17 @@ export class CacheMonitor extends EventEmitter {
       }
 
       // Check response time
-      if (stats.avgResponseTime > this.thresholds.responseTime) {
+      if (stats.avgResponseTime > this?.thresholds?.responseTime) {
         await this.createAlert({
           type: 'performance',
           severity: 'medium',
-          message: `Cache response time (${stats.avgResponseTime.toFixed(1)}ms) exceeds threshold (${this.thresholds.responseTime}ms)`,
-          metadata: { responseTime: stats.avgResponseTime, threshold: this.thresholds.responseTime },
+          message: `Cache response time (${stats?.avgResponseTime?.toFixed(1)}ms) exceeds threshold (${this?.thresholds?.responseTime}ms)`,
+          metadata: { responseTime: stats.avgResponseTime, threshold: this?.thresholds?.responseTime },
         });
       }
 
       logger.debug('Threshold check completed', 'CACHE_MONITOR', {
-        activeAlerts: this.activeAlerts.size,
+        activeAlerts: this?.activeAlerts?.size,
       });
     } catch (error) {
       logger.error('Failed to check thresholds', 'CACHE_MONITOR', {
@@ -342,7 +342,7 @@ export class CacheMonitor extends EventEmitter {
     };
 
     // Check if similar alert already exists
-    const existingAlert = Array.from(this.activeAlerts.values()).find(
+    const existingAlert = Array.from(this?.activeAlerts?.values()).find(
       a => a.type === alert.type && a.message === alert.message && !a.resolved
     );
 
@@ -353,7 +353,7 @@ export class CacheMonitor extends EventEmitter {
       return;
     }
 
-    this.activeAlerts.set(alert.id, alert);
+    this?.activeAlerts?.set(alert.id, alert);
 
     logger.warn('Cache alert created', 'CACHE_MONITOR', {
       alertId: alert.id,
@@ -362,7 +362,7 @@ export class CacheMonitor extends EventEmitter {
       message: alert.message,
     });
 
-    metrics.increment('cache_monitor.alerts.created');
+    metrics.increment('cache_monitor?.alerts?.created');
     this.emit('alert:created', alert);
   }
 
@@ -370,13 +370,13 @@ export class CacheMonitor extends EventEmitter {
    * Resolve an alert
    */
   async resolveAlert(alertId: string): Promise<boolean> {
-    const alert = this.activeAlerts.get(alertId);
+    const alert = this?.activeAlerts?.get(alertId);
     if (!alert) {
       return false;
     }
 
     alert.resolved = true;
-    this.activeAlerts.delete(alertId);
+    this?.activeAlerts?.delete(alertId);
 
     logger.info('Cache alert resolved', 'CACHE_MONITOR', {
       alertId,
@@ -384,7 +384,7 @@ export class CacheMonitor extends EventEmitter {
       message: alert.message,
     });
 
-    metrics.increment('cache_monitor.alerts.resolved');
+    metrics.increment('cache_monitor?.alerts?.resolved');
     this.emit('alert:resolved', alert);
 
     return true;
@@ -399,7 +399,7 @@ export class CacheMonitor extends EventEmitter {
       status: 'pending',
     };
 
-    this.warmingJobs.set(job.id, warmingJob);
+    this?.warmingJobs?.set(job.id, warmingJob);
 
     logger.info('Cache warming job registered', 'CACHE_MONITOR', {
       jobId: job.id,
@@ -412,12 +412,12 @@ export class CacheMonitor extends EventEmitter {
    * Execute cache warming jobs
    */
   async executeWarmingJobs(): Promise<void> {
-    const jobs = Array.from(this.warmingJobs.values())
+    const jobs = Array.from(this?.warmingJobs?.values())
       .filter(job => job.status === 'pending')
       .sort((a, b) => b.priority - a.priority);
 
     logger.info('Executing cache warming jobs', 'CACHE_MONITOR', {
-      jobCount: jobs.length,
+      jobCount: jobs?.length || 0,
     });
 
     for (const job of jobs) {
@@ -435,8 +435,8 @@ export class CacheMonitor extends EventEmitter {
           warmedCount,
         });
 
-        metrics.increment('cache_monitor.warming.completed');
-        metrics.histogram('cache_monitor.warming.items', warmedCount);
+        metrics.increment('cache_monitor?.warming?.completed');
+        metrics.histogram('cache_monitor?.warming?.items', warmedCount);
       } catch (error) {
         job.status = 'failed';
 
@@ -446,7 +446,7 @@ export class CacheMonitor extends EventEmitter {
           error: error instanceof Error ? error.message : String(error),
         });
 
-        metrics.increment('cache_monitor.warming.failed');
+        metrics.increment('cache_monitor?.warming?.failed');
       }
     }
   }
@@ -547,7 +547,7 @@ export class CacheMonitor extends EventEmitter {
    * Get current health status
    */
   getCurrentHealth(): CacheHealthStatus | null {
-    return this.healthHistory.length > 0 ? this.healthHistory[this.healthHistory.length - 1] : null;
+    return this?.healthHistory?.length > 0 ? this.healthHistory[this?.healthHistory?.length - 1] ?? null : null;
   }
 
   /**
@@ -561,7 +561,7 @@ export class CacheMonitor extends EventEmitter {
    * Get active alerts
    */
   getActiveAlerts(): CacheAlert[] {
-    return Array.from(this.activeAlerts.values()).filter(alert => !alert.resolved);
+    return Array.from(this?.activeAlerts?.values()).filter(alert => !alert.resolved);
   }
 
   /**
@@ -571,34 +571,34 @@ export class CacheMonitor extends EventEmitter {
     try {
       const currentHealth = this.getCurrentHealth();
       const activeAlerts = this.getActiveAlerts();
-      const warmingJobs = Array.from(this.warmingJobs.values());
+      const warmingJobs = Array.from(this?.warmingJobs?.values());
 
       const report = {
         timestamp: new Date(),
         health: currentHealth,
         alerts: {
-          active: activeAlerts.length,
-          byType: activeAlerts.reduce((acc, alert) => {
+          active: activeAlerts?.length || 0,
+          byType: activeAlerts.reduce((acc: any, alert: any) => {
             acc[alert.type] = (acc[alert.type] || 0) + 1;
             return acc;
           }, {} as Record<string, number>),
-          bySeverity: activeAlerts.reduce((acc, alert) => {
+          bySeverity: activeAlerts.reduce((acc: any, alert: any) => {
             acc[alert.severity] = (acc[alert.severity] || 0) + 1;
             return acc;
           }, {} as Record<string, number>),
         },
         warming: {
-          totalJobs: warmingJobs.length,
-          completedJobs: warmingJobs.filter(j => j.status === 'completed').length,
-          failedJobs: warmingJobs.filter(j => j.status === 'failed').length,
+          totalJobs: warmingJobs?.length || 0,
+          completedJobs: warmingJobs?.filter(j => j.status === 'completed').length,
+          failedJobs: warmingJobs?.filter(j => j.status === 'failed').length,
         },
         recommendations: currentHealth?.recommendations || [],
       };
 
       logger.info('Performance report generated', 'CACHE_MONITOR', {
         healthy: currentHealth?.healthy,
-        alertCount: activeAlerts.length,
-        jobCount: warmingJobs.length,
+        alertCount: activeAlerts?.length || 0,
+        jobCount: warmingJobs?.length || 0,
       });
 
       return report;
@@ -615,9 +615,13 @@ export class CacheMonitor extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.stopMonitoring();
-    this.warmingJobs.clear();
-    this.activeAlerts.clear();
-    this.healthHistory.length = 0;
+    this?.warmingJobs?.clear();
+    this?.activeAlerts?.clear();
+    if (this.healthHistory) {
+
+      this.healthHistory.length = 0;
+
+    }
 
     logger.info('Cache monitor shutdown completed', 'CACHE_MONITOR');
   }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Request, Response } from "express";
 import { TRPCError } from "@trpc/server";
 import {
@@ -11,7 +11,7 @@ import {
   ensureCSRFToken,
   shouldRotateToken,
   updateTokenMetadata,
-} from "../csrf.js";
+} from '../csrf';
 
 // Mock logger
 vi.mock("../../../../utils/logger", () => ({
@@ -26,7 +26,7 @@ vi.mock("../../../../utils/logger", () => ({
 describe("CSRF Protection", () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
-  let mockContext: unknown;
+  let mockContext: any;
 
   beforeEach(() => {
     // Reset mocks
@@ -97,11 +97,11 @@ describe("CSRF Protection", () => {
       setCSRFCookie(mockRes as Response, "test-token", true);
 
       expect(mockRes.cookie).toHaveBeenCalledWith(
-        "__Host-csrf-token",
+        "csrf-token",  // Changed from "__Host-csrf-token" to match development behavior
         "test-token",
         expect.objectContaining({
           httpOnly: true,
-          secure: false,
+          secure: false,  // Development uses false for secure flag
           sameSite: "strict",
         }),
       );

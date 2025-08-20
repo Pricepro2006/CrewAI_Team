@@ -93,7 +93,7 @@ export class BrightDataScraper {
       });
 
       const scrapeOptions = {
-        url: `https://www.walmart.com/search?q=${encodeURIComponent(options.query)}`,
+        url: `https://www?.walmart.com/search?q=${encodeURIComponent(options.query)}`,
         platform: "walmart",
         searchKeyword: options.query,
         maxProducts: options.limit || 20,
@@ -101,7 +101,7 @@ export class BrightDataScraper {
       };
 
       const results = await this.executeWithRetry(async () => {
-        return await this.brightDataClient.scrape(scrapeOptions);
+        return await this?.brightDataClient?.scrape(scrapeOptions);
       });
 
       return this.transformSearchResults(results);
@@ -121,13 +121,13 @@ export class BrightDataScraper {
       logger.info("Fetching product details", "BRIGHTDATA", { productId });
 
       const scrapeOptions = {
-        url: `https://www.walmart.com/ip/${productId}`,
+        url: `https://www?.walmart.com/ip/${productId}`,
         platform: "walmart",
         extractDetails: true,
       };
 
       const result = await this.executeWithRetry(async () => {
-        return await this.brightDataClient.scrape(scrapeOptions);
+        return await this?.brightDataClient?.scrape(scrapeOptions);
       });
 
       if (!result) return null;
@@ -148,17 +148,17 @@ export class BrightDataScraper {
   async monitorPrices(productIds: string[]): Promise<Map<string, number>> {
     try {
       logger.info("Monitoring prices", "BRIGHTDATA", {
-        count: productIds.length,
+        count: productIds?.length || 0,
       });
 
       const priceMap = new Map<string, number>();
 
       // Batch process for efficiency
       const batchSize = 10;
-      for (let i = 0; i < productIds.length; i += batchSize) {
+      for (let i = 0; i < productIds?.length || 0; i += batchSize) {
         const batch = productIds.slice(i, i + batchSize);
         const batchResults = await Promise.all(
-          batch.map((id) => this.getProductPrice(id)),
+          batch?.map((id: any) => this.getProductPrice(id)),
         );
 
         batch.forEach((id, index) => {
@@ -198,14 +198,14 @@ export class BrightDataScraper {
       });
 
       const scrapeOptions = {
-        url: `https://www.walmart.com/ip/${productId}`,
+        url: `https://www?.walmart.com/ip/${productId}`,
         platform: "walmart",
         checkAvailability: true,
         zipCode,
       };
 
       const result = await this.executeWithRetry(async () => {
-        return await this.brightDataClient.scrape(scrapeOptions);
+        return await this?.brightDataClient?.scrape(scrapeOptions);
       });
 
       return this.transformAvailabilityData(result);
@@ -229,14 +229,14 @@ export class BrightDataScraper {
       });
 
       const scrapeOptions = {
-        url: `https://www.walmart.com/browse/${categoryPath}`,
+        url: `https://www?.walmart.com/browse/${categoryPath}`,
         platform: "walmart",
         maxProducts: limit,
         extractDetails: false,
       };
 
       const results = await this.executeWithRetry(async () => {
-        return await this.brightDataClient.scrape(scrapeOptions);
+        return await this?.brightDataClient?.scrape(scrapeOptions);
       });
 
       return this.transformSearchResults(results);
@@ -266,14 +266,14 @@ export class BrightDataScraper {
       logger.info("Fetching product reviews", "BRIGHTDATA", { productId });
 
       const scrapeOptions = {
-        url: `https://www.walmart.com/reviews/product/${productId}`,
+        url: `https://www?.walmart.com/reviews/product/${productId}`,
         platform: "walmart",
         extractReviews: true,
         maxReviews: limit,
       };
 
       const result = await this.executeWithRetry(async () => {
-        return await this.brightDataClient.scrape(scrapeOptions);
+        return await this?.brightDataClient?.scrape(scrapeOptions);
       });
 
       return this.transformReviews(result);
@@ -289,7 +289,7 @@ export class BrightDataScraper {
   private async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
     let lastError: unknown;
 
-    for (let attempt = 1; attempt <= this.config.retries!; attempt++) {
+    for (let attempt = 1; attempt <= this?.config?.retries!; attempt++) {
       try {
         return await operation();
       } catch (error) {
@@ -298,9 +298,9 @@ export class BrightDataScraper {
           error,
         });
 
-        if (attempt < this.config.retries!) {
+        if (attempt < this?.config?.retries!) {
           // Exponential backoff
-          await new Promise((resolve) =>
+          await new Promise((resolve: any) =>
             setTimeout(resolve, Math.pow(2, attempt) * 1000),
           );
         }
@@ -323,8 +323,8 @@ export class BrightDataScraper {
     }
 
     if (filters.priceRange) {
-      brightDataFilters.minPrice = filters.priceRange.min;
-      brightDataFilters.maxPrice = filters.priceRange.max;
+      brightDataFilters.minPrice = filters?.priceRange?.min;
+      brightDataFilters.maxPrice = filters?.priceRange?.max;
     }
 
     if (filters.inStock !== undefined) {
@@ -346,7 +346,7 @@ export class BrightDataScraper {
    * Helper: Transform search results to WalmartProduct format
    */
   private transformSearchResults(results: any[]): WalmartProduct[] {
-    return results.map((item) => this.transformToWalmartProduct(item));
+    return results?.map((item: any) => this.transformToWalmartProduct(item));
   }
 
   /**
@@ -451,7 +451,7 @@ export class BrightDataScraper {
       if (details?.price) {
         // Extract number from ProductPrice object
         if (typeof details.price === "object" && "regular" in details.price) {
-          return details.price.regular;
+          return details?.price?.regular;
         }
         return typeof details.price === "number" ? details.price : null;
       }
@@ -512,7 +512,7 @@ export class BrightDataScraper {
    */
   private async mockScrape(options: any): Promise<any> {
     // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve: any) => setTimeout(resolve, 500));
 
     if (options.searchKeyword) {
       // Mock search results
@@ -526,12 +526,12 @@ export class BrightDataScraper {
         inStock: Math.random() > 0.2,
         rating: 3.5 + Math.random() * 1.5,
         reviewCount: Math.floor(Math.random() * 1000),
-        imageUrl: `https://via.placeholder.com/150?text=Product${i + 1}`,
+        imageUrl: `https://via?.placeholder?.com/150?text=Product${i + 1}`,
       }));
     } else if (options.extractDetails) {
       // Mock product details
       return {
-        id: options.url.split("/").pop(),
+        id: options?.url?.split("/").pop(),
         name: "Mock Product Details",
         price: 24.99,
         regularPrice: 29.99,

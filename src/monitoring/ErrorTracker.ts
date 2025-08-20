@@ -71,7 +71,7 @@ export class ErrorTracker extends EventEmitter {
     };
 
     // Store error
-    this.errors.set(errorId, errorEvent);
+    this?.errors?.set(errorId, errorEvent);
 
     // Update aggregation
     this.updateAggregation(errorEvent);
@@ -91,14 +91,14 @@ export class ErrorTracker extends EventEmitter {
 
   // Get error by ID
   getError(errorId: string): ErrorEvent | undefined {
-    return this.errors.get(errorId);
+    return this?.errors?.get(errorId);
   }
 
   // Get recent errors
   getRecentErrors(limit: number = 100): ErrorEvent[] {
-    const errors = Array.from(this.errors.values());
+    const errors = Array.from(this?.errors?.values());
     return errors
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .sort((a, b) => b?.timestamp?.getTime() - a?.timestamp?.getTime())
       .slice(0, limit);
   }
 
@@ -106,17 +106,17 @@ export class ErrorTracker extends EventEmitter {
   getAggregations(): Record<string, any> {
     const result: Record<string, any> = {};
 
-    this.aggregations.forEach((agg, key) => {
+    this?.aggregations?.forEach((agg, key) => {
       result[key] = {
         count: agg.count,
         firstSeen: agg.firstSeen,
         lastSeen: agg.lastSeen,
-        affectedUsers: agg.affectedUsers.size,
+        affectedUsers: agg?.affectedUsers?.size,
         endpoints: Array.from(agg.endpoints),
-        samples: agg.samples.slice(0, 3).map((e) => ({
+        samples: agg?.samples?.slice(0, 3).map((e: any) => ({
           id: e.id,
           timestamp: e.timestamp,
-          message: e.error.message,
+          message: e?.error?.message,
         })),
       };
     });
@@ -127,12 +127,12 @@ export class ErrorTracker extends EventEmitter {
   // Get error statistics
   getStatistics(timeWindowMs: number = 3600000): Record<string, any> {
     const cutoff = Date.now() - timeWindowMs;
-    const recentErrors = Array.from(this.errors.values()).filter(
-      (e) => e.timestamp.getTime() > cutoff,
+    const recentErrors = Array.from(this?.errors?.values()).filter(
+      (e: any) => e?.timestamp?.getTime() > cutoff,
     );
 
     const stats = {
-      total: recentErrors.length,
+      total: recentErrors?.length || 0,
       bySeverity: {
         low: 0,
         medium: 0,
@@ -146,12 +146,14 @@ export class ErrorTracker extends EventEmitter {
       errorRate: 0,
     };
 
-    recentErrors.forEach((error) => {
+    recentErrors.forEach((error: any) => {
       // Count by severity
-      stats.bySeverity[error.severity]++;
+      if (error.severity && error.severity in stats.bySeverity) {
+        stats.bySeverity[error.severity as keyof typeof stats.bySeverity]++;
+      }
 
       // Count by type
-      const type = error.error.name;
+      const type = error?.error?.name;
       stats.byType[type] = (stats.byType[type] || 0) + 1;
 
       // Count handled vs unhandled
@@ -164,7 +166,7 @@ export class ErrorTracker extends EventEmitter {
 
     // Calculate error rate (errors per minute)
     const timeWindowMinutes = timeWindowMs / 60000;
-    stats.errorRate = recentErrors.length / timeWindowMinutes;
+    stats.errorRate = recentErrors?.length || 0 / timeWindowMinutes;
 
     // Get top errors
     stats.topErrors = Object.entries(stats.byType)
@@ -173,7 +175,7 @@ export class ErrorTracker extends EventEmitter {
       .map(([type, count]) => ({
         type,
         count,
-        lastSeen: this.aggregations.get(type)?.lastSeen || new Date(),
+        lastSeen: this?.aggregations?.get(type)?.lastSeen || new Date(),
       }));
 
     return stats;
@@ -190,16 +192,16 @@ export class ErrorTracker extends EventEmitter {
 
   // Get errors by user
   getErrorsByUser(userId: string): ErrorEvent[] {
-    return Array.from(this.errors.values())
-      .filter((e) => e.context.userId === userId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return Array.from(this?.errors?.values())
+      .filter((e: any) => e?.context?.userId === userId)
+      .sort((a, b) => b?.timestamp?.getTime() - a?.timestamp?.getTime());
   }
 
   // Get errors by endpoint
   getErrorsByEndpoint(endpoint: string): ErrorEvent[] {
-    return Array.from(this.errors.values())
-      .filter((e) => e.context.endpoint === endpoint)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return Array.from(this?.errors?.values())
+      .filter((e: any) => e?.context?.endpoint === endpoint)
+      .sort((a, b) => b?.timestamp?.getTime() - a?.timestamp?.getTime());
   }
 
   // Search errors
@@ -211,43 +213,43 @@ export class ErrorTracker extends EventEmitter {
     endTime?: Date;
     errorType?: string;
   }): ErrorEvent[] {
-    let results = Array.from(this.errors.values());
+    let results = Array.from(this?.errors?.values());
 
     if (query.severity) {
-      results = results.filter((e) => e.severity === query.severity);
+      results = results?.filter((e: any) => e.severity === query.severity);
     }
 
     if (query.handled !== undefined) {
-      results = results.filter((e) => e.handled === query.handled);
+      results = results?.filter((e: any) => e.handled === query.handled);
     }
 
-    if (query.tags && query.tags.length > 0) {
-      results = results.filter(
-        (e) => e.tags && query.tags!.some((tag) => e.tags!.includes(tag)),
+    if (query.tags && query?.tags?.length > 0) {
+      results = results?.filter(
+        (e: any) => e.tags && query.tags!.some((tag: any) => e.tags!.includes(tag)),
       );
     }
 
     if (query.startTime) {
-      results = results.filter((e) => e.timestamp >= query.startTime!);
+      results = results?.filter((e: any) => e.timestamp >= query.startTime!);
     }
 
     if (query.endTime) {
-      results = results.filter((e) => e.timestamp <= query.endTime!);
+      results = results?.filter((e: any) => e.timestamp <= query.endTime!);
     }
 
     if (query.errorType) {
-      results = results.filter((e) => e.error.name === query.errorType);
+      results = results?.filter((e: any) => e?.error?.name === query.errorType);
     }
 
     return results.sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
+      (a, b) => b?.timestamp?.getTime() - a?.timestamp?.getTime(),
     );
   }
 
   // Clear all errors
   clearErrors(): void {
-    this.errors.clear();
-    this.aggregations.clear();
+    this?.errors?.clear();
+    this?.aggregations?.clear();
   }
 
   // Private methods
@@ -256,8 +258,8 @@ export class ErrorTracker extends EventEmitter {
   }
 
   private updateAggregation(errorEvent: ErrorEvent): void {
-    const key = errorEvent.error.name;
-    const existing = this.aggregations.get(key) || {
+    const key = errorEvent?.error?.name;
+    const existing = this?.aggregations?.get(key) || {
       errorType: key,
       count: 0,
       firstSeen: errorEvent.timestamp,
@@ -271,28 +273,28 @@ export class ErrorTracker extends EventEmitter {
     existing.lastSeen = errorEvent.timestamp;
 
     // Add sample if under limit
-    if (existing.samples.length < this.maxSamplesPerType) {
-      existing.samples.push(errorEvent);
+    if (existing?.samples?.length < this.maxSamplesPerType) {
+      existing?.samples?.push(errorEvent);
     }
 
     // Track affected users
-    if (errorEvent.context.userId) {
-      existing.affectedUsers.add(errorEvent.context.userId);
+    if (errorEvent?.context?.userId) {
+      existing?.affectedUsers?.add(errorEvent?.context?.userId);
     }
 
     // Track endpoints
-    if (errorEvent.context.endpoint) {
-      existing.endpoints.add(errorEvent.context.endpoint);
+    if (errorEvent?.context?.endpoint) {
+      existing?.endpoints?.add(errorEvent?.context?.endpoint);
     }
 
-    this.aggregations.set(key, existing);
+    this?.aggregations?.set(key, existing);
   }
 
   private logError(errorEvent: ErrorEvent): void {
     const logData = {
       errorId: errorEvent.id,
-      error: errorEvent.error.name,
-      message: errorEvent.error.message,
+      error: errorEvent?.error?.name,
+      message: errorEvent?.error?.message,
       severity: errorEvent.severity,
       handled: errorEvent.handled,
       context: errorEvent.context,
@@ -320,20 +322,20 @@ export class ErrorTracker extends EventEmitter {
       const cutoff = Date.now() - this.errorRetentionMs;
 
       // Clean up old errors
-      this.errors.forEach((error, id) => {
-        if (error.timestamp.getTime() < cutoff) {
-          this.errors.delete(id);
+      this?.errors?.forEach((error, id) => {
+        if (error?.timestamp?.getTime() < cutoff) {
+          this?.errors?.delete(id);
         }
       });
 
       // Clean up old aggregations
-      this.aggregations.forEach((agg, key) => {
-        if (agg.lastSeen.getTime() < cutoff) {
-          this.aggregations.delete(key);
+      this?.aggregations?.forEach((agg, key) => {
+        if (agg?.lastSeen?.getTime() < cutoff) {
+          this?.aggregations?.delete(key);
         } else {
           // Clean up old samples
-          agg.samples = agg.samples.filter(
-            (s) => s.timestamp.getTime() > cutoff,
+          agg.samples = agg?.samples?.filter(
+            (s: any) => s?.timestamp?.getTime() > cutoff,
           );
         }
       });

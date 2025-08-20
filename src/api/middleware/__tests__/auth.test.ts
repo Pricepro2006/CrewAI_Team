@@ -3,9 +3,9 @@
  * Tests the JWT authentication implementation for security vulnerabilities
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import jwt from "jsonwebtoken";
-import { verifyJWT, type AuthUser } from "../auth.js";
+import { verifyJWT, type AuthUser } from '../auth';
 
 const TEST_JWT_SECRET = "test-secret-key-for-unit-tests-only";
 
@@ -66,13 +66,13 @@ describe("Authentication Middleware Security Tests", () => {
     it("should reject malformed tokens", () => {
       const malformedTokens = [
         "invalid.token",
-        "not.jwt.token.format",
+        "not?.jwt?.token.format",
         "",
         "bearer token",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9?.invalid?.signature",
       ];
 
-      malformedTokens.forEach((token) => {
+      malformedTokens.forEach((token: any) => {
         expect(() => verifyJWT(token)).toThrow();
       });
     });
@@ -85,7 +85,7 @@ describe("Authentication Middleware Security Tests", () => {
         { sub: "user123", email: "" }, // Empty email
       ];
 
-      incompletePayloads.forEach((payload) => {
+      incompletePayloads.forEach((payload: any) => {
         const token = jwt.sign(payload, TEST_JWT_SECRET);
         expect(() => verifyJWT(token)).toThrow("Invalid token payload");
       });
@@ -95,7 +95,7 @@ describe("Authentication Middleware Security Tests", () => {
       const originalSecret = process.env.JWT_SECRET;
       delete process.env.JWT_SECRET;
 
-      expect(() => verifyJWT("any.token.here")).toThrow(
+      expect(() => verifyJWT("any?.token?.here")).toThrow(
         "JWT_SECRET environment variable is required",
       );
 

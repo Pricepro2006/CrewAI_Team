@@ -10,11 +10,11 @@ import { spawn } from "child_process";
 
 class KeyOptimizer {
   private async executeCommand(command: string, description: string): Promise<boolean> {
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       console.log(`   🔄 ${description}...`);
       const process = spawn('sh', ['-c', command], { stdio: 'inherit' });
       
-      process.on('close', (code) => {
+      process.on('close', (code: any) => {
         if (code === 0) {
           console.log(`   ✅ ${description} - SUCCESS`);
           resolve(true);
@@ -29,10 +29,10 @@ class KeyOptimizer {
   public async optimizeViteConfig(): Promise<boolean> {
     console.log('🔧 Optimizing Vite build configuration...');
     
-    const viteConfigPath = 'vite.config.ts';
+    const viteConfigPath = 'vite?.config?.ts';
     
     if (!existsSync(viteConfigPath)) {
-      console.log('   ⚠️ vite.config.ts not found');
+      console.log('   ⚠️ vite?.config?.ts not found');
       return false;
     }
     
@@ -245,8 +245,8 @@ new Dashboard().start();
     console.log('OPTIMIZATION RESULTS');
     console.log('='.repeat(50));
     
-    const successful = results.filter(r => r.success).length;
-    console.log(`Overall: ${successful}/${results.length} optimizations applied\n`);
+    const successful = results?.filter(r => r.success).length;
+    console.log(`Overall: ${successful}/${results?.length || 0} optimizations applied\n`);
     
     results.forEach((result, index) => {
       const status = result.success ? '✅' : '❌';
@@ -265,7 +265,7 @@ new Dashboard().start();
     console.log('• 10-20% faster database queries');
     console.log('• Better memory management');
     
-    if (successful === results.length) {
+    if (successful === results?.length || 0) {
       console.log('\n🎉 All optimizations applied successfully!');
     }
   }

@@ -42,7 +42,7 @@ export function ErrorModal({
 
   const copyErrorDetails = async () => {
     const details = `Error: ${errorMessage}\n\nStack Trace:\n${errorStack || "Not available"}`;
-    await navigator.clipboard.writeText(details);
+    await navigator?.clipboard?.writeText(details);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

@@ -151,10 +151,10 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
             </p>
             {item.product && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {item.product.brand && <span>{item.product.brand}</span>}
-                {item.product.size && <span>• {item.product.size}</span>}
-                {item.product.price && (
-                  <span>• {formatPrice(getNumericPrice(item.product.price))}</span>
+                {item?.product?.brand && <span>{item?.product?.brand}</span>}
+                {item?.product?.size && <span>• {item?.product?.size}</span>}
+                {item?.product?.price && (
+                  <span>• {formatPrice(getNumericPrice(item?.product?.price))}</span>
                 )}
               </div>
             )}
@@ -169,12 +169,12 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
                 <Input
                   type="number"
                   value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                  onChange={(e: any) => setQuantity(parseInt(e?.target?.value) || 1)}
                   className="w-16 h-8"
                   min={1}
                   max={99}
                   onBlur={handleQuantitySubmit}
-                  onKeyDown={(e) => {
+                  onKeyDown={(e: any) => {
                     if (e.key === 'Enter') handleQuantitySubmit();
                     if (e.key === 'Escape') {
                       setQuantity(item.quantity);
@@ -219,7 +219,7 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
         
         {item.product?.category && (
           <Badge variant="outline" className="text-xs">
-            {getCategoryName(item.product.category)}
+            {getCategoryName(item?.product?.category)}
           </Badge>
         )}
       </div>
@@ -283,7 +283,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
 
   const handleDeleteList = (listId: string) => {
     deleteList(listId);
-    if (currentListId === listId && lists.length > 1) {
+    if (currentListId === listId && lists?.length || 0 > 1) {
       const nextList = lists.find((l: GroceryList) => l.id !== listId);
       if (nextList) setCurrentList(nextList.id);
     }
@@ -292,7 +292,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
   const handleTogglePurchased = (listId: string, itemId: string) => {
   const list = lists.find((l: GroceryList) => l.id === listId);
   if (list && list.items) {
-  const updatedItems = list.items.map((item: GroceryItem) => {
+  const updatedItems = list?.items?.map((item: GroceryItem) => {
   if (item.id === itemId) {
       return { ...item, status: item.status === 'purchased' ? 'pending' : 'purchased' } as GroceryItem;
     }
@@ -305,7 +305,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
   const handleUpdateQuantity = (listId: string, itemId: string, quantity: number) => {
     const list = lists.find((l: GroceryList) => l.id === listId);
     if (list && list.items) {
-      const updatedItems = list.items.map((item: GroceryItem) =>
+      const updatedItems = list?.items?.map((item: GroceryItem) =>
         item.id === itemId ? { ...item, quantity } : item
       );
       updateList(listId, { items: updatedItems });
@@ -413,9 +413,9 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
               <ListItemRow
                 key={item.id}
                 item={extendGroceryItem(item)}
-                onTogglePurchased={(itemId) => handleTogglePurchased(currentList.id, itemId)}
+                onTogglePurchased={(itemId: any) => handleTogglePurchased(currentList.id, itemId)}
                 onUpdateQuantity={(itemId, qty) => handleUpdateQuantity(currentList.id, itemId, qty)}
-                onRemove={(itemId) => removeFromList(currentList.id, itemId)}
+                onRemove={(itemId: any) => removeFromList(currentList.id, itemId)}
                 compactMode
               />
             ))}
@@ -445,7 +445,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
             <Input
               placeholder="Search lists..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: any) => setSearchQuery(e?.target?.value)}
               className="pl-9"
             />
           </div>
@@ -472,7 +472,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
         </div>
 
         {/* Lists Grid */}
-        {filteredLists.length === 0 ? (
+        {filteredLists?.length || 0 === 0 ? (
           <Card className="p-12 text-center">
             <ListChecks className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">No grocery lists yet</h3>
@@ -488,7 +488,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredLists.map(list => {
+            {filteredLists?.map(list => {
               const completedCount = (list.items || []).filter(i => extendGroceryItem(i).isPurchased).length;
               const progress = (list.items?.length || 0) > 0 ? (completedCount / (list.items?.length || 0)) * 100 : 0;
               
@@ -524,7 +524,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={(e) => {
+                            onClick={(e: any) => {
                               e.stopPropagation();
                               setEditingList(list);
                               setNewListName(list.list_name || '');
@@ -536,7 +536,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                             Edit List
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={(e) => {
+                            onClick={(e: any) => {
                               e.stopPropagation();
                               handleDuplicateList(list);
                             }}
@@ -545,7 +545,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                             Duplicate
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={(e) => {
+                            onClick={(e: any) => {
                               e.stopPropagation();
                               setEditingList(list);
                               setShowShareDialog(true);
@@ -557,7 +557,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
-                            onClick={(e) => {
+                            onClick={(e: any) => {
                               e.stopPropagation();
                               handleDeleteList(list.id);
                             }}
@@ -643,7 +643,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                     <Button
                       variant="secondary"
                       className="w-full"
-                      onClick={(e) => {
+                      onClick={(e: any) => {
                         e.stopPropagation();
                         handleAddAllToCart(list);
                       }}
@@ -675,7 +675,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
               <Input
                 id="list-name"
                 value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
+                onChange={(e: any) => setNewListName(e?.target?.value)}
                 placeholder="e.g., Weekly Groceries"
               />
             </div>
@@ -684,7 +684,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
               <Textarea
                 id="list-description"
                 value={newListDescription}
-                onChange={(e) => setNewListDescription(e.target.value)}
+                onChange={(e: any) => setNewListDescription(e?.target?.value)}
                 placeholder="e.g., Regular items for the week"
                 rows={3}
               />
@@ -716,7 +716,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
               <Input
                 id="edit-list-name"
                 value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
+                onChange={(e: any) => setNewListName(e?.target?.value)}
               />
             </div>
             <div>
@@ -724,7 +724,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
               <Textarea
                 id="edit-list-description"
                 value={newListDescription}
-                onChange={(e) => setNewListDescription(e.target.value)}
+                onChange={(e: any) => setNewListDescription(e?.target?.value)}
                 rows={3}
               />
             </div>
@@ -754,14 +754,14 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
               <p className="text-sm font-medium mb-2">Share Link</p>
               <div className="flex gap-2">
                 <Input
-                  value={`https://walmart.groceries.app/list/${editingList?.id}`}
+                  value={`https://walmart?.groceries?.app/list/${editingList?.id}`}
                   readOnly
                 />
                 <Button
                   size="icon"
                   onClick={() => {
-                    navigator.clipboard.writeText(
-                      `https://walmart.groceries.app/list/${editingList?.id}`
+                    navigator?.clipboard?.writeText(
+                      `https://walmart?.groceries?.app/list/${editingList?.id}`
                     );
                   }}
                 >

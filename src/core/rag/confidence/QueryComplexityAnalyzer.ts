@@ -3,7 +3,7 @@
  * Determines routing strategy based on query characteristics
  */
 
-import type { QueryComplexity } from "./types.js";
+import type { QueryComplexity } from "./types";
 
 export class QueryComplexityAnalyzer {
   private complexityCache = new Map<string, QueryComplexity>();
@@ -16,8 +16,8 @@ export class QueryComplexityAnalyzer {
     const cacheKey = this.getCacheKey(query);
 
     // Check cache first
-    if (this.complexityCache.has(cacheKey)) {
-      return this.complexityCache.get(cacheKey)!;
+    if (this?.complexityCache?.has(cacheKey)) {
+      return this?.complexityCache?.get(cacheKey)!;
     }
 
     const complexity = this.calculateComplexity(query);
@@ -58,9 +58,9 @@ export class QueryComplexityAnalyzer {
    * Calculate syntactic complexity
    */
   private calculateSyntacticComplexity(query: string): number {
-    const sentences = query.split(/[.!?]+/).filter((s) => s.trim().length > 0);
+    const sentences = query.split(/[.!?]+/).filter((s: any) => s.trim().length > 0);
     const words = query.split(/\s+/).length;
-    const avgWordsPerSentence = words / Math.max(sentences.length, 1);
+    const avgWordsPerSentence = words / Math.max(sentences?.length || 0, 1);
 
     // Score based on sentence length and structure
     let score = 0;
@@ -70,7 +70,7 @@ export class QueryComplexityAnalyzer {
     else if (avgWordsPerSentence > 10) score += 0.2;
 
     // Multiple sentences
-    if (sentences.length > 2) score += 0.2;
+    if (sentences?.length || 0 > 2) score += 0.2;
 
     // Complex punctuation
     if (/[;:,]/.test(query)) score += 0.1;
@@ -106,7 +106,7 @@ export class QueryComplexityAnalyzer {
       "deployment",
       "scalability",
     ];
-    const techCount = technicalTerms.filter((term) =>
+    const techCount = technicalTerms?.filter((term: any) =>
       lowerQuery.includes(term),
     ).length;
     score += Math.min(0.3, techCount * 0.1);
@@ -124,7 +124,7 @@ export class QueryComplexityAnalyzer {
       "paradigm",
       "best practice",
     ];
-    const abstractCount = abstractConcepts.filter((term) =>
+    const abstractCount = abstractConcepts?.filter((term: any) =>
       lowerQuery.includes(term),
     ).length;
     score += Math.min(0.2, abstractCount * 0.1);
@@ -190,7 +190,7 @@ export class QueryComplexityAnalyzer {
       "cloud",
       "devops",
     ];
-    const techMatches = techDomains.filter((term) =>
+    const techMatches = techDomains?.filter((term: any) =>
       lowerQuery.includes(term),
     ).length;
     if (techMatches > 0) score += 0.3;
@@ -209,7 +209,7 @@ export class QueryComplexityAnalyzer {
       "operations",
       "logistics",
     ];
-    const businessMatches = businessDomains.filter((term) =>
+    const businessMatches = businessDomains?.filter((term: any) =>
       lowerQuery.includes(term),
     ).length;
     if (businessMatches > 0) score += 0.2;
@@ -227,15 +227,15 @@ export class QueryComplexityAnalyzer {
       "analysis",
       "methodology",
     ];
-    const scienceMatches = scienceDomains.filter((term) =>
+    const scienceMatches = scienceDomains?.filter((term: any) =>
       lowerQuery.includes(term),
     ).length;
     if (scienceMatches > 0) score += 0.3;
 
     // Acronyms and abbreviations (high specificity)
     const acronyms = query.match(/\b[A-Z]{2,}\b/g);
-    if (acronyms && acronyms.length > 0) {
-      score += Math.min(0.2, acronyms.length * 0.05);
+    if (acronyms && acronyms?.length || 0 > 0) {
+      score += Math.min(0.2, acronyms?.length || 0 * 0.05);
     }
 
     return Math.min(1, score);
@@ -257,7 +257,7 @@ export class QueryComplexityAnalyzer {
       "which",
       "who",
     ];
-    const questionCount = questionWords.filter((word) =>
+    const questionCount = questionWords?.filter((word: any) =>
       lowerQuery.includes(word),
     ).length;
     if (questionCount > 1) return true;
@@ -270,7 +270,7 @@ export class QueryComplexityAnalyzer {
       "furthermore",
       "moreover",
     ];
-    const conjunctionCount = conjunctions.filter((word) =>
+    const conjunctionCount = conjunctions?.filter((word: any) =>
       lowerQuery.includes(word),
     ).length;
     if (conjunctionCount > 1) return true;
@@ -284,7 +284,7 @@ export class QueryComplexityAnalyzer {
       "analyze",
       "evaluate",
     ];
-    const actionCount = actionVerbs.filter((verb) =>
+    const actionCount = actionVerbs?.filter((verb: any) =>
       lowerQuery.includes(verb),
     ).length;
     if (actionCount > 1) return true;
@@ -319,14 +319,14 @@ export class QueryComplexityAnalyzer {
       "best",
       "worst",
     ];
-    const vagueCount = vagueTerms.filter((term) =>
+    const vagueCount = vagueTerms?.filter((term: any) =>
       lowerQuery.includes(term),
     ).length;
     score += Math.min(0.3, vagueCount * 0.1);
 
     // Pronouns without clear antecedents
     const pronouns = ["it", "this", "that", "these", "those", "they", "them"];
-    const pronounCount = pronouns.filter((pronoun) =>
+    const pronounCount = pronouns?.filter((pronoun: any) =>
       lowerQuery.includes(pronoun),
     ).length;
     score += Math.min(0.2, pronounCount * 0.05);
@@ -347,7 +347,7 @@ export class QueryComplexityAnalyzer {
 
     // Modal verbs suggesting uncertainty
     const modalVerbs = ["might", "could", "would", "should", "may", "can"];
-    const modalCount = modalVerbs.filter((modal) =>
+    const modalCount = modalVerbs?.filter((modal: any) =>
       lowerQuery.includes(modal),
     ).length;
     score += Math.min(0.1, modalCount * 0.03);
@@ -416,7 +416,7 @@ export class QueryComplexityAnalyzer {
       reasons.push("ambiguous or vague language");
     }
 
-    if (reasons.length === 0) {
+    if (reasons?.length || 0 === 0) {
       return "Simple, straightforward query";
     }
 
@@ -434,15 +434,15 @@ export class QueryComplexityAnalyzer {
    * Cache result with size limit
    */
   private cacheResult(key: string, complexity: QueryComplexity): void {
-    if (this.complexityCache.size >= this.cacheSize) {
+    if (this?.complexityCache?.size >= this.cacheSize) {
       // Remove oldest entry
-      const firstKey = this.complexityCache.keys().next().value;
+      const firstKey = this?.complexityCache?.keys().next().value;
       if (firstKey) {
-        this.complexityCache.delete(firstKey);
+        this?.complexityCache?.delete(firstKey);
       }
     }
 
-    this.complexityCache.set(key, complexity);
+    this?.complexityCache?.set(key, complexity);
   }
 
   /**
@@ -450,14 +450,14 @@ export class QueryComplexityAnalyzer {
    */
   getCachedComplexity(query: string): QueryComplexity | null {
     const key = this.getCacheKey(query);
-    return this.complexityCache.get(key) || null;
+    return this?.complexityCache?.get(key) || null;
   }
 
   /**
    * Clear cache
    */
   clearCache(): void {
-    this.complexityCache.clear();
+    this?.complexityCache?.clear();
   }
 
   /**
@@ -465,7 +465,7 @@ export class QueryComplexityAnalyzer {
    */
   getCacheStats(): { size: number; maxSize: number; hitRate: number } {
     return {
-      size: this.complexityCache.size,
+      size: this?.complexityCache?.size,
       maxSize: this.cacheSize,
       hitRate: 0, // Would need tracking to implement
     };

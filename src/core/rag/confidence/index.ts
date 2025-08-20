@@ -4,40 +4,40 @@
  */
 
 // Core types
-export * from "./types.js";
+export * from "./types";
 
 // Query analysis
-export { QueryComplexityAnalyzer } from "./QueryComplexityAnalyzer.js";
+export { QueryComplexityAnalyzer } from "./QueryComplexityAnalyzer";
 
 // Retrieval
-export { ConfidenceRAGRetriever } from "./ConfidenceRAGRetriever.js";
+export { ConfidenceRAGRetriever } from "./ConfidenceRAGRetriever";
 
 // Context building
-export { ConfidenceContextBuilder } from "./ConfidenceContextBuilder.js";
+export { ConfidenceContextBuilder } from "./ConfidenceContextBuilder";
 
 // Response generation
-export { ConfidenceResponseGenerator } from "./ConfidenceResponseGenerator.js";
+export { ConfidenceResponseGenerator } from "./ConfidenceResponseGenerator";
 
 // Evaluation
-export { MultiModalEvaluator } from "./MultiModalEvaluator.js";
-// export { ConfidenceExtractor } from './ConfidenceExtractor.js'; // TODO: Implement ConfidenceExtractor
+export { MultiModalEvaluator } from "./MultiModalEvaluator";
+export { ConfidenceExtractor } from './ConfidenceExtractor';
 
 // Evaluators
-export { RelevanceScorer } from "./evaluators/RelevanceScorer.js";
-export { FactualityChecker } from "./evaluators/FactualityChecker.js";
-export { CoherenceAnalyzer } from "./evaluators/CoherenceAnalyzer.js";
+export { RelevanceScorer } from "./evaluators/RelevanceScorer";
+export { FactualityChecker } from "./evaluators/FactualityChecker";
+export { CoherenceAnalyzer } from "./evaluators/CoherenceAnalyzer";
 
 // Calibration
-export { ConfidenceCalibrator } from "./ConfidenceCalibrator.js";
+export { ConfidenceCalibrator } from "./ConfidenceCalibrator";
 
 // Delivery
-export { AdaptiveDeliveryManager } from "./AdaptiveDeliveryManager.js";
+export { AdaptiveDeliveryManager } from "./AdaptiveDeliveryManager";
 
 // Performance optimization
-export { PerformanceOptimizer } from "../../../api/services/PerformanceOptimizer.js";
+export { PerformanceOptimizer } from "../../../api/services/PerformanceOptimizer";
 
 // BERT ranking
-// export { BERTRanker } from './BERTRanker.js'; // TODO: Implement BERTRanker
+export { BERTRanker } from './BERTRanker';
 
 // Re-export action types and core enums
-export { ActionType } from "./types.js";
+export { ActionType } from "./types";

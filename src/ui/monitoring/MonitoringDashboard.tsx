@@ -10,20 +10,20 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import type { 
   MonitoringMetric, 
   ConnectionInfo, 
   PerformanceMetric, 
   DatabaseQuery, 
   SystemHealth, 
   MonitoringAlert 
-} from '../../services/MonitoringService';
-import { MetricsChart } from './MetricsChart';
-import { ConnectionMonitor } from './ConnectionMonitor';
-import { PerformancePanel } from './PerformancePanel';
-import { DatabasePanel } from './DatabasePanel';
-import { AlertsPanel } from './AlertsPanel';
-import { SystemHealthIndicator } from './SystemHealthIndicator';
+} from '../../services/MonitoringService.js';
+import { MetricsChart } from './MetricsChart.js';
+import { ConnectionMonitor } from './ConnectionMonitor.js';
+import { PerformancePanel } from './PerformancePanel.js';
+import { DatabasePanel } from './DatabasePanel.js';
+import { AlertsPanel } from './AlertsPanel.js';
+import { SystemHealthIndicator } from './SystemHealthIndicator.js';
 import './MonitoringDashboard.css';
 
 interface DashboardData {
@@ -64,12 +64,12 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
     if (autoRefresh) {
       connectWebSocket();
     } else if (wsRef.current) {
-      wsRef.current.close();
+      wsRef?.current?.close();
     }
 
     return () => {
       if (wsRef.current) {
-        wsRef.current.close();
+        wsRef?.current?.close();
       }
       if (refreshTimerRef.current) {
         clearInterval(refreshTimerRef.current);
@@ -106,7 +106,7 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
         ws.send(JSON.stringify({ type: 'get_health_status' }));
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: any) => {
         try {
           const message = JSON.parse(event.data);
           
@@ -158,7 +158,7 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
               if (dashboardData) {
                 setDashboardData(prev => {
                   const connections = [...prev!.connections];
-                  const index = connections.findIndex(c => c.id === message.data.id);
+                  const index = connections.findIndex(c => c.id === message?.data?.id);
                   if (index >= 0) {
                     connections[index] = message.data;
                   } else {
@@ -188,7 +188,7 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
         }
       };
 
-      ws.onerror = (error) => {
+      ws.onerror = (error: any) => {
         console.error('Monitoring WebSocket error:', error);
         setConnectionStatus('disconnected');
       };
@@ -230,7 +230,7 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
       if (response.ok && dashboardData) {
         setDashboardData(prev => ({
           ...prev!,
-          alerts: prev!.alerts.map(alert => 
+          alerts: prev!.alerts?.map(alert => 
             alert.id === alertId ? { ...alert, acknowledged: true } : alert
           )
         }));
@@ -280,14 +280,14 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
               <input
                 type="checkbox"
                 checked={autoRefresh}
-                onChange={(e) => setAutoRefresh(e.target.checked)}
+                onChange={(e: any) => setAutoRefresh(e?.target?.checked)}
               />
               Auto-refresh
             </label>
             
             <select
               value={refreshInterval}
-              onChange={(e) => setRefreshInterval(Number(e.target.value))}
+              onChange={(e: any) => setRefreshInterval(Number(e?.target?.value))}
               disabled={!autoRefresh}
             >
               <option value={1000}>1s</option>
@@ -315,10 +315,10 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
       <div className="dashboard-nav">
         {[
           { key: 'overview', label: '📊 Overview', count: null },
-          { key: 'connections', label: '🔌 Connections', count: dashboardData.systemStats.activeConnections },
-          { key: 'performance', label: '⚡ Performance', count: dashboardData.recentPerformance.length },
-          { key: 'database', label: '💾 Database', count: dashboardData.recentQueries.length },
-          { key: 'alerts', label: '🚨 Alerts', count: dashboardData.alerts.filter(a => !a.acknowledged).length }
+          { key: 'connections', label: '🔌 Connections', count: dashboardData?.systemStats?.activeConnections },
+          { key: 'performance', label: '⚡ Performance', count: dashboardData?.recentPerformance?.length },
+          { key: 'database', label: '💾 Database', count: dashboardData?.recentQueries?.length },
+          { key: 'alerts', label: '🚨 Alerts', count: dashboardData?.alerts?.filter(a => !a.acknowledged).length }
         ].map(({ key, label, count }) => (
           <button
             key={key}
@@ -342,11 +342,11 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
                 <h3>🔌 Connections</h3>
                 <div className="card-stats">
                   <div className="stat-item">
-                    <span className="stat-value">{dashboardData.systemStats.activeConnections}</span>
+                    <span className="stat-value">{dashboardData?.systemStats?.activeConnections}</span>
                     <span className="stat-label">Active</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-value">{dashboardData.systemStats.totalConnections}</span>
+                    <span className="stat-value">{dashboardData?.systemStats?.totalConnections}</span>
                     <span className="stat-label">Total</span>
                   </div>
                 </div>
@@ -357,13 +357,13 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
                 <div className="card-stats">
                   <div className="stat-item">
                     <span className="stat-value">
-                      {dashboardData.recentPerformance.length > 0 ? 
-                        Math.round(dashboardData.recentPerformance.reduce((sum, p) => sum + p.responseTime, 0) / dashboardData.recentPerformance.length) : 0}ms
+                      {dashboardData?.recentPerformance?.length > 0 ? 
+                        Math.round(dashboardData?.recentPerformance?.reduce((sum: any, p: any) => sum + p.responseTime, 0) / dashboardData?.recentPerformance?.length) : 0}ms
                     </span>
                     <span className="stat-label">Avg Response</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-value">{dashboardData.recentPerformance.length}</span>
+                    <span className="stat-value">{dashboardData?.recentPerformance?.length}</span>
                     <span className="stat-label">Recent Requests</span>
                   </div>
                 </div>
@@ -374,13 +374,13 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
                 <div className="card-stats">
                   <div className="stat-item">
                     <span className="stat-value">
-                      {dashboardData.recentQueries.length > 0 ? 
-                        Math.round(dashboardData.recentQueries.reduce((sum, q) => sum + q.executionTime, 0) / dashboardData.recentQueries.length) : 0}ms
+                      {dashboardData?.recentQueries?.length > 0 ? 
+                        Math.round(dashboardData?.recentQueries?.reduce((sum: any, q: any) => sum + q.executionTime, 0) / dashboardData?.recentQueries?.length) : 0}ms
                     </span>
                     <span className="stat-label">Avg Query Time</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-value">{dashboardData.recentQueries.length}</span>
+                    <span className="stat-value">{dashboardData?.recentQueries?.length}</span>
                     <span className="stat-label">Recent Queries</span>
                   </div>
                 </div>
@@ -390,11 +390,11 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
                 <h3>🚨 Alerts</h3>
                 <div className="card-stats">
                   <div className="stat-item">
-                    <span className="stat-value">{dashboardData.alerts.filter(a => !a.acknowledged).length}</span>
+                    <span className="stat-value">{dashboardData?.alerts?.filter(a => !a.acknowledged).length}</span>
                     <span className="stat-label">Active</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-value">{dashboardData.systemStats.recentErrors}</span>
+                    <span className="stat-value">{dashboardData?.systemStats?.recentErrors}</span>
                     <span className="stat-label">Recent Errors</span>
                   </div>
                 </div>
@@ -419,14 +419,14 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
         {selectedPanel === 'performance' && (
           <PerformancePanel 
             performanceData={dashboardData.recentPerformance}
-            metrics={dashboardData.recentMetrics.filter(m => m.name.includes('api.'))}
+            metrics={dashboardData?.recentMetrics?.filter(m => m?.name?.includes('api.'))}
           />
         )}
 
         {selectedPanel === 'database' && (
           <DatabasePanel 
             queries={dashboardData.recentQueries}
-            metrics={dashboardData.recentMetrics.filter(m => m.name.includes('db.'))}
+            metrics={dashboardData?.recentMetrics?.filter(m => m?.name?.includes('db.'))}
           />
         )}
 

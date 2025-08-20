@@ -51,23 +51,41 @@ export class DealDataService {
   private static instance: DealDataService;
 
   constructor(dbPath?: string) {
-    const databasePath = dbPath || appConfig.database.path;
-    this.db = new Database(databasePath);
-    this.initializeDatabase();
+    const databasePath = dbPath || appConfig?.database?.path;
+    if (!databasePath) {
+      throw new Error('Database path is required but not provided');
+    }
+    try {
+      this.db = new Database(databasePath);
+      this.initializeDatabase();
+    } catch (error) {
+      logger.error(`Failed to initialize database: ${error}`, "DEAL_DATA");
+      throw error;
+    }
   }
 
   private initializeDatabase(): void {
     logger.info("Initializing deal data database", "DEAL_DATA");
 
-    // Enable performance optimizations
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
-    this.db.pragma("cache_size = 10000");
-    this.db.pragma("temp_store = MEMORY");
-    this.db.pragma("foreign_keys = ON");
+    if (!this.db) {
+      throw new Error('Database connection not established');
+    }
+
+    try {
+      // Enable performance optimizations
+      this.db.pragma("journal_mode = WAL");
+      this.db.pragma("synchronous = NORMAL");
+      this.db.pragma("cache_size = 10000");
+      this.db.pragma("temp_store = MEMORY");
+      this.db.pragma("foreign_keys = ON");
+    } catch (error) {
+      logger.error(`Failed to set database pragmas: ${error}`, "DEAL_DATA");
+      throw error;
+    }
 
     // Create deals table
-    this.db.exec(`
+    try {
+      this.db.exec(`
       CREATE TABLE IF NOT EXISTS deals (
         id TEXT PRIMARY KEY,
         deal_id TEXT UNIQUE NOT NULL,
@@ -81,9 +99,14 @@ export class DealDataService {
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    } catch (error) {
+      logger.error(`Failed to create deals table: ${error}`, "DEAL_DATA");
+      throw error;
+    }
 
     // Create deal items table
-    this.db.exec(`
+    try {
+      this.db.exec(`
       CREATE TABLE IF NOT EXISTS deal_items (
         id TEXT PRIMARY KEY,
         deal_id TEXT NOT NULL,
@@ -98,9 +121,14 @@ export class DealDataService {
         FOREIGN KEY (deal_id) REFERENCES deals(deal_id) ON DELETE CASCADE
       );
     `);
+    } catch (error) {
+      logger.error(`Failed to create deal_items table: ${error}`, "DEAL_DATA");
+      throw error;
+    }
 
     // Create indexes for performance
-    this.db.exec(`
+    try {
+      this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_deals_deal_id ON deals(deal_id);
       CREATE INDEX IF NOT EXISTS idx_deals_customer ON deals(customer);
       CREATE INDEX IF NOT EXISTS idx_deals_end_date ON deals(end_date);
@@ -109,16 +137,30 @@ export class DealDataService {
       CREATE INDEX IF NOT EXISTS idx_deal_items_product_number ON deal_items(product_number);
       CREATE INDEX IF NOT EXISTS idx_deal_items_product_family ON deal_items(product_family);
     `);
+    } catch (error) {
+      logger.error(`Failed to create indexes: ${error}`, "DEAL_DATA");
+      throw error;
+    }
 
     // Seed sample deal data if empty
-    this.seedSampleData();
+    try {
+      this.seedSampleData();
+    } catch (error) {
+      logger.error(`Failed to seed sample data: ${error}`, "DEAL_DATA");
+      // Non-critical error, continue
+    }
 
     logger.info("Deal data database initialized successfully", "DEAL_DATA");
   }
 
   private seedSampleData(): void {
+    if (!this.db) {
+      throw new Error('Database connection not established');
+    }
+
     const countStmt = this.db.prepare("SELECT COUNT(*) as count FROM deals");
-    const count = (countStmt.get() as any).count;
+    const result = countStmt.get() as { count: number } | undefined;
+    const count = result?.count ?? 0;
 
     if (count === 0) {
       logger.info("Seeding sample deal data", "DEAL_DATA");
@@ -258,7 +300,15 @@ export class DealDataService {
    * Get a deal by deal ID with all items
    */
   async getDeal(dealId: string): Promise<DealResponse | null> {
+    if (!dealId || typeof dealId !== 'string') {
+      throw new Error('Invalid deal ID provided');
+    }
+
     try {
+      if (!this.db) {
+        throw new Error('Database connection not established');
+      }
+
       // Get deal information
       const dealStmt = this.db.prepare(`
         SELECT * FROM deals WHERE deal_id = ?
@@ -297,7 +347,7 @@ export class DealDataService {
         updatedAt: dealResult.updated_at,
       };
 
-      const items: DealItem[] = itemsResults.map((item) => ({
+      const items: DealItem[] = (itemsResults || []).map((item: any) => ({
         id: item.id,
         dealId: item.deal_id,
         productNumber: item.product_number,
@@ -326,7 +376,7 @@ export class DealDataService {
         },
       };
     } catch (error) {
-      logger.error(`Failed to get deal ${dealId}: ${error}`, "DEAL_DATA");
+      logger.error(`Failed to get deal ${dealId}: ${error instanceof Error ? error.message : String(error)}`, "DEAL_DATA");
       throw error;
     }
   }
@@ -338,7 +388,15 @@ export class DealDataService {
     dealId: string,
     productNumber: string,
   ): Promise<DealItem | null> {
+    if (!dealId || !productNumber) {
+      throw new Error('Deal ID and product number are required');
+    }
+
     try {
+      if (!this.db) {
+        throw new Error('Database connection not established');
+      }
+
       const stmt = this.db.prepare(`
         SELECT * FROM deal_items 
         WHERE deal_id = ? AND product_number = ?
@@ -363,7 +421,7 @@ export class DealDataService {
       };
     } catch (error) {
       logger.error(
-        `Failed to get deal item ${productNumber} from deal ${dealId}: ${error}`,
+        `Failed to get deal item ${productNumber} from deal ${dealId}: ${error instanceof Error ? error.message : String(error)}`,
         "DEAL_DATA",
       );
       throw error;
@@ -374,14 +432,19 @@ export class DealDataService {
    * Calculate pricing with IPG/PSG logic
    */
   calculatePrice(dealerNetPrice: number, productFamily: string): number {
+    if (!Number.isFinite(dealerNetPrice) || dealerNetPrice < 0) {
+      logger.warn(`Invalid dealer net price: ${dealerNetPrice}`, "DEAL_DATA");
+      return 0;
+    }
+
     try {
       if (productFamily === "IPG") {
-        return Math.round(dealerNetPrice * 1.04 * 100) / 100; // IPG: Dealer net � 1.04
+        return Math.round(dealerNetPrice * 1.04 * 100) / 100; // IPG: Dealer net × 1.04
       } else {
         return dealerNetPrice; // PSG: Dealer net unchanged
       }
     } catch (error) {
-      logger.error(`Failed to calculate price: ${error}`, "DEAL_DATA");
+      logger.error(`Failed to calculate price: ${error instanceof Error ? error.message : String(error)}`, "DEAL_DATA");
       return dealerNetPrice;
     }
   }
@@ -396,6 +459,19 @@ export class DealDataService {
     try {
       const deals: any[] = [];
       let totalSavings = 0;
+
+      if (!productIds || productIds.length === 0) {
+        return {
+          deals: [],
+          totalSavings: 0,
+          productIds: [],
+          customerId
+        };
+      }
+
+      if (!this.db) {
+        throw new Error('Database connection not established');
+      }
 
       // Find deals containing these products
       const placeholders = productIds.map(() => "?").join(",");
@@ -421,7 +497,7 @@ export class DealDataService {
       // Group by deal
       const dealMap = new Map<string, any>();
 
-      results.forEach((row) => {
+      results.forEach((row: any) => {
         if (!dealMap.has(row.deal_id)) {
           dealMap.set(row.deal_id, {
             dealId: row.deal_id,
@@ -439,17 +515,19 @@ export class DealDataService {
         );
         const savings = (row.list_price || 0) - discountPrice;
 
-        deal.items.push({
+        if (deal) {
+          deal.items.push({
           productNumber: row.product_number,
           dealerNetPrice: row.dealer_net_price,
           discountPrice,
           listPrice: row.list_price,
           savings,
           remainingQuantity: row.remaining_quantity,
-        });
+          });
 
-        deal.totalValue += discountPrice * row.remaining_quantity;
-        totalSavings += savings * row.remaining_quantity;
+          deal.totalValue += discountPrice * row.remaining_quantity;
+          totalSavings += savings * row.remaining_quantity;
+        }
       });
 
       return {
@@ -460,7 +538,7 @@ export class DealDataService {
       };
     } catch (error) {
       logger.error("Failed to analyze deals for products", "DEAL_DATA", {
-        error,
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -479,6 +557,10 @@ export class DealDataService {
         );
       }
 
+      if (!this.db) {
+        throw new Error('Database connection not established');
+      }
+
       const stmt = this.db.prepare(`
         SELECT * FROM deals 
         WHERE datetime(created_at) >= datetime('now', ? || ' hours')
@@ -487,7 +569,7 @@ export class DealDataService {
 
       const results = stmt.all(`-${hoursAgo}`) as any[];
 
-      return results.map((deal) => ({
+      return (results || []).map((deal: any) => ({
         id: deal.deal_id,
         customer: deal.customer,
         endDate: deal.end_date,
@@ -496,7 +578,9 @@ export class DealDataService {
         products: this.getDealProducts(deal.deal_id),
       }));
     } catch (error) {
-      logger.error("Failed to get recent deals", "DEAL_DATA", { error });
+      logger.error("Failed to get recent deals", "DEAL_DATA", { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
       throw error;
     }
   }
@@ -506,13 +590,20 @@ export class DealDataService {
    */
   private getDealProducts(dealId: string): string[] {
     try {
+      if (!this.db) {
+        logger.warn('Database connection not established', "DEAL_DATA");
+        return [];
+      }
+
       const stmt = this.db.prepare(`
         SELECT product_number FROM deal_items WHERE deal_id = ?
       `);
       const results = stmt.all(dealId) as any[];
-      return results.map((r) => r.product_number);
+      return (results || []).map((r: any) => r.product_number);
     } catch (error) {
-      logger.error("Failed to get deal products", "DEAL_DATA", { error });
+      logger.error("Failed to get deal products", "DEAL_DATA", { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
       return [];
     }
   }
@@ -531,7 +622,7 @@ export class DealDataService {
       totalValue: dealResponse.metadata.totalValue,
       itemCount: dealResponse.metadata.totalItems,
       daysUntilExpiration: dealResponse.metadata.daysUntilExpiration,
-      products: dealResponse.items.map((item) => ({
+      products: dealResponse.items.map((item: DealItem) => ({
         sku: item.productNumber,
         price: this.calculatePrice(item.dealerNetPrice, item.productFamily),
         quantity: item.remainingQuantity,
@@ -551,10 +642,12 @@ export class DealDataService {
 
   async close(): Promise<void> {
     try {
-      this.db.close();
-      logger.info("Deal data database connection closed", "DEAL_DATA");
+      if (this.db) {
+        this.db.close();
+        logger.info("Deal data database connection closed", "DEAL_DATA");
+      }
     } catch (error) {
-      logger.error(`Failed to close deal data database: ${error}`, "DEAL_DATA");
+      logger.error(`Failed to close deal data database: ${error instanceof Error ? error.message : String(error)}`, "DEAL_DATA");
       throw error;
     }
   }

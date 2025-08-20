@@ -7,27 +7,39 @@ import { PricingService } from '../../microservices/pricing-service/PricingServi
 import { ListManagementService } from './ListManagementService.js';
 import { z } from 'zod';
 
-// Unified cache manager configuration
+// Unified cache manager configuration - matches CentralizedCacheService requirements
 const UnifiedCacheManagerConfigSchema = z.object({
   cache: z.object({
     memory: z.object({
-      maxSize: z.number().default(50000),
-      ttl: z.number().default(300) // 5 minutes
+      maxSize: z.number().min(100).default(50000),
+      ttl: z.number().min(10).default(300), // 5 minutes
+      checkInterval: z.number().min(1000).default(60000) // 1 minute
     }),
     redis: z.object({
       host: z.string().default('localhost'),
-      port: z.number().default(6379),
-      ttl: z.number().default(3600) // 1 hour
+      port: z.number().min(1).max(65535).default(6379),
+      password: z.string().optional(),
+      db: z.number().min(0).default(0),
+      ttl: z.number().min(60).default(3600), // 1 hour
+      keyPrefix: z.string().default('cache:'),
+      maxRetries: z.number().min(0).default(3)
     }),
     sqlite: z.object({
       path: z.string().default('./data/unified_cache.db'),
-      ttl: z.number().default(86400) // 24 hours
+      ttl: z.number().min(300).default(86400), // 24 hours
+      tableName: z.string().default('unified_cache'),
+      maxEntries: z.number().min(1000).default(1000000),
+      cleanupInterval: z.number().min(60000).default(3600000) // 1 hour
     })
   }),
   integration: z.object({
     enablePricingCache: z.boolean().default(true),
     enableListCache: z.boolean().default(true),
+    pricingCacheTtl: z.number().default(3600), // 1 hour
+    listCacheTtl: z.number().default(1800), // 30 minutes
+    enableCacheWarm: z.boolean().default(true),
     warmOnStartup: z.boolean().default(false),
+    cacheKeyPrefix: z.string().default('integrated:'),
     invalidationStrategy: z.enum(['immediate', 'lazy', 'periodic']).default('immediate')
   }),
   monitoring: z.object({
@@ -98,28 +110,28 @@ export class UnifiedCacheManager extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Central cache events
-    this.centralCache.on('cache:hit', (data) => {
+    this.centralCache.on('cache:hit', (data: any) => {
       this.emit('cache:hit', { ...data, source: 'central' });
     });
 
-    this.centralCache.on('error', (error) => {
+    this.centralCache.on('error', (error: any) => {
       this.emit('cache:error', { ...error, source: 'central' });
     });
 
     // Integration service events
-    this.integration.on('cache:pricing:hit', (data) => {
+    this.integration.on('cache:pricing:hit', (data: any) => {
       this.emit('cache:hit', { ...data, source: 'pricing' });
     });
 
-    this.integration.on('cache:list:hit', (data) => {
+    this.integration.on('cache:list:hit', (data: any) => {
       this.emit('cache:hit', { ...data, source: 'lists' });
     });
 
-    this.integration.on('service:registered', (data) => {
+    this.integration.on('service:registered', (data: any) => {
       this.emit('service:registered', data);
     });
 
-    this.integration.on('cache:error', (error) => {
+    this.integration.on('cache:error', (error: any) => {
       this.emit('cache:error', { ...error, source: 'integration' });
     });
   }
@@ -242,9 +254,9 @@ export class UnifiedCacheManager extends EventEmitter {
         central: centralStats,
         integration: integrationStats,
         combined: {
-          totalHits: centralStats.hits.memory + centralStats.hits.redis + centralStats.hits.sqlite,
-          totalMisses: centralStats.misses.memory + centralStats.misses.redis + centralStats.misses.sqlite,
-          overallHitRatio: integrationStats.unified.overallHitRatio
+          totalHits: (centralStats?.hits?.memory || 0) + (centralStats?.hits?.redis || 0) + (centralStats?.hits?.sqlite || 0),
+          totalMisses: (centralStats?.misses?.memory || 0) + (centralStats?.misses?.redis || 0) + (centralStats?.misses?.sqlite || 0),
+          overallHitRatio: integrationStats?.unified?.overallHitRatio || 0
         }
       };
 
@@ -273,37 +285,37 @@ export class UnifiedCacheManager extends EventEmitter {
     const centralStats = this.centralCache.getStats();
     const integrationStats = this.integration.getStats();
 
-    const totalRequests = integrationStats.unified.totalHits + integrationStats.unified.totalMisses;
-    const errorCount = Object.values(centralStats.errors).reduce((sum, errors) => sum + errors, 0);
+    const totalRequests = (integrationStats?.unified?.totalHits || 0) + (integrationStats?.unified?.totalMisses || 0);
+    const errorCount = Object.values(centralStats?.errors || {}).reduce((sum: any, errors: any) => sum + errors, 0);
 
     return {
       status: integrationHealth.status,
       uptime: Date.now() - this.startTime,
       services: {
-        central: integrationHealth.cache.status !== 'unhealthy',
+        central: integrationHealth?.cache?.status !== 'unhealthy',
         integration: Object.keys(integrationHealth.services).length > 0,
         pricing: !!this.pricingService,
         lists: !!this.listService
       },
       performance: {
         totalRequests,
-        cacheHitRatio: integrationStats.unified.overallHitRatio,
-        averageLatency: Object.values(centralStats.averageLatency).reduce((sum, lat) => sum + lat, 0) / 3,
+        cacheHitRatio: integrationStats?.unified?.overallHitRatio || 0,
+        averageLatency: Object.values(centralStats?.averageLatency || {}).reduce((sum: any, lat: any) => sum + lat, 0) / 3,
         errorRate: totalRequests > 0 ? (errorCount / totalRequests) * 100 : 0
       },
       tiers: {
         memory: {
-          status: integrationHealth.cache.tiers.memory,
-          size: centralStats.sizes.memory,
-          hitRatio: centralStats.hitRatio.memory
+          status: integrationHealth?.cache?.tiers.memory,
+          size: centralStats?.sizes?.memory,
+          hitRatio: centralStats?.hitRatio?.memory
         },
         redis: {
-          status: integrationHealth.cache.tiers.redis,
-          hitRatio: centralStats.hitRatio.redis
+          status: integrationHealth?.cache?.tiers.redis,
+          hitRatio: centralStats?.hitRatio?.redis
         },
         sqlite: {
-          status: integrationHealth.cache.tiers.sqlite,
-          hitRatio: centralStats.hitRatio.sqlite
+          status: integrationHealth?.cache?.tiers.sqlite,
+          hitRatio: centralStats?.hitRatio?.sqlite
         }
       }
     };
@@ -381,7 +393,9 @@ export class UnifiedCacheManager extends EventEmitter {
       res.setHeader('X-Cache-Uptime', Math.floor((Date.now() - this.startTime) / 1000));
       
       // Add cache status to response locals
-      res.locals.cacheManager = this;
+      if (res && res.locals) {
+        res.locals.cacheManager = this;
+      }
       
       next();
     };

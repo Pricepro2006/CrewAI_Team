@@ -23,9 +23,9 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
         );
       } else {
         setOpenItems(
-          openItems.includes(value)
-            ? openItems.filter((item) => item !== value)
-            : [...openItems, value],
+        openItems.includes(value)
+        ? openItems.filter((item) => item !== value)
+        : [...openItems, value],
         );
       }
     };
@@ -34,7 +34,7 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
       <div ref={ref} className={cn("space-y-2", className)} {...props}>
         {React.Children.map(children, (child, index) => {
           if (React.isValidElement(child)) {
-            const value = child.props.value || `item-${index}`;
+            const value = child.props?.value || `item-${index}`;
             return React.cloneElement(child, {
               isOpen: openItems.includes(value),
               onToggle: () => handleToggle(value),

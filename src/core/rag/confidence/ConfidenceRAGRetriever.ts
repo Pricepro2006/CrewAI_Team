@@ -3,12 +3,12 @@
  * Integrates with vector stores and applies confidence-based filtering
  */
 
-import type { VectorStore } from "../VectorStore.js";
+import type { VectorStore } from "../VectorStore";
 import type {
   RetrievalResult,
   RetrievalOptions,
   ScoredDocument,
-} from "./types.js";
+} from "./types";
 
 export class ConfidenceRAGRetriever {
   private vectorStore: VectorStore;
@@ -38,7 +38,7 @@ export class ConfidenceRAGRetriever {
 
     try {
       // Perform vector search
-      const searchResults = await this.vectorStore.search(
+      const searchResults = await this?.vectorStore?.search(
         query,
         options.topK * 2,
       );
@@ -54,15 +54,15 @@ export class ConfidenceRAGRetriever {
 
       // Calculate average confidence
       const averageConfidence =
-        finalDocs.length > 0
-          ? finalDocs.reduce((sum, doc) => sum + doc.confidence, 0) /
-            finalDocs.length
+        finalDocs?.length || 0 > 0
+          ? finalDocs.reduce((sum: any, doc: any) => sum + doc.confidence, 0) /
+            finalDocs?.length || 0
           : 0;
 
       const result: RetrievalResult = {
         documents: finalDocs,
         query,
-        totalMatches: searchResults.length,
+        totalMatches: searchResults?.length || 0,
         averageConfidence,
         retrievalTime: Date.now() - startTime,
       };
@@ -94,7 +94,7 @@ export class ConfidenceRAGRetriever {
   ): Promise<ScoredDocument[]> {
     const queryTerms = this.extractQueryTerms(query);
 
-    return documents.map((doc, index) => {
+    return documents?.map((doc, index) => {
       const baseScore = doc.score || 0;
 
       // Calculate additional confidence factors
@@ -115,15 +115,15 @@ export class ConfidenceRAGRetriever {
 
       return {
         id: doc.id || `doc-${index}`,
-        content: doc.content,
+        content: doc.content || '',
         metadata: doc.metadata || {},
-        source: doc.metadata?.sourceId || doc.metadata?.source,
+        source: String(doc.metadata?.sourceId || doc.metadata?.source || ''),
         timestamp: doc.metadata?.createdAt || doc.metadata?.timestamp,
         score: baseScore,
         confidence,
         relevanceScore: contextRelevance,
         chunkIndex: index,
-      };
+      } as ScoredDocument;
     });
   }
 
@@ -181,7 +181,7 @@ export class ConfidenceRAGRetriever {
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter((term) => term.length > 2 && !stopWords.has(term))
+      .filter((term: any) => term?.length || 0 > 2 && !stopWords.has(term))
       .slice(0, 10); // Limit to top 10 terms
   }
 
@@ -189,14 +189,14 @@ export class ConfidenceRAGRetriever {
    * Calculate term coverage score
    */
   private calculateTermCoverage(queryTerms: string[], content: string): number {
-    if (queryTerms.length === 0) return 0;
+    if (queryTerms?.length || 0 === 0) return 0;
 
     const contentLower = content.toLowerCase();
-    const coveredTerms = queryTerms.filter((term) =>
+    const coveredTerms = queryTerms?.filter((term: any) =>
       contentLower.includes(term),
     );
 
-    return coveredTerms.length / queryTerms.length;
+    return coveredTerms?.length || 0 / queryTerms?.length || 0;
   }
 
   /**
@@ -208,7 +208,7 @@ export class ConfidenceRAGRetriever {
 
     // Jaccard similarity
     const intersection = new Set(
-      Array.from(queryWords).filter((x) => contentWords.has(x)),
+      Array.from(queryWords).filter((x: any) => contentWords.has(x)),
     );
     const union = new Set([
       ...Array.from(queryWords),
@@ -242,7 +242,7 @@ export class ConfidenceRAGRetriever {
     let quality = 0.5; // Base quality
 
     // Length factor (moderate length is better)
-    const contentLength = doc.content.length;
+    const contentLength = doc?.content?.length;
     if (contentLength > 100 && contentLength < 2000) {
       quality += 0.2;
     } else if (contentLength > 2000 && contentLength < 5000) {
@@ -305,8 +305,8 @@ export class ConfidenceRAGRetriever {
     options: RetrievalOptions,
   ): ScoredDocument[] {
     // Filter by minimum confidence
-    const filtered = documents.filter(
-      (doc) => doc.confidence >= options.minConfidence,
+    const filtered = documents?.filter(
+      (doc: any) => doc.confidence >= options.minConfidence,
     );
 
     // Sort by confidence score (descending)
@@ -330,7 +330,7 @@ export class ConfidenceRAGRetriever {
    * Get cached result if valid
    */
   private getCachedResult(key: string): RetrievalResult | null {
-    const cached = this.retrievalCache.get(key);
+    const cached = this?.retrievalCache?.get(key);
     if (!cached) return null;
 
     // Check if cache is still valid (simple TTL check)
@@ -338,7 +338,7 @@ export class ConfidenceRAGRetriever {
     const cacheAge = now - (cached as any).cachedAt;
 
     if (cacheAge > this.defaultCacheTTL) {
-      this.retrievalCache.delete(key);
+      this?.retrievalCache?.delete(key);
       return null;
     }
 
@@ -349,17 +349,17 @@ export class ConfidenceRAGRetriever {
    * Cache result with size limit
    */
   private cacheResult(key: string, result: RetrievalResult): void {
-    if (this.retrievalCache.size >= this.cacheSize) {
+    if (this?.retrievalCache?.size >= this.cacheSize) {
       // Remove oldest entry
-      const firstKey = this.retrievalCache.keys().next().value;
+      const firstKey = this?.retrievalCache?.keys().next().value;
       if (firstKey) {
-        this.retrievalCache.delete(firstKey);
+        this?.retrievalCache?.delete(firstKey);
       }
     }
 
     // Add timestamp for TTL
     (result as any).cachedAt = Date.now();
-    this.retrievalCache.set(key, result);
+    this?.retrievalCache?.set(key, result);
   }
 
   /**
@@ -373,12 +373,12 @@ export class ConfidenceRAGRetriever {
     const startTime = Date.now();
 
     try {
-      const searchResults = await this.vectorStore.search(
+      const searchResults = await this?.vectorStore?.search(
         query,
         options.topK * 2,
       );
 
-      const scoredDocs = searchResults.map((doc, index) => {
+      const scoredDocs = searchResults?.map((doc, index) => {
         const customScore = scoringFunction(query, doc);
         const baseScore = doc.score || 0;
 
@@ -387,33 +387,33 @@ export class ConfidenceRAGRetriever {
 
         return {
           id: doc.id || `doc-${index}`,
-          content: doc.content,
+          content: doc.content || '',
           metadata: doc.metadata || {},
-          source: doc.metadata?.sourceId || doc.metadata?.source,
+          source: String(doc.metadata?.sourceId || doc.metadata?.source || ''),
           timestamp: doc.metadata?.createdAt || doc.metadata?.timestamp,
           score: baseScore,
           confidence: combinedScore,
           relevanceScore: customScore,
           chunkIndex: index,
-        };
+        } as ScoredDocument;
       });
 
       // Filter and sort
       const filtered = scoredDocs
-        .filter((doc) => doc.confidence >= options.minConfidence)
+        .filter((doc: any) => doc.confidence >= options.minConfidence)
         .sort((a, b) => b.confidence - a.confidence)
         .slice(0, options.topK);
 
       const averageConfidence =
-        filtered.length > 0
-          ? filtered.reduce((sum, doc) => sum + doc.confidence, 0) /
-            filtered.length
+        filtered?.length || 0 > 0
+          ? filtered.reduce((sum: any, doc: any) => sum + doc.confidence, 0) /
+            filtered?.length || 0
           : 0;
 
       return {
         documents: filtered,
         query,
-        totalMatches: searchResults.length,
+        totalMatches: searchResults?.length || 0,
         averageConfidence,
         retrievalTime: Date.now() - startTime,
       };
@@ -433,7 +433,7 @@ export class ConfidenceRAGRetriever {
    * Clear cache
    */
   clearCache(): void {
-    this.retrievalCache.clear();
+    this?.retrievalCache?.clear();
   }
 
   /**
@@ -441,7 +441,7 @@ export class ConfidenceRAGRetriever {
    */
   getCacheStats(): { size: number; maxSize: number; hitRate: number } {
     return {
-      size: this.retrievalCache.size,
+      size: this?.retrievalCache?.size,
       maxSize: this.cacheSize,
       hitRate: 0, // Would need tracking to implement
     };

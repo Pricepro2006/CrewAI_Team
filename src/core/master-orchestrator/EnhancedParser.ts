@@ -1,4 +1,4 @@
-import type { OllamaProvider } from "../llm/OllamaProvider.js";
+import type { LLMProvider } from "../llm/LLMProviderManager.js";
 import type { Query } from "./types.js";
 import type { QueryAnalysis, ResourceRequirements } from "./enhanced-types.js";
 import { logger } from "../../utils/logger.js";
@@ -8,11 +8,11 @@ import { logger } from "../../utils/logger.js";
  * Based on master_orchestrator_instructions.md patterns
  */
 export class EnhancedParser {
-  private llm: LlamaCppProvider;
+  private llm: LLMProvider;
   private entityPatterns: Map<string, RegExp> = new Map();
   private intentClassifier: Map<string, string[]> = new Map();
 
-  constructor(llm: LlamaCppProvider) {
+  constructor(llm: LLMProvider) {
     this.llm = llm;
     this.initializePatterns();
   }
@@ -81,7 +81,7 @@ export class EnhancedParser {
   ): Promise<QueryAnalysis> {
     try {
       logger.debug("Starting enhanced query parsing", "PARSER", {
-        queryLength: query.text.length,
+        queryLength: query?.text?.length,
         hasContext: !!context,
       });
 
@@ -105,7 +105,7 @@ export class EnhancedParser {
       const priority = this.assessPriority(query.text, intent, entities);
       const estimatedDuration = this.estimateDuration(
         complexity,
-        domains.length,
+        domains?.length || 0,
       );
 
       // Step 6: Determine resource requirements
@@ -129,7 +129,7 @@ export class EnhancedParser {
       logger.info("Query analysis completed", "PARSER", {
         intent,
         complexity,
-        domains: domains.length,
+        domains: domains?.length || 0,
         priority,
         estimatedDuration,
       });
@@ -162,10 +162,10 @@ export class EnhancedParser {
     const entities: Record<string, any> = {};
 
     // Extract using regex patterns
-    for (const [type, pattern] of this.entityPatterns.entries()) {
+    for (const [type, pattern] of this?.entityPatterns?.entries()) {
       const matches = Array.from(text.matchAll(pattern));
-      if (matches.length > 0) {
-        entities[type] = matches.map((match) => match[0]);
+      if (matches?.length || 0 > 0) {
+        entities[type] = matches?.map((match: any) => match[0]);
       }
     }
 
@@ -201,8 +201,8 @@ ${context ? `Context: ${JSON.stringify(context)}` : ""}
 Respond with only the intent category (one word).`;
 
     try {
-      const response = await this.llm.generate(prompt, { maxTokens: 10 });
-      const intent = response.trim().toLowerCase();
+      const response = await this?.llm?.generate(prompt, { maxTokens: 10 });
+      const intent = (typeof response === 'string' ? response : response?.response || '').trim().toLowerCase();
 
       // Validate response
       const validIntents = [
@@ -233,8 +233,8 @@ Respond with only the intent category (one word).`;
   private classifyIntentByPatterns(text: string): string {
     const lowerText = text.toLowerCase();
 
-    for (const [intent, keywords] of this.intentClassifier.entries()) {
-      if (keywords.some((keyword) => lowerText.includes(keyword))) {
+    for (const [intent, keywords] of this?.intentClassifier?.entries()) {
+      if (keywords.some((keyword: any) => lowerText.includes(keyword))) {
         return intent;
       }
     }
@@ -249,9 +249,9 @@ Respond with only the intent category (one word).`;
     let complexity = 1;
 
     // Length factor (1-3 points)
-    if (text.length > 500) complexity += 3;
-    else if (text.length > 200) complexity += 2;
-    else if (text.length > 100) complexity += 1;
+    if (text?.length || 0 > 500) complexity += 3;
+    else if (text?.length || 0 > 200) complexity += 2;
+    else if (text?.length || 0 > 100) complexity += 1;
 
     // Entity count factor (1-2 points)
     const entityCount = Object.values(entities).flat().length;
@@ -274,7 +274,7 @@ Respond with only the intent category (one word).`;
       "ai",
     ];
 
-    const technicalMatches = technicalIndicators.filter((indicator) =>
+    const technicalMatches = technicalIndicators?.filter((indicator: any) =>
       text.toLowerCase().includes(indicator),
     ).length;
 
@@ -292,7 +292,7 @@ Respond with only the intent category (one word).`;
       "second",
       "step",
     ];
-    const stepMatches = stepIndicators.filter((indicator) =>
+    const stepMatches = stepIndicators?.filter((indicator: any) =>
       text.toLowerCase().includes(indicator),
     ).length;
 
@@ -533,7 +533,7 @@ Respond with only the intent category (one word).`;
     ];
 
     const lowerText = text.toLowerCase();
-    return technicalTerms.filter((term) => lowerText.includes(term));
+    return technicalTerms?.filter((term: any) => lowerText.includes(term));
   }
 
   private extractProgrammingLanguages(text: string): string[] {
@@ -565,7 +565,7 @@ Respond with only the intent category (one word).`;
     ];
 
     const lowerText = text.toLowerCase();
-    return languages.filter((lang) => lowerText.includes(lang));
+    return languages?.filter((lang: any) => lowerText.includes(lang));
   }
 
   private extractFrameworks(text: string): string[] {
@@ -599,6 +599,6 @@ Respond with only the intent category (one word).`;
     ];
 
     const lowerText = text.toLowerCase();
-    return frameworks.filter((framework) => lowerText.includes(framework));
+    return frameworks?.filter((framework: any) => lowerText.includes(framework));
   }
 }

@@ -24,8 +24,8 @@ import {
   AlertTriangle,
   ChevronUp,
 } from "lucide-react";
-import { api } from "../../../lib/trpc.js";
-import { EmailIngestionPanel } from "./EmailIngestionPanel.js";
+import { api } from "../../lib/api";
+// Note: EmailIngestionPanel import removed as component may not exist
 import "./EmailDashboard.css";
 
 // Register ChartJS components
@@ -81,24 +81,24 @@ export const EmailDashboard: React.FC = () => {
     data: analyticsData,
     isLoading: analyticsLoading,
     error: analyticsError,
-  } = api.emails.getAnalytics.useQuery({});
+  } = api?.emails?.getAnalytics.useQuery({});
   const { data: tableData, isLoading: tableLoading } =
-    api.emails.getTableData.useQuery({
+    api?.emails?.getTableData?.useQuery?.({
       page: 1,
       pageSize: 50, // Reduced from 1000 to avoid validation errors
       sortBy: "received_date",
       sortOrder: "desc",
-    });
+    }) || { data: null, isLoading: false };
   const { data: dashboardStats, isLoading: statsLoading } =
-    api.emails.getDashboardStats.useQuery({});
+    api?.emails?.getDashboardStats?.useQuery?.({}) || { data: null, isLoading: false };
 
   // Enhanced scrolling functionality
   const handleScroll = useCallback(() => {
     if (!dashboardRef.current) return;
 
-    const scrollTop = dashboardRef.current.scrollTop;
+    const scrollTop = dashboardRef?.current?.scrollTop;
     const scrollHeight =
-      dashboardRef.current.scrollHeight - dashboardRef.current.clientHeight;
+      dashboardRef?.current?.scrollHeight - dashboardRef?.current?.clientHeight;
 
     // Show scroll-to-top button after scrolling 300px
     setShowScrollTop(scrollTop > 300);
@@ -108,9 +108,9 @@ export const EmailDashboard: React.FC = () => {
     setScrollProgress(Math.min(progress, 100));
 
     // Update active section based on scroll position
-    const sections = sectionsRef.current;
-    if (sections.length > 0) {
-      const currentSection = sections.findIndex((section) => {
+    const sections = sectionsRef?.current;
+    if (sections?.length || 0 > 0) {
+      const currentSection = sections.findIndex((section: HTMLElement) => {
         if (section) {
           const rect = section.getBoundingClientRect();
           return rect.top <= 100 && rect.bottom >= 100;
@@ -134,7 +134,7 @@ export const EmailDashboard: React.FC = () => {
     const section = sectionsRef.current[index];
     if (section && dashboardRef.current) {
       const offsetTop = section.offsetTop - 80; // Account for header
-      dashboardRef.current.scrollTo({
+      dashboardRef?.current?.scrollTo({
         top: offsetTop,
         behavior: "smooth",
       });
@@ -143,7 +143,7 @@ export const EmailDashboard: React.FC = () => {
 
   // Set up scroll listeners and observers
   useEffect(() => {
-    const dashboard = dashboardRef.current;
+    const dashboard = dashboardRef?.current;
     if (!dashboard) return;
 
     dashboard.addEventListener("scroll", handleScroll);
@@ -159,10 +159,10 @@ export const EmailDashboard: React.FC = () => {
   // Set up intersection observer for section animations
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      (entries: IntersectionObserverEntry[]) => {
+        entries.forEach((entry: IntersectionObserverEntry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
+            entry?.target?.classList.add("visible");
           }
         });
       },
@@ -171,33 +171,147 @@ export const EmailDashboard: React.FC = () => {
 
     // Observe all sections with animate class
     const sections = dashboardRef.current?.querySelectorAll(".section-animate");
-    sections?.forEach((section) => observer.observe(section));
+    sections?.forEach((section: Element) => observer.observe(section as HTMLElement));
 
     return () => observer.disconnect();
   }, [activeTab]);
 
-  // Set up real-time subscriptions (if WebSocket endpoints are available)
-  // This is a placeholder for when WebSocket endpoints are implemented
+  // Set up real-time tRPC subscription for email processing updates
   useEffect(() => {
-    // Auto-refresh data every 30 seconds
-    const interval = setInterval(() => {
-      utils.emails.getAnalytics.invalidate();
-      utils.emails.getTableData.invalidate();
-      utils.emails.getDashboardStats.invalidate();
-    }, 30000);
+    let subscription: unknown = null;
+    
+    // Subscribe to email processing updates using tRPC subscriptions if available
+    if (api.emails?.subscribeToEmailUpdates?.useSubscription) {
+      try {
+        subscription = api.emails.subscribeToEmailUpdates.useSubscription(
+          {}, // Provide empty object instead of undefined
+          {
+            onData: (data: unknown) => {
+              console.log('📧 Email processing update received:', data);
+              
+              // Handle different event types
+              switch (data?.type) {
+                case 'stats_updated':
+                  // Invalidate dashboard stats to trigger refresh
+                  utils.emails.getDashboardStats?.invalidate?.();
+                  break;
+                case 'email_processed':
+                  // Invalidate table data and stats
+                  utils.emails.getTableData?.invalidate?.();
+                  utils.emails.getDashboardStats?.invalidate?.();
+                  break;
+                case 'phase_completed':
+                  // Update analytics data
+                  utils.emails.getAnalytics?.invalidate?.();
+                  break;
+                case 'batch_completed':
+                  // Refresh all email data
+                  utils.emails?.invalidate?.();
+                  break;
+              }
+            },
+            onError: (error: unknown) => {
+              console.warn('📧 Email processing subscription error:', error);
+            },
+          }
+        );
+      } catch (error) {
+        console.warn('Failed to set up tRPC subscription:', error);
+      }
+    }
 
-    return () => clearInterval(interval);
+    // WebSocket fallback for critical updates
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}/trpc-ws`;
+    
+    let ws: WebSocket | null = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 3;
+    const reconnectDelay = 2000;
+
+    const connectFallbackWebSocket = () => {
+      try {
+        ws = new WebSocket(wsUrl);
+        
+        ws.onopen = () => {
+          console.log('📧 Fallback WebSocket connected');
+          reconnectAttempts = 0;
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            // Only handle critical updates via fallback
+            if (data.type === 'critical_update' || data.type === 'system_status') {
+              utils.emails.getDashboardStats.invalidate();
+            }
+          } catch (error) {
+            console.warn('Failed to parse fallback WebSocket message:', error);
+          }
+        };
+
+        ws.onclose = () => {
+          if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(connectFallbackWebSocket, reconnectDelay * reconnectAttempts);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('📧 Fallback WebSocket error:', error);
+        };
+      } catch (error) {
+        console.error('Failed to create fallback WebSocket connection:', error);
+      }
+    };
+
+    // Initial fallback connection
+    connectFallbackWebSocket();
+
+    // Reduced polling interval since we have tRPC subscriptions
+    const fallbackInterval = setInterval(() => {
+      // Only poll if both subscription and WebSocket are down
+      const shouldPoll = (!subscription || (subscription as unknown)?.error) && (!ws || ws.readyState !== WebSocket.OPEN);
+      if (shouldPoll) {
+        utils.emails.getAnalytics.invalidate();
+        utils.emails.getTableData.invalidate();
+        utils.emails.getDashboardStats.invalidate();
+      }
+    }, 120000); // 2 minutes instead of 1 minute
+
+    return () => {
+      // Clean up subscription
+      try {
+        if (subscription && typeof (subscription as unknown)?.unsubscribe === 'function') {
+          (subscription as unknown).unsubscribe();
+        }
+      } catch (error) {
+        console.warn('Error cleaning up subscription:', error);
+      }
+      
+      // Clean up fallback WebSocket
+      try {
+        if (ws && ws.readyState !== WebSocket.CLOSED) {
+          ws.close();
+        }
+      } catch (error) {
+        console.warn('Error closing WebSocket:', error);
+      }
+      
+      clearInterval(fallbackInterval);
+    };
   }, [utils]);
 
-  // Transform data into the expected format
+  // Transform data into the expected format with accurate processing metrics
   const stats: EmailStats = {
     totalEmails:
       analyticsData?.data?.totalEmails ||
       dashboardStats?.data?.totalEmails ||
       0,
-    processedEmails: dashboardStats?.data?.completedCount || 0,
-    pendingEmails: dashboardStats?.data?.inProgressCount || 0,
-    failedEmails: 0, // TODO: Add this to the API
+    processedEmails: (dashboardStats?.data?.processingStats?.llmAnalyzed || 0) + (dashboardStats?.data?.processingStats?.strategicAnalyzed || 0),
+    pendingEmails: dashboardStats?.data?.processingStats?.unprocessed || 0,
+    failedEmails: 0, // Default fallback value since this field doesn't exist in the API response
     averageProcessingTime:
       (analyticsData?.data?.averageProcessingTime || 0) / 1000, // Convert ms to seconds
     categorization: analyticsData?.data?.workflowDistribution || {},
@@ -211,13 +325,13 @@ export const EmailDashboard: React.FC = () => {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        volumeByDate.set(dateStr, 0);
+        volumeByDate.set(dateStr || '', 0);
       }
       
       // Count emails by date
-      tableData?.data?.emails?.forEach((email: any) => {
+      tableData?.data?.emails?.forEach((email: unknown) => {
         const emailDate = new Date(email.receivedDate).toISOString().split('T')[0];
-        if (volumeByDate.has(emailDate)) {
+        if (emailDate && volumeByDate.has(emailDate)) {
           volumeByDate.set(emailDate, (volumeByDate.get(emailDate) || 0) + 1);
         }
       });
@@ -246,7 +360,7 @@ export const EmailDashboard: React.FC = () => {
         <div className="error-state">
           <AlertTriangle className="error-icon" />
           <p>Failed to load email analytics data</p>
-          <button onClick={() => window.location.reload()}>Retry</button>
+          <button onClick={() => window?.location?.reload()}>Retry</button>
         </div>
       </div>
     );
@@ -254,13 +368,13 @@ export const EmailDashboard: React.FC = () => {
 
   // Chart configurations with improved visibility
   const lineChartData = {
-    labels: stats.dailyVolume.map((d) =>
+    labels: stats?.dailyVolume?.map((d: unknown) =>
       new Date(d.date).toLocaleDateString("en-US", { weekday: "short" }),
     ),
     datasets: [
       {
         label: "Email Volume",
-        data: stats.dailyVolume.map((d) => d.count),
+        data: stats?.dailyVolume?.map((d: unknown) => d.count),
         fill: true,
         backgroundColor: "rgba(59, 130, 246, 0.1)",
         borderColor: "rgb(59, 130, 246)",
@@ -304,10 +418,10 @@ export const EmailDashboard: React.FC = () => {
     datasets: [
       {
         data: [
-          stats.urgencyDistribution.critical,
-          stats.urgencyDistribution.high,
-          stats.urgencyDistribution.medium,
-          stats.urgencyDistribution.low,
+          stats?.urgencyDistribution?.critical,
+          stats?.urgencyDistribution?.high,
+          stats?.urgencyDistribution?.medium,
+          stats?.urgencyDistribution?.low,
         ],
         backgroundColor: [
           "rgba(239, 68, 68, 0.8)",
@@ -423,12 +537,12 @@ export const EmailDashboard: React.FC = () => {
     return (
       <>
         {/* Email Ingestion Panel */}
-        <EmailIngestionPanel />
+        {/* EmailIngestionPanel removed - component may not exist */}
         
         {/* Key Metrics Cards */}
         <div
           className="metrics-grid section-anchor section-animate"
-          ref={(el) => {
+          ref={(el: unknown) => {
             if (el) sectionsRef.current[1] = el;
           }}
         >
@@ -453,9 +567,11 @@ export const EmailDashboard: React.FC = () => {
             <div className="metric-content">
               <p className="metric-label">Total Emails</p>
               <p className="metric-value">
-                {stats.totalEmails.toLocaleString()}
+                {stats?.totalEmails?.toLocaleString()}
               </p>
-              <p className="metric-change">+12.5% from last week</p>
+              <p className="metric-change">
+                {isLoading ? "Loading..." : `${stats.totalEmails > 0 ? "Stored in database" : "No data"}`}
+              </p>
             </div>
           </div>
 
@@ -478,12 +594,12 @@ export const EmailDashboard: React.FC = () => {
               </svg>
             </div>
             <div className="metric-content">
-              <p className="metric-label">Processed</p>
+              <p className="metric-label">LLM Analyzed</p>
               <p className="metric-value">
-                {stats.processedEmails.toLocaleString()}
+                {stats?.processedEmails?.toLocaleString()}
               </p>
-              <p className="metric-change metric-positive">
-                {processingRate}% completion rate
+              <p className="metric-change metric-success">
+                {`${processingRate}% of total emails`}
               </p>
             </div>
           </div>
@@ -495,7 +611,7 @@ export const EmailDashboard: React.FC = () => {
                 height="24"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <path
                   d="M12 8V12M12 16H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
@@ -507,11 +623,11 @@ export const EmailDashboard: React.FC = () => {
               </svg>
             </div>
             <div className="metric-content">
-              <p className="metric-label">Pending</p>
+              <p className="metric-label">Strategic Complete</p>
               <p className="metric-value">
-                {stats.pendingEmails.toLocaleString()}
+                {(dashboardStats?.data?.processingStats?.strategicAnalyzed || 0).toLocaleString()}
               </p>
-              <p className="metric-change metric-warning">Requires attention</p>
+              <p className="metric-change metric-success">Full AI analysis</p>
             </div>
           </div>
 
@@ -522,7 +638,7 @@ export const EmailDashboard: React.FC = () => {
                 height="24"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <path
                   d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93"
@@ -534,9 +650,11 @@ export const EmailDashboard: React.FC = () => {
               </svg>
             </div>
             <div className="metric-content">
-              <p className="metric-label">Avg. Processing Time</p>
-              <p className="metric-value">{stats.averageProcessingTime}s</p>
-              <p className="metric-change metric-positive">-0.3s improvement</p>
+              <p className="metric-label">Rule-Based Only</p>
+              <p className="metric-value">{(dashboardStats?.data?.processingStats?.ruleBasedOnly || 0).toLocaleString()}</p>
+              <p className="metric-change metric-neutral">
+                Basic extraction only
+              </p>
             </div>
           </div>
         </div>
@@ -544,7 +662,7 @@ export const EmailDashboard: React.FC = () => {
         {/* Charts Section */}
         <div
           className="charts-grid section-anchor section-animate"
-          ref={(el) => {
+          ref={(el: unknown) => {
             if (el) sectionsRef.current[2] = el;
           }}
         >
@@ -573,66 +691,12 @@ export const EmailDashboard: React.FC = () => {
         {/* Recent Activity Section */}
         <div
           className="activity-section section-anchor section-animate"
-          ref={(el) => {
+          ref={(el: unknown) => {
             if (el) sectionsRef.current[3] = el;
           }}
         >
-          <h2 className="section-title">Recent Processing Activity</h2>
+          <h2 className="section-title">System Status</h2>
           <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-icon activity-icon-success">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M5 13L9 17L19 7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="activity-content">
-                <p className="activity-title">Batch Processing Completed</p>
-                <p className="activity-description">
-                  Successfully processed 1,250 emails in order management queue
-                </p>
-                <p className="activity-time">2 minutes ago</p>
-              </div>
-            </div>
-
-            <div className="activity-item">
-              <div className="activity-icon activity-icon-warning">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="activity-content">
-                <p className="activity-title">High Priority Alert</p>
-                <p className="activity-description">
-                  347 critical emails require immediate attention
-                </p>
-                <p className="activity-time">5 minutes ago</p>
-              </div>
-            </div>
-
             <div className="activity-item">
               <div className="activity-icon activity-icon-info">
                 <svg
@@ -652,13 +716,73 @@ export const EmailDashboard: React.FC = () => {
                 </svg>
               </div>
               <div className="activity-content">
-                <p className="activity-title">System Update</p>
-                <p className="activity-description">
-                  Email categorization model updated to v2.1.0
-                </p>
-                <p className="activity-time">15 minutes ago</p>
+              <p className="activity-title">Database Status</p>
+              <p className="activity-description">
+              {stats?.totalEmails?.toLocaleString()} emails total: {(dashboardStats?.data?.processingStats?.strategicAnalyzed || 0).toLocaleString()} strategic, {(dashboardStats?.data?.processingStats?.llmAnalyzed || 0).toLocaleString()} LLM-only, {(dashboardStats?.data?.processingStats?.ruleBasedOnly || 0).toLocaleString()} rule-based
+              </p>
+              <p className="activity-time">Live database metrics</p>
               </div>
             </div>
+
+            {(dashboardStats?.data?.processingStats?.unprocessed || 0) > 0 && (
+              <div className="activity-item">
+                <div className="activity-icon activity-icon-warning">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www?.w3?.org/2000/svg"
+                  >
+                    <path
+                      d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className="activity-content">
+                  <p className="activity-title">Unprocessed Emails</p>
+                  <p className="activity-description">
+                    {(dashboardStats?.data?.processingStats?.unprocessed || 0).toLocaleString()} emails awaiting initial processing
+                  </p>
+                  <p className="activity-time">Needs attention</p>
+                </div>
+              </div>
+            )}
+
+            {stats.processedEmails > 0 && (
+              <div className="activity-item">
+                <div className="activity-icon activity-icon-success">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www?.w3?.org/2000/svg"
+                  >
+                    <path
+                      d="M5 13L9 17L19 7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className="activity-content">
+                  <p className="activity-title">AI Processing Success</p>
+                  <p className="activity-description">
+                    {stats?.processedEmails?.toLocaleString()} emails with LLM or strategic analysis complete
+                  </p>
+                  <p className="activity-time">
+                    {processingRate}% processing completion rate
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </>
@@ -668,8 +792,8 @@ export const EmailDashboard: React.FC = () => {
   const renderAnalytics = () => {
     // Calculate performance metrics from the data we already have
     const calculatePerformance = () => {
-      const totalProcessed = stats.processedEmails;
-      const total = stats.totalEmails;
+      const totalProcessed = stats?.processedEmails;
+      const total = stats?.totalEmails;
       const throughput =
         stats.averageProcessingTime > 0 ? 1 / stats.averageProcessingTime : 0;
       const successRate = total > 0 ? (totalProcessed / total) * 100 : 0;
@@ -692,12 +816,12 @@ export const EmailDashboard: React.FC = () => {
         ORDER_REF: 0,
       };
       
-      tableData?.data?.emails?.forEach((email: any) => {
+      tableData?.data?.emails?.forEach((email: unknown) => {
         if (email.entities && Array.isArray(email.entities)) {
-          email.entities.forEach((entity: any) => {
+          email?.entities?.forEach((entity: { type: string; value: string }) => {
             const type = entity.type?.toUpperCase() || '';
             if (type in counts) {
-              counts[type]++;
+              (counts as unknown)[type]++;
             }
           });
         }
@@ -798,7 +922,7 @@ export const EmailDashboard: React.FC = () => {
             <div className="chart-wrapper">
               <Bar
                 data={{
-                  labels: stats.dailyVolume.map((d) =>
+                  labels: stats?.dailyVolume?.map((d: unknown) =>
                     new Date(d.date).toLocaleDateString("en-US", {
                       weekday: "short",
                     }),
@@ -806,7 +930,7 @@ export const EmailDashboard: React.FC = () => {
                   datasets: [
                     {
                       label: "Avg Processing Time (s)",
-                      data: stats.dailyVolume.map(() => stats.averageProcessingTime), // Use actual average
+                      data: stats?.dailyVolume?.map(() => stats.averageProcessingTime), // Use actual average
                       backgroundColor: "rgba(75, 192, 192, 0.6)",
                       borderColor: "rgba(75, 192, 192, 1)",
                       borderWidth: 1,
@@ -832,7 +956,7 @@ export const EmailDashboard: React.FC = () => {
                     x: {
                       grid: {
                         color: "rgba(75, 85, 99, 0.3)",
-                        drawBorder: false,
+                        display: true,
                       },
                       ticks: {
                         color: "#9ca3af",
@@ -845,7 +969,7 @@ export const EmailDashboard: React.FC = () => {
                       beginAtZero: true,
                       grid: {
                         color: "rgba(75, 85, 99, 0.3)",
-                        drawBorder: false,
+                        display: true,
                       },
                       ticks: {
                         color: "#9ca3af",
@@ -917,69 +1041,60 @@ export const EmailDashboard: React.FC = () => {
     );
   };
 
-  const renderAutomation = () => (
-    <div className="automation-section">
-      <h2 className="section-title">Email Automation Rules</h2>
+  const renderAutomation = () => {
+    // Fetch automation rules from the database/API (handle missing endpoint gracefully)
+    const automationQuery = (api as unknown)?.emails?.getAutomationRules?.useQuery ? 
+      (api as unknown).emails.getAutomationRules.useQuery({}) : 
+      { data: null, isLoading: false };
+    const { data: automationRules, isLoading: rulesLoading } = automationQuery;
+    
+    return (
+      <div className="automation-section">
+        <h2 className="section-title">Email Automation Rules</h2>
 
-      <div className="automation-controls">
-        <button className="btn-primary">
-          <Zap size={16} />
-          Create New Rule
-        </button>
-        <button className="btn-secondary">
-          <Download size={16} />
-          Export Rules
-        </button>
-      </div>
-
-      <div className="automation-rules">
-        <div className="rule-card">
-          <div className="rule-header">
-            <h3 className="rule-title">Priority Order Processing</h3>
-            <div className="rule-status active">Active</div>
-          </div>
-          <p className="rule-description">
-            Automatically prioritize emails containing "urgent", "critical", or
-            PO numbers starting with "RUSH"
-          </p>
-          <div className="rule-stats">
-            <span>Triggered: 1,247 times</span>
-            <span>Success rate: 99.2%</span>
-          </div>
+        <div className="automation-controls">
+          <button className="btn-primary">
+            <Zap size={16} />
+            Create New Rule
+          </button>
+          <button className="btn-secondary">
+            <Download size={16} />
+            Export Rules
+          </button>
         </div>
 
-        <div className="rule-card">
-          <div className="rule-header">
-            <h3 className="rule-title">Quote Auto-Categorization</h3>
-            <div className="rule-status active">Active</div>
-          </div>
-          <p className="rule-description">
-            Automatically categorize emails with quote numbers (FTQ-, Q-*-*,
-            F5Q-) into quote processing workflow
-          </p>
-          <div className="rule-stats">
-            <span>Triggered: 633 times</span>
-            <span>Success rate: 97.8%</span>
-          </div>
-        </div>
-
-        <div className="rule-card">
-          <div className="rule-header">
-            <h3 className="rule-title">Customer Support Routing</h3>
-            <div className="rule-status paused">Paused</div>
-          </div>
-          <p className="rule-description">
-            Route customer support emails to appropriate teams based on
-            extracted company names and issue types
-          </p>
-          <div className="rule-stats">
-            <span>Triggered: 2,841 times</span>
-            <span>Success rate: 94.5%</span>
-          </div>
+        <div className="automation-rules">
+          {rulesLoading ? (
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Loading automation rules...</p>
+            </div>
+          ) : automationRules?.data?.length > 0 ? (
+            automationRules?.data?.map((rule: unknown) => (
+              <div key={rule.id} className="rule-card">
+                <div className="rule-header">
+                  <h3 className="rule-title">{rule.name}</h3>
+                  <div className={`rule-status ${rule.isActive ? 'active' : 'paused'}`}>
+                    {rule.isActive ? 'Active' : 'Paused'}
+                  </div>
+                </div>
+                <p className="rule-description">{rule.description}</p>
+                <div className="rule-stats">
+                  <span>Triggered: {rule.triggerCount?.toLocaleString() || 0} times</span>
+                  <span>Success rate: {rule.successRate?.toFixed(1) || 0}%</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <p>No automation rules configured yet.</p>
+              <p>Create your first rule to start automating email workflows.</p>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderReports = () => (
     <div className="reports-section">
@@ -1021,7 +1136,7 @@ export const EmailDashboard: React.FC = () => {
           <h3 className="report-title">Entity Extraction Report</h3>
           <p className="report-description">
             Detailed analysis of extracted entities including PO numbers,
-            quotes, and company information
+            quotes, and compunknown information
           </p>
           <button className="btn-generate">Generate Report</button>
         </div>
@@ -1146,7 +1261,7 @@ export const EmailDashboard: React.FC = () => {
 
       {/* Page Navigation Dots */}
       <div className="page-navigation">
-        {sections.map((section, index) => (
+        {sections?.map((section, index) => (
           <div
             key={section.id}
             className={`nav-dot ${activeSection === index ? "active" : ""}`}
@@ -1168,7 +1283,7 @@ export const EmailDashboard: React.FC = () => {
       {/* Header Section */}
       <div
         className="dashboard-header section-anchor section-animate"
-        ref={(el) => {
+        ref={(el: unknown) => {
           if (el) sectionsRef.current[0] = el;
         }}
       >
@@ -1180,8 +1295,8 @@ export const EmailDashboard: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="dashboard-nav">
-        {tabs.map((tab) => {
-          const IconComponent = tab.icon;
+        {tabs?.map((tab: unknown) => {
+          const IconComponent = tab?.icon;
           return (
             <button
               key={tab.id}

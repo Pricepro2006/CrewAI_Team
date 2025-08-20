@@ -89,6 +89,7 @@ export class EmailPipelineHealthChecker {
           database: databaseHealth,
           redis: redisHealth,
           ollama: ollamaHealth,
+          llama: ollamaHealth, // Using ollama health for llama since they're the same service
           pipeline: pipelineHealth,
           processingQueue: queueHealth,
         },
@@ -98,7 +99,7 @@ export class EmailPipelineHealthChecker {
           unprocessedEmails: pipelineMetrics.unprocessedEmails,
           failedEmails: pipelineMetrics.failedEmails,
           averageProcessingTime: pipelineMetrics.averageProcessingTime,
-          queueDepth: pipelineMetrics.queueMetrics.depth,
+          queueDepth: pipelineMetrics?.queueMetrics?.depth,
         },
         resources,
       };
@@ -128,7 +129,7 @@ export class EmailPipelineHealthChecker {
         },
       );
 
-      return this.healthCache;
+      return this.healthCache!;
     } catch (error) {
       logger.error(
         "Email pipeline health check failed",
@@ -152,6 +153,11 @@ export class EmailPipelineHealthChecker {
             details: "Health check failed",
           },
           ollama: {
+            status: "unhealthy",
+            lastCheck: new Date().toISOString(),
+            details: "Health check failed",
+          },
+          llama: {
             status: "unhealthy",
             lastCheck: new Date().toISOString(),
             details: "Health check failed",
@@ -193,7 +199,7 @@ export class EmailPipelineHealthChecker {
 
     try {
       // Test basic connectivity
-      this.db.prepare("SELECT 1 as test").get();
+      this?.db?.prepare("SELECT 1 as test").get();
 
       // Check critical tables exist
       const tables = [
@@ -211,11 +217,11 @@ export class EmailPipelineHealthChecker {
       }
 
       // Check database size and performance
-      const dbInfo = this.db.prepare(`PRAGMA database_list`).all() as Array<{
+      const dbInfo = this?.db?.prepare(`PRAGMA database_list`).all() as Array<{
         name: string;
         file: string;
       }>;
-      const mainDb = dbInfo.find((db) => db.name === "main");
+      const mainDb = dbInfo.find((db: any) => db.name === "main");
 
       let dbSize = 0;
       if (mainDb?.file) {
@@ -244,7 +250,7 @@ export class EmailPipelineHealthChecker {
         metrics: {
           responseTime,
           databaseSize: dbSize,
-          tablesChecked: tables.length,
+          tablesChecked: tables?.length || 0,
         },
       };
     } catch (error) {
@@ -326,18 +332,18 @@ export class EmailPipelineHealthChecker {
 
       // Check if required models are available
       const requiredModels = ["llama3.2:3b", "phi3:14b"];
-      const availableModels = models.map((m: any) => m.name || m.model);
-      const missingModels = requiredModels.filter(
-        (model) =>
+      const availableModels = models?.map((m: any) => m.name || m.model);
+      const missingModels = requiredModels?.filter(
+        (model: any) =>
           !availableModels.some((available: string) =>
             available?.includes(model.split(":")[0]),
           ),
       );
 
       const status =
-        responseTime < 2000 && missingModels.length === 0
+        responseTime < 2000 && missingModels?.length || 0 === 0
           ? "healthy"
-          : responseTime < 5000 && missingModels.length <= 1
+          : responseTime < 5000 && missingModels?.length || 0 <= 1
             ? "degraded"
             : "unhealthy";
 
@@ -345,11 +351,11 @@ export class EmailPipelineHealthChecker {
         status,
         lastCheck: new Date().toISOString(),
         responseTime,
-        details: `${models.length} models available${missingModels.length > 0 ? `, missing: ${missingModels.join(", ")}` : ""}`,
+        details: `${models?.length || 0} models available${missingModels?.length || 0 > 0 ? `, missing: ${missingModels.join(", ")}` : ""}`,
         metrics: {
           responseTime,
-          modelsAvailable: models.length,
-          missingModels: missingModels.length,
+          modelsAvailable: models?.length || 0,
+          missingModels: missingModels?.length || 0,
         },
       };
     } catch (error) {
@@ -373,7 +379,7 @@ export class EmailPipelineHealthChecker {
 
     try {
       // Check current pipeline status
-      const pipelineStatus = await this.pipelineOrchestrator.getStatus();
+      const pipelineStatus = await this?.pipelineOrchestrator?.getStatus();
 
       // Check recent pipeline executions
       const recentExecutions = this.db
@@ -392,7 +398,7 @@ export class EmailPipelineHealthChecker {
         0,
       );
       const failedRecent =
-        recentExecutions.find((exec) => exec.status === "failed")?.count || 0;
+        recentExecutions.find((exec: any) => exec.status === "failed")?.count || 0;
       const successRate =
         totalRecent > 0
           ? ((totalRecent - failedRecent) / totalRecent) * 100
@@ -578,7 +584,7 @@ export class EmailPipelineHealthChecker {
         .get() as { avg_seconds: number | null };
 
       // Queue metrics
-      const queueDepth = unprocessedEmails.count;
+      const queueDepth = unprocessedEmails?.count;
       const avgWaitTime = this.db
         .prepare(
           `

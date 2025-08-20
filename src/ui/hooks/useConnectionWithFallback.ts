@@ -22,7 +22,7 @@ export interface ConnectionOptions {
   maxReconnectAttempts?: number;
   onModeChange?: (mode: ConnectionMode) => void;
   onQualityChange?: (quality: ConnectionQuality) => void;
-  onDataUpdate?: (data: any) => void;
+  onDataUpdate?: (data: unknown) => void;
 }
 
 export interface ConnectionState {
@@ -75,7 +75,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const metricsTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionStartRef = useRef<number>(Date.now());
-  const lastDataRef = useRef<any>(null);
+  const lastDataRef = useRef<unknown>(null);
   const latencyMeasurementsRef = useRef<number[]>([]);
   const websocketFailuresRef = useRef<number>(0);
   const isPollingActiveRef = useRef<boolean>(false);
@@ -84,12 +84,11 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
   const websocket = useWalmartWebSocket({
     userId,
     autoConnect: preferWebSocket,
-    maxReconnectAttempts,
-    onModeChange: undefined
+    maxReconnectAttempts
   });
 
   // tRPC polling queries
-  const pollWalmart = trpc.polling.pollWalmartData.useQuery(
+  const pollWalmart = trpc?.polling?.pollWalmartData.useQuery(
     { 
       userId, 
       sessionId: sessionId || websocket.sessionId,
@@ -101,7 +100,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
     }
   );
 
-  const pollEmails = trpc.polling.pollEmailData.useQuery(
+  const pollEmails = trpc?.polling?.pollEmailData.useQuery(
     { userId, lastVersion: state.dataVersion },
     {
       enabled: false,
@@ -109,7 +108,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
     }
   );
 
-  const batchPoll = trpc.polling.batchPoll.useQuery(
+  const batchPoll = trpc?.polling?.batchPoll.useQuery(
     {
       requests: [
         { key: `walmart:${userId}`, lastVersion: state.dataVersion },
@@ -127,14 +126,14 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    */
   const updateMetrics = useCallback((latency?: number) => {
     if (latency !== undefined) {
-      latencyMeasurementsRef.current.push(latency);
-      if (latencyMeasurementsRef.current.length > 10) {
-        latencyMeasurementsRef.current.shift();
+      latencyMeasurementsRef?.current?.push(latency);
+      if (latencyMeasurementsRef?.current?.length > 10) {
+        latencyMeasurementsRef?.current?.shift();
       }
     }
 
-    const avgLatency = latencyMeasurementsRef.current.length > 0
-      ? Math.round(latencyMeasurementsRef.current.reduce((a, b) => a + b, 0) / latencyMeasurementsRef.current.length)
+    const avgLatency = latencyMeasurementsRef?.current?.length > 0
+      ? Math.round(latencyMeasurementsRef?.current?.reduce((a: unknown, b: unknown) => a + b, 0) / latencyMeasurementsRef?.current?.length)
       : 0;
 
     const uptime = Date.now() - sessionStartRef.current;
@@ -153,48 +152,53 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    * Assess connection quality based on metrics
    */
   const assessQuality = useCallback((): ConnectionQuality => {
-    const { latency } = state.metrics;
-    const { mode, isConnected } = state;
+    // Use current state directly to avoid stale closures
+    return ((currentState: ConnectionState): ConnectionQuality => {
+      const { latency } = currentState.metrics;
+      const { mode, isConnected } = currentState;
 
-    if (!isConnected) return 'offline';
+      if (!isConnected) return 'offline';
 
-    if (mode === 'websocket' || mode === 'hybrid') {
-      if (latency < 100 && websocketFailuresRef.current === 0) return 'excellent';
-      if (latency < 300 && websocketFailuresRef.current < 2) return 'good';
-      if (latency < 1000 && websocketFailuresRef.current < 3) return 'fair';
-      return 'poor';
-    } else if (mode === 'polling') {
-      if (latency < 500) return 'good';
-      if (latency < 2000) return 'fair';
-      return 'poor';
-    }
+      if (mode === 'websocket' || mode === 'hybrid') {
+        if (latency < 100 && websocketFailuresRef.current === 0) return 'excellent';
+        if (latency < 300 && websocketFailuresRef.current < 2) return 'good';
+        if (latency < 1000 && websocketFailuresRef.current < 3) return 'fair';
+        return 'poor';
+      } else if (mode === 'polling') {
+        if (latency < 500) return 'good';
+        if (latency < 2000) return 'fair';
+        return 'poor';
+      }
 
-    return 'offline';
-  }, [state]);
+      return 'offline';
+    })(state);
+  }, [state.metrics.latency, state.mode, state.isConnected]);
 
   /**
    * Handle mode transition
    */
   const transitionToMode = useCallback((newMode: ConnectionMode, reason?: string) => {
-    if (state.mode === newMode) return;
+    setState(prev => {
+      if (prev.mode === newMode) return prev;
 
-    logger.info('Connection mode transition', 'CONNECTION', {
-      from: state.mode,
-      to: newMode,
-      reason
+      logger.info('Connection mode transition', 'CONNECTION', {
+        from: prev.mode,
+        to: newMode,
+        reason
+      });
+
+      onModeChange?.(newMode);
+
+      return {
+        ...prev,
+        mode: newMode,
+        isTransitioning: true,
+        metrics: {
+          ...prev.metrics,
+          modeChanges: prev?.metrics?.modeChanges + 1
+        }
+      };
     });
-
-    setState(prev => ({
-      ...prev,
-      mode: newMode,
-      isTransitioning: true,
-      metrics: {
-        ...prev.metrics,
-        modeChanges: prev.metrics.modeChanges + 1
-      }
-    }));
-
-    onModeChange?.(newMode);
 
     // Complete transition after a short delay
     setTimeout(() => {
@@ -204,7 +208,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
         isConnected: newMode !== 'offline'
       }));
     }, 100);
-  }, [state.mode, onModeChange]);
+  }, [onModeChange]); // Removed state.mode to prevent stale closures
 
   /**
    * Start polling
@@ -230,7 +234,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
 
           // Check for data updates
           let hasUpdates = false;
-          for (const [key, response] of Object.entries(result.data.responses)) {
+          for (const [key, response] of Object.entries(result?.data?.responses)) {
             if (response.hasChanges && response.data) {
               hasUpdates = true;
               lastDataRef.current = response.data;
@@ -250,7 +254,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
               ...prev,
               metrics: {
                 ...prev.metrics,
-                dataUpdates: prev.metrics.dataUpdates + 1
+                dataUpdates: prev?.metrics?.dataUpdates + 1
               }
             }));
           }
@@ -260,7 +264,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
           pollingTimerRef.current = setTimeout(poll, nextInterval);
         }
       } catch (error) {
-        logger.error('Polling error', 'CONNECTION', error);
+        logger.error('Polling error', 'CONNECTION', error as unknown);
         
         // Retry with backoff
         pollingTimerRef.current = setTimeout(poll, Math.min(pollingInterval * 2, 30000));
@@ -335,10 +339,10 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    */
   useEffect(() => {
     if (websocket.lastMessage) {
-      const latency = Date.now() - (websocket.lastMessage.timestamp || Date.now());
+      const latency = Date.now() - Number(websocket?.lastMessage?.timestamp || Date.now());
       updateMetrics(latency);
 
-      lastDataRef.current = websocket.lastMessage.data;
+      lastDataRef.current = websocket?.lastMessage?.data;
       
       setState(prev => ({
         ...prev,
@@ -346,11 +350,11 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
         dataVersion: prev.dataVersion + 1,
         metrics: {
           ...prev.metrics,
-          dataUpdates: prev.metrics.dataUpdates + 1
+          dataUpdates: prev?.metrics?.dataUpdates + 1
         }
       }));
 
-      onDataUpdate?.(websocket.lastMessage.data);
+      onDataUpdate?.(websocket?.lastMessage?.data);
     }
   }, [websocket.lastMessage, updateMetrics, onDataUpdate]);
 
@@ -359,20 +363,24 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    */
   useEffect(() => {
     metricsTimerRef.current = setInterval(() => {
-      const quality = assessQuality();
-      
-      if (quality !== state.quality) {
-        setState(prev => ({ ...prev, quality }));
-        onQualityChange?.(quality);
-      }
+      setState(prev => {
+        const quality = assessQuality();
+        
+        if (quality !== prev.quality) {
+          onQualityChange?.(quality);
+          return { ...prev, quality };
+        }
+        return prev;
+      });
     }, 5000);
 
     return () => {
       if (metricsTimerRef.current) {
         clearInterval(metricsTimerRef.current);
+        metricsTimerRef.current = null;
       }
     };
-  }, [assessQuality, state.quality, onQualityChange]);
+  }, [assessQuality, onQualityChange]); // Removed state.quality to prevent stale closures
 
   /**
    * Cleanup on unmount
@@ -420,7 +428,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
   /**
    * Send message (WebSocket only)
    */
-  const sendMessage = useCallback((message: any) => {
+  const sendMessage = useCallback((message: unknown) => {
     if (state.mode === 'websocket' || state.mode === 'hybrid') {
       return websocket.sendMessage(message);
     } else {

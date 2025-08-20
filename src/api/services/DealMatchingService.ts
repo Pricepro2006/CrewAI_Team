@@ -10,17 +10,23 @@ import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
 import type { Deal, DealItem } from "../types/deal.types.js";
 
-interface DealMatch {
+// =====================================================
+// Deal Matching Types
+// =====================================================
+
+export type MatchType = "exact" | "similar" | "category";
+
+export interface DealMatch {
   product: WalmartProduct;
   deal: Deal;
   dealItem: DealItem;
   savings: number;
   savingsPercent: number;
   matchConfidence: number;
-  matchType: "exact" | "similar" | "category";
+  matchType: MatchType;
 }
 
-interface DealAnalysis {
+export interface DealAnalysis {
   totalSavings: number;
   averageSavingsPercent: number;
   bestDeals: DealMatch[];
@@ -32,6 +38,16 @@ interface DealAnalysis {
       totalSavings: number;
     }
   >;
+}
+
+export interface ScoredDealItem {
+  item: DealItem;
+  score: number;
+}
+
+export interface DealMatchCacheEntry {
+  matches: DealMatch[];
+  timestamp: number;
 }
 
 export class DealMatchingService {
@@ -61,17 +77,17 @@ export class DealMatchingService {
     try {
       // Check cache first
       const cacheKey = `product:${productId}`;
-      if (this.matchCache.has(cacheKey)) {
-        return this.matchCache.get(cacheKey)!;
+      if (this?.matchCache?.has(cacheKey)) {
+        return this?.matchCache?.get(cacheKey)!;
       }
 
       logger.info("Finding deals for product", "DEAL_MATCHING", { productId });
 
-      const productEntity = await this.productRepo.findByProductId(productId);
+      const productEntity = await this?.productRepo?.findByProductId(productId);
       if (!productEntity) {
         throw new Error(`Product not found: ${productId}`);
       }
-      const repoProduct = this.productRepo.entityToProduct(productEntity);
+      const repoProduct = this?.productRepo?.entityToProduct(productEntity);
       const product = this.convertToTypesProduct(repoProduct);
 
       // Search for exact matches by SKU/UPC
@@ -91,13 +107,13 @@ export class DealMatchingService {
       );
 
       // Cache results
-      this.matchCache.set(cacheKey, allMatches);
+      this?.matchCache?.set(cacheKey, allMatches);
 
       // Clear old cache entries
-      if (this.matchCache.size > 1000) {
-        const firstKey = this.matchCache.keys().next().value;
+      if (this?.matchCache?.size > 1000) {
+        const firstKey = this?.matchCache?.keys().next().value;
         if (firstKey) {
-          this.matchCache.delete(firstKey);
+          this?.matchCache?.delete(firstKey);
         }
       }
 
@@ -118,17 +134,17 @@ export class DealMatchingService {
   ): Promise<Map<string, DealMatch[]>> {
     try {
       logger.info("Finding deals for multiple products", "DEAL_MATCHING", {
-        count: productIds.length,
+        count: productIds?.length || 0,
       });
 
       const results = new Map<string, DealMatch[]>();
 
       // Process in batches for efficiency
       const batchSize = 10;
-      for (let i = 0; i < productIds.length; i += batchSize) {
+      for (let i = 0; i < productIds?.length || 0; i += batchSize) {
         const batch = productIds.slice(i, i + batchSize);
         const batchResults = await Promise.all(
-          batch.map((id) => this.findDealsForProduct(id)),
+          batch?.map((id: string) => this.findDealsForProduct(id)),
         );
 
         batch.forEach((id, index) => {
@@ -164,7 +180,7 @@ export class DealMatchingService {
 
       // Aggregate all deals
       dealMap.forEach((deals, productId) => {
-        if (deals && deals.length > 0) {
+        if (deals && deals?.length || 0 > 0) {
           // Take the best deal for each product
           const bestDeal = deals[0];
           if (bestDeal) {
@@ -175,7 +191,7 @@ export class DealMatchingService {
             // Update category breakdown
             const category =
               typeof bestDeal.product?.category === "object"
-                ? bestDeal.product.category.name
+                ? bestDeal?.product?.category.name
                 : bestDeal.product?.category || "Other";
             if (!categoryBreakdown[category]) {
               categoryBreakdown[category] = { count: 0, totalSavings: 0 };
@@ -193,7 +209,7 @@ export class DealMatchingService {
 
       // Find expiring deals (within 7 days)
       const expiringDeals = allDeals
-        .filter((match) => {
+        .filter((match: DealMatch) => {
           const daysUntilExpiry = this.getDaysUntilExpiry(match.deal);
           return daysUntilExpiry >= 0 && daysUntilExpiry <= 7;
         })
@@ -205,7 +221,7 @@ export class DealMatchingService {
 
       const averageSavingsPercent =
         totalProducts > 0
-          ? allDeals.reduce((sum, d) => sum + d.savingsPercent, 0) /
+          ? allDeals.reduce((sum: number, d: DealMatch) => sum + d.savingsPercent, 0) /
             totalProducts
           : 0;
 
@@ -238,7 +254,7 @@ export class DealMatchingService {
       });
 
       // Get recent deals
-      const recentDeals = await this.dealService.getRecentDeals(24); // Last 24 hours
+      const recentDeals = await this?.dealService?.getRecentDeals(24); // Last 24 hours
 
       const matches: DealMatch[] = [];
 
@@ -247,14 +263,14 @@ export class DealMatchingService {
 
         // Filter by category if specified
         if (category) {
-          const hasCategory = deal.items.some((item: any) =>
+          const hasCategory = deal?.items?.some((item: DealItem) =>
             item.product_family?.toLowerCase().includes(category.toLowerCase()),
           );
           if (!hasCategory) continue;
         }
 
         // Get the best deal item
-        const bestItem = deal.items.reduce((best: any, item: any) => {
+        const bestItem = deal?.items?.reduce((best: DealItem, item: DealItem) => {
           const itemDiscount = this.calculateDiscount(
             item.dealer_net_price,
             item.msrp || item.dealer_net_price * 1.2,
@@ -275,12 +291,12 @@ export class DealMatchingService {
             dealItem: bestItem,
             savings:
               (typeof product.price === "object"
-                ? product.price.wasPrice || product.price.regular || 0
+                ? product?.price?.wasPrice || product?.price?.regular || 0
                 : product.price || 0) - bestItem.dealer_net_price,
             savingsPercent: this.calculateDiscount(
               bestItem.dealer_net_price,
               typeof product.price === "object"
-                ? product.price.wasPrice || product.price.regular || 0
+                ? product?.price?.wasPrice || product?.price?.regular || 0
                 : product.price || 0,
             ),
             matchConfidence: 0.8,
@@ -310,11 +326,11 @@ export class DealMatchingService {
       if (product.upc) {
         // For now, we'll use a placeholder approach
         // TODO: Implement proper SKU search in DealDataService
-        const dealsBySku: any[] = [];
+        const dealsBySku: Deal[] = [];
 
         for (const deal of dealsBySku) {
           const matchingItem = deal.items?.find(
-            (item: any) => item.part_number === product.upc,
+            (item: DealItem) => item.part_number === product.upc,
           );
 
           if (matchingItem) {
@@ -328,10 +344,10 @@ export class DealMatchingService {
       // Search by UPC/Barcode
       if (product.upc) {
         // TODO: Implement proper UPC search in DealDataService
-        const dealsByUpc: any[] = [];
+        const dealsByUpc: Deal[] = [];
 
         for (const deal of dealsByUpc) {
-          const matchingItem = deal.items?.find((item: any) =>
+          const matchingItem = deal.items?.find((item: DealItem) =>
             item.description?.includes(product.upc!),
           );
 
@@ -359,13 +375,13 @@ export class DealMatchingService {
 
     try {
       // Get recent deals and filter by product name
-      const recentDeals = await this.dealService.getRecentDeals(168); // Last week
+      const recentDeals = await this?.dealService?.getRecentDeals(168); // Last week
       const nameSearch = recentDeals
-        .filter((deal: any) =>
-          deal.items?.some((item: any) =>
+        .filter((deal: Deal) =>
+          deal.items?.some((item: DealItem) =>
             item.description
               ?.toLowerCase()
-              .includes(product.name.toLowerCase()),
+              .includes(product?.name?.toLowerCase()),
           ),
         )
         .slice(0, 10);
@@ -374,14 +390,14 @@ export class DealMatchingService {
         if (!deal.items?.length) continue;
 
         // Find best matching item
-        const scoredItems = deal.items.map((item: any) => ({
+        const scoredItems = deal?.items?.map((item: DealItem) => ({
           item,
           score: this.calculateSimilarity(product, item),
         }));
 
         const bestMatch = scoredItems
-          .filter((s: any) => s.score > 0.6)
-          .sort((a: any, b: any) => b.score - a.score)[0];
+          .filter((s: ScoredDealItem) => s.score > 0.6)
+          .sort((a: ScoredDealItem, b: ScoredDealItem) => b.score - a.score)[0];
 
         if (bestMatch) {
           matches.push(
@@ -410,7 +426,7 @@ export class DealMatchingService {
       const category =
         typeof product.category === "string"
           ? product.category
-          : product.category.name;
+          : product?.category?.name;
 
       // Map Walmart categories to deal product families
       const familyMapping: Record<string, string[]> = {
@@ -426,10 +442,10 @@ export class DealMatchingService {
 
       for (const family of families) {
         // Get recent deals and filter by product family
-        const recentDeals = await this.dealService.getRecentDeals(168); // Last week
+        const recentDeals = await this?.dealService?.getRecentDeals(168); // Last week
         const categoryDeals = recentDeals
-          .filter((deal: any) =>
-            deal.items?.some((item: any) =>
+          .filter((deal: Deal) =>
+            deal.items?.some((item: DealItem) =>
               item.product_family?.toLowerCase().includes(family.toLowerCase()),
             ),
           )
@@ -439,8 +455,8 @@ export class DealMatchingService {
           if (!deal.items?.length) continue;
 
           // Find items that might match
-          const relevantItems = deal.items.filter(
-            (item: any) => item.product_family === family,
+          const relevantItems = deal?.items?.filter(
+            (item: DealItem) => item.product_family === family,
           );
 
           for (const item of relevantItems.slice(0, 2)) {
@@ -468,9 +484,9 @@ export class DealMatchingService {
   ): DealMatch {
     const walmartPrice =
       typeof product.price === "object"
-        ? product.price.regular || 0
+        ? product?.price?.regular || 0
         : product.price || 0;
-    const dealPrice = dealItem.dealer_net_price;
+    const dealPrice = dealItem?.dealer_net_price;
     const savings = Math.max(0, walmartPrice - dealPrice);
     const savingsPercent =
       walmartPrice > 0 ? (savings / walmartPrice) * 100 : 0;
@@ -502,8 +518,8 @@ export class DealMatchingService {
     // Name similarity
     if (product.name && item.description) {
       const nameSimilarity = this.stringSimilarity(
-        product.name.toLowerCase(),
-        item.description.toLowerCase(),
+        product?.name?.toLowerCase(),
+        item?.description?.toLowerCase(),
       );
       score += nameSimilarity * 0.4;
       factors += 0.4;
@@ -520,10 +536,10 @@ export class DealMatchingService {
       const categoryName =
         typeof product.category === "string"
           ? product.category
-          : product.category.name;
+          : product?.category?.name;
       const categoryMatch = categoryName
         .toLowerCase()
-        .includes(item.product_family.toLowerCase());
+        .includes(item?.product_family?.toLowerCase());
       if (categoryMatch) {
         score += 0.3;
         factors += 0.3;
@@ -543,13 +559,13 @@ export class DealMatchingService {
     let matches = 0;
     for (const word1 of words1) {
       if (
-        words2.some((word2) => word2.includes(word1) || word1.includes(word2))
+        words2.some((word2: string) => word2.includes(word1) || word1.includes(word2))
       ) {
         matches++;
       }
     }
 
-    return matches / Math.max(words1.length, words2.length);
+    return matches / Math.max(words1?.length || 0, words2?.length || 0);
   }
 
   /**
@@ -583,15 +599,15 @@ export class DealMatchingService {
     try {
       // Search by part number
       if (item.part_number) {
-        const products = await this.productRepo.searchProducts(
+        const products = await this?.productRepo?.searchProducts(
           item.part_number,
           1,
         );
-        if (products.length > 0) {
+        if (products?.length || 0 > 0) {
           const productEntity = products[0];
           return productEntity
             ? this.convertToTypesProduct(
-                this.productRepo.entityToProduct(productEntity),
+                this?.productRepo?.entityToProduct(productEntity),
               )
             : null;
         }
@@ -599,15 +615,15 @@ export class DealMatchingService {
 
       // Search by description
       if (item.description) {
-        const products = await this.productRepo.searchProducts(
+        const products = await this?.productRepo?.searchProducts(
           item.description,
           1,
         );
-        if (products.length > 0) {
+        if (products?.length || 0 > 0) {
           const productEntity = products[0];
           return productEntity
             ? this.convertToTypesProduct(
-                this.productRepo.entityToProduct(productEntity),
+                this?.productRepo?.entityToProduct(productEntity),
               )
             : null;
         }
@@ -631,8 +647,8 @@ export class DealMatchingService {
 
     // Deduplicate by deal ID + item part number
     const seen = new Set<string>();
-    const unique = allMatches.filter((match) => {
-      const key = `${match.deal.id}:${match.dealItem.part_number}`;
+    const unique = allMatches?.filter((match: DealMatch) => {
+      const key = `${match?.deal?.id}:${match?.dealItem?.part_number}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -718,8 +734,8 @@ export class DealMatchingService {
         typeof repoProduct.ingredients === "string"
           ? [repoProduct.ingredients]
           : repoProduct.ingredients,
-      allergens: repoProduct.allergens?.map((allergen) => ({
-        type: allergen.toLowerCase() as any,
+      allergens: repoProduct.allergens?.map((allergen: string) => ({
+        type: allergen.toLowerCase() as 'milk' | 'eggs' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soybeans' | 'sesame',
         contains: true,
         mayContain: false,
       })),

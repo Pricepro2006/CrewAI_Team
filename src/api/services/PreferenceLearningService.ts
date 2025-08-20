@@ -4,8 +4,7 @@
  * Continuously adapts recommendations and matching algorithms
  */
 
-import { Logger } from "../../utils/logger.js";
-const logger = Logger.getInstance();
+import { logger } from "../../utils/logger.js";
 import { getDatabaseManager } from "../../database/DatabaseManager.js";
 import { PurchaseHistoryService } from "./PurchaseHistoryService.js";
 import type { PurchaseRecord, ProductFrequency } from "./PurchaseHistoryService.js";
@@ -43,6 +42,22 @@ export interface LearningEvent {
   feedback?: 'positive' | 'negative' | 'neutral';
   metadata: Record<string, any>;
   timestamp: string;
+}
+
+// Database row interface for user_preferences table
+interface UserPreferenceRow {
+  id: string;
+  user_id: string;
+  category: string;
+  preference_type: string;
+  value: string;
+  confidence: number;
+  strength: number;
+  source: string;
+  created_at: string;
+  updated_at: string;
+  last_reinforced: string;
+  reinforcement_count: number;
 }
 
 export interface PreferenceSummary {
@@ -83,9 +98,17 @@ export class PreferenceLearningService {
     const dbManager = getDatabaseManager();
     const connection = dbManager.connectionPool?.getConnection();
     if (!connection) {
-      throw new Error("Database connection not available");
+      logger.error("Failed to get database connection", "PREFERENCE_LEARNING");
+      throw new Error("Database connection not available for PreferenceLearningService");
     }
-    this.db = connection.getDatabase();
+    
+    try {
+      this.db = connection.getDatabase();
+    } catch (error) {
+      logger.error("Failed to get database instance", "PREFERENCE_LEARNING", { error });
+      throw new Error("Failed to initialize database for PreferenceLearningService");
+    }
+    
     this.historyService = PurchaseHistoryService.getInstance();
     
     this.config = {
@@ -231,13 +254,13 @@ export class PreferenceLearningService {
     try {
       // Get all user preferences
       const preferences = await this.getUserPreferences(userId);
-      if (preferences.length === 0) {
+      if (preferences?.length || 0 === 0) {
         return null;
       }
 
       // Get purchase history for additional insights
       const purchaseHistory = await this.historyService.getUserHistory({ userId, limit: 100 });
-      const purchases = purchaseHistory.purchases;
+      const purchases = purchaseHistory?.purchases;
 
       // Calculate brand preferences
       const brandPreferences = this.calculateBrandPreferences(preferences, purchases);
@@ -322,8 +345,8 @@ export class PreferenceLearningService {
     if (selectedProduct) {
       await this.learnFromAction(userId, {
         eventType: 'recommendation_click',
-        productId: selectedProduct.product.walmartId || selectedProduct.product.id,
-        productName: selectedProduct.product.name,
+        productId: selectedProduct?.product?.walmartId || selectedProduct?.product?.id,
+        productName: selectedProduct?.product?.name,
         searchQuery,
         feedback: 'positive',
         metadata: {
@@ -339,8 +362,8 @@ export class PreferenceLearningService {
       for (const dismissed of dismissedProducts) {
         await this.learnFromAction(userId, {
           eventType: 'recommendation_dismiss',
-          productId: dismissed.product.walmartId || dismissed.product.id,
-          productName: dismissed.product.name,
+          productId: dismissed?.product?.walmartId || dismissed?.product?.id,
+          productName: dismissed?.product?.name,
           searchQuery,
           feedback: 'negative',
           metadata: {
@@ -368,7 +391,7 @@ export class PreferenceLearningService {
     await this.learnFromAction(userId, {
       eventType,
       productId: deal.productId,
-      productName: deal.product.name,
+      productName: deal?.product?.name,
       dealId: deal.id,
       price: deal.currentPrice,
       feedback,
@@ -439,7 +462,7 @@ export class PreferenceLearningService {
     const preferences = await this.getUserPreferences(userId);
     const now = Date.now();
 
-    return preferences.map(pref => {
+    return preferences?.map(pref => {
       // Apply time decay to preferences
       const daysSinceReinforced = (now - new Date(pref.lastReinforced).getTime()) / (1000 * 60 * 60 * 24);
       const decayFactor = Math.exp(-daysSinceReinforced * this.config.decayRate / 30);
@@ -517,7 +540,7 @@ export class PreferenceLearningService {
 
     // Extract intent from search query
     const intent = this.extractSearchIntent(event.searchQuery);
-    if (intent.dietaryKeywords.length > 0) {
+    if (intent?.dietaryKeywords?.length > 0) {
       for (const keyword of intent.dietaryKeywords) {
         await this.reinforcePreference(event.userId, 'dietary', keyword, 'general');
       }
@@ -541,7 +564,7 @@ export class PreferenceLearningService {
   private async processDealAccept(event: LearningEvent): Promise<void> {
     // Learn price sensitivity and deal preferences
     const dealType = event.metadata?.dealType;
-    if (dealType) {
+    if (dealType && event.category) {
       await this.reinforcePreference(event.userId, 'price_sensitivity', dealType, event.category);
     }
   }
@@ -549,7 +572,7 @@ export class PreferenceLearningService {
   private async processDealReject(event: LearningEvent): Promise<void> {
     // Learn what deals user doesn't want
     const dealType = event.metadata?.dealType;
-    if (dealType) {
+    if (dealType && event.category) {
       await this.weakenPreference(event.userId, 'price_sensitivity', dealType, event.category);
     }
   }
@@ -557,7 +580,7 @@ export class PreferenceLearningService {
   private async processExplicitFeedback(event: LearningEvent): Promise<void> {
     const feedbackType = event.metadata?.feedbackType;
     const value = event.metadata?.value;
-    const sentiment = event.feedback;
+    const sentiment = event?.feedback;
 
     if (feedbackType && value) {
       if (sentiment === 'positive') {
@@ -641,7 +664,7 @@ export class PreferenceLearningService {
   } {
     const lower = query.toLowerCase();
     
-    const dietaryKeywords = [];
+    const dietaryKeywords: string[] = [];
     const dietaryTerms = ['organic', 'gluten-free', 'sugar-free', 'low-fat', 'fat-free', 'vegan', 'vegetarian', 'keto', 'low-carb'];
     for (const term of dietaryTerms) {
       if (lower.includes(term.replace('-', ' ')) || lower.includes(term)) {
@@ -649,10 +672,10 @@ export class PreferenceLearningService {
       }
     }
 
-    const brandHints = [];
+    const brandHints: string[] = [];
     // Would implement brand detection logic here
 
-    const sizeHints = [];
+    const sizeHints: string[] = [];
     // Would implement size detection logic here
 
     return { dietaryKeywords, brandHints, sizeHints };
@@ -665,15 +688,16 @@ export class PreferenceLearningService {
       ORDER BY confidence DESC, strength DESC
     `);
 
-    return stmt.all(userId).map((row: any) => ({
+    const rows = stmt.all(userId) as UserPreferenceRow[];
+    return rows.map((row) => ({
       id: row.id,
       userId: row.user_id,
       category: row.category,
-      preferenceType: row.preference_type,
+      preferenceType: row.preference_type as UserPreference['preferenceType'],
       value: row.value,
       confidence: row.confidence,
       strength: row.strength,
-      source: row.source,
+      source: row.source as UserPreference['source'],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       lastReinforced: row.last_reinforced,
@@ -692,18 +716,18 @@ export class PreferenceLearningService {
       WHERE user_id = ? AND preference_type = ? AND value = ? AND category = ?
     `);
 
-    const row = stmt.get(userId, preferenceType, value, category);
+    const row = stmt.get(userId, preferenceType, value, category) as UserPreferenceRow | undefined;
     if (!row) return null;
 
     return {
       id: row.id,
       userId: row.user_id,
       category: row.category,
-      preferenceType: row.preference_type,
+      preferenceType: row.preference_type as UserPreference['preferenceType'],
       value: row.value,
       confidence: row.confidence,
       strength: row.strength,
-      source: row.source,
+      source: row.source as UserPreference['source'],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       lastReinforced: row.last_reinforced,
@@ -821,18 +845,18 @@ export class PreferenceLearningService {
         if (!categoryPrices[p.category]) {
           categoryPrices[p.category] = [];
         }
-        categoryPrices[p.category].push(p.unitPrice);
+        categoryPrices[p.category]?.push(p.unitPrice);
       }
     });
     
     const priceRanges: Record<string, { min: number; max: number; preferred: number }> = {};
     
     Object.entries(categoryPrices).forEach(([category, prices]) => {
-      if (prices.length > 0) {
+      if (prices && prices.length > 0) {
         const sorted = prices.sort((a, b) => a - b);
         priceRanges[category] = {
-          min: sorted[0],
-          max: sorted[sorted.length - 1],
+          min: sorted[0]!,
+          max: sorted[sorted.length - 1]!,
           preferred: this.calculateMedian(sorted)
         };
       }
@@ -842,7 +866,7 @@ export class PreferenceLearningService {
   }
 
   private analyzeShoppingPatterns(purchases: PurchaseRecord[]): PreferenceSummary['shoppingPatterns'] {
-    const totalSpent = purchases.reduce((sum, p) => sum + p.totalPrice, 0);
+    const totalSpent = purchases.reduce((sum: any, p: any) => sum + p.totalPrice, 0);
     const averageBasketSize = totalSpent / Math.max(1, purchases.length);
     
     // Analyze shopping days
@@ -858,8 +882,8 @@ export class PreferenceLearningService {
       .map(([day]) => day);
     
     // Determine budget consciousness
-    const prices = purchases.map(p => p.unitPrice);
-    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+    const prices = purchases?.map(p => p.unitPrice);
+    const avgPrice = prices.reduce((sum: any, p: any) => sum + p, 0) / prices?.length || 0;
     
     let budgetConsciousness: 'high' | 'medium' | 'low' = 'medium';
     if (avgPrice < 10) budgetConsciousness = 'high';
@@ -908,15 +932,15 @@ export class PreferenceLearningService {
       .map(p => p.value);
     
     // Determine brand loyalty
-    const brandLoyalty: 'high' | 'medium' | 'low' = preferredBrands.length > 3 ? 'high' : 
-                                                     preferredBrands.length > 1 ? 'medium' : 'low';
+    const brandLoyalty: 'high' | 'medium' | 'low' = preferredBrands?.length || 0 > 3 ? 'high' : 
+                                                     preferredBrands?.length || 0 > 1 ? 'medium' : 'low';
     
     return {
       preferredBrands,
       avoidBrands,
       dietaryRestrictions,
       brandLoyalty,
-      prioritizeHistory: purchases.length > 5
+      prioritizeHistory: (purchases?.length || 0) > 5
     };
   }
 
@@ -924,10 +948,10 @@ export class PreferenceLearningService {
     const sorted = numbers.sort((a, b) => a - b);
     const middle = Math.floor(sorted.length / 2);
     
-    if (sorted.length % 2 === 0) {
-      return (sorted[middle - 1] + sorted[middle]) / 2;
+    if (sorted.length % 2 === 0 && middle > 0) {
+      return (sorted[middle - 1]! + sorted[middle]!) / 2;
     }
     
-    return sorted[middle];
+    return sorted[middle] ?? 0;
   }
 }

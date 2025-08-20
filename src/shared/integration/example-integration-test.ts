@@ -208,7 +208,7 @@ describe("CrewAI Team Integration Tests", () => {
       // Test user authentication
       authToken = await authenticateUser(
         testContext,
-        testContext.config.authentication?.defaultUser || {
+        testContext?.config?.authentication?.defaultUser || {
           username: "test",
           password: "test",
         },
@@ -216,14 +216,14 @@ describe("CrewAI Team Integration Tests", () => {
 
       expect(authToken).toBeDefined();
       expect(authToken).toBeTypeOf("string");
-      expect(authToken.length).toBeGreaterThan(50); // JWT tokens are typically longer
+      expect(authToken?.length || 0).toBeGreaterThan(50); // JWT tokens are typically longer
 
       console.log("✅ User authentication successful");
     });
 
     it("should fail authentication with invalid credentials", async () => {
       const invalidUser = {
-        ...(testContext.config.authentication?.defaultUser || {
+        ...(testContext?.config?.authentication?.defaultUser || {
           username: "test",
           password: "test",
         }),
@@ -274,7 +274,7 @@ describe("CrewAI Team Integration Tests", () => {
       if (!authToken) {
         authToken = await authenticateUser(
           testContext,
-          testContext.config.authentication?.defaultUser || {
+          testContext?.config?.authentication?.defaultUser || {
             username: "test",
             password: "test",
           },
@@ -283,7 +283,7 @@ describe("CrewAI Team Integration Tests", () => {
     });
 
     it("should list emails with pagination", async () => {
-      const response = await testContext.services.http.get(
+      const response = await testContext?.services?.http.get(
         "/api/emails?page=1&pageSize=10",
       );
 
@@ -301,7 +301,7 @@ describe("CrewAI Team Integration Tests", () => {
     });
 
     it("should filter emails by status", async () => {
-      const response = await testContext.services.http.get(
+      const response = await testContext?.services?.http.get(
         "/api/emails?statuses=red,yellow&page=1&pageSize=20",
       );
 
@@ -311,12 +311,12 @@ describe("CrewAI Team Integration Tests", () => {
       expect(data.emails).toBeDefined();
 
       // Verify all returned emails have the correct status
-      data.emails.forEach((email: EmailRecord) => {
+      data?.emails?.forEach((email: EmailRecord) => {
         expect(["red", "yellow"]).toContainEqual(email.status);
       });
 
       console.log(
-        `✅ Filtered emails by status: ${data.emails.length} results`,
+        `✅ Filtered emails by status: ${data?.emails?.length} results`,
       );
     });
 
@@ -333,7 +333,7 @@ describe("CrewAI Team Integration Tests", () => {
         priority: "medium" as const,
       };
 
-      const createResponse = await testContext.services.http.post(
+      const createResponse = await testContext?.services?.http.post(
         "/api/emails",
         newEmail,
       );
@@ -353,7 +353,7 @@ describe("CrewAI Team Integration Tests", () => {
         workflow_state: "COMPLETION" as const,
       };
 
-      const updateResponse = await testContext.services.http.patch(
+      const updateResponse = await testContext?.services?.http.patch(
         `/api/emails/${createdEmail.id}`,
         updateData,
       );
@@ -368,7 +368,7 @@ describe("CrewAI Team Integration Tests", () => {
       console.log(`✅ Created and updated email: ${createdEmail.id}`);
 
       // Cleanup: Delete the test email
-      const deleteResponse = await testContext.services.http.delete(
+      const deleteResponse = await testContext?.services?.http.delete(
         `/api/emails/${createdEmail.id}`,
       );
       expect(deleteResponse.status).toBe(200);
@@ -380,25 +380,25 @@ describe("CrewAI Team Integration Tests", () => {
   describe("WebSocket Real-time Updates", () => {
     it("should connect to WebSocket and receive messages", async () => {
       // Check if WebSocket is available in test services
-      if (!testContext.services.websocket) {
+      if (!testContext?.services?.websocket) {
         console.log("⏭️  WebSocket tests skipped (not configured)");
         return;
       }
 
       // Connect to WebSocket
-      const wsConnection = await testContext.services.websocket.connect();
+      const wsConnection = await testContext?.services?.websocket.connect();
 
       expect(wsConnection.connected).toBe(true);
       expect(wsConnection.id).toBeDefined();
 
       // Subscribe to email updates channel
-      await testContext.services.websocket.subscribe("email.updates");
+      await testContext?.services?.websocket.subscribe("email.updates");
 
       expect(wsConnection.subscriptions).toContainEqual("email.updates");
 
       // Set up message listener
       let receivedMessage: any = null;
-      testContext.services.websocket.once("email.create", (message: any) => {
+      testContext?.services?.websocket.once("email.create", async (message: any) => {
         receivedMessage = message;
       });
 
@@ -412,10 +412,10 @@ describe("CrewAI Team Integration Tests", () => {
         workflow_state: "START_POINT" as const,
       };
 
-      await testContext.services.http.post("/api/emails", newEmail);
+      await testContext?.services?.http.post("/api/emails", newEmail);
 
       // Wait for WebSocket message
-      const wsMessage = await testContext.services.websocket.waitForMessage(
+      const wsMessage = await testContext?.services?.websocket.waitForMessage(
         "email.create",
         10000,
       );
@@ -427,7 +427,7 @@ describe("CrewAI Team Integration Tests", () => {
       console.log("✅ WebSocket real-time updates working");
 
       // Disconnect
-      await testContext.services.websocket.disconnect();
+      await testContext?.services?.websocket.disconnect();
     }, 15000);
   });
 
@@ -444,7 +444,7 @@ describe("CrewAI Team Integration Tests", () => {
         priority: "medium" as const,
       };
 
-      const response = await testContext.services.http.post(
+      const response = await testContext?.services?.http.post(
         "/api/tasks",
         taskRequest,
       );
@@ -463,9 +463,9 @@ describe("CrewAI Team Integration Tests", () => {
       const maxAttempts = 30; // Wait up to 30 seconds
 
       while (attempts < maxAttempts && !completedTask) {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
+        await new Promise((resolve: any) => setTimeout(resolve, 1000)); // Wait 1 second
 
-        const statusResponse = await testContext.services.http.get(
+        const statusResponse = await testContext?.services?.http.get(
           `/api/tasks/${task.id}`,
         );
         const currentTask = statusResponse.data as any;
@@ -496,7 +496,7 @@ describe("CrewAI Team Integration Tests", () => {
   describe("Error Handling and Resilience", () => {
     it("should handle API errors gracefully", async () => {
       // Test 404 error
-      const notFoundResponse = await testContext.services.http.get(
+      const notFoundResponse = await testContext?.services?.http.get(
         "/api/emails/non-existent-id",
       );
       expect(notFoundResponse.status).toBe(404);
@@ -507,7 +507,7 @@ describe("CrewAI Team Integration Tests", () => {
         status: "invalid-status", // Invalid status
       };
 
-      const validationResponse = await testContext.services.http.post(
+      const validationResponse = await testContext?.services?.http.post(
         "/api/emails",
         invalidEmail,
       );
@@ -519,7 +519,7 @@ describe("CrewAI Team Integration Tests", () => {
     it("should implement rate limiting", async () => {
       // This test would need to be implemented based on your specific rate limiting rules
       // For now, just verify the rate limiting headers are present
-      const response = await testContext.services.http.get(
+      const response = await testContext?.services?.http.get(
         "/api/emails?page=1&pageSize=1",
       );
 
@@ -544,7 +544,7 @@ describe("CrewAI Team Integration Tests", () => {
     it("should collect and report performance metrics", async () => {
       // Make several API calls to generate metrics
       for (let i = 0; i < 5; i++) {
-        await testContext.services.http.get("/api/health");
+        await testContext?.services?.http.get("/api/health");
       }
 
       // Get metrics snapshot
@@ -553,21 +553,21 @@ describe("CrewAI Team Integration Tests", () => {
       expect(metrics.timestamp).toBeDefined();
       expect(metrics.metrics).toBeDefined();
       expect(Array.isArray(metrics.metrics)).toBe(true);
-      expect(metrics.metrics.length).toBeGreaterThan(0);
+      expect(metrics?.metrics?.length).toBeGreaterThan(0);
 
       // Look for HTTP request metrics
-      const httpMetrics = metrics.metrics.filter(
+      const httpMetrics = metrics?.metrics?.filter(
         (m: any) => m.name === "http_requests_total",
       );
-      expect(httpMetrics.length).toBeGreaterThan(0);
+      expect(httpMetrics?.length || 0).toBeGreaterThan(0);
 
-      console.log(`✅ Collected ${metrics.metrics.length} metrics`);
+      console.log(`✅ Collected ${metrics?.metrics?.length} metrics`);
     });
 
     it("should track error rates", async () => {
       // Generate some errors
       try {
-        await testContext.services.http.get("/api/non-existent-endpoint");
+        await testContext?.services?.http.get("/api/non-existent-endpoint");
       } catch (error) {
         // Expected 404 error
       }
@@ -607,7 +607,7 @@ export async function createSampleEmailData(
       priority: (["high", "medium", "low"] as const)[i % 3],
     };
 
-    const response = await context.services.http.post("/api/emails", email);
+    const response = await context?.services?.http.post("/api/emails", email);
 
     if (response.status === 201) {
       emails.push(response.data as EmailRecord);
@@ -647,7 +647,7 @@ export async function performanceTest(
   }
 
   return {
-    averageTime: times.reduce((sum, time) => sum + time, 0) / times.length,
+    averageTime: times.reduce((sum: any, time: any) => sum + time, 0) / times?.length || 0,
     minTime: Math.min(...times),
     maxTime: Math.max(...times),
     successRate: successes / iterations,

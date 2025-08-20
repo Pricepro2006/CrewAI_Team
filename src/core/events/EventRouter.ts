@@ -129,7 +129,7 @@ export class EventRouter extends EventEmitter {
       type: 'transform',
       enabled: true,
       conditions: {
-        expression: 'event.payload.password || event.payload.token || event.payload.secret'
+        expression: 'event?.payload?.password || event?.payload?.token || event?.payload?.secret'
       },
       action: {
         removeFields: ['payload.password', 'payload.token', 'payload.secret'],
@@ -157,19 +157,19 @@ export class EventRouter extends EventEmitter {
     RoutingTableSchema.parse(routingTable);
 
     // Sort rules by priority (lower number = higher priority)
-    routingTable.rules.sort((a, b) => a.priority - b.priority);
+    routingTable?.rules?.sort((a, b) => a.priority - b.priority);
 
-    this.routingTables.set(table.id, routingTable);
+    this?.routingTables?.set(table.id, routingTable);
     this.clearRoutingCache(); // Clear cache when rules change
 
     this.emit('routing_table_added', {
       tableId: table.id,
-      rulesCount: table.rules.length
+      rulesCount: table?.rules?.length
     });
   }
 
   public removeRoutingTable(tableId: string): boolean {
-    const removed = this.routingTables.delete(tableId);
+    const removed = this?.routingTables?.delete(tableId);
     if (removed) {
       this.clearRoutingCache();
       this.emit('routing_table_removed', { tableId });
@@ -178,17 +178,17 @@ export class EventRouter extends EventEmitter {
   }
 
   public getRoutingTable(tableId: string): RoutingTable | undefined {
-    return this.routingTables.get(tableId);
+    return this?.routingTables?.get(tableId);
   }
 
   public listRoutingTables(): RoutingTable[] {
-    return Array.from(this.routingTables.values());
+    return Array.from(this?.routingTables?.values());
   }
 
   // Filter management
   public addFilter(filter: EventFilter): void {
     FilterSchema.parse(filter);
-    this.filters.set(filter.id, filter);
+    this?.filters?.set(filter.id, filter);
     
     this.emit('filter_added', {
       filterId: filter.id,
@@ -197,7 +197,7 @@ export class EventRouter extends EventEmitter {
   }
 
   public removeFilter(filterId: string): boolean {
-    const removed = this.filters.delete(filterId);
+    const removed = this?.filters?.delete(filterId);
     if (removed) {
       this.emit('filter_removed', { filterId });
     }
@@ -205,16 +205,16 @@ export class EventRouter extends EventEmitter {
   }
 
   public getFilter(filterId: string): EventFilter | undefined {
-    return this.filters.get(filterId);
+    return this?.filters?.get(filterId);
   }
 
   public listFilters(): EventFilter[] {
-    return Array.from(this.filters.values());
+    return Array.from(this?.filters?.values());
   }
 
   // Handler registration
   public registerHandler(handlerId: string, handler: EventHandler): void {
-    this.handlers.set(handlerId, handler);
+    this?.handlers?.set(handlerId, handler);
     
     this.emit('handler_registered', {
       handlerId,
@@ -223,7 +223,7 @@ export class EventRouter extends EventEmitter {
   }
 
   public unregisterHandler(handlerId: string): boolean {
-    const removed = this.handlers.delete(handlerId);
+    const removed = this?.handlers?.delete(handlerId);
     if (removed) {
       this.emit('handler_unregistered', { handlerId });
     }
@@ -237,8 +237,8 @@ export class EventRouter extends EventEmitter {
     try {
       // Check cache first
       const cacheKey = this.getCacheKey(event, tableId);
-      if (this.routingCache.has(cacheKey)) {
-        const cached = this.routingCache.get(cacheKey)!;
+      if (this?.routingCache?.has(cacheKey)) {
+        const cached = this?.routingCache?.get(cacheKey)!;
         return {
           ...cached,
           metadata: {
@@ -267,14 +267,14 @@ export class EventRouter extends EventEmitter {
       }
 
       transformedEvent = filterResult.event;
-      if (filterResult.metadata.transformations.length > 0) {
+      if ((filterResult.metadata?.transformations?.length || 0) > 0) {
         this.metrics.transformedEvents++;
       }
 
       // Route through specific table or all tables
       const tablesToCheck = tableId 
-        ? [this.routingTables.get(tableId)].filter(Boolean) as RoutingTable[]
-        : Array.from(this.routingTables.values());
+        ? [this?.routingTables?.get(tableId)].filter(Boolean) as RoutingTable[]
+        : Array.from(this?.routingTables?.values());
 
       for (const table of tablesToCheck) {
         for (const rule of table.rules) {
@@ -336,7 +336,7 @@ export class EventRouter extends EventEmitter {
 
       // Cache the result
       if (this.routingCache.size < 1000) { // Limit cache size
-        this.routingCache.set(cacheKey, result);
+      this.routingCache.set(cacheKey, result);
       }
 
       this.metrics.routedEvents++;
@@ -467,7 +467,7 @@ export class EventRouter extends EventEmitter {
     const transformations: string[] = [];
 
     // Sort filters by type (include/exclude first, then transform/enrich)
-    const sortedFilters = Array.from(this.filters.values())
+    const sortedFilters = Array.from(this?.filters?.values())
       .filter(f => f.enabled)
       .sort((a, b) => {
         const order = { include: 1, exclude: 2, transform: 3, enrich: 4 };
@@ -508,7 +508,7 @@ export class EventRouter extends EventEmitter {
                 ...currentEvent,
                 metadata: {
                   ...currentEvent.metadata,
-                  ...filter.action.addMetadata
+                  ...filter?.action?.addMetadata
                 }
               };
               transformations.push(filter.id);
@@ -612,13 +612,20 @@ export class EventRouter extends EventEmitter {
     const parts = path.split('.');
     const result = JSON.parse(JSON.stringify(obj));
     
+    if (!parts || parts.length === 0) return result;
+    
     let current = result;
-    for (let i = 0; i < parts.length - 1; i++) {
-      if (!(parts[i] in current)) return result;
-      current = current[parts[i]];
+    const partsLength = parts.length;
+    for (let i = 0; i < partsLength - 1; i++) {
+      const part = parts[i];
+      if (!part || !(part in current)) return result;
+      current = current[part];
     }
     
-    delete current[parts[parts.length - 1]];
+    const lastPart = parts[partsLength - 1];
+    if (lastPart && current && typeof current === 'object') {
+      delete current[lastPart];
+    }
     return result;
   }
 
@@ -627,16 +634,14 @@ export class EventRouter extends EventEmitter {
   }
 
   private clearRoutingCache(): void {
-    this.routingCache.clear();
+    this?.routingCache?.clear();
   }
 
   private updateAverageRoutingTime(newTime: number): void {
     if (this.metrics.routedEvents === 1) {
       this.metrics.averageRoutingTime = newTime;
-    } else {
-      this.metrics.averageRoutingTime = 
-        (this.metrics.averageRoutingTime * (this.metrics.routedEvents - 1) + newTime) / 
-        this.metrics.routedEvents;
+    } else if (this.metrics.routedEvents > 1) {
+      this.metrics.averageRoutingTime = (this.metrics.averageRoutingTime * (this.metrics.routedEvents - 1) + newTime) / this.metrics.routedEvents;
     }
   }
 
@@ -663,13 +668,13 @@ export class EventRouter extends EventEmitter {
   public async testFilter(filter: EventFilter, event: BaseEvent): Promise<FilterResult> {
     const originalFilters = new Map(this.filters);
     try {
-      this.filters.clear();
-      this.filters.set(filter.id, filter);
+      this?.filters?.clear();
+      this?.filters?.set(filter.id, filter);
       return await this.applyFilters(event);
     } finally {
-      this.filters.clear();
+      this?.filters?.clear();
       for (const [id, f] of originalFilters) {
-        this.filters.set(id, f);
+        this?.filters?.set(id, f);
       }
     }
   }

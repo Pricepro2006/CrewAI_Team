@@ -5,7 +5,7 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import { performance } from 'perf_hooks';
-import { metricsCollectionService } from '../../monitoring/MetricsCollectionService.js';
+import { metricsCollectionService } from '../../monitoring/MetricsCollectionService';
 import { v4 as uuidv4 } from 'uuid';
 
 interface MetricsRequest extends Request {
@@ -18,7 +18,7 @@ interface MetricsRequest extends Request {
  */
 export function metricsMiddleware(req: MetricsRequest, res: Response, next: NextFunction): void {
   // Skip metrics endpoint to avoid recursion
-  if (req.path === '/metrics' || req.path.startsWith('/metrics/')) {
+  if (req.path === '/metrics' || req?.path?.startsWith('/metrics/')) {
     return next();
   }
   
@@ -32,15 +32,15 @@ export function metricsMiddleware(req: MetricsRequest, res: Response, next: Next
   res.setHeader('X-Correlation-Id', req.correlationId);
   
   // Override res.end to capture metrics
-  const originalEnd = res.end;
+  const originalEnd = res?.end;
   res.end = function(...args: any[]): Response {
     // Calculate duration
     const duration = req.metricsStartTime ? performance.now() - req.metricsStartTime : 0;
     
     // Record API metric
-    const method = req.method;
+    const method = req?.method;
     const endpoint = req.route?.path || req.path;
-    const status = res.statusCode;
+    const status = res?.statusCode;
     
     metricsCollectionService.recordAPIMetric(method, endpoint, status, duration);
     
@@ -104,7 +104,7 @@ export function websocketMetricsMiddleware(ws: any): void {
   });
   
   // Track sending
-  const originalSend = ws.send;
+  const originalSend = ws?.send;
   ws.send = function(data: any, ...args: any[]) {
     metricsCollectionService.recordWebSocketMetric('message', {
       direction: 'outbound',

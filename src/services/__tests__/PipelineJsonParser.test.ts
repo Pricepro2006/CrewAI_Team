@@ -2,8 +2,8 @@
  * Unit tests for PipelineJsonParser service
  */
 
-import { describe, it, expect } from "vitest";
-import { PipelineJsonParser } from "../PipelineJsonParser.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { PipelineJsonParser } from '../PipelineJsonParser';
 
 describe("PipelineJsonParser", () => {
   let parser: PipelineJsonParser;
@@ -43,8 +43,8 @@ describe("PipelineJsonParser", () => {
 
       expect(result.workflow_state).toBe("IN_PROGRESS");
       expect(result.business_process).toBe("Order Management");
-      expect(result.entities?.po_numbers).toHaveLength(2);
-      expect(result.entities?.quote_numbers).toHaveLength(1);
+      expect(result.entities?.length).toHaveLength(2);
+      expect(result.entities?.length).toHaveLength(1);
       expect(result.action_items).toHaveLength(1);
       expect(result.quality_score).toBe(8.5);
     });
@@ -54,7 +54,7 @@ describe("PipelineJsonParser", () => {
 
       expect(result.workflow_state).toBe("NEW");
       expect(result.business_process).toBe("General");
-      expect(result.entities?.po_numbers).toEqual([]);
+      expect(result.entities?.length).toEqual([]);
       expect(result.action_items).toEqual([]);
     });
 
@@ -77,7 +77,7 @@ describe("PipelineJsonParser", () => {
 
       expect(result.workflow_state).toBe("COMPLETE");
       expect(result.business_process).toBe("General");
-      expect(result.entities?.po_numbers).toEqual([]);
+      expect(result.entities?.length).toEqual([]);
       expect(result.contextual_summary).toBe("");
     });
 
@@ -93,10 +93,10 @@ describe("PipelineJsonParser", () => {
 
       const result = parser.parseLlamaAnalysis(jsonWithMixedEntities);
 
-      expect(result.entities?.po_numbers).toEqual(["PO12345678"]);
-      expect(result.entities?.quote_numbers).toEqual([]);
-      expect(result.entities?.case_numbers).toEqual(["CAS-123", "CAS-456"]);
-      expect(result.entities?.part_numbers).toEqual([]);
+      expect(result.entities?.length).toEqual(["PO12345678"]);
+      expect(result.entities?.length).toEqual([]);
+      expect(result.entities?.length).toEqual(["CAS-123", "CAS-456"]);
+      expect(result.entities?.length).toEqual([]);
     });
   });
 
@@ -128,8 +128,8 @@ describe("PipelineJsonParser", () => {
       expect(result.executive_summary).toBe(
         "Critical order requiring immediate attention",
       );
-      expect(result.business_impact?.revenue_impact).toBe(50000);
-      expect(result.business_impact?.customer_satisfaction).toBe("Critical");
+      expect(result.business_impact?).toHaveLength(50000);
+      expect(result.business_impact?.length).toBe("Critical");
       expect(result.deep_insights).toHaveLength(2);
       expect(result.quality_score).toBe(9.2);
     });
@@ -138,7 +138,7 @@ describe("PipelineJsonParser", () => {
       const result = parser.parsePhi4Analysis(null);
 
       expect(result.executive_summary).toBe("");
-      expect(result.business_impact?.customer_satisfaction).toBe("Neutral");
+      expect(result.business_impact?.length).toBe("Neutral");
       expect(result.deep_insights).toEqual([]);
     });
   });

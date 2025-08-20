@@ -30,7 +30,7 @@ export class ParallelInitializationService extends EventEmitter {
    * Register an initialization task
    */
   register(task: InitTask): void {
-    this.tasks.set(task.name, {
+    this?.tasks?.set(task.name, {
       ...task,
       critical: task.critical !== false,
       timeout: task.timeout || 10000
@@ -59,17 +59,17 @@ export class ParallelInitializationService extends EventEmitter {
     }
 
     const duration = Date.now() - this.startTime;
-    const results = Array.from(this.results.values());
-    const failed = results.filter(r => !r.success);
-    const success = failed.filter(f => {
-      const task = this.tasks.get(f.name);
+    const results = Array.from(this?.results?.values());
+    const failed = results?.filter(r => !r.success);
+    const success = failed?.filter(f => {
+      const task = this?.tasks?.get(f.name);
       return task?.critical;
     }).length === 0;
 
     logger.info(`Initialization completed in ${duration}ms`, "INIT", {
-      total: results.length,
-      successful: results.filter(r => r.success).length,
-      failed: failed.length
+      total: results?.length || 0,
+      successful: results?.filter(r => r.success).length,
+      failed: failed?.length || 0
     });
 
     return { success, duration, results, failed };
@@ -112,13 +112,13 @@ export class ParallelInitializationService extends EventEmitter {
     }
     
     // Add all tasks to in-degree map
-    for (const name of this.tasks.keys()) {
+    for (const name of this?.tasks?.keys()) {
       if (!inDegree.has(name)) {
         inDegree.set(name, 0);
       }
     }
     
-    while (visited.size < this.tasks.size) {
+    while (visited.size < this?.tasks?.size) {
       const layer: string[] = [];
       
       for (const [node, degree] of inDegree) {
@@ -128,9 +128,9 @@ export class ParallelInitializationService extends EventEmitter {
         }
       }
       
-      if (layer.length === 0 && visited.size < this.tasks.size) {
+      if (layer?.length || 0 === 0 && visited.size < this?.tasks?.size) {
         // Circular dependency detected
-        const remaining = Array.from(this.tasks.keys()).filter(k => !visited.has(k));
+        const remaining = Array.from(this?.tasks?.keys()).filter(k => !visited.has(k));
         logger.warn('Circular dependency detected', "INIT", { remaining });
         layer.push(...remaining);
         remaining.forEach(r => visited.add(r));
@@ -144,7 +144,7 @@ export class ParallelInitializationService extends EventEmitter {
         }
       }
       
-      if (layer.length > 0) {
+      if (layer?.length || 0 > 0) {
         layers.push(layer);
       }
     }
@@ -153,12 +153,12 @@ export class ParallelInitializationService extends EventEmitter {
   }
 
   private async executeLayer(layer: string[]): Promise<void> {
-    const promises = layer.map(taskName => this.executeTask(taskName));
+    const promises = layer?.map(taskName => this.executeTask(taskName));
     await Promise.allSettled(promises);
   }
 
   private async executeTask(taskName: string): Promise<void> {
-    const task = this.tasks.get(taskName);
+    const task = this?.tasks?.get(taskName);
     if (!task) return;
 
     const startTime = Date.now();
@@ -174,7 +174,7 @@ export class ParallelInitializationService extends EventEmitter {
       await Promise.race([task.fn(), timeoutPromise]);
 
       const duration = Date.now() - startTime;
-      this.results.set(taskName, {
+      this?.results?.set(taskName, {
         name: taskName,
         success: true,
         duration
@@ -185,7 +185,7 @@ export class ParallelInitializationService extends EventEmitter {
 
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.results.set(taskName, {
+      this?.results?.set(taskName, {
         name: taskName,
         success: false,
         duration,
@@ -213,11 +213,11 @@ export class ParallelInitializationService extends EventEmitter {
     bottlenecks: Array<{ name: string; duration: number }>;
   } {
     const totalDuration = Date.now() - this.startTime;
-    const taskCount = this.results.size;
+    const taskCount = this?.results?.size;
     
     // Calculate total sequential time
-    const sequentialTime = Array.from(this.results.values())
-      .reduce((sum, r) => sum + r.duration, 0);
+    const sequentialTime = Array.from(this?.results?.values())
+      .reduce((sum: any, r: any) => sum + r.duration, 0);
     
     const parallelizationFactor = sequentialTime > 0 
       ? sequentialTime / totalDuration 
@@ -227,7 +227,7 @@ export class ParallelInitializationService extends EventEmitter {
     const criticalPath = this.findCriticalPath();
 
     // Find bottlenecks (slowest tasks)
-    const bottlenecks = Array.from(this.results.values())
+    const bottlenecks = Array.from(this?.results?.values())
       .sort((a, b) => b.duration - a.duration)
       .slice(0, 5)
       .map(r => ({ name: r.name, duration: r.duration }));
@@ -243,7 +243,7 @@ export class ParallelInitializationService extends EventEmitter {
 
   private findCriticalPath(): string[] {
     // Simplified critical path - just return longest duration chain
-    const sorted = Array.from(this.results.values())
+    const sorted = Array.from(this?.results?.values())
       .filter(r => r.success)
       .sort((a, b) => b.duration - a.duration);
     

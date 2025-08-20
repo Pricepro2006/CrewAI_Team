@@ -70,7 +70,7 @@ Important: Return ONLY the JSON object, no additional text.`;
         },
       });
 
-      return this.parsePlan(response.data.response);
+      return this.parsePlan(response?.data?.response);
     } catch (error) {
       console.error("Failed to create plan:", error);
       throw error;
@@ -99,7 +99,7 @@ Important: Return ONLY the JSON object, no additional text.`;
 
       // Ensure all required fields
       return {
-        steps: parsed.steps.map((step: any, index: number) => ({
+        steps: parsed?.steps?.map((step: any, index: number) => ({
           id: step.id || `step-${index + 1}`,
           description: step.description || "No description provided",
           agentType: step.agentType || "ResearchAgent",
@@ -149,10 +149,10 @@ Important: Return ONLY the JSON object, no additional text.`;
       try {
         const plan = await this.createPlan(query);
         console.log(
-          `✅ Successfully created plan with ${plan.steps.length} steps:`,
+          `✅ Successfully created plan with ${plan?.steps?.length} steps:`,
         );
 
-        plan.steps.forEach((step) => {
+        plan?.steps?.forEach((step: any) => {
           console.log(`\n  Step ${step.id}:`);
           console.log(`    Description: ${step.description}`);
           console.log(`    Agent: ${step.agentType}`);
@@ -180,7 +180,7 @@ main()
     console.log("\n✅ Test completed!");
     process.exit(0);
   })
-  .catch((error) => {
+  .catch((error: any) => {
     console.error("\n❌ Test failed:", error);
     process.exit(1);
   });

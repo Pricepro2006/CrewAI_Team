@@ -35,7 +35,7 @@ export interface NutritionInfo {
   servingSize?: string;
   ingredients?: string[];
   allergens?: string[];
-  nutritionFacts?: Record<string, any>;
+  nutritionFacts?: Record<string, unknown>;
 }
 
 export interface ProductAvailability {
@@ -113,7 +113,7 @@ export interface NLPResult {
 export interface NLPIntent {
   type: 'search' | 'add_to_cart' | 'compare' | 'price_check' | 'availability' | 'nutrition' | 'substitute';
   confidence: number;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 export interface NLPEntity {
@@ -129,7 +129,7 @@ export interface NLPEntity {
 export interface SuggestedAction {
   type: 'search' | 'add_to_cart' | 'view_product' | 'compare' | 'set_alert';
   label: string;
-  data: any;
+  data: unknown;
   confidence: number;
 }
 
@@ -218,7 +218,7 @@ export interface PriceAlert {
 // WebSocket Types
 export interface WSMessage {
   type: 'nlp_processing' | 'nlp_result' | 'cart_update' | 'price_update' | 'product_match' | 'error' | 'notification';
-  data: any;
+  data: unknown;
   timestamp: string;
   sessionId?: string;
   userId?: string;
@@ -287,7 +287,7 @@ export interface GroceryListProps {
 }
 
 // API Response Types
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -312,7 +312,7 @@ export interface ProductAPIResponse extends APIResponse<WalmartProduct> {
 export interface WalmartError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp: string;
   requestId?: string;
 }
@@ -356,4 +356,69 @@ export interface SystemHealth {
   overall: 'healthy' | 'degraded' | 'down';
   services: ServiceHealth[];
   timestamp: string;
+}
+
+// Performance and Monitoring Types
+export interface PerformanceMetrics {
+  responseTime: number;
+  throughput: number;
+  errorRate: number;
+  uptime: number;
+  memoryUsage: number;
+  cpuUsage: number;
+  connections: number;
+  requestsPerMinute: number;
+}
+
+// List Total Calculation Types
+export interface ListTotalCalculation {
+  subtotal: number;
+  tax: number;
+  fees: number;
+  discounts: number;
+  total: number;
+  itemCount: number;
+  estimatedWeight: number;
+  itemSavings?: number;
+  couponSavings?: number;
+  loyaltyDiscounts?: number;
+  bulkSavings?: number;
+}
+
+// Product Item Types for Lists
+export interface ProductItem extends WalmartProduct {
+  quantity?: number;
+  selected?: boolean;
+  notes?: string;
+  addedDate?: string;
+  priority?: 'low' | 'medium' | 'high';
+}
+
+// Additional utility types for enhanced components
+export interface ExtendedWalmartProduct extends WalmartProduct {
+  rating?: number;
+  reviewCount?: number;
+  deliveryInfo?: {
+    available: boolean;
+    estimatedDays: number;
+    cost?: number;
+  };
+  nutritionalInfo?: NutritionInfo;
+  substitutes?: WalmartProduct[];
+  trend?: 'up' | 'down' | 'stable';
+  priceChange?: number;
+  currentPrice?: number;
+}
+
+// Connection status types for WebSocket components
+export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
+
+// Enhanced search query types
+export interface EnhancedSearchQuery extends SearchQuery {
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  brand?: string;
+  minRating?: number;
 }

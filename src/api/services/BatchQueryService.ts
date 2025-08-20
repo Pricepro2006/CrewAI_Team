@@ -22,16 +22,21 @@ interface ProductBatchOptions {
 
 export class BatchQueryService {
   private static instance: BatchQueryService;
-  private db: Database.Database;
+  private dbManager: any;
   private batchQueue: Map<string, Set<string>> = new Map();
   private batchTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly BATCH_DELAY = 10; // milliseconds
   private readonly MAX_BATCH_SIZE = 1000;
 
   private constructor() {
-    const dbManager = getDatabaseManager();
-    this.db = dbManager.connectionPool?.getConnection().getDatabase() || 
-              (() => { throw new Error("Database connection not available"); })();
+    this.dbManager = getDatabaseManager();
+  }
+
+  /**
+   * Execute a database operation with proper connection handling
+   */
+  private async executeWithConnection<T>(operation: (db: Database.Database) => T): Promise<T> {
+    return this.dbManager.executeQuery(operation);
   }
 
   static getInstance(): BatchQueryService {
@@ -108,24 +113,35 @@ export class BatchQueryService {
     }
 
     try {
-      const stmt = this.db.prepare(query);
-      const rows = stmt.all(...productIds) as any[];
+      const rows = await this.executeWithConnection((db: Database.Database) => {
+        const stmt = db.prepare(query);
+        return stmt.all(...productIds) as any[];
+      });
 
       for (const row of rows) {
         const product: WalmartProduct = {
           id: row.id,
+          walmartId: row.walmart_id || row.id,
           name: row.name,
           brand: row.brand,
           category: row.category,
+          description: row.description || '',
           price: options.includePricing ? row.sale_price || row.current_price : row.current_price,
           regularPrice: options.includePricing ? row.regular_price : undefined,
-          discount: options.includePricing ? row.discount_percentage : undefined,
           unit: row.unit,
           imageUrl: row.image_url,
           inStock: row.in_stock === 1,
-          quantity: options.includeInventory ? row.inventory_quantity : undefined,
-          lastUpdated: row.inventory_updated || row.updated_at
-        };
+          stock: options.includeInventory ? row.inventory_quantity : undefined,
+          images: [],
+          availability: {
+            online: row.in_stock === 1,
+            stores: []
+          },
+          metadata: {
+            lastUpdated: row.inventory_updated || row.updated_at,
+            source: 'batch_query'
+          }
+        } as unknown as WalmartProduct;
 
         result.data.set(row.id, product);
       }
@@ -181,13 +197,15 @@ export class BatchQueryService {
 
       if (dateRange) {
         query += ' AND pr.purchase_date BETWEEN ? AND ?';
-        params.push(dateRange.from.toISOString(), dateRange.to.toISOString());
+        params.push(dateRange?.from?.toISOString(), dateRange?.to?.toISOString());
       }
 
       query += ' ORDER BY pr.product_id, pr.purchase_date DESC';
 
-      const stmt = this.db.prepare(query);
-      const rows = stmt.all(...params) as any[];
+      const rows = await this.executeWithConnection((db: Database.Database) => {
+        const stmt = db.prepare(query);
+        return stmt.all(...params) as any[];
+      });
 
       // Group by product ID
       const historyMap = new Map<string, any[]>();
@@ -256,8 +274,10 @@ export class BatchQueryService {
           ORDER BY product_id, recorded_at DESC
         `;
 
-        const stmt = this.db.prepare(query);
-        const rows = stmt.all(...chunk, cutoffDate) as any[];
+        const rows = await this.executeWithConnection((db: Database.Database) => {
+          const stmt = db.prepare(query);
+          return stmt.all(...chunk, cutoffDate) as any[];
+        });
 
         for (const row of rows) {
           if (!priceMap.has(row.product_id)) {
@@ -300,37 +320,39 @@ export class BatchQueryService {
     let success = 0;
     let failed = 0;
 
-    const transaction = this.db.transaction((updates) => {
-      for (const update of updates) {
-        try {
-          // Update current price
-          const updateStmt = this.db.prepare(`
-            UPDATE walmart_products 
-            SET current_price = ?, updated_at = datetime('now')
-            WHERE id = ?
-          `);
-          updateStmt.run(update.price, update.productId);
-
-          // Insert price history
-          const historyStmt = this.db.prepare(`
-            INSERT INTO price_history (product_id, price, store_id, recorded_at)
-            VALUES (?, ?, ?, datetime('now'))
-          `);
-          historyStmt.run(update.productId, update.price, update.store || null);
-
-          success++;
-        } catch (error) {
-          failed++;
-          logger.warn("Failed to update price", "BATCH_QUERY", { 
-            productId: update.productId, 
-            error 
-          });
-        }
-      }
-    });
-
     try {
-      transaction(updates);
+      await this.executeWithConnection((db: Database.Database) => {
+        const transaction = db.transaction((updates: any) => {
+          for (const update of updates) {
+            try {
+              // Update current price
+              const updateStmt = db.prepare(`
+                UPDATE walmart_products 
+                SET current_price = ?, updated_at = datetime('now')
+                WHERE id = ?
+              `);
+              updateStmt.run(update.price, update.productId);
+
+              // Insert price history
+              const historyStmt = db.prepare(`
+                INSERT INTO price_history (product_id, price, store_id, recorded_at)
+                VALUES (?, ?, ?, datetime('now'))
+              `);
+              historyStmt.run(update.productId, update.price, update.store || null);
+
+              success++;
+            } catch (error) {
+              failed++;
+              logger.warn("Failed to update price", "BATCH_QUERY", { 
+                productId: update.productId, 
+                error 
+              });
+            }
+          }
+        });
+
+        return transaction(updates);
+      });
       
       const timing = Date.now() - startTime;
       
@@ -380,8 +402,10 @@ export class BatchQueryService {
           params.push(storeId);
         }
 
-        const stmt = this.db.prepare(query);
-        const rows = stmt.all(...params) as any[];
+        const rows = await this.executeWithConnection((db: Database.Database) => {
+          const stmt = db.prepare(query);
+          return stmt.all(...params) as any[];
+        });
 
         for (const row of rows) {
           const available = storeId 

@@ -1,6 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEmailAssignment } from "../useEmailAssignment.js";
+import { useEmailAssignment } from '../useEmailAssignment';
 import React from "react";
 
 // Mock the trpc module completely
@@ -131,7 +132,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.teamMembers).toEqual(mockTeamMembers);
+      expect(result?.current?.teamMembers).toEqual(mockTeamMembers);
     });
 
     it("should provide workload data", () => {
@@ -139,7 +140,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.workloadData).toEqual(mockWorkloadData);
+      expect(result?.current?.workloadData).toEqual(mockWorkloadData);
     });
 
     it("should calculate loading state correctly", () => {
@@ -147,8 +148,8 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.isAssigning).toBe(false);
+      expect(result?.current?.isLoading).toBe(false);
+      expect(result?.current?.isAssigning).toBe(false);
     });
   });
 
@@ -158,7 +159,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.assignEmail("email-1", "john-smith");
+      await result?.current?.assignEmail("email-1", "john-smith");
 
       expect(mockMutateAsync).toHaveBeenCalledWith({
         emailId: "email-1",
@@ -171,7 +172,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.bulkAssignEmails(
+      await result?.current?.bulkAssignEmails(
         ["email-1", "email-2"],
         "john-smith",
       );
@@ -188,7 +189,7 @@ describe("useEmailAssignment Hook", () => {
       });
 
       const suggestions =
-        await result.current.getAssignmentSuggestions("email-1");
+        await result?.current?.getAssignmentSuggestions("email-1");
 
       expect(mockFetch).toHaveBeenCalledWith("email-1");
       expect(suggestions).toEqual({
@@ -205,7 +206,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      const member = result.current.getTeamMemberById("john-smith");
+      const member = result?.current?.getTeamMemberById("john-smith");
       expect(member).toEqual(mockTeamMembers[0]);
     });
 
@@ -214,7 +215,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      const member = result.current.getTeamMemberById("non-existent");
+      const member = result?.current?.getTeamMemberById("non-existent");
       expect(member).toBeUndefined();
     });
 
@@ -223,7 +224,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      const name = result.current.getAssignedMemberName("john-smith");
+      const name = result?.current?.getAssignedMemberName("john-smith");
       expect(name).toBe("John Smith");
     });
 
@@ -232,7 +233,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      const name = result.current.getAssignedMemberName();
+      const name = result?.current?.getAssignedMemberName();
       expect(name).toBe("Unassigned");
     });
 
@@ -241,7 +242,7 @@ describe("useEmailAssignment Hook", () => {
         wrapper: createWrapper(),
       });
 
-      const name = result.current.getAssignedMemberName("unknown-id");
+      const name = result?.current?.getAssignedMemberName("unknown-id");
       expect(name).toBe("unknown-id");
     });
   });
@@ -269,7 +270,7 @@ describe("useEmailAssignment Hook", () => {
       });
 
       // Since we're mocking the mutations to return null errors, this should be null
-      expect(result.current.error).toBeNull();
+      expect(result?.current?.error).toBeNull();
     });
   });
 });

@@ -1,7 +1,7 @@
-import type { Email } from "../pipeline/types";
-import type { EmailAnalysis } from "../../types/AnalysisTypes";
-import { scoreAnalysis } from "../scoring/AnalysisScorer";
-import { logger } from "../../utils/logger";
+import type { Email } from "../pipeline/types.js";
+import type { EmailAnalysis } from "../../types/AnalysisTypes.js";
+import { scoreAnalysis } from "../scoring/AnalysisScorer.js";
+import { logger } from "../../utils/logger.js";
 
 export interface ModelConfig {
   modelName: string;
@@ -37,34 +37,34 @@ export class PromptOptimizer {
     {
       name: "add_step_by_step",
       description: "Add step-by-step reasoning",
-      apply: (prompt) => prompt.replace("Analyze", "Analyze step by step"),
+      apply: (prompt: any) => prompt.replace("Analyze", "Analyze step by step"),
     },
     {
       name: "add_json_structure",
       description: "Add explicit JSON output structure",
-      apply: (prompt) =>
+      apply: (prompt: any) =>
         `${prompt}\n\nOutput as JSON with these exact fields:\n${this.getJsonSchema()}`,
     },
     {
       name: "add_examples",
       description: "Add few-shot examples",
-      apply: (prompt) => `${prompt}\n\nExample:\n${this.getExampleAnalysis()}`,
+      apply: (prompt: any) => `${prompt}\n\nExample:\n${this.getExampleAnalysis()}`,
     },
     {
       name: "simplify_instructions",
       description: "Simplify complex instructions",
-      apply: (prompt) => this.simplifyLanguage(prompt),
+      apply: (prompt: any) => this.simplifyLanguage(prompt),
     },
     {
       name: "add_role_context",
       description: "Add role-based context",
-      apply: (prompt) =>
+      apply: (prompt: any) =>
         `You are an expert email analyst for TD SYNNEX with 10 years of experience.\n\n${prompt}`,
     },
     {
       name: "optimize_for_model",
       description: "Add model-specific optimizations",
-      apply: (prompt) => this.addModelSpecificOptimizations(prompt),
+      apply: (prompt: any) => this.addModelSpecificOptimizations(prompt),
     },
   ];
 
@@ -110,10 +110,10 @@ export class PromptOptimizer {
 
       // Test variations in parallel (batch of 5)
       const batchSize = 5;
-      for (let i = 0; i < newVariations.length; i += batchSize) {
+      for (let i = 0; i < newVariations?.length || 0; i += batchSize) {
         const batch = newVariations.slice(i, i + batchSize);
         const scores = await Promise.all(
-          batch.map((variation) => this.testVariation(variation)),
+          batch?.map((variation: any) => this.testVariation(variation)),
         );
 
         // Update scores and find best
@@ -125,7 +125,7 @@ export class PromptOptimizer {
             bestScore = variation.score!;
             bestPrompt = variation.prompt;
             logger.info(
-              `New best score: ${bestScore}/10 (${variation.modifications.join(", ")})`,
+              `New best score: ${bestScore}/10 (${variation?.modifications?.join(", ")})`,
             );
           }
         });
@@ -159,11 +159,12 @@ export class PromptOptimizer {
           email_id: email.id,
           analysis_version: "1.0.0",
           final_summary: {
-            priority: "medium",
-            workflow_state: "pending",
-            suggested_response: "Mock response",
-            key_insights: [],
-            next_steps: [],
+            email_id: email.id,
+            overall_priority: "MEDIUM",
+            recommended_actions: ["Mock action"],
+            key_insights: ["Mock insight"],
+            workflow_recommendations: ["Mock recommendation"],
+            confidence_score: 0.8,
           },
           confidence_score: 0.8,
           workflow_type: "standard",
@@ -179,15 +180,16 @@ export class PromptOptimizer {
     }
 
     // Score against baseline
-    const scores = results.map((result, index) =>
-      scoreAnalysis(result, this.baselineResults[index]),
-    );
+    const scores = results?.map((result, index) => {
+      const baseline = this.baselineResults[index];
+      return baseline ? scoreAnalysis(result, baseline) : 0;
+    });
 
-    return scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    return scores.reduce((sum: any, score: any) => sum + score, 0) / scores?.length || 0;
   }
 
   private async testVariation(variation: PromptVariation): Promise<number> {
-    logger.info(`Testing variation: ${variation.modifications.join(", ")}`);
+    logger.info(`Testing variation: ${variation?.modifications?.join(", ")}`);
     const score = await this.testPrompt(variation.prompt);
     logger.info(`Variation score: ${score}/10`);
     return score;
@@ -212,20 +214,20 @@ export class PromptOptimizer {
 
     // Combine successful strategies
     const successfulStrategies = existingVariations
-      .filter((v) => v.score && v.score > 6)
-      .flatMap((v) => v.modifications);
+      .filter((v: any) => v.score && v.score > 6)
+      .flatMap((v: any) => v.modifications);
 
     const uniqueStrategies = [...new Set(successfulStrategies)];
 
     // Try combining pairs of successful strategies
-    for (let i = 0; i < uniqueStrategies.length; i++) {
-      for (let j = i + 1; j < uniqueStrategies.length; j++) {
+    for (let i = 0; i < uniqueStrategies?.length || 0; i++) {
+      for (let j = i + 1; j < uniqueStrategies?.length || 0; j++) {
         const combo = [uniqueStrategies[i], uniqueStrategies[j]];
         if (!this.hasVariation(existingVariations, combo)) {
           let prompt = basePrompt;
           for (const strategyName of combo) {
-            const strategy = this.strategies.find(
-              (s) => s.name === strategyName,
+            const strategy = this?.strategies?.find(
+              (s: any) => s.name === strategyName,
             );
             if (strategy) {
               prompt = strategy.apply(prompt);
@@ -249,9 +251,9 @@ export class PromptOptimizer {
     modifications: string[],
   ): boolean {
     return variations.some(
-      (v) =>
-        v.modifications.length === modifications.length &&
-        v.modifications.every((m) => modifications.includes(m)),
+      (v: any) =>
+        v?.modifications?.length === modifications?.length || 0 &&
+        v?.modifications?.every((m: any) => modifications.includes(m)),
     );
   }
 
@@ -276,8 +278,8 @@ export class PromptOptimizer {
     const avgScores = Array.from(strategyScores.entries())
       .map(([strategy, scores]) => ({
         strategy,
-        avgScore: scores.reduce((a, b) => a + b, 0) / scores.length,
-        count: scores.length,
+        avgScore: scores.reduce((a: any, b: any) => a + b, 0) / scores?.length || 0,
+        count: scores?.length || 0,
       }))
       .sort((a, b) => b.avgScore - a.avgScore);
 

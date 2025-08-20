@@ -60,21 +60,25 @@ export class MemorySafeBatchProcessor extends EventEmitter {
     processor: (item: T, index: number) => Promise<void>,
   ): Promise<ProcessingMetrics> {
     const startTime = Date.now();
-    this.metrics.totalItems = items.length;
+    if (this.metrics) {
+
+      this.metrics.totalItems = items?.length || 0;
+
+    }
 
     logger.info(
-      `Starting batch processing of ${items.length} items`,
+      `Starting batch processing of ${items?.length || 0} items`,
       "BATCH_START",
       {
-        batchSize: this.options.batchSize,
-        maxMemoryMB: this.options.maxMemoryMB,
+        batchSize: this?.options?.batchSize,
+        maxMemoryMB: this?.options?.maxMemoryMB,
       },
     );
 
     // Process in batches
-    for (let i = 0; i < items.length; i += this.options.batchSize) {
-      const batch = items.slice(i, i + this.options.batchSize);
-      const batchNumber = Math.floor(i / this.options.batchSize) + 1;
+    for (let i = 0; i < items?.length || 0; i += this?.options?.batchSize) {
+      const batch = items.slice(i, i + this?.options?.batchSize);
+      const batchNumber = Math.floor(i / this?.options?.batchSize) + 1;
 
       // Check memory before processing batch
       await this.checkMemoryPressure();
@@ -83,24 +87,34 @@ export class MemorySafeBatchProcessor extends EventEmitter {
       await this.processSingleBatch(batch, processor, i, batchNumber);
 
       // Update metrics
-      this.metrics.batchesProcessed = batchNumber;
+      if (this.metrics) {
+
+        this.metrics.batchesProcessed = batchNumber;
+
+      }
 
       // Emit progress
       this.emit("progress", {
-        processed: this.metrics.processedItems,
-        total: this.metrics.totalItems,
+        processed: this?.metrics?.processedItems,
+        total: this?.metrics?.totalItems,
         percentage:
-          (this.metrics.processedItems / this.metrics.totalItems) * 100,
-        memoryUsageMB: this.metrics.memoryUsageMB,
+          (this?.metrics?.processedItems / this?.metrics?.totalItems) * 100,
+        memoryUsageMB: this?.metrics?.memoryUsageMB,
       });
 
       // Run GC if needed
-      if (batchNumber % this.options.gcInterval === 0) {
+      if (batchNumber % this?.options?.gcInterval === 0) {
         await this.runGarbageCollection();
       }
     }
 
-    this.metrics.processingTimeMs = Date.now() - startTime;
+    if (this.metrics) {
+
+
+      this.metrics.processingTimeMs = Date.now() - startTime;
+
+
+    }
 
     logger.info(`Batch processing complete`, "BATCH_COMPLETE", {
       ...this.metrics,
@@ -120,17 +134,17 @@ export class MemorySafeBatchProcessor extends EventEmitter {
     batchNumber: number,
   ): Promise<void> {
     logger.debug(`Processing batch ${batchNumber}`, "BATCH_PROCESS", {
-      batchSize: batch.length,
+      batchSize: batch?.length || 0,
       startIndex,
     });
 
-    const batchPromises = batch.map(async (item, idx) => {
+    const batchPromises = batch?.map(async (item, idx) => {
       const globalIndex = startIndex + idx;
       try {
         await processor(item, globalIndex);
-        this.metrics.processedItems++;
+        if (this.metrics.processedItems) { this.metrics.processedItems++ };
       } catch (error) {
-        this.metrics.failedItems++;
+        if (this.metrics.failedItems) { this.metrics.failedItems++ };
         logger.error(
           `Failed to process item at index ${globalIndex}`,
           "ITEM_ERROR",
@@ -151,25 +165,33 @@ export class MemorySafeBatchProcessor extends EventEmitter {
    */
   private async checkMemoryPressure(): Promise<void> {
     const memoryUsage = process.memoryUsage();
-    this.metrics.memoryUsageMB = memoryUsage.heapUsed / 1024 / 1024;
+    if (this.metrics) {
 
-    if (this.metrics.memoryUsageMB > this.metrics.peakMemoryMB) {
-      this.metrics.peakMemoryMB = this.metrics.memoryUsageMB;
+      this.metrics.memoryUsageMB = memoryUsage.heapUsed / 1024 / 1024;
+
     }
 
-    if (this.metrics.memoryUsageMB > this.options.maxMemoryMB) {
+    if (this?.metrics?.memoryUsageMB > this?.metrics?.peakMemoryMB) {
+      if (this.metrics) {
+
+        this.metrics.peakMemoryMB = this?.metrics?.memoryUsageMB;
+
+      }
+    }
+
+    if (this?.metrics?.memoryUsageMB > this?.options?.maxMemoryMB) {
       logger.warn(`Memory usage exceeded limit`, "MEMORY_PRESSURE", {
-        currentMB: this.metrics.memoryUsageMB,
-        limitMB: this.options.maxMemoryMB,
+        currentMB: this?.metrics?.memoryUsageMB,
+        limitMB: this?.options?.maxMemoryMB,
       });
 
       // Force garbage collection
       await this.runGarbageCollection();
 
       // If still over limit, pause briefly
-      if (this.metrics.memoryUsageMB > this.options.maxMemoryMB) {
+      if (this?.metrics?.memoryUsageMB > this?.options?.maxMemoryMB) {
         logger.warn(`Pausing for memory recovery`, "MEMORY_PAUSE");
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve: any) => setTimeout(resolve, 1000));
       }
     }
   }
@@ -184,7 +206,11 @@ export class MemorySafeBatchProcessor extends EventEmitter {
       const afterMB = process.memoryUsage().heapUsed / 1024 / 1024;
 
       this.gcCount++;
-      this.metrics.memoryUsageMB = afterMB;
+      if (this.metrics) {
+
+        this.metrics.memoryUsageMB = afterMB;
+
+      }
 
       logger.debug(`Garbage collection completed`, "GC_RUN", {
         beforeMB: beforeMB.toFixed(2),
@@ -208,23 +234,23 @@ export class MemorySafeBatchProcessor extends EventEmitter {
 
     for await (const item of itemGenerator) {
       batch.push(item);
-      this.metrics.totalItems++;
+      if (this.metrics.totalItems) { this.metrics.totalItems++ };
 
-      if (batch.length >= this.options.batchSize) {
+      if (batch?.length || 0 >= this?.options?.batchSize) {
         await this.checkMemoryPressure();
         await this.processSingleBatch(
           batch,
           processor,
-          index - batch.length,
-          this.metrics.batchesProcessed + 1,
+          index - batch?.length || 0,
+          this?.metrics?.batchesProcessed + 1,
         );
-        this.metrics.batchesProcessed++;
+        if (this.metrics.batchesProcessed) { this.metrics.batchesProcessed++ };
 
         yield { ...this.metrics };
 
         batch = [];
 
-        if (this.metrics.batchesProcessed % this.options.gcInterval === 0) {
+        if (this?.metrics?.batchesProcessed % this?.options?.gcInterval === 0) {
           await this.runGarbageCollection();
         }
       }
@@ -233,18 +259,24 @@ export class MemorySafeBatchProcessor extends EventEmitter {
     }
 
     // Process remaining items
-    if (batch.length > 0) {
+    if (batch?.length || 0 > 0) {
       await this.processSingleBatch(
         batch,
         processor,
-        index - batch.length,
-        this.metrics.batchesProcessed + 1,
+        index - batch?.length || 0,
+        this?.metrics?.batchesProcessed + 1,
       );
-      this.metrics.batchesProcessed++;
+      if (this.metrics.batchesProcessed) { this.metrics.batchesProcessed++ };
       yield { ...this.metrics };
     }
 
-    this.metrics.processingTimeMs = Date.now() - startTime;
+    if (this.metrics) {
+
+
+      this.metrics.processingTimeMs = Date.now() - startTime;
+
+
+    }
   }
 
   /**

@@ -3,7 +3,7 @@
  * Replaces the 6-step planning approach with a streamlined 4-step confidence workflow
  */
 
-import { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
+import { LLMProviderManager } from "../llm/LLMProviderManager.js";
 import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
 import { RAGSystem } from "../rag/RAGSystem.js";
 import { PlanExecutor } from "./PlanExecutor.js";
@@ -34,11 +34,38 @@ import { wsService } from "../../api/services/WebSocketService.js";
 import { VectorStore } from "../rag/VectorStore.js";
 import { EventEmitter } from "events";
 import { PerformanceOptimizer } from "../../api/services/PerformanceOptimizer.js";
-import {
-  selectModel,
-  getModelForSystemLoad,
-  MODEL_CONFIGS,
-} from "../../config/model-selection.config.js";
+// Model configuration constants
+const MODEL_CONFIGS = {
+  SIMPLE: {
+    model: 'qwen2.5:0.5b',
+    temperature: 0.5,
+    maxTokens: 512
+  },
+  COMPLEX: {
+    model: 'granite3.3:2b',
+    temperature: 0.7,
+    maxTokens: 2048
+  }
+};
+
+// Simple model selection function
+function selectModel(queryText: string, options?: any) {
+  // Basic complexity assessment
+  const complexity = queryText.length > 200 || 
+    queryText.includes('analyze') || 
+    queryText.includes('complex') ? 'complex' : 'simple';
+    
+  return complexity === 'complex' ? MODEL_CONFIGS.COMPLEX : MODEL_CONFIGS.SIMPLE;
+}
+
+// System load adjustment function
+function getModelForSystemLoad(modelConfig: any, systemLoad: any) {
+  // For high load, prefer lighter models
+  if (systemLoad.cpu > 0.8 || systemLoad.memory > 0.8) {
+    return MODEL_CONFIGS.SIMPLE;
+  }
+  return modelConfig;
+}
 
 export interface ConfidenceOrchestratorResult extends ExecutionResult {
   confidence: number;
@@ -48,7 +75,7 @@ export interface ConfidenceOrchestratorResult extends ExecutionResult {
 }
 
 export class ConfidenceMasterOrchestrator extends EventEmitter {
-  private llm: LlamaCppProvider;
+  private llm: LLMProviderManager;
   public agentRegistry: AgentRegistry;
   public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
@@ -97,16 +124,8 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     // Initialize performance optimizer first
     this.performanceOptimizer = new PerformanceOptimizer();
 
-    // Initialize LLM with model selection based on configuration
-    // Default to complex model (granite3.3:2b) for main orchestrator
-    const defaultModel = MODEL_CONFIGS.COMPLEX.model;
-    this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/config.model.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
+    // Initialize LLM using the modern LLMProviderManager singleton pattern
+    this.llm = new LLMProviderManager();
 
     // Initialize core systems
     this.agentRegistry = new AgentRegistry();
@@ -140,7 +159,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
   async initialize(): Promise<void> {
     // Initialize RAG system
     try {
-      await this.ragSystem.initialize();
+      await this?.ragSystem?.initialize();
       logger.info("RAG system initialized", "CONFIDENCE_ORCHESTRATOR");
     } catch (error) {
       logger.warn(
@@ -151,7 +170,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     }
 
     // Initialize agents
-    await this.agentRegistry.initialize();
+    await this?.agentRegistry?.initialize();
 
     // Load calibration parameters if available
     await this.loadCalibrationParameters();
@@ -163,21 +182,21 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
   }
 
   async processQuery(query: Query): Promise<ConfidenceOrchestratorResult> {
-    const perf = this.perfMonitor.start("processQuery");
+    const perf = this?.perfMonitor?.start("processQuery");
     const startTime = Date.now();
 
     logger.info(
       "Processing query with confidence scoring",
       "CONFIDENCE_ORCHESTRATOR",
       {
-        query: query.text.substring(0, 100),
+        query: query?.text?.substring(0, 100),
         conversationId: query.conversationId,
       },
     );
 
     try {
       // Step 1: Analyze query complexity
-      const complexity = await this.confidenceRAG.analyzer.assessComplexity(
+      const complexity = await this?.confidenceRAG?.analyzer.assessComplexity(
         query.text,
       );
 
@@ -205,36 +224,30 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         systemLoad,
       );
 
-      // Switch model if different from current
-      if (adjustedModelConfig.model !== this.llm.getConfig().model) {
-        logger.info(
-          "Switching model based on complexity and system load",
-          "CONFIDENCE_ORCHESTRATOR",
-          {
-            from: this.llm.getConfig().model,
-            to: adjustedModelConfig.model,
-            complexity: complexity.score,
-            systemLoad,
-          },
-        );
-        this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/adjustedModelConfig.model.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
-      }
+      // Get current model info from LLMProviderManager
+      const currentModelInfo = this?.llm?.getModelInfo();
+      
+      // Log model info for debugging - note: LLMProviderManager handles model switching internally
+      logger.info(
+        "Using LLMProviderManager for model selection",
+        "CONFIDENCE_ORCHESTRATOR",
+        {
+          currentModel: currentModelInfo?.model,
+          targetModel: adjustedModelConfig.model,
+          complexity: complexity.score,
+          systemLoad,
+        },
+      );
 
       // Step 3: Route based on complexity
       let result: ConfidenceOrchestratorResult;
 
       if (
-        complexity.score <= this.confidenceConfig.complexityThresholds.simple
+        complexity.score <= this?.confidenceConfig?.complexityThresholds.simple
       ) {
         result = await this.handleSimpleQuery(query, complexity);
       } else if (
-        complexity.score <= this.confidenceConfig.complexityThresholds.medium
+        complexity.score <= this?.confidenceConfig?.complexityThresholds.medium
       ) {
         result = await this.handleConfidenceRAG(query, complexity);
       } else {
@@ -275,38 +288,32 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
   ): Promise<ConfidenceOrchestratorResult> {
     logger.info("Handling simple query", "CONFIDENCE_ORCHESTRATOR");
 
-    // Use simple model for quick responses
-    const simpleModel = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/MODEL_CONFIGS.SIMPLE.model.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
+    // Use the existing LLM provider for quick responses
+    // Note: LLMProviderManager already handles model optimization based on system load
 
     // Generate direct response
-    const response = await simpleModel.generate(
+    const response = await this.llm.generate(
       `Answer this simple question concisely: ${query.text}`,
       {
-        temperature: MODEL_CONFIGS.SIMPLE.temperature,
-        maxTokens: MODEL_CONFIGS.SIMPLE.maxTokens,
+        temperature: MODEL_CONFIGS?.SIMPLE?.temperature,
+        maxTokens: MODEL_CONFIGS?.SIMPLE?.maxTokens,
       },
     );
 
     // Quick evaluation
-    const _evaluation = this.confidenceRAG.evaluator.quickEvaluate(
+    const _evaluation = this?.confidenceRAG?.evaluator.quickEvaluate(
       query.text,
-      response,
+      response.response,
       0.85, // High base confidence for simple queries
     );
 
     // Deliver response
-    const delivered = await this.confidenceRAG.delivery.deliver(_evaluation, {
+    const delivered = await this?.confidenceRAG?.delivery.deliver(_evaluation, {
       includeConfidenceScore: true,
       confidenceFormat: "percentage",
     });
 
-    return this.createOrchestratorResult(response, delivered, "simple-query");
+    return this.createOrchestratorResult(response.response, delivered, "simple-query");
   }
 
   /**
@@ -319,14 +326,14 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     logger.info("Handling with confidence RAG", "CONFIDENCE_ORCHESTRATOR");
 
     // Step 1: Retrieve relevant documents (with caching)
-    const retrievalCacheKey = this.performanceOptimizer.generateQueryKey(
+    const retrievalCacheKey = this?.performanceOptimizer?.generateQueryKey(
       `retrieval:${query.text}`,
     );
 
-    const retrieval = await this.performanceOptimizer.withCache(
+    const retrieval = await this?.performanceOptimizer?.withCache(
       retrievalCacheKey,
       async () =>
-        this.confidenceRAG.retriever.retrieve(query.text, {
+        this?.confidenceRAG?.retriever.retrieve(query.text, {
           topK: 5,
           minConfidence: 0.6,
         }),
@@ -336,14 +343,14 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     this.emit("confidence:update", {
       stage: "retrieval",
       confidence: retrieval.averageConfidence,
-      details: { documentsFound: retrieval.documents.length },
+      details: { documentsFound: retrieval?.documents?.length },
     });
 
     // Use retrieved documents directly
-    const optimizedDocs = retrieval.documents.slice(0, 5);
+    const optimizedDocs = retrieval?.documents?.slice(0, 5);
 
     // Step 2: Build context
-    const context = this.confidenceRAG.contextBuilder.buildContext(
+    const context = this?.confidenceRAG?.contextBuilder.buildContext(
       optimizedDocs,
       query.text,
       { mode: "unified", includeConfidence: true },
@@ -351,7 +358,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
 
     // Step 3: Generate response with confidence
     const generation =
-      await this.confidenceRAG.generator.generateWithConfidence({
+      await this?.confidenceRAG?.generator.generateWithConfidence({
         query: query.text,
         retrievedDocuments: retrieval.documents,
         complexity: _complexity.score,
@@ -361,11 +368,11 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     this.emit("confidence:update", {
       stage: "generation",
       confidence: generation.rawConfidence,
-      details: { tokenCount: generation.tokenConfidence.length },
+      details: { tokenCount: generation?.tokenConfidence?.length },
     });
 
     // Step 4: Evaluate response
-    const evaluation = await this.confidenceRAG.evaluator.evaluate(
+    const evaluation = await this?.confidenceRAG?.evaluator.evaluate(
       query.text,
       generation.response,
       retrieval.documents,
@@ -381,7 +388,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     });
 
     // Step 5: Apply calibration
-    const calibrated = this.confidenceRAG.calibrator.calibrate(
+    const calibrated = this?.confidenceRAG?.calibrator.calibrate(
       evaluation.overallConfidence,
       { method: "temperature_scaling" },
     );
@@ -389,7 +396,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     evaluation.overallConfidence = calibrated.calibratedScore;
 
     // Step 6: Deliver response
-    const delivered = await this.confidenceRAG.delivery.deliver(evaluation, {
+    const delivered = await this?.confidenceRAG?.delivery.deliver(evaluation, {
       includeConfidenceScore: true,
       includeSourceAttribution: true,
       includeUncertaintyWarnings: true,
@@ -417,10 +424,10 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     );
 
     // Use enhanced parser for query analysis
-    const queryAnalysis = await this.enhancedParser.parseQuery(query);
+    const queryAnalysis = await this?.enhancedParser?.parseQuery(query);
 
     // Create agent routing plan
-    const routingPlan = await this.agentRouter.routeQuery(queryAnalysis);
+    const routingPlan = await this?.agentRouter?.routeQuery(queryAnalysis);
 
     // Create and execute plan
     const plan = await this.createEnhancedPlan(
@@ -428,13 +435,13 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       queryAnalysis,
       routingPlan,
     );
-    const executionResult = await this.planExecutor.execute(plan);
+    const executionResult = await this?.planExecutor?.execute(plan);
 
     // Format agent results
     const consolidatedResponse = this.consolidateAgentResults(executionResult);
 
     // Evaluate the consolidated response
-    const evaluation = await this.confidenceRAG.evaluator.evaluate(
+    const evaluation = await this?.confidenceRAG?.evaluator.evaluate(
       query.text,
       consolidatedResponse,
       [], // No direct sources for agent responses
@@ -447,7 +454,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       (evaluation.overallConfidence + agentConfidence) / 2;
 
     // Deliver response
-    const delivered = await this.confidenceRAG.delivery.deliver(evaluation, {
+    const delivered = await this?.confidenceRAG?.delivery.deliver(evaluation, {
       includeConfidenceScore: true,
       includeUncertaintyWarnings: true,
       confidenceFormat: "detailed",
@@ -481,12 +488,12 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       Query Analysis:
       - Intent: ${analysis.intent}
       - Complexity: ${analysis.complexity}/10
-      - Domains: ${analysis.domains.join(", ")}
+      - Domains: ${analysis?.domains?.join(", ")}
       - Priority: ${analysis.priority}
       
       Agent Routing:
       - Selected agents: ${routingPlan.selectedAgents
-        .map((a) => `${a.agentType} (confidence: ${a.confidence})`)
+        .map((a: any) => `${a.agentType} (confidence: ${a.confidence})`)
         .join(", ")}
       - Strategy: ${routingPlan.executionStrategy}
       - Overall confidence: ${routingPlan.confidence}
@@ -499,13 +506,13 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       Return JSON format with confidence-aware steps.
     `;
 
-    const response = await this.llm.generate(prompt, {
+    const response = await this?.llm?.generate(prompt, {
       format: "json",
       temperature: 0.3,
       maxTokens: 2000,
     });
 
-    return this.parsePlan(response, query);
+    return this.parsePlan(response.response, query);
   }
 
   /**
@@ -556,8 +563,8 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
    */
   private consolidateAgentResults(executionResult: ExecutionResult): string {
     const sections = executionResult.results
-      .filter((r) => r.success && r.output)
-      .map((r) => {
+      .filter((r: any) => r.success && r.output)
+      .map((r: any) => {
         const agentName = r.metadata?.agentType || "Unknown Agent";
         return `## ${agentName} Results\n\n${r.output}`;
       });
@@ -569,16 +576,16 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
    * Calculate confidence based on agent execution
    */
   private calculateAgentConfidence(executionResult: ExecutionResult): number {
-    const results = executionResult.results;
-    if (results.length === 0) return 0.5;
+    const results = executionResult?.results;
+    if (results?.length || 0 === 0) return 0.5;
 
     const successRate =
-      results.filter((r) => r.success).length / results.length;
+      results?.filter((r: any) => r.success).length / results?.length || 0;
     const avgStepConfidence =
       results
-        .filter((r) => r.metadata?.confidence)
-        .reduce((sum, r) => sum + (r.metadata?.confidence || 0), 0) /
-      results.length;
+        .filter((r: any) => r.metadata?.confidence)
+        .reduce((sum: any, r: any) => sum + (r.metadata?.confidence || 0), 0) /
+      results?.length || 0;
 
     return successRate * 0.6 + avgStepConfidence * 0.4;
   }
@@ -638,11 +645,11 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
    * Get error-specific fallback message
    */
   private getErrorFallbackMessage(error: Error): string {
-    if (error.message.includes("timeout")) {
+    if (error?.message?.includes("timeout")) {
       return "I apologize, but the request timed out. This might be due to system load. Please try again with a simpler question or break down your request into smaller parts.";
     }
 
-    if (error.message.includes("model")) {
+    if (error?.message?.includes("model")) {
       return "I'm having trouble accessing the AI model at the moment. Please ensure the system is properly configured and try again.";
     }
 
@@ -665,19 +672,19 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
           success: true,
           output: response,
           metadata: {
-            confidence: delivered.confidence.score,
-            action: delivered.metadata.action,
+            confidence: delivered?.confidence?.score,
+            action: delivered?.metadata?.action,
           },
         },
       ],
       summary: delivered.content,
-      confidence: delivered.confidence.score,
+      confidence: delivered?.confidence?.score,
       deliveredResponse: delivered,
       processingPath,
       feedbackId: delivered.feedbackId,
       metadata: {
         processingPath,
-        humanReviewNeeded: delivered.metadata.humanReviewNeeded,
+        humanReviewNeeded: delivered?.metadata?.humanReviewNeeded,
       },
     };
   }
@@ -686,18 +693,18 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
    * Capture user feedback
    */
   captureFeedback(feedbackId: string, feedback: any): void {
-    this.confidenceRAG.delivery.captureFeedback(feedbackId, feedback);
+    this?.confidenceRAG?.delivery.captureFeedback(feedbackId, feedback);
 
     // Update calibration if positive feedback
     if (feedback.helpful && feedback.accurate) {
-      const history = this.confidenceRAG.delivery.exportHistory();
+      const history = this?.confidenceRAG?.delivery.exportHistory();
       const delivery = history.find((d: any) => d.feedbackId === feedbackId);
 
       if (delivery) {
-        this.confidenceRAG.calibrator.trainCalibration(
+        this?.confidenceRAG?.calibrator.trainCalibration(
           [
             {
-              predictedConfidence: delivery.confidence.score,
+              predictedConfidence: delivery?.confidence?.score,
               actualAccuracy: 0.9, // High accuracy based on positive feedback
             },
           ],
@@ -712,14 +719,14 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
    */
   getPerformanceStats() {
     return {
-      delivery: this.confidenceRAG.delivery.getDeliveryStats(),
-      calibration: this.confidenceRAG.calibrator.getDiagnostics(),
+      delivery: this?.confidenceRAG?.delivery.getDeliveryStats(),
+      calibration: this?.confidenceRAG?.calibrator.getDiagnostics(),
       performance: {
         operationCounts: {},
         averageExecutionTimes: {},
         totalOperations: 0,
       },
-      optimization: this.performanceOptimizer.getStatistics(),
+      optimization: this?.performanceOptimizer?.getStatistics(),
     };
   }
 
@@ -736,7 +743,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
    * Save calibration parameters
    */
   async saveCalibrationParameters(): Promise<void> {
-    const params = this.confidenceRAG.calibrator.exportParameters();
+    const params = this?.confidenceRAG?.calibrator.exportParameters();
     // In production, save to database or file
     logger.info("Saving calibration parameters", "CONFIDENCE_ORCHESTRATOR", {
       params,
@@ -777,7 +784,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     );
 
     // Cleanup performance optimizer
-    this.performanceOptimizer.cleanup();
+    this?.performanceOptimizer?.cleanup();
 
     // Save calibration parameters before cleanup
     await this.saveCalibrationParameters();

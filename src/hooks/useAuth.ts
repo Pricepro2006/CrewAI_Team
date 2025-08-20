@@ -40,7 +40,7 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-export const useAuthState = (): AuthState => {
+export const useAuthState = (): AuthContextType => {
   const [state, setState] = useState<AuthState>({
     user: null,
     token: null,
@@ -150,7 +150,7 @@ export const useAuthState = (): AuthState => {
   }, []);
 
   const refreshToken = useCallback(async (): Promise<boolean> => {
-    const currentToken = state.token;
+    const currentToken = state?.token;
     if (!currentToken) {
       return false;
     }
@@ -246,7 +246,7 @@ export const useCurrentUser = (): User | null => {
  */
 export const usePermission = (permission: string): boolean => {
   const { user } = useAuth();
-  return user ? user.permissions.includes(permission) || user.role === 'admin' : false;
+  return user ? user?.permissions?.includes(permission) || user.role === 'admin' : false;
 };
 
 /**

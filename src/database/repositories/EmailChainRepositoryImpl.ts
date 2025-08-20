@@ -1,4 +1,4 @@
-import { BaseRepository } from "./BaseRepository.js";
+// Removed BaseRepository import as we don't extend it
 import { IEmailChainRepository } from "./interfaces/IEmailChainRepository.js";
 import {
   EmailChain,
@@ -7,24 +7,33 @@ import {
 } from "../../types/ChainTypes.js";
 import { executeQuery, executeTransaction } from "../ConnectionPool.js";
 import { logger } from "../../utils/logger.js";
+import type { 
+  DatabaseInstance, 
+  DatabaseRow 
+} from "../../shared/types/client.types.js";
 
 /**
  * Email chain repository implementation
  */
-export class EmailChainRepositoryImpl
-  extends BaseRepository<EmailChain>
-  implements IEmailChainRepository
-{
+export class EmailChainRepositoryImpl implements IEmailChainRepository {
+  protected tableName = "email_chains";
+  protected primaryKey = "id";
+
   constructor() {
-    super(null as any, "email_chains");
-    this.tableName = "email_chains";
-    this.primaryKey = "id";
+    // No super call needed
+  }
+
+  /**
+   * Generate a new UUID for entity ID
+   */
+  protected generateId(): string {
+    return require('uuid').v4();
   }
 
   /**
    * Map database row to EmailChain entity
    */
-  protected mapRowToEntity(row: any): EmailChain {
+  protected mapRowToEntity(row: DatabaseRow): EmailChain {
     return {
       id: row.id,
       chain_id: row.chain_id,
@@ -52,8 +61,8 @@ export class EmailChainRepositoryImpl
   /**
    * Map EmailChain entity to database row
    */
-  protected mapEntityToRow(entity: Partial<EmailChain>): any {
-    const row: any = {};
+  protected mapEntityToRow(entity: Partial<EmailChain>): DatabaseRow {
+    const row: DatabaseRow = {};
 
     if (entity.chain_id !== undefined) row.chain_id = entity.chain_id;
     if (entity.conversation_id !== undefined)
@@ -69,9 +78,9 @@ export class EmailChainRepositoryImpl
     if (entity.missing_stages !== undefined)
       row.missing_stages = JSON.stringify(entity.missing_stages);
     if (entity.start_time !== undefined)
-      row.start_time = entity.start_time.toISOString();
+      row.start_time = entity?.start_time?.toISOString();
     if (entity.end_time !== undefined)
-      row.end_time = entity.end_time.toISOString();
+      row.end_time = entity?.end_time?.toISOString();
     if (entity.duration_hours !== undefined)
       row.duration_hours = entity.duration_hours;
     if (entity.participants !== undefined)
@@ -90,13 +99,13 @@ export class EmailChainRepositoryImpl
    * Find complete chains
    */
   async findCompleteChains(limit?: number): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       let query = `
         SELECT * FROM ${this.tableName}
         WHERE is_complete = 1
         ORDER BY completeness_score DESC, email_count DESC
       `;
-      const params: any[] = [];
+      const params: unknown[] = [];
 
       if (limit !== undefined) {
         query += " LIMIT ?";
@@ -105,7 +114,7 @@ export class EmailChainRepositoryImpl
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: DatabaseRow) => this.mapRowToEntity(row));
     });
   }
 
@@ -113,13 +122,13 @@ export class EmailChainRepositoryImpl
    * Find incomplete chains
    */
   async findIncompleteChains(limit?: number): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       let query = `
         SELECT * FROM ${this.tableName}
         WHERE is_complete = 0
         ORDER BY completeness_score DESC, end_time DESC
       `;
-      const params: any[] = [];
+      const params: unknown[] = [];
 
       if (limit !== undefined) {
         query += " LIMIT ?";
@@ -128,7 +137,7 @@ export class EmailChainRepositoryImpl
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: DatabaseRow) => this.mapRowToEntity(row));
     });
   }
 
@@ -136,14 +145,14 @@ export class EmailChainRepositoryImpl
    * Find chains by type
    */
   async findByType(type: ChainType): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE chain_type = ?
         ORDER BY created_at DESC
       `);
       const rows = stmt.all(type);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: DatabaseRow) => this.mapRowToEntity(row));
     });
   }
 
@@ -154,14 +163,14 @@ export class EmailChainRepositoryImpl
     minScore: number,
     maxScore: number,
   ): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE completeness_score BETWEEN ? AND ?
         ORDER BY completeness_score DESC
       `);
       const rows = stmt.all(minScore, maxScore);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: DatabaseRow) => this.mapRowToEntity(row));
     });
   }
 
@@ -172,7 +181,7 @@ export class EmailChainRepositoryImpl
     chainId: string,
     completeness: ChainCompleteness,
   ): Promise<void> {
-    await executeQuery((db) => {
+    await executeQuery((db: DatabaseInstance) => {
       const stmt = db.prepare(`
         UPDATE ${this.tableName}
         SET completeness_score = ?,
@@ -194,7 +203,7 @@ export class EmailChainRepositoryImpl
    * Add email to chain
    */
   async addEmailToChain(chainId: string, emailId: string): Promise<void> {
-    await executeTransaction((db) => {
+    await executeTransaction((db: DatabaseInstance) => {
       // Get current chain
       const getStmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE chain_id = ?`,
@@ -206,7 +215,7 @@ export class EmailChainRepositoryImpl
       }
 
       // Update email_ids and count
-      const emailIds = chain.email_ids ? JSON.parse(chain.email_ids) : [];
+      const emailIds = (chain as DatabaseRow).email_ids ? JSON.parse((chain as DatabaseRow).email_ids as string) : [];
       if (!emailIds.includes(emailId)) {
         emailIds.push(emailId);
 
@@ -217,7 +226,7 @@ export class EmailChainRepositoryImpl
               updated_at = datetime('now')
           WHERE chain_id = ?
         `);
-        updateStmt.run(JSON.stringify(emailIds), emailIds.length, chainId);
+        updateStmt.run(JSON.stringify(emailIds), emailIds?.length || 0, chainId);
       }
     });
   }
@@ -226,7 +235,7 @@ export class EmailChainRepositoryImpl
    * Remove email from chain
    */
   async removeEmailFromChain(chainId: string, emailId: string): Promise<void> {
-    await executeTransaction((db) => {
+    await executeTransaction((db: DatabaseInstance) => {
       // Get current chain
       const getStmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE chain_id = ?`,
@@ -238,12 +247,12 @@ export class EmailChainRepositoryImpl
       }
 
       // Update email_ids and count
-      const emailIds: string[] = chain.email_ids
-        ? JSON.parse(chain.email_ids)
+      const emailIds: string[] = (chain as DatabaseRow).email_ids
+        ? JSON.parse((chain as DatabaseRow).email_ids as string)
         : [];
-      const filteredIds = emailIds.filter((id) => id !== emailId);
+      const filteredIds = emailIds?.filter((id: string) => id !== emailId);
 
-      if (filteredIds.length !== emailIds.length) {
+      if (filteredIds?.length || 0 !== emailIds?.length || 0) {
         const updateStmt = db.prepare(`
           UPDATE ${this.tableName}
           SET email_ids = ?,
@@ -253,7 +262,7 @@ export class EmailChainRepositoryImpl
         `);
         updateStmt.run(
           JSON.stringify(filteredIds),
-          filteredIds.length,
+          filteredIds?.length || 0,
           chainId,
         );
       }
@@ -271,7 +280,7 @@ export class EmailChainRepositoryImpl
     avgCompleteness: number;
     avgEmailCount: number;
   }> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       // Basic counts
       const statsStmt = db.prepare(`
         SELECT 
@@ -282,7 +291,7 @@ export class EmailChainRepositoryImpl
           AVG(email_count) as avg_email_count
         FROM ${this.tableName}
       `);
-      const stats = statsStmt.get() as any;
+      const stats = statsStmt.get() as DatabaseRow;
 
       // By type counts
       const typeStmt = db.prepare(`
@@ -290,7 +299,7 @@ export class EmailChainRepositoryImpl
         FROM ${this.tableName}
         GROUP BY chain_type
       `);
-      const typeCounts = typeStmt.all() as any[];
+      const typeCounts = typeStmt.all() as DatabaseRow[];
 
       const byType: Record<ChainType, number> = {
         [ChainType.QUOTE_REQUEST]: 0,
@@ -301,9 +310,9 @@ export class EmailChainRepositoryImpl
         [ChainType.UNKNOWN]: 0,
       };
 
-      typeCounts.forEach((t) => {
-        if (t.chain_type in byType) {
-          byType[t.chain_type as ChainType] = t.count;
+      typeCounts.forEach((t: DatabaseRow) => {
+        if (t.chain_type && t.chain_type in byType) {
+          byType[t.chain_type as ChainType] = t.count as number;
         }
       });
 
@@ -322,14 +331,14 @@ export class EmailChainRepositoryImpl
    * Find chains with minimum email count
    */
   async findByMinEmailCount(minCount: number): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE email_count >= ?
         ORDER BY email_count DESC, created_at DESC
       `);
       const rows = stmt.all(minCount);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: DatabaseRow) => this.mapRowToEntity(row));
     });
   }
 
@@ -340,14 +349,14 @@ export class EmailChainRepositoryImpl
     minHours: number,
     maxHours: number,
   ): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE duration_hours BETWEEN ? AND ?
         ORDER BY duration_hours DESC
       `);
       const rows = stmt.all(minHours, maxHours);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: DatabaseRow) => this.mapRowToEntity(row));
     });
   }
 
@@ -355,7 +364,7 @@ export class EmailChainRepositoryImpl
    * Create or update chain
    */
   async upsert(chain: EmailChain): Promise<EmailChain> {
-    return executeTransaction((db) => {
+    return executeTransaction((db: DatabaseInstance) => {
       // Check if chain exists
       const existsStmt = db.prepare(`
         SELECT 1 FROM ${this.tableName} WHERE chain_id = ?
@@ -366,12 +375,12 @@ export class EmailChainRepositoryImpl
         // Update existing
         const row = this.mapEntityToRow(chain);
         const columns = Object.keys(row).filter(
-          (col) => col !== "id" && col !== "chain_id" && col !== "created_at",
+          (col: string) => col !== "id" && col !== "chain_id" && col !== "created_at",
         );
-        const values = columns.map((col) => row[col]);
+        const values = columns?.map((col: string) => row[col]);
         values.push(chain.chain_id);
 
-        const setClause = columns.map((col) => `${col} = ?`).join(", ");
+        const setClause = columns?.map((col: string) => `${col} = ?`).join(", ");
         const updateStmt = db.prepare(`
           UPDATE ${this.tableName}
           SET ${setClause}, updated_at = datetime('now')
@@ -390,15 +399,15 @@ export class EmailChainRepositoryImpl
           "id",
           "chain_id",
           ...Object.keys(row).filter(
-            (col) => col !== "id" && col !== "chain_id",
+            (col: string) => col !== "id" && col !== "chain_id",
           ),
         ];
         const values = [
           id,
           chain.chain_id,
-          ...columns.slice(2).map((col) => row[col]),
+          ...columns.slice(2).map((col: string) => row[col]),
         ];
-        const placeholders = columns.map(() => "?").join(", ");
+        const placeholders = columns?.map(() => "?").join(", ");
 
         const insertStmt = db.prepare(`
           INSERT INTO ${this.tableName} (${columns.join(", ")}, created_at)
@@ -424,11 +433,11 @@ export class EmailChainRepositoryImpl
    * Get chain email IDs
    */
   async getChainEmailIds(chainId: string): Promise<string[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const stmt = db.prepare(
         `SELECT email_ids FROM ${this.tableName} WHERE chain_id = ?`,
       );
-      const result = stmt.get(chainId) as any;
+      const result = stmt.get(chainId) as DatabaseRow | undefined;
 
       if (!result || !result.email_ids) {
         return [];
@@ -444,14 +453,38 @@ export class EmailChainRepositoryImpl
   async findChainsNeedingReanalysis(
     lastAnalyzedBefore: Date,
   ): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE last_analyzed IS NULL OR last_analyzed < ?
         ORDER BY completeness_score ASC, created_at ASC
       `);
       const rows = stmt.all(lastAnalyzedBefore.toISOString());
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: DatabaseRow) => this.mapRowToEntity(row));
+    });
+  }
+
+  /**
+   * Adapter method to match IRepository interface
+   */
+  async findAll(filter?: Partial<EmailChain>): Promise<EmailChain[]> {
+    return executeQuery((db: DatabaseInstance) => {
+      let query = `SELECT * FROM ${this.tableName}`;
+      const params: unknown[] = [];
+
+      if (filter && Object.keys(filter).length > 0) {
+        const conditions = Object.keys(filter).map((key: string) => {
+          params.push(filter[key as keyof EmailChain]);
+          return `${key} = ?`;
+        });
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
+      query += ` ORDER BY created_at DESC`;
+
+      const stmt = db.prepare(query);
+      const rows = stmt.all(...params) as DatabaseRow[];
+      return rows?.map((row: DatabaseRow) => this.mapRowToEntity(row));
     });
   }
 
@@ -459,7 +492,7 @@ export class EmailChainRepositoryImpl
    * Override methods to use connection pool
    */
   async findById(id: string): Promise<EmailChain | null> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const stmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
       );
@@ -469,7 +502,7 @@ export class EmailChainRepositoryImpl
   }
 
   async create(data: Omit<EmailChain, "id">): Promise<EmailChain> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const id = this.generateId();
       const chainData: EmailChain = {
         ...data,
@@ -479,8 +512,8 @@ export class EmailChainRepositoryImpl
 
       const row = this.mapEntityToRow(chainData);
       const columns = Object.keys(row);
-      const values = columns.map((col) => row[col]);
-      const placeholders = columns.map(() => "?").join(", ");
+      const values = columns?.map((col: string) => row[col]);
+      const placeholders = columns?.map(() => "?").join(", ");
 
       const query = `INSERT INTO ${this.tableName} (id, ${columns.join(", ")}, created_at) VALUES (?, ${placeholders}, datetime('now'))`;
       const stmt = db.prepare(query);
@@ -497,18 +530,18 @@ export class EmailChainRepositoryImpl
     id: string,
     data: Partial<Omit<EmailChain, "id" | "created_at">>,
   ): Promise<EmailChain | null> {
-    return executeQuery((db) => {
+    return executeQuery((db: DatabaseInstance) => {
       const row = this.mapEntityToRow(data);
       const columns = Object.keys(row);
 
-      if (columns.length === 0) {
+      if (columns?.length || 0 === 0) {
         return this.findById(id);
       }
 
-      const values = columns.map((col) => row[col]);
+      const values = columns?.map((col: string) => row[col]);
       values.push(id);
 
-      const setClause = columns.map((col) => `${col} = ?`).join(", ");
+      const setClause = columns?.map((col: string) => `${col} = ?`).join(", ");
       const query = `UPDATE ${this.tableName} SET ${setClause}, updated_at = datetime('now') WHERE ${this.primaryKey} = ?`;
 
       const stmt = db.prepare(query);
@@ -520,6 +553,55 @@ export class EmailChainRepositoryImpl
 
       logger.info("Chain updated", "CHAIN_REPOSITORY", { id });
       return this.findById(id);
+    });
+  }
+
+  /**
+   * Count chains with optional filtering
+   */
+  async count(filter?: Partial<EmailChain>): Promise<number> {
+    return executeQuery((db: DatabaseInstance) => {
+      let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
+      const params: unknown[] = [];
+
+      if (filter && Object.keys(filter).length > 0) {
+        const conditions = Object.keys(filter).map((key: string) => {
+          params.push(filter[key as keyof EmailChain]);
+          return `${key} = ?`;
+        });
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
+      const stmt = db.prepare(query);
+      const result = stmt.get(...params) as { count: number };
+      return result.count;
+    });
+  }
+
+  /**
+   * Check if a chain exists
+   */
+  async exists(id: string): Promise<boolean> {
+    const chain = await this.findById(id);
+    return chain !== null;
+  }
+
+  /**
+   * Delete a chain
+   */
+  async delete(id: string): Promise<boolean> {
+    return executeQuery((db: DatabaseInstance) => {
+      const stmt = db.prepare(
+        `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
+      );
+      const result = stmt.run(id);
+      const deleted = result.changes > 0;
+
+      if (deleted) {
+        logger.info("Chain deleted", "CHAIN_REPOSITORY", { id });
+      }
+
+      return deleted;
     });
   }
 }

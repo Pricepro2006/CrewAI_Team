@@ -71,7 +71,7 @@ export class LocationDatabase {
     },
     {
       correct: 'New York',
-      variations: ['NYC', 'NY', 'N.Y.C.', 'New York City', 'Newyork', 'The City'],
+      variations: ['NYC', 'NY', 'N?.Y?.C.', 'New York City', 'Newyork', 'The City'],
       type: 'city',
       metadata: {
         state: 'New York',
@@ -586,7 +586,7 @@ export class LocationDatabase {
     
     // Check cities
     for (const city of this.CITY_CORRECTIONS) {
-      if (city.variations.some(v => v.toLowerCase() === lowerInput)) {
+      if (city?.variations?.some(v => v.toLowerCase() === lowerInput)) {
         return { corrected: city.correct, confidence: 0.9 };
       }
       
@@ -600,13 +600,13 @@ export class LocationDatabase {
     
     // Check states
     for (const state of this.STATE_INFO) {
-      if (state.variations.some(v => v.toLowerCase() === lowerInput) || 
-          state.abbreviation.toLowerCase() === lowerInput) {
+      if (state?.variations?.some(v => v.toLowerCase() === lowerInput) || 
+          state?.abbreviation?.toLowerCase() === lowerInput) {
         return { corrected: state.name, confidence: 0.9 };
       }
       
       // Check regional terms
-      if (state.regionalTerms.some(term => term.toLowerCase() === lowerInput)) {
+      if (state?.regionalTerms?.some(term => term.toLowerCase() === lowerInput)) {
         return { corrected: state.name, confidence: 0.8 };
       }
     }
@@ -620,10 +620,10 @@ export class LocationDatabase {
   public static getStateAbbreviation(state: string): string | null {
     const lowerState = state.toLowerCase().trim();
     
-    const stateInfo = this.STATE_INFO.find(s => 
-      s.name.toLowerCase() === lowerState ||
-      s.abbreviation.toLowerCase() === lowerState ||
-      s.variations.some(v => v.toLowerCase() === lowerState)
+    const stateInfo = this?.STATE_INFO?.find(s => 
+      s?.name?.toLowerCase() === lowerState ||
+      s?.abbreviation?.toLowerCase() === lowerState ||
+      s?.variations?.some(v => v.toLowerCase() === lowerState)
     );
     
     return stateInfo ? stateInfo.abbreviation : null;
@@ -633,9 +633,9 @@ export class LocationDatabase {
    * Get major cities for a state
    */
   public static getMajorCities(state: string): string[] {
-    const stateInfo = this.STATE_INFO.find(s => 
-      s.name.toLowerCase() === state.toLowerCase() ||
-      s.abbreviation.toLowerCase() === state.toLowerCase()
+    const stateInfo = this?.STATE_INFO?.find(s => 
+      s?.name?.toLowerCase() === state.toLowerCase() ||
+      s?.abbreviation?.toLowerCase() === state.toLowerCase()
     );
     
     return stateInfo ? stateInfo.majorCities : [];
@@ -645,8 +645,8 @@ export class LocationDatabase {
    * Get regional service terminology
    */
   public static getRegionalTerms(region: string, service: string): string[] {
-    const regionalTerms = this.SERVICE_TERMINOLOGY.find(t => 
-      t.region.toLowerCase() === region.toLowerCase()
+    const regionalTerms = this?.SERVICE_TERMINOLOGY?.find(t => 
+      t?.region?.toLowerCase() === region.toLowerCase()
     );
     
     if (regionalTerms && regionalTerms.terms[service]) {
@@ -691,13 +691,13 @@ export class LocationDatabase {
    * Simple fuzzy matching algorithm
    */
   private static fuzzyMatch(str1: string, str2: string): boolean {
-    if (Math.abs(str1.length - str2.length) > 3) return false;
+    if (Math.abs(str1?.length || 0 - str2?.length || 0) > 3) return false;
     
     let mismatches = 0;
-    const shorter = str1.length < str2.length ? str1 : str2;
-    const longer = str1.length < str2.length ? str2 : str1;
+    const shorter = str1?.length || 0 < str2?.length || 0 ? str1 : str2;
+    const longer = str1?.length || 0 < str2?.length || 0 ? str2 : str1;
     
-    for (let i = 0; i < shorter.length; i++) {
+    for (let i = 0; i < shorter?.length || 0; i++) {
       if (shorter[i] !== longer[i]) {
         mismatches++;
         if (mismatches > 2) return false;
@@ -711,9 +711,9 @@ export class LocationDatabase {
    * Get city metadata
    */
   public static getCityMetadata(city: string): any {
-    const cityInfo = this.CITY_CORRECTIONS.find(c => 
-      c.correct.toLowerCase() === city.toLowerCase() ||
-      c.variations.some(v => v.toLowerCase() === city.toLowerCase())
+    const cityInfo = this?.CITY_CORRECTIONS?.find(c => 
+      c?.correct?.toLowerCase() === city.toLowerCase() ||
+      c?.variations?.some(v => v.toLowerCase() === city.toLowerCase())
     );
     
     return cityInfo?.metadata || null;

@@ -4,20 +4,19 @@ import {
   publicProcedure,
   protectedProcedure,
 } from "../trpc/enhanced-router.js";
-import { EmailStorageService } from "../services/EmailStorageService.js";
-import { mockEmailStorageService } from "../services/MockEmailStorageService.js";
+// Removed MockEmailStorageService import - using real service only
 import { realEmailStorageService } from "../services/RealEmailStorageService.js";
 // import { emailStorageAdapter } from "../services/EmailStorageServiceAdapter.js"; // Disabled - conflicts with enhanced DB
-import { UnifiedEmailService } from "../services/UnifiedEmailService.js";
+// import { UnifiedEmailService } from "../services/UnifiedEmailService.js";
 import { emailIntegrationService } from "../services/EmailIntegrationService.js";
-import { simpleAPIProxy } from "../services/SimpleAPIProxy.js";
+// import { simpleAPIProxy } from "../services/SimpleAPIProxy.js";
 import { logger } from "../../utils/logger.js";
 
 // Initialize email services
 // Use RealEmailStorageService that connects to crewai_enhanced.db
 const emailStorage = realEmailStorageService; // Real database connection with enhanced schema
 // const unifiedEmailService = new UnifiedEmailService(); // Can't use - wrong database schema
-const unifiedEmailService = null as any; // Temporary disable until database fixed
+// const unifiedEmailService: UnifiedEmailService | null = null; // Temporary disable until database fixed
 // Start SLA monitoring
 // emailStorage.startSLAMonitoring(); // Not implemented in RealEmailStorageService yet
 
@@ -42,8 +41,8 @@ const GetEmailsTableInputSchema = z.object({
         .optional(),
       dateRange: z
         .object({
-          start: z.string().datetime(),
-          end: z.string().datetime(),
+          start: z.string(),
+          end: z.string(),
         })
         .optional(),
     })
@@ -51,6 +50,9 @@ const GetEmailsTableInputSchema = z.object({
   search: z.string().optional(),
   refreshKey: z.number().optional(),
 });
+
+// Type definition for validated input
+type GetEmailsTableInput = z.infer<typeof GetEmailsTableInputSchema>;
 
 const GetEmailsInputSchema = z.object({
   limit: z.number().min(1).max(100).optional().default(50),
@@ -172,44 +174,35 @@ export const emailRouter = router({
           search: input.search,
         });
 
-        // Convert input to unified service format
-        const filters = {
-          search: input.search,
-          emailAliases: input.filters?.emailAlias || [],
-          statuses: (input.filters?.status || []).map(status => {
-            // Map old status values to new EmailStatus values
-            switch (status) {
-              case "red": return "escalated" as const;
-              case "yellow": return "processing" as const;
-              case "green": return "resolved" as const;
-              default: return "unread" as const;
-            }
-          }),
-          workflowStates: input.filters?.workflowState || [],
-          priorities: input.filters?.priority || [],
-          dateRange: input.filters?.dateRange ? {
-            start: new Date(input.filters.dateRange.start),
-            end: new Date(input.filters.dateRange.end),
-          } : { start: null, end: null },
-          requesters: [],
-          workflowTypes: [],
-          hasAttachments: undefined,
-          isRead: undefined,
-          tags: [],
-          assignedAgents: [],
+        // Convert input to emailStorage-compatible format
+        const storageInput: Parameters<typeof emailStorage.getEmailsForTableView>[0] = {
+          page: input.page,
+          pageSize: input.pageSize,
+          sortBy: input.sortBy as string | undefined,
+          sortOrder: input.sortOrder,
+          filters: input.filters ? {
+            status: input.filters.status as string[] | undefined,
+            priority: input.filters.priority as string[] | undefined,
+            dateRange: input.filters.dateRange ? {
+              start: input.filters.dateRange.start,
+              end: input.filters.dateRange.end
+            } : undefined
+          } : undefined,
+          search: input.search
         };
 
         // Use real email storage service to get analyzed emails
-        const result = await emailStorage.getEmailsForTableView(input);
+        const result = await emailStorage.getEmailsForTableView(storageInput);
 
         // Broadcast table data update for real-time synchronization
-        // Temporarily disabled due to import issues
-        // try {
-        //   const { wsService } = await import('../services/WebSocketService.js');
-        //   wsService.broadcastEmailTableDataUpdated(result.emails.length, input);
-        // } catch (error) {
-        //   logger.error('Failed to broadcast table data update', 'EMAIL_ROUTER', { error });
-        // }
+        try {
+          const { wsService } = await import('../services/WebSocketService.js');
+          if (wsService && typeof wsService.broadcastEmailTableDataUpdated === 'function') {
+            wsService.broadcastEmailTableDataUpdated(result?.emails?.length || 0, input);
+          }
+        } catch (error) {
+          logger.debug('WebSocket service not available, skipping broadcast', 'EMAIL_ROUTER');
+        }
 
         return {
           success: true,
@@ -236,18 +229,19 @@ export const emailRouter = router({
         const stats = await emailStorage.getDashboardStats();
 
         // Broadcast stats update for real-time dashboard sync
-        // Temporarily disabled due to import issues
-        // try {
-        //   const { wsService } = await import('../services/WebSocketService.js');
-        //   wsService.broadcastEmailStatsUpdated({
-        //     total: stats.totalEmails,
-        //     critical: stats.criticalCount,
-        //     inProgress: stats.inProgressCount,
-        //     completed: stats.completedCount
-        //   });
-        // } catch (error) {
-        //   logger.error('Failed to broadcast stats update', 'EMAIL_ROUTER', { error });
-        // }
+        try {
+          const { wsService } = await import('../services/WebSocketService.js');
+          if (wsService && typeof wsService.broadcastEmailStatsUpdated === 'function') {
+            wsService.broadcastEmailStatsUpdated({
+              total: stats.totalEmails,
+              critical: stats.criticalCount,
+              inProgress: stats.inProgressCount,
+              completed: stats.completedCount
+            });
+          }
+        } catch (error) {
+          logger.debug('WebSocket service not available, skipping stats broadcast', 'EMAIL_ROUTER');
+        }
 
         return {
           success: true,
@@ -276,18 +270,19 @@ export const emailRouter = router({
         const analytics = await emailStorage.getWorkflowAnalytics();
 
         // Broadcast analytics update for real-time dashboard updates
-        // Temporarily disabled due to import issues
-        // try {
-        //   const { wsService } = await import('../services/WebSocketService.js');
-        //   wsService.broadcastEmailAnalyticsUpdated(
-        //     analytics.totalEmails,
-        //     analytics.workflowDistribution,
-        //     analytics.slaCompliance,
-        //     analytics.averageProcessingTime
-        //   );
-        // } catch (error) {
-        //   logger.error('Failed to broadcast analytics update', 'EMAIL_ROUTER', { error });
-        // }
+        try {
+          const { wsService } = await import('../services/WebSocketService.js');
+          if (wsService && typeof wsService.broadcastEmailAnalyticsUpdated === 'function') {
+            wsService.broadcastEmailAnalyticsUpdated(
+              analytics.totalEmails,
+              analytics.workflowDistribution,
+              analytics.slaCompliance,
+              analytics.averageProcessingTime
+            );
+          }
+        } catch (error) {
+          logger.debug('WebSocket service not available, skipping analytics broadcast', 'EMAIL_ROUTER');
+        }
 
         return {
           success: true,
@@ -308,14 +303,45 @@ export const emailRouter = router({
       try {
         logger.info("Fetching email list", "EMAIL_ROUTER", { filters: input });
 
-        let emails: any[] = [];
+        let emails: Array<{
+          id: string;
+          subject: string;
+          from?: { emailAddress: { address: string; name: string } };
+          analysis?: {
+            quick_priority?: string;
+            workflow_state?: string;
+            action_sla_status?: string;
+          };
+          receivedDateTime: string;
+        }> = [];
 
         if (input.workflow) {
-          emails = await emailStorage.getEmailsByWorkflow(
-            input.workflow,
-            input.limit,
-            input.offset,
-          );
+          // Get emails by workflow - simplified call
+          const allEmails = await emailStorage.getEmailsForTableView({
+            page: 1,
+            pageSize: input.limit || 50,
+            filters: {
+              // Map workflow state to status for compatibility
+              status: [input.workflow === 'COMPLETION' ? 'green' : input.workflow === 'START_POINT' ? 'red' : 'yellow']
+            }
+          });
+          // Transform the emails to match the expected format
+          emails = (allEmails.emails || []).map(email => ({
+            id: email.id,
+            subject: email.subject,
+            from: email.requested_by ? {
+              emailAddress: {
+                address: email.requested_by,
+                name: email.requested_by
+              }
+            } : undefined,
+            analysis: {
+              quick_priority: email.priority,
+              workflow_state: email.workflow_state,
+              action_sla_status: email.status
+            },
+            receivedDateTime: email.received_date
+          }));
         } else {
           // For now, return empty array - this would be replaced with actual filtering logic
           emails = [];
@@ -323,41 +349,41 @@ export const emailRouter = router({
 
         // Apply additional filters
         if (input.search) {
-          emails = emails.filter(
-            (email: any) =>
+          emails = emails?.filter(
+            (email) =>
               email.subject
                 .toLowerCase()
                 .includes(input.search!.toLowerCase()) ||
-              email.from.emailAddress.address
-                .toLowerCase()
+              email.from?.emailAddress?.address
+                ?.toLowerCase()
                 .includes(input.search!.toLowerCase()) ||
-              email.from.emailAddress.name
-                .toLowerCase()
+              email.from?.emailAddress?.name
+                ?.toLowerCase()
                 .includes(input.search!.toLowerCase()),
           );
         }
 
         if (input.priority) {
-          emails = emails.filter(
-            (email: any) => email.analysis?.quick_priority === input.priority,
+          emails = emails?.filter(
+            (email) => email.analysis?.quick_priority === input.priority,
           );
         }
 
         if (input.status) {
-          emails = emails.filter(
-            (email: any) => email.analysis?.workflow_state === input.status,
+          emails = emails?.filter(
+            (email) => email.analysis?.workflow_state === input.status,
           );
         }
 
         if (input.slaStatus) {
-          emails = emails.filter(
-            (email: any) =>
+          emails = emails?.filter(
+            (email) =>
               email.analysis?.action_sla_status === input.slaStatus,
           );
         }
 
         if (input.dateRange) {
-          emails = emails.filter((email) => {
+          emails = emails?.filter((email) => {
             const emailDate = new Date(email.receivedDateTime);
             return (
               emailDate >= input.dateRange!.start &&
@@ -410,8 +436,8 @@ export const emailRouter = router({
         });
 
         // Pass user context as changedBy for WebSocket broadcast
-        const changedBy =
-          (ctx.user as any)?.email || (ctx.user as any)?.name || "system";
+        const user = ctx.user;
+        const changedBy = user?.email ?? user?.username ?? "system";
         await emailStorage.updateWorkflowState(
           input.emailId,
           input.newState,
@@ -451,8 +477,8 @@ export const emailRouter = router({
           workflow_state: input.workflow_state,
         });
 
-        const changedBy =
-          (ctx.user as any)?.email || (ctx.user as any)?.name || "system";
+        const user = ctx.user;
+        const changedBy = user?.email ?? user?.username ?? "system";
 
         // Update the email status
         await emailStorage.updateEmailStatus(
@@ -620,8 +646,8 @@ export const emailRouter = router({
             sentAt: new Date().toISOString(),
             recipients:
               input.to.length +
-              (input.cc?.length || 0) +
-              (input.bcc?.length || 0),
+              (input.cc?.length ?? 0) +
+              (input.bcc?.length ?? 0),
           },
         };
       } catch (error) {
@@ -712,8 +738,8 @@ export const emailRouter = router({
         const options = {
           timeRange: input.timeRange
             ? {
-                start: new Date(input.timeRange.start),
-                end: new Date(input.timeRange.end),
+                start: new Date(input?.timeRange?.start),
+                end: new Date(input?.timeRange?.end),
               }
             : undefined,
           customerFilter: input.customerFilter,
@@ -763,13 +789,13 @@ export const emailRouter = router({
           data: {
             summary: biData.summary,
             topMetrics: {
-              totalValue: biData.summary.totalBusinessValue,
-              emailsAnalyzed: biData.summary.totalEmailsAnalyzed,
-              uniqueCustomers: biData.summary.uniqueCustomerCount,
-              highPriorityRate: biData.summary.highPriorityRate,
+              totalValue: biData?.summary?.totalBusinessValue,
+              emailsAnalyzed: biData?.summary?.totalEmailsAnalyzed,
+              uniqueCustomers: biData?.summary?.uniqueCustomerCount,
+              highPriorityRate: biData?.summary?.highPriorityRate,
             },
-            recentHighValueItems: biData.entityExtracts.recentHighValueItems.slice(0, 5),
-            topWorkflows: biData.workflowDistribution.slice(0, 3),
+            recentHighValueItems: biData?.entityExtracts?.recentHighValueItems.slice(0, 5),
+            topWorkflows: biData?.workflowDistribution?.slice(0, 3),
             generatedAt: biData.generatedAt,
           },
         };
@@ -824,12 +850,12 @@ export const emailRouter = router({
           success: true,
           data: {
             customers: sortedCustomers.slice(0, input.limit),
-            totalCustomers: biData.summary.uniqueCustomerCount,
+            totalCustomers: biData?.summary?.uniqueCustomerCount,
             metrics: {
               avgEmailsPerCustomer:
-                biData.summary.totalEmailsAnalyzed / biData.summary.uniqueCustomerCount,
+                biData?.summary?.totalEmailsAnalyzed / biData?.summary?.uniqueCustomerCount,
               avgValuePerCustomer:
-                biData.summary.totalBusinessValue / biData.summary.uniqueCustomerCount,
+                biData?.summary?.totalBusinessValue / biData?.summary?.uniqueCustomerCount,
             },
           },
         };
@@ -863,29 +889,34 @@ export const emailRouter = router({
         const biData = await biService.getBusinessIntelligence({ useCache: true });
 
         // Group data based on input
-        let groupedData: any[] = [];
+        let groupedData: Array<{
+          label: string;
+          value: number;
+          count: number;
+          [key: string]: unknown;
+        }> = [];
 
         switch (input.groupBy) {
           case "workflow":
-            groupedData = biData.workflowDistribution.map((w) => ({
+            groupedData = biData?.workflowDistribution?.map((w: { type: string; totalValue: number; count: number; avgValue: number }) => ({
               label: w.type,
               value: w.totalValue,
               count: w.count,
               avgValue: w.avgValue,
-            }));
+            })) || [];
             break;
 
           case "priority":
-            groupedData = biData.priorityDistribution.map((p) => ({
+            groupedData = biData?.priorityDistribution?.map((p: { level: string; count: number; percentage: number }) => ({
               label: p.level,
               value: 0, // Would need to enhance BI service to include value by priority
               count: p.count,
               percentage: p.percentage,
-            }));
+            })) || [];
             break;
 
           case "customer":
-            groupedData = biData.topCustomers.map((c) => ({
+            groupedData = biData?.topCustomers?.map((c: any) => ({
               label: c.name,
               value: c.totalValue,
               count: c.emailCount,
@@ -903,15 +934,15 @@ export const emailRouter = router({
           data: {
             metrics: groupedData.slice(0, input.limit),
             summary: {
-              totalValue: biData.summary.totalBusinessValue,
-              totalItems: biData.summary.totalEmailsAnalyzed,
+              totalValue: biData?.summary?.totalBusinessValue,
+              totalItems: biData?.summary?.totalEmailsAnalyzed,
               uniqueEntities: {
-                poNumbers: biData.summary.uniquePOCount,
-                quoteNumbers: biData.summary.uniqueQuoteCount,
-                customers: biData.summary.uniqueCustomerCount,
+                poNumbers: biData?.summary?.uniquePOCount,
+                quoteNumbers: biData?.summary?.uniqueQuoteCount,
+                customers: biData?.summary?.uniqueCustomerCount,
               },
             },
-            timeRange: biData.processingMetrics.timeRange,
+            timeRange: biData?.processingMetrics?.timeRange,
           },
         };
       } catch (error) {
@@ -1048,10 +1079,10 @@ export const emailRouter = router({
           pageSize: input.limit,
           filters: {
             priority: input.filters?.priority
-              ? [input.filters.priority]
+              ? [input?.filters?.priority]
               : undefined,
             workflowState: input.filters?.status
-              ? [input.filters.status as any]
+              ? [input?.filters?.status as any]
               : undefined,
           },
         };
@@ -1115,8 +1146,8 @@ export const emailRouter = router({
           const { wsService } = await import("../services/WebSocketService.js");
           wsService.broadcastEmailBatchCreated(
             input.batchId || `batch_${Date.now()}`,
-            results.length,
-            errors.length,
+            results?.length || 0,
+            errors?.length || 0,
           );
         } catch (error) {
           logger.error("Failed to broadcast batch creation", "EMAIL_ROUTER", {
@@ -1127,11 +1158,11 @@ export const emailRouter = router({
         return {
           success: true,
           data: {
-            created: results.length,
-            failed: errors.length,
+            created: results?.length || 0,
+            failed: errors?.length || 0,
             total: input.emails.length,
             results,
-            errors: errors.length > 0 ? errors : undefined,
+            errors: errors?.length || 0 > 0 ? errors : undefined,
           },
         };
       } catch (error) {
@@ -1154,8 +1185,8 @@ export const emailRouter = router({
 
         const results = [];
         const errors = [];
-        const changedBy =
-          input.changedBy || (ctx.user as any)?.email || "system";
+        const user = ctx.user;
+        const changedBy = input.changedBy || user?.email || user?.username || "system";
 
         for (const update of input.updates) {
           try {
@@ -1187,9 +1218,9 @@ export const emailRouter = router({
         try {
           const { wsService } = await import("../services/WebSocketService.js");
           wsService.broadcastEmailBatchStatusUpdated(
-            input.updates.map((u) => u.emailId),
-            results.length,
-            errors.length,
+            input?.updates?.map((u: any) => u.emailId),
+            results?.length || 0,
+            errors?.length || 0,
             changedBy,
           );
         } catch (error) {
@@ -1203,11 +1234,11 @@ export const emailRouter = router({
         return {
           success: true,
           data: {
-            updated: results.length,
-            failed: errors.length,
+            updated: results?.length || 0,
+            failed: errors?.length || 0,
             total: input.updates.length,
             results,
-            errors: errors.length > 0 ? errors : undefined,
+            errors: errors?.length || 0 > 0 ? errors : undefined,
           },
         };
       } catch (error) {
@@ -1267,8 +1298,8 @@ export const emailRouter = router({
           const { wsService } = await import("../services/WebSocketService.js");
           wsService.broadcastEmailBatchDeleted(
             input.emailIds,
-            results.length,
-            errors.length,
+            results?.length || 0,
+            errors?.length || 0,
             input.softDelete,
           );
         } catch (error) {
@@ -1280,12 +1311,12 @@ export const emailRouter = router({
         return {
           success: true,
           data: {
-            deleted: results.length,
-            failed: errors.length,
+            deleted: results?.length || 0,
+            failed: errors?.length || 0,
             total: input.emailIds.length,
             softDelete: input.softDelete,
             results,
-            errors: errors.length > 0 ? errors : undefined,
+            errors: errors?.length || 0 > 0 ? errors : undefined,
           },
         };
       } catch (error) {
@@ -1459,6 +1490,316 @@ export const emailRouter = router({
     }
   }),
 
+  // Agent Processing Control Endpoints
+  
+  // Start agent-based email processing
+  startAgentProcessing: protectedProcedure
+    .input(
+      z.object({
+        batchSize: z.number().min(1).max(1000).optional().default(100),
+        maxConcurrent: z.number().min(1).max(10).optional().default(3),
+        skipProcessed: z.boolean().optional().default(true),
+        targetEmails: z.array(z.string().uuid()).optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info("Starting agent processing", "EMAIL_ROUTER", {
+          batchSize: input.batchSize,
+          maxConcurrent: input.maxConcurrent,
+          skipProcessed: input.skipProcessed,
+          targetEmails: input.targetEmails?.length,
+        });
+
+        const user = ctx.user;
+        const initiatedBy = user?.email ?? user?.username ?? "system";
+
+        // Start the agent processing
+        await emailStorage.startAgentBacklogProcessing({
+          batchSize: input.batchSize,
+          maxEmails: input.targetEmails?.length || 1000,
+          priority: input.skipProcessed ? ['medium', 'high', 'critical'] : undefined
+        });
+
+        // Broadcast processing start
+        try {
+          const { wsService } = await import("../services/WebSocketService.js");
+          wsService.broadcastEmailProcessingStarted({
+            initiatedBy,
+            batchSize: input.batchSize,
+            maxConcurrent: input.maxConcurrent,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          logger.error("Failed to broadcast processing start", "EMAIL_ROUTER", { error });
+        }
+
+        return {
+          success: true,
+          message: "Agent processing started successfully",
+          data: {
+            initiatedBy,
+            batchSize: input.batchSize,
+            maxConcurrent: input.maxConcurrent,
+            startedAt: new Date().toISOString(),
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to start agent processing", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to start agent processing");
+      }
+    }),
+
+  // Stop agent-based email processing
+  stopAgentProcessing: protectedProcedure
+    .input(
+      z.object({
+        reason: z.string().optional().default("Manual stop"),
+        forceStop: z.boolean().optional().default(false),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info("Stopping agent processing", "EMAIL_ROUTER", {
+          reason: input.reason,
+          forceStop: input.forceStop,
+        });
+
+        const user = ctx.user;
+        const stoppedBy = user?.email ?? user?.username ?? "system";
+
+        // Stop the agent processing
+        await emailStorage.stopAgentProcessing({
+          graceful: !input.forceStop,
+          timeout: 30000
+        });
+
+        // Broadcast processing stop
+        try {
+          const { wsService } = await import("../services/WebSocketService.js");
+          wsService.broadcastEmailProcessingStopped({
+            stoppedBy,
+            reason: input.reason,
+            forceStop: input.forceStop,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          logger.error("Failed to broadcast processing stop", "EMAIL_ROUTER", { error });
+        }
+
+        return {
+          success: true,
+          message: "Agent processing stopped successfully",
+          data: {
+            stoppedBy,
+            reason: input.reason,
+            stoppedAt: new Date().toISOString(),
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to stop agent processing", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to stop agent processing");
+      }
+    }),
+
+  // Get agent processing status and metrics
+  getAgentProcessingStatus: publicProcedure.query(async () => {
+    try {
+      logger.info("Fetching agent processing status", "EMAIL_ROUTER");
+
+      const status = await emailStorage.getAgentProcessingStatus();
+
+      return {
+        success: true,
+        data: status,
+      };
+    } catch (error) {
+      logger.error("Failed to get agent processing status", "EMAIL_ROUTER", { error });
+      throw new Error("Failed to get agent processing status");
+    }
+  }),
+
+  // Process specific emails through agents
+  processEmailsThroughAgents: protectedProcedure
+    .input(
+      z.object({
+        emailIds: z.array(z.string().uuid()).min(1).max(50),
+        priority: z.enum(["high", "normal", "low"]).optional().default("normal"),
+        agentType: z.enum(["analysis", "research", "data"]).optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info("Processing specific emails through agents", "EMAIL_ROUTER", {
+          emailIds: input.emailIds,
+          priority: input.priority,
+          agentType: input.agentType,
+        });
+
+        const user = ctx.user;
+        const requestedBy = user?.email ?? user?.username ?? "system";
+
+        const results = [];
+        const errors = [];
+
+        for (const emailId of input.emailIds) {
+          try {
+            const email = await emailStorage.getEmail(emailId);
+            if (!email) {
+              errors.push({
+                emailId,
+                error: "Email not found",
+                success: false,
+              });
+              continue;
+            }
+
+            // Process through agent system
+            const result = await emailStorage.processEmailThroughAgents(email);
+            
+            results.push({
+              emailId,
+              agentResult: result,
+              success: true,
+            });
+
+            // Broadcast individual email processing completion
+            try {
+              const { wsService } = await import("../services/WebSocketService.js");
+              wsService.broadcastEmailAgentProcessed({
+                emailId,
+                agentType: input.agentType || "analysis",
+                requestedBy,
+                result,
+                timestamp: new Date(),
+              });
+            } catch (error) {
+              logger.error("Failed to broadcast email processing", "EMAIL_ROUTER", { error });
+            }
+
+          } catch (error) {
+            errors.push({
+              emailId,
+              error: error instanceof Error ? error.message : String(error),
+              success: false,
+            });
+            logger.error("Failed to process email through agents", "EMAIL_ROUTER", {
+              emailId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            processed: results.length,
+            failed: errors.length,
+            total: input.emailIds.length,
+            results,
+            errors: errors.length > 0 ? errors : undefined,
+            requestedBy,
+            processedAt: new Date().toISOString(),
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to process emails through agents", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to process emails through agents");
+      }
+    }),
+
+  // Get agent processing metrics and performance data
+  getAgentProcessingMetrics: publicProcedure
+    .input(
+      z.object({
+        timeRange: z.object({
+          start: z.string().datetime(),
+          end: z.string().datetime(),
+        }).optional(),
+        groupBy: z.enum(["hour", "day", "agent", "status"]).optional().default("day"),
+        includeDetails: z.boolean().optional().default(false),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        logger.info("Fetching agent processing metrics", "EMAIL_ROUTER", {
+          timeRange: input.timeRange,
+          groupBy: input.groupBy,
+          includeDetails: input.includeDetails,
+        });
+
+        const metrics = await emailStorage.getAgentProcessingMetrics({
+          timeRange: input.timeRange?.start ? 'day' : 'day',
+          agentType: input.groupBy
+        });
+
+        return {
+          success: true,
+          data: metrics,
+        };
+      } catch (error) {
+        logger.error("Failed to get agent processing metrics", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to get agent processing metrics");
+      }
+    }),
+
+  // Reset agent processing state (emergency use)
+  resetAgentProcessing: protectedProcedure
+    .input(
+      z.object({
+        confirmReset: z.boolean(),
+        reason: z.string().min(10),
+        clearProgress: z.boolean().optional().default(false),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        if (!input.confirmReset) {
+          throw new Error("Reset confirmation required");
+        }
+
+        logger.warn("Resetting agent processing state", "EMAIL_ROUTER", {
+          reason: input.reason,
+          clearProgress: input.clearProgress,
+        });
+
+        const user = ctx.user;
+        const resetBy = user?.email ?? user?.username ?? "system";
+
+        await emailStorage.resetAgentProcessing({
+          resetQueue: input.clearProgress || true,
+          resetMetrics: input.clearProgress || false,
+          resetHistory: input.clearProgress || false
+        });
+
+        // Broadcast processing reset
+        try {
+          const { wsService } = await import("../services/WebSocketService.js");
+          wsService.broadcastEmailProcessingReset({
+            resetBy,
+            reason: input.reason,
+            clearProgress: input.clearProgress,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          logger.error("Failed to broadcast processing reset", "EMAIL_ROUTER", { error });
+        }
+
+        return {
+          success: true,
+          message: "Agent processing state reset successfully",
+          data: {
+            resetBy,
+            reason: input.reason,
+            resetAt: new Date().toISOString(),
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to reset agent processing", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to reset agent processing");
+      }
+    }),
+
   // WebSocket subscriptions for real-time updates
   subscribeToEmailUpdates: publicProcedure
     .input(
@@ -1471,6 +1812,8 @@ export const emailRouter = router({
             "email.state_changed",
             "email.sla_alert",
             "email.analytics_updated",
+            "email.processing_progress",
+            "email.agent_processed",
           ]),
       }),
     )
@@ -1491,7 +1834,7 @@ export const emailRouter = router({
             message &&
             typeof message === "object" &&
             "type" in message &&
-            input.types.includes((message as any).type)
+            input?.types?.includes((message as any).type)
           ) {
             if (resolver) {
               resolver(message);
@@ -1503,17 +1846,17 @@ export const emailRouter = router({
         };
 
         // Listen for email events
-        input.types.forEach((type) => {
+        input?.types?.forEach((type: any) => {
           wsService.on(type, messageHandler);
         });
 
         try {
           while (true) {
             let message;
-            if (messageQueue.length > 0) {
+            if (messageQueue?.length || 0 > 0) {
               message = messageQueue.shift();
             } else {
-              message = await new Promise<unknown>((resolve) => {
+              message = await new Promise<unknown>((resolve: any) => {
                 resolver = resolve;
               });
             }
@@ -1526,7 +1869,7 @@ export const emailRouter = router({
           }
         } finally {
           // Clean up
-          input.types.forEach((type) => {
+          input?.types?.forEach((type: any) => {
             wsService.off(type, messageHandler);
           });
           wsService.unsubscribe(clientId, input.types);

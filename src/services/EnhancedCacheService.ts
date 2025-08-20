@@ -95,7 +95,7 @@ export class EnhancedCacheService extends EventEmitter {
       }
     });
 
-    this.caches.set(name, cache);
+    this?.caches?.set(name, cache);
   }
 
   private setupCleanupInterval(): void {
@@ -111,7 +111,7 @@ export class EnhancedCacheService extends EventEmitter {
     for (const [key, promise] of this.requestDeduplication) {
       promise.finally(() => {
         setTimeout(() => {
-          this.requestDeduplication.delete(key);
+          this?.requestDeduplication?.delete(key);
         }, 5000);
       });
     }
@@ -119,14 +119,26 @@ export class EnhancedCacheService extends EventEmitter {
 
   private updateStats(): void {
     let totalSize = 0;
-    for (const cache of this.caches.values()) {
+    for (const cache of this?.caches?.values()) {
       totalSize += cache.size;
     }
-    this.stats.size = totalSize;
-    this.stats.inflightRequests = this.requestDeduplication.size;
+    if (this.stats) {
+
+      this.stats.size = totalSize;
+
+    }
+    if (this.stats) {
+
+      this.stats.inflightRequests = this?.requestDeduplication?.size;
+
+    }
     
-    const total = this.stats.hits + this.stats.misses;
-    this.stats.hitRate = total > 0 ? (this.stats.hits / total) * 100 : 0;
+    const total = this?.stats?.hits + this?.stats?.misses;
+    if (this.stats) {
+
+      this.stats.hitRate = total > 0 ? (this?.stats?.hits / total) * 100 : 0;
+
+    }
     
     this.emit('stats', this.stats);
   }
@@ -141,12 +153,12 @@ export class EnhancedCacheService extends EventEmitter {
     if (entry) {
       entry.accessCount++;
       entry.lastAccessed = Date.now();
-      this.stats.hits++;
+      if (this.stats.hits) { this.stats.hits++ };
       this.emit('hit', { cache: cacheName, key });
       return entry.value;
     }
     
-    this.stats.misses++;
+    if (this.stats.misses) { this.stats.misses++ };
     this.emit('miss', { cache: cacheName, key });
     return null;
   }
@@ -167,7 +179,7 @@ export class EnhancedCacheService extends EventEmitter {
     };
 
     cache.set(key, entry, { ttl: options.ttl });
-    this.stats.sets++;
+    if (this.stats.sets) { this.stats.sets++ };
     this.emit('set', { cache: cacheName, key });
   }
 
@@ -181,9 +193,9 @@ export class EnhancedCacheService extends EventEmitter {
     options: { ttl?: number; cache?: string } = {}
   ): Promise<T> {
     // Check if request is already in flight
-    const inflightRequest = this.requestDeduplication.get(key);
+    const inflightRequest = this?.requestDeduplication?.get(key);
     if (inflightRequest) {
-      this.stats.deduplicatedRequests++;
+      if (this.stats.deduplicatedRequests) { this.stats.deduplicatedRequests++ };
       return inflightRequest;
     }
 
@@ -195,17 +207,17 @@ export class EnhancedCacheService extends EventEmitter {
 
     // Create new request and store promise
     const requestPromise = factory()
-      .then(async (result) => {
+      .then(async (result: any) => {
         await this.set(key, result, options);
-        this.requestDeduplication.delete(key);
+        this?.requestDeduplication?.delete(key);
         return result;
       })
-      .catch((error) => {
-        this.requestDeduplication.delete(key);
+      .catch((error: any) => {
+        this?.requestDeduplication?.delete(key);
         throw error;
       });
 
-    this.requestDeduplication.set(key, requestPromise);
+    this?.requestDeduplication?.set(key, requestPromise);
     return requestPromise;
   }
 
@@ -237,14 +249,14 @@ export class EnhancedCacheService extends EventEmitter {
    */
   async invalidatePattern(pattern: RegExp, cacheName?: string): Promise<number> {
     let invalidated = 0;
-    const caches = cacheName ? [this.selectCache(cacheName)] : Array.from(this.caches.values());
+    const caches = cacheName ? [this.selectCache(cacheName)] : Array.from(this?.caches?.values());
     
     for (const cache of caches) {
       for (const key of cache.keys()) {
         if (pattern.test(key)) {
           cache.delete(key);
           invalidated++;
-          this.stats.deletes++;
+          if (this.stats.deletes) { this.stats.deletes++ };
         }
       }
     }
@@ -267,7 +279,7 @@ export class EnhancedCacheService extends EventEmitter {
       }
 
       // Store original json method
-      const originalJson = res.json.bind(res);
+      const originalJson = res.json?.bind(res);
       
       // Override json method to cache response
       res.json = (data: any) => {
@@ -298,10 +310,10 @@ export class EnhancedCacheService extends EventEmitter {
    * Select or create cache by name
    */
   private selectCache(name: string): LRUCache<string, CacheEntry<any>> {
-    let cache = this.caches.get(name);
+    let cache = this?.caches?.get(name);
     if (!cache) {
       this.createCache(name);
-      cache = this.caches.get(name)!;
+      cache = this?.caches?.get(name)!;
     }
     return cache;
   }
@@ -318,7 +330,7 @@ export class EnhancedCacheService extends EventEmitter {
    * Get cache statistics
    */
   getStats(): CacheStats & { caches: Array<{ name: string; size: number; maxSize: number }> } {
-    const cacheStats = Array.from(this.caches.entries()).map(([name, cache]) => ({
+    const cacheStats = Array.from(this?.caches?.entries()).map(([name, cache]) => ({
       name,
       size: cache.size,
       maxSize: cache.max
@@ -335,14 +347,14 @@ export class EnhancedCacheService extends EventEmitter {
    */
   async clear(cacheName?: string): Promise<void> {
     if (cacheName) {
-      const cache = this.caches.get(cacheName);
+      const cache = this?.caches?.get(cacheName);
       if (cache) cache.clear();
     } else {
-      for (const cache of this.caches.values()) {
+      for (const cache of this?.caches?.values()) {
         cache.clear();
       }
     }
-    this.requestDeduplication.clear();
+    this?.requestDeduplication?.clear();
     this.emit('cleared', { cache: cacheName || 'all' });
   }
 
@@ -353,7 +365,7 @@ export class EnhancedCacheService extends EventEmitter {
     for (const entry of entries) {
       await this.set(entry.key, entry.value, { ttl: entry.ttl, cache: entry.cache });
     }
-    this.emit('warmed', { count: entries.length });
+    this.emit('warmed', { count: entries?.length || 0 });
   }
 
   /**

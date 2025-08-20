@@ -116,17 +116,17 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
     };
     const updatedRules = [...filterRules, newRule];
     setFilterRules(updatedRules);
-    onFilterChange(updatedRules.filter((rule) => rule.enabled));
+    onFilterChange(updatedRules?.filter((rule: any) => rule.enabled));
   }, [filterRules, columns, onFilterChange]);
 
   // Update filter rule
   const updateFilterRule = useCallback(
     (ruleId: string, updates: Partial<FilterRule>) => {
-      const updatedRules = filterRules.map((rule) =>
+      const updatedRules = filterRules?.map((rule: any) =>
         rule.id === ruleId ? { ...rule, ...updates } : rule,
       );
       setFilterRules(updatedRules);
-      onFilterChange(updatedRules.filter((rule) => rule.enabled));
+      onFilterChange(updatedRules?.filter((rule: any) => rule.enabled));
     },
     [filterRules, onFilterChange],
   );
@@ -134,9 +134,9 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
   // Remove filter rule
   const removeFilterRule = useCallback(
     (ruleId: string) => {
-      const updatedRules = filterRules.filter((rule) => rule.id !== ruleId);
+      const updatedRules = filterRules?.filter((rule: any) => rule.id !== ruleId);
       setFilterRules(updatedRules);
-      onFilterChange(updatedRules.filter((rule) => rule.enabled));
+      onFilterChange(updatedRules?.filter((rule: any) => rule.enabled));
     },
     [filterRules, onFilterChange],
   );
@@ -155,7 +155,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
     const preset: Omit<FilterPreset, "id" | "createdAt" | "updatedAt"> = {
       name: newPresetName,
       description: newPresetDescription,
-      rules: filterRules.filter((rule) => rule.enabled),
+      rules: filterRules?.filter((rule: any) => rule.enabled),
       isDefault: false,
     };
 
@@ -169,7 +169,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
   const loadPreset = useCallback(
     (preset: FilterPreset) => {
       setFilterRules(preset.rules);
-      onFilterChange(preset.rules.filter((rule) => rule.enabled));
+      onFilterChange(preset?.rules?.filter((rule: any) => rule.enabled));
       setShowPresets(false);
     },
     [onFilterChange],
@@ -197,9 +197,9 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                     : "text"
               }
               value={rangeValue.min}
-              onChange={(e) =>
+              onChange={(e: any) =>
                 updateFilterRule(rule.id, {
-                  value: { ...rangeValue, min: e.target.value },
+                  value: { ...rangeValue, min: e?.target?.value },
                 })
               }
               placeholder="Min"
@@ -214,9 +214,9 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                     : "text"
               }
               value={rangeValue.max}
-              onChange={(e) =>
+              onChange={(e: any) =>
                 updateFilterRule(rule.id, {
-                  value: { ...rangeValue, max: e.target.value },
+                  value: { ...rangeValue, max: e?.target?.value },
                 })
               }
               placeholder="Max"
@@ -232,10 +232,10 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
           <select
             multiple
             value={arrayValue}
-            onChange={(e) => {
+            onChange={(e: any) => {
               const selectedValues = Array.from(
-                e.target.selectedOptions,
-                (option) => option.value,
+                e?.target?.selectedOptions,
+                (option: any) => option.value,
               );
               updateFilterRule(rule.id, { value: selectedValues });
             }}
@@ -255,8 +255,8 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
         return (
           <select
             value={rule.value as string}
-            onChange={(e) =>
-              updateFilterRule(rule.id, { value: e.target.value })
+            onChange={(e: any) =>
+              updateFilterRule(rule.id, { value: e?.target?.value })
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
           >
@@ -280,7 +280,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                 : "text"
           }
           value={rule.value as string}
-          onChange={(e) => updateFilterRule(rule.id, { value: e.target.value })}
+          onChange={(e: any) => updateFilterRule(rule.id, { value: e?.target?.value })}
           placeholder={
             rule.operator === "regex"
               ? "Enter regex pattern..."
@@ -296,7 +296,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
   // Active filter count
   const activeFilterCount = useMemo(() => {
     return (
-      filterRules.filter((rule) => rule.enabled && rule.value).length +
+      filterRules?.filter((rule: any) => rule.enabled && rule.value).length +
       (globalSearch ? 1 : 0)
     );
   }, [filterRules, globalSearch]);
@@ -383,7 +383,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
             <input
               type="text"
               value={globalSearch}
-              onChange={(e) => onGlobalSearchChange(e.target.value)}
+              onChange={(e: any) => onGlobalSearchChange(e?.target?.value)}
               placeholder="Search across all columns..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
             />
@@ -408,16 +408,16 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                 </button>
               </div>
 
-              {filterRules.length === 0 ? (
+              {filterRules?.length || 0 === 0 ? (
                 <p className="text-sm text-gray-500 text-center py-8">
                   No filter rules defined. Click &ldquo;Add Rule&rdquo; to get
                   started.
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {filterRules.map((rule, index) => {
+                  {filterRules?.map((rule, index) => {
                     const column = columns.find(
-                      (col) => col.id === rule.column,
+                      (col: any) => col.id === rule.column,
                     );
                     return (
                       <div
@@ -434,9 +434,9 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                           <input
                             type="checkbox"
                             checked={rule.enabled}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               updateFilterRule(rule.id, {
-                                enabled: e.target.checked,
+                                enabled: e?.target?.checked,
                               })
                             }
                             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
@@ -446,14 +446,14 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                         {/* Column Select */}
                         <select
                           value={rule.column}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             updateFilterRule(rule.id, {
-                              column: e.target.value,
+                              column: e?.target?.value,
                             })
                           }
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
                         >
-                          {columns.map((col) => (
+                          {columns?.map((col: any) => (
                             <option key={col.id} value={col.id}>
                               {col.label}
                             </option>
@@ -463,7 +463,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                         {/* Operator Select */}
                         <select
                           value={rule.operator}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             updateFilterRule(rule.id, {
                               operator: e.target
                                 .value as FilterRule["operator"],
@@ -473,7 +473,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
                         >
                           {getOperatorOptions(column?.type || "text").map(
-                            (op) => (
+                            (op: any) => (
                               <option key={op.value} value={op.value}>
                                 {op.label}
                               </option>
@@ -509,12 +509,12 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                 Filter Presets
               </h4>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {presets.length === 0 ? (
+                {presets?.length || 0 === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-4">
                     No saved presets
                   </p>
                 ) : (
-                  presets.map((preset) => (
+                  presets?.map((preset: any) => (
                     <div
                       key={preset.id}
                       className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100"
@@ -532,12 +532,12 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                           </div>
                         )}
                         <div className="text-xs text-gray-500">
-                          {preset.rules.length} rules •{" "}
+                          {preset?.rules?.length} rules •{" "}
                           {new Date(preset.updatedAt).toLocaleDateString()}
                         </div>
                       </div>
                       <button
-                        onClick={(e) => {
+                        onClick={(e: any) => {
                           e.stopPropagation();
                           onPresetDelete(preset.id);
                         }}
@@ -570,7 +570,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                 <input
                   type="text"
                   value={newPresetName}
-                  onChange={(e) => setNewPresetName(e.target.value)}
+                  onChange={(e: any) => setNewPresetName(e?.target?.value)}
                   placeholder="Enter preset name..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
                 />
@@ -581,7 +581,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                 </label>
                 <textarea
                   value={newPresetDescription}
-                  onChange={(e) => setNewPresetDescription(e.target.value)}
+                  onChange={(e: any) => setNewPresetDescription(e?.target?.value)}
                   placeholder="Enter description..."
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"

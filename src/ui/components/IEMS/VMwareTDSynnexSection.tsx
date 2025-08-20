@@ -30,6 +30,8 @@ export const VMwareTDSynnexSection: React.FC<VMwareTDSynnexSectionProps> = ({
         return <ClockIcon className="status-icon status-icon--yellow" />;
       case "green":
         return <CheckCircleIcon className="status-icon status-icon--green" />;
+      default:
+        return <ClockIcon className="status-icon status-icon--yellow" />;
     }
   };
 
@@ -44,7 +46,7 @@ export const VMwareTDSynnexSection: React.FC<VMwareTDSynnexSectionProps> = ({
     <div className="vmware-tdsynnex-section">
       <div className="section-header">
         <h2 className="section-title">VMware / TD SYNNEX</h2>
-        <span className="section-count">{emails.length} emails</span>
+        <span className="section-count">{emails?.length || 0} emails</span>
       </div>
 
       <div className="section-table">
@@ -70,12 +72,12 @@ export const VMwareTDSynnexSection: React.FC<VMwareTDSynnexSectionProps> = ({
         </div>
 
         <div className="table-body">
-          {emails.length === 0 ? (
+          {emails?.length || 0 === 0 ? (
             <div className="table-empty">
               <p>No emails in this category</p>
             </div>
           ) : (
-            emails.map((email) => (
+            emails?.map((email: any) => (
               <div key={email.id} className="table-row">
                 <div className="table-cell table-cell--alias">
                   <div className="email-alias-name">{email.emailAlias}</div>

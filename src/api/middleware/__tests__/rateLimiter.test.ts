@@ -3,10 +3,10 @@
  * Tests rate limiting implementation for security and performance
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { MockedFunction } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, type MockedFunction } from 'vitest';
+import type { Request } from "express";
 import { TRPCError } from "@trpc/server";
-import { rateLimitMiddleware } from "../rateLimiter.js";
+import { rateLimitMiddleware } from '../rateLimiter';
 
 // Mock Redis to test both Redis and in-memory implementations
 vi.mock("ioredis", () => ({
@@ -18,13 +18,13 @@ vi.mock("ioredis", () => ({
 
 describe("Rate Limiting Middleware Security Tests", () => {
   let mockNext: MockedFunction<() => Promise<any>>;
-  let mockCtx: unknown;
+  let mockCtx: { user?: { id?: string; role?: string; isAdmin?: boolean }; req?: Request };
 
   beforeEach(() => {
     mockNext = vi.fn().mockResolvedValue("success");
     mockCtx = {
       user: { id: "user123" },
-      req: { ip: "192.168.1.1" },
+      req: { ip: "192.168.1.1" } as Request,
     };
   });
 
@@ -69,8 +69,8 @@ describe("Rate Limiting Middleware Security Tests", () => {
     it("should use IP address when user is not authenticated", async () => {
       const rateLimiter = rateLimitMiddleware(1, 60000);
 
-      const unauthCtx1 = { req: { ip: "192.168.1.1" } };
-      const unauthCtx2 = { req: { ip: "192.168.1.2" } };
+      const unauthCtx1 = { req: { ip: "192.168.1.1" } as Request };
+      const unauthCtx2 = { req: { ip: "192.168.1.2" } as Request };
 
       // Different IPs should have separate limits
       await rateLimiter({ ctx: unauthCtx1, next: mockNext });
@@ -84,7 +84,7 @@ describe("Rate Limiting Middleware Security Tests", () => {
     it("should handle missing user and IP gracefully", async () => {
       const rateLimiter = rateLimitMiddleware(5, 60000);
 
-      const emptyCtx = { req: {} };
+      const emptyCtx: { user?: { id?: string; role?: string; isAdmin?: boolean }; req?: Request } = { req: {} as Request };
 
       // Should not throw error and use fallback identifier
       await expect(

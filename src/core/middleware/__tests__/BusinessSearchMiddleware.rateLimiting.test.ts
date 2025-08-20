@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BusinessSearchMiddleware } from "../BusinessSearchMiddleware.js";
-import type { OllamaProvider } from "../../llm/OllamaProvider.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { BusinessSearchMiddleware } from '../BusinessSearchMiddleware';
+import type { OllamaProvider } from '../../llm/OllamaProvider';
 
 // Set timeout for rate limiting tests
 vi.setConfig({ testTimeout: 20000 });
@@ -199,7 +199,7 @@ describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
     it("should track latency including rate limit checks", async () => {
       // Mock rate limit check with delay
       vi.spyOn(middleware as any, "checkRateLimit").mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(true), 50)),
+        () => new Promise((resolve: any) => setTimeout(() => resolve(true), 50)),
       );
 
       const startTime = Date.now();

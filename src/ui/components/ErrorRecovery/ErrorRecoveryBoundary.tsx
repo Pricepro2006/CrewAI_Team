@@ -4,8 +4,30 @@ import {
   useErrorRecovery,
   useNetworkRecovery,
 } from "../../hooks/useErrorRecovery.js";
-import { Alert } from "../Alert";
-import { Button } from "../Button";
+// Simple inline implementations for Alert and Button
+const Alert: React.FC<{ type: string; icon?: React.ReactNode; className?: string; children: React.ReactNode }> = ({ type, icon, className, children }) => (
+  <div className={`p-4 rounded border ${type === 'warning' ? 'bg-yellow-50 border-yellow-300 text-yellow-800' : type === 'info' ? 'bg-blue-50 border-blue-300 text-blue-800' : 'bg-red-50 border-red-300 text-red-800'} ${className || ''}`}>
+    <div className="flex items-center gap-2">
+      {icon}
+      <div>{children}</div>
+    </div>
+  </div>
+);
+
+const Button: React.FC<{ children: React.ReactNode; onClick?: () => void; variant?: string; size?: string; icon?: React.ReactNode; disabled?: boolean }> = ({ children, onClick, variant, disabled, icon }) => (
+  <button 
+    onClick={onClick}
+    disabled={disabled}
+    className={`flex items-center gap-2 px-4 py-2 rounded ${
+      variant === 'primary' ? 'bg-blue-600 text-white hover:bg-blue-700' : 
+      variant === 'secondary' ? 'bg-gray-600 text-white hover:bg-gray-700' : 
+      'bg-blue-600 text-white hover:bg-blue-700'
+    } disabled:opacity-50`}
+  >
+    {icon}
+    {children}
+  </button>
+);
 import { WifiOff, RefreshCw } from "lucide-react";
 
 interface ErrorRecoveryBoundaryProps {
@@ -29,7 +51,7 @@ export function ErrorRecoveryBoundary({
   const { isOnline } = useNetworkRecovery();
   const errorRecovery = useErrorRecovery({
     maxRetries,
-    onMaxRetriesExceeded: (error) => {
+    onMaxRetriesExceeded: (error: any) => {
       console.error("Max retries exceeded:", error);
     },
   });
@@ -43,7 +65,7 @@ export function ErrorRecoveryBoundary({
   const handleRetry = () => {
     setBoundaryError(null);
     errorRecovery.reset();
-    setRetryKey((prev) => prev + 1); // Force re-render of children
+    setRetryKey((prev: any) => prev + 1); // Force re-render of children
   };
 
   // Show network status banner if offline
@@ -106,7 +128,7 @@ export function ErrorRecoveryBoundary({
 
               {!errorRecovery.canRetry && (
                 <Button
-                  onClick={() => window.location.reload()}
+                  onClick={() => window?.location?.reload()}
                   variant="secondary"
                 >
                   Reload Application

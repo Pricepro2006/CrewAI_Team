@@ -63,7 +63,7 @@ interface SystemMetrics {
 class PerformanceMonitor {
   private results: BenchmarkResult[] = [];
   private systemMetrics: SystemMetrics[] = [];
-  private logStream: any;
+  private logStream: NodeJS.WritableStream | null = null;
 
   constructor() {
     this.setupResultsDirectory();
@@ -95,7 +95,7 @@ class PerformanceMonitor {
   }
 
   private async getSystemMetrics(): Promise<SystemMetrics> {
-    return new Promise((resolve) => {
+    return new Promise<SystemMetrics>((resolve) => {
       const metrics: SystemMetrics = {
         cpu: 0,
         memory: { used: 0, total: 0, percentage: 0 },
@@ -106,29 +106,29 @@ class PerformanceMonitor {
       const memInfo = spawn('free', ['-m']);
       let memOutput = '';
       
-      memInfo.stdout.on('data', (data) => {
+      memInfo.stdout?.on('data', (data: Buffer) => {
         memOutput += data.toString();
       });
 
       memInfo.on('close', () => {
         const memLines = memOutput.split('\n');
-        if (memLines.length > 1) {
+        if (memLines.length > 1 && memLines[1]) {
           const memData = memLines[1].split(/\s+/);
           if (memData.length >= 3) {
-            metrics.memory.total = parseInt(memData[1]);
-            metrics.memory.used = parseInt(memData[2]);
+            metrics.memory.total = parseInt(memData[1] || '0');
+            metrics.memory.used = parseInt(memData[2] || '0');
             metrics.memory.percentage = (metrics.memory.used / metrics.memory.total) * 100;
           }
         }
 
         // Get process counts
         const processCount = spawn('pgrep', ['-c', 'node']);
-        processCount.stdout.on('data', (data) => {
+        processCount.stdout?.on('data', (data: Buffer) => {
           metrics.processes.node = parseInt(data.toString().trim()) || 0;
         });
 
         const ollamaCount = spawn('pgrep', ['-c', 'ollama']);
-        ollamaCount.stdout.on('data', (data) => {
+        ollamaCount.stdout?.on('data', (data: Buffer) => {
           metrics.processes.ollama = parseInt(data.toString().trim()) || 0;
         });
 
@@ -137,7 +137,7 @@ class PerformanceMonitor {
     });
   }
 
-  private async checkServiceHealth(service: any): Promise<boolean> {
+  private async checkServiceHealth(service: typeof SERVICES[keyof typeof SERVICES]): Promise<boolean> {
     try {
       const response = await axios.get(`${service.url}/health`, { 
         timeout: 2000,
@@ -166,7 +166,7 @@ class PerformanceMonitor {
     }
   }
 
-  private async warmupService(service: any, endpoint: string): Promise<void> {
+  private async warmupService(service: typeof SERVICES[keyof typeof SERVICES], endpoint: string): Promise<void> {
     this.log(`Warming up ${service.name}...`);
     
     for (let i = 0; i < BENCHMARK_CONFIG.warmupRequests; i++) {
@@ -182,10 +182,10 @@ class PerformanceMonitor {
   }
 
   private async benchmarkEndpoint(
-    service: any,
+    service: typeof SERVICES[keyof typeof SERVICES],
     endpoint: string,
     method: "GET" | "POST" = "GET",
-    data?: any,
+    data?: unknown,
     requests: number = BENCHMARK_CONFIG.testRequests
   ): Promise<BenchmarkResult> {
     
@@ -237,7 +237,7 @@ class PerformanceMonitor {
       
       // Progress indicator
       if ((i + 1) % Math.max(1, Math.floor(requests / 10)) === 0) {
-        process.stdout.write(`  Progress: ${i + 1}/${requests}\r`);
+        process.stdout?.write(`  Progress: ${i + 1}/${requests}\r`);
       }
     }
     
@@ -252,7 +252,7 @@ class PerformanceMonitor {
       endpoint,
       timestamp: new Date().toISOString(),
       requests,
-      avgLatency: latencies.reduce((sum, l) => sum + l, 0) / latencies.length,
+      avgLatency: latencies.reduce((sum, l) => sum + l, 0) / (latencies.length || 1),
       minLatency: latencies[0] || 0,
       maxLatency: latencies[latencies.length - 1] || 0,
       p50Latency: this.calculatePercentile(latencies, 50),
@@ -262,14 +262,14 @@ class PerformanceMonitor {
       successRate: (successes / requests) * 100,
       throughput: (successes / totalTime) * 1000,
       memoryUsage: process.memoryUsage(),
-      errors: [...new Set(errors)].slice(0, 5) // Unique errors, max 5
+      errors: Array.from(new Set(errors)).slice(0, 5) // Unique errors, max 5
     };
     
     this.results.push(result);
     return result;
   }
 
-  private async concurrentLoadTest(service: any, endpoint: string, concurrentUsers: number): Promise<BenchmarkResult> {
+  private async concurrentLoadTest(service: typeof SERVICES[keyof typeof SERVICES], endpoint: string, concurrentUsers: number): Promise<BenchmarkResult> {
     this.log(`Load testing ${service.name} with ${concurrentUsers} concurrent users...`);
     
     const startTime = performance.now();
@@ -315,16 +315,16 @@ class PerformanceMonitor {
       endpoint: `${endpoint} (${concurrentUsers} concurrent)`,
       timestamp: new Date().toISOString(),
       requests: concurrentUsers,
-      avgLatency: latencies.reduce((sum, l) => sum + l, 0) / latencies.length,
-      minLatency: latencies[0],
-      maxLatency: latencies[latencies.length - 1],
+      avgLatency: latencies.reduce((sum, l) => sum + l, 0) / (latencies.length || 1),
+      minLatency: latencies[0] || 0,
+      maxLatency: latencies[latencies.length - 1] || 0,
       p50Latency: this.calculatePercentile(latencies, 50),
       p90Latency: this.calculatePercentile(latencies, 90),
       p95Latency: this.calculatePercentile(latencies, 95),
       p99Latency: this.calculatePercentile(latencies, 99),
       successRate: (successes / concurrentUsers) * 100,
       throughput: (successes / totalTime) * 1000,
-      errors: [...new Set(errors)].slice(0, 5)
+      errors: Array.from(new Set(errors)).slice(0, 5)
     };
   }
 
@@ -336,7 +336,7 @@ class PerformanceMonitor {
     // Group results by service
     const serviceResults = this.results.reduce((acc, result) => {
       if (!acc[result.service]) acc[result.service] = [];
-      acc[result.service].push(result);
+      acc[result.service]!.push(result);
       return acc;
     }, {} as Record<string, BenchmarkResult[]>);
     
@@ -344,7 +344,7 @@ class PerformanceMonitor {
       console.log(`\n📊 ${serviceName.toUpperCase()}`);
       console.log('-'.repeat(50));
       
-      results.forEach(result => {
+      (results as BenchmarkResult[]).forEach(result => {
         console.log(`\n🔹 ${result.endpoint}`);
         console.log(`   Avg Latency: ${result.avgLatency.toFixed(2)}ms`);
         console.log(`   P95 Latency: ${result.p95Latency.toFixed(2)}ms`);
@@ -499,7 +499,7 @@ class PerformanceMonitor {
       results: this.results,
       summary: {
         totalTests: this.results.length,
-        servicesActive: [...new Set(this.results.map(r => r.service))].length,
+        servicesActive: Array.from(new Set(this.results.map(r => r.service))).length,
         avgLatency: this.results.reduce((sum, r) => sum + r.avgLatency, 0) / this.results.length,
         avgSuccessRate: this.results.reduce((sum, r) => sum + r.successRate, 0) / this.results.length
       }
@@ -514,7 +514,7 @@ class PerformanceMonitor {
     
     // 1. Check service health
     this.log('\n🔍 Checking service health...');
-    const healthResults = {};
+    const healthResults: Record<string, boolean> = {};
     for (const [key, service] of Object.entries(SERVICES)) {
       const isHealthy = await this.checkServiceHealth(service);
       healthResults[key] = isHealthy;
@@ -612,9 +612,9 @@ process.on('SIGTERM', () => {
 });
 
 // Run if this is the main module
-const isMainModule = process.argv[1] === new URL(import.meta.url).pathname;
-if (isMainModule) {
+if (require.main === module) {
   main();
 }
 
-export { PerformanceMonitor, BenchmarkResult, SystemMetrics };
+export { PerformanceMonitor };
+export type { BenchmarkResult, SystemMetrics };

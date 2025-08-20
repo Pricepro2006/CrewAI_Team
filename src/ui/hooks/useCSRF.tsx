@@ -6,12 +6,22 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 // CSRF Token configuration matching backend
 const CSRF_TOKEN_HEADER = "x-csrf-token";
 const CSRF_TOKEN_STORAGE_KEY = "csrf-token";
-const CSRF_TOKEN_FETCH_URL = "http://localhost:3001/api/csrf-token";
+// Dynamic CSRF token URL based on environment
+const CSRF_TOKEN_FETCH_URL = (() => {
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const host = window.location.hostname;
+    const port = process.env.NODE_ENV === 'development' ? 
+      (process.env.VITE_API_PORT || '3001') : window.location.port || '3001';
+    return `${protocol}//${host}:${port}/api/csrf-token`;
+  }
+  return "http://localhost:3001/api/csrf-token";
+})();
 const CSRF_TOKEN_REFRESH_INTERVAL = 55 * 60 * 1000; // 55 minutes (before 1-hour rotation)
 
 // Types
@@ -54,7 +64,7 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
         }
 
         const data = await response.json();
-        const newToken = data.token;
+        const newToken = data?.token;
 
         if (!newToken) {
           throw new Error("CSRF token not found in response");
@@ -133,12 +143,12 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
 
       // Verify stored token is still valid
       fetchCSRFToken()
-        .then((newToken) => {
+        .then((newToken: any) => {
           if (newToken && newToken !== storedToken) {
             setToken(newToken);
           }
         })
-        .catch((err) => {
+        .catch((err: any) => {
           logger.error("Failed to verify stored CSRF token", "CSRF", err);
         });
     } else {
@@ -200,6 +210,15 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
     }
   }, [token]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+      }
+    };
+  }, []);
+
   const value: CSRFContextValue = {
     token,
     isLoading,
@@ -241,7 +260,7 @@ export async function handleCSRFError<T>(
       // Check if it's a CSRF error
       const isCSRFError =
         (error instanceof Error &&
-          error.message.toLowerCase().includes("csrf")) ||
+          error?.message?.toLowerCase().includes("csrf")) ||
         (error as any)?.code === "FORBIDDEN" ||
         (error as any)?.response?.status === 403;
 
@@ -261,7 +280,7 @@ export async function handleCSRFError<T>(
         }
 
         // Wait before retry
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        await new Promise((resolve: any) => setTimeout(resolve, retryDelay));
         continue;
       }
 

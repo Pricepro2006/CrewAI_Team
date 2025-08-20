@@ -34,6 +34,7 @@ export class PricingRouter {
     this.rateLimiter = createRateLimiter({
       windowMs: 60 * 1000, // 1 minute
       max: 100, // 100 requests per minute per IP
+      keyPrefix: 'pricing:',
       message: 'Too many pricing requests, please try again later'
     });
 
@@ -43,56 +44,56 @@ export class PricingRouter {
 
   private setupRoutes(): void {
     // Health check endpoint
-    this.router.get('/health', this.healthCheck.bind(this));
+    this?.router?.get('/health', this?.healthCheck?.bind(this));
 
     // Single price lookup
-    this.router.get('/price/:productId', this.rateLimiter, this.getPrice.bind(this));
+    this?.router?.get('/price/:productId', this.rateLimiter, this?.getPrice?.bind(this));
 
     // Batch price lookup
-    this.router.post('/prices/batch', this.rateLimiter, this.getBatchPrices.bind(this));
+    this?.router?.post('/prices/batch', this.rateLimiter, this?.getBatchPrices?.bind(this));
 
     // Cache management endpoints
-    this.router.post('/cache/control', this.cacheControl.bind(this));
+    this?.router?.post('/cache/control', this?.cacheControl?.bind(this));
     
     // Metrics endpoint
-    this.router.get('/metrics', this.getMetrics.bind(this));
+    this?.router?.get('/metrics', this?.getMetrics?.bind(this));
 
     // WebSocket endpoint for real-time price updates
-    this.router.get('/stream/:productId', this.streamPriceUpdates.bind(this));
+    this?.router?.get('/stream/:productId', this?.streamPriceUpdates?.bind(this));
   }
 
   private setupEventHandlers(): void {
     // Log cache hits for monitoring
-    this.pricingService.on('cache:hit', (data) => {
+    this?.pricingService?.on('cache:hit', (data: any) => {
       console.log(`[PricingService] Cache hit at ${data.level}: ${data.key} (${data.latency}ms)`);
     });
 
     // Log API fetches
-    this.pricingService.on('api:fetch', (data) => {
+    this?.pricingService?.on('api:fetch', (data: any) => {
       console.log(`[PricingService] API fetch for ${data.productId} (${data.latency}ms)`);
     });
 
     // Log errors
-    this.pricingService.on('error', (data) => {
+    this?.pricingService?.on('error', (data: any) => {
       console.error(`[PricingService] Error from ${data.source}:`, data.error);
     });
 
     // Log cache warm progress
-    this.pricingService.on('cache:warm:progress', (data) => {
+    this?.pricingService?.on('cache:warm:progress', (data: any) => {
       console.log(`[PricingService] Cache warming: ${data.completed}/${data.total}`);
     });
   }
 
   private async healthCheck(req: Request, res: Response): Promise<void> {
     try {
-      const metrics = this.pricingService.getMetrics();
+      const metrics = this?.pricingService?.getMetrics();
       res.json({
         status: 'healthy',
         service: 'pricing-microservice',
         uptime: process.uptime(),
         metrics: {
-          cacheHitRate: metrics.hitRate.overall.toFixed(2) + '%',
-          memoryCacheSize: `${metrics.cacheSize.memory}/${metrics.cacheSize.memoryMax}`,
+          cacheHitRate: metrics?.hitRate?.overall.toFixed(2) + '%',
+          memoryCacheSize: `${metrics?.cacheSize?.memory}/${metrics?.cacheSize?.memoryMax}`,
           errors: metrics.errors
         }
       });
@@ -107,14 +108,14 @@ export class PricingRouter {
   private async getPrice(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const request: PriceRequest = {
-        productId: req.params.productId,
-        storeId: req.query.storeId as string || 'default',
-        quantity: parseInt(req.query.quantity as string) || 1,
-        includePromotions: req.query.includePromotions !== 'false'
+        productId: req?.params?.productId || '',
+        storeId: req?.query?.storeId as string || 'default',
+        quantity: parseInt(req?.query?.quantity as string) || 1,
+        includePromotions: req?.query?.includePromotions !== 'false'
       };
 
       const validatedRequest = PriceRequestSchema.parse(request);
-      const price = await this.pricingService.getPrice(validatedRequest);
+      const price = await this?.pricingService?.getPrice(validatedRequest);
 
       // Set cache headers based on source
       const cacheMaxAge = this.getCacheMaxAge(price.source);
@@ -143,8 +144,8 @@ export class PricingRouter {
       if (strategy === 'parallel') {
         // Process all requests in parallel
         prices = await Promise.all(
-          products.map(product => 
-            this.pricingService.getPrice(product).catch(err => ({
+          products?.map(product => 
+            this?.pricingService?.getPrice(product).catch(err => ({
               productId: product.productId,
               error: err.message
             }))
@@ -155,7 +156,7 @@ export class PricingRouter {
         prices = [];
         for (const product of products) {
           try {
-            const price = await this.pricingService.getPrice(product);
+            const price = await this?.pricingService?.getPrice(product);
             prices.push(price);
           } catch (err) {
             prices.push({
@@ -167,7 +168,7 @@ export class PricingRouter {
       }
 
       res.json({
-        count: prices.length,
+        count: prices?.length || 0,
         strategy,
         prices
       });
@@ -189,26 +190,26 @@ export class PricingRouter {
 
       switch (validatedRequest.action) {
         case 'warm':
-          if (!validatedRequest.productIds || validatedRequest.productIds.length === 0) {
+          if (!validatedRequest.productIds || validatedRequest?.productIds?.length === 0) {
             res.status(400).json({ error: 'productIds required for warm action' });
             return;
           }
 
           // Start cache warming in background
-          this.pricingService.warmCache(
+          this?.pricingService?.warmCache(
             validatedRequest.productIds,
             validatedRequest.storeIds
           ).catch(console.error);
 
           res.json({
             message: 'Cache warming started',
-            products: validatedRequest.productIds.length,
+            products: validatedRequest?.productIds?.length,
             stores: validatedRequest.storeIds?.length || 1
           });
           break;
 
         case 'invalidate':
-          const invalidated = await this.pricingService.invalidateCache(
+          const invalidated = await this?.pricingService?.invalidateCache(
             validatedRequest.criteria || {}
           );
 
@@ -219,7 +220,7 @@ export class PricingRouter {
           break;
 
         case 'stats':
-          const metrics = this.pricingService.getMetrics();
+          const metrics = this?.pricingService?.getMetrics();
           res.json({
             cacheStats: {
               hits: metrics.hits,
@@ -247,11 +248,11 @@ export class PricingRouter {
   }
 
   private async getMetrics(req: Request, res: Response): Promise<void> {
-    const metrics = this.pricingService.getMetrics();
-    const reset = req.query.reset === 'true';
+    const metrics = this?.pricingService?.getMetrics();
+    const reset = req?.query?.reset === 'true';
 
     if (reset) {
-      this.pricingService.resetMetrics();
+      this?.pricingService?.resetMetrics();
     }
 
     res.json({
@@ -270,13 +271,13 @@ export class PricingRouter {
       'X-Accel-Buffering': 'no'
     });
 
-    const productId = req.params.productId;
-    const storeId = req.query.storeId as string || 'default';
+    const productId = req?.params?.productId;
+    const storeId = req?.query?.storeId as string || 'default';
 
     // Send initial price
     try {
-      const price = await this.pricingService.getPrice({
-        productId,
+      const price = await this?.pricingService?.getPrice({
+        productId: productId || '',
         storeId,
         quantity: 1,
         includePromotions: true
@@ -290,8 +291,8 @@ export class PricingRouter {
     // Set up periodic price updates
     const interval = setInterval(async () => {
       try {
-        const price = await this.pricingService.getPrice({
-          productId,
+        const price = await this?.pricingService?.getPrice({
+          productId: productId || '',
           storeId,
           quantity: 1,
           includePromotions: true
@@ -330,6 +331,6 @@ export class PricingRouter {
   }
 
   public async shutdown(): Promise<void> {
-    await this.pricingService.close();
+    await this?.pricingService?.close();
   }
 }

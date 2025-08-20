@@ -164,13 +164,13 @@ router.post("/batch", validateRequest(batchProcessSchema), asyncHandler(async (r
   try {
     logger.info("Processing batch NLP request", "GROCERY_NLP_API", {
       batchId: generatedBatchId,
-      queryCount: queries.length,
+      queryCount: queries?.length || 0,
       priority,
       userAgent: req.get("User-Agent")
     });
     
     // Process all queries concurrently through the queue
-    const operations = queries.map((queryData, index) => 
+    const operations = queries?.map((queryData, index) => 
       () => mockNLPOperation(queryData.query, {
         ...queryData.metadata,
         batchId: generatedBatchId,
@@ -181,16 +181,16 @@ router.post("/batch", validateRequest(batchProcessSchema), asyncHandler(async (r
     const results = await queue.enqueueBatch(operations, priority);
     
     const totalProcessingTime = Date.now() - startTime;
-    const completedCount = results.filter(r => r !== null).length;
-    const failedCount = results.length - completedCount;
+    const completedCount = results?.filter(r => r !== null).length;
+    const failedCount = results?.length || 0 - completedCount;
     
     // Convert results to ProcessNLPResponse format
-    const processedResults: ProcessNLPResponse[] = results.map((result, index) => ({
+    const processedResults: ProcessNLPResponse[] = results?.map((result, index) => ({
       success: result !== null,
       result: result || undefined,
       error: result === null ? "Processing failed" : undefined,
       requestId: `${generatedBatchId}-${index}`,
-      processingTime: totalProcessingTime / queries.length, // Average
+      processingTime: totalProcessingTime / queries?.length || 0, // Average
       queueTime: 0 // Would be calculated properly
     }));
     
@@ -213,7 +213,7 @@ router.post("/batch", validateRequest(batchProcessSchema), asyncHandler(async (r
     logger.error("Batch NLP processing failed", "GROCERY_NLP_API", {
       error,
       batchId: generatedBatchId,
-      queryCount: queries.length
+      queryCount: queries?.length || 0
     });
     
     res.status(500).json({
@@ -221,7 +221,7 @@ router.post("/batch", validateRequest(batchProcessSchema), asyncHandler(async (r
       error: {
         code: "BATCH_PROCESSING_ERROR",
         message: error instanceof Error ? error.message : "Batch processing failed",
-        details: { batchId: generatedBatchId, queryCount: queries.length }
+        details: { batchId: generatedBatchId, queryCount: queries?.length || 0 }
       },
       timestamp: Date.now()
     } as ApiResponse);
@@ -316,7 +316,7 @@ router.get("/queue", asyncHandler(async (req: Request, res: Response) => {
     success: true,
     data: {
       items,
-      total: items.length
+      total: items?.length || 0
     },
     timestamp: Date.now()
   } as ApiResponse);

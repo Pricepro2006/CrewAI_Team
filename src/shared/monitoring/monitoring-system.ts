@@ -79,9 +79,9 @@ export class MetricsCollector {
   private collectors: MetricCollectorFunction[] = [];
 
   registerMetric(definition: MetricDefinition): void {
-    this.metrics.set(definition.name, definition);
-    if (!this.values.has(definition.name)) {
-      this.values.set(definition.name, []);
+    this?.metrics?.set(definition.name, definition);
+    if (!this?.values?.has(definition.name)) {
+      this?.values?.set(definition.name, []);
     }
   }
 
@@ -90,7 +90,7 @@ export class MetricsCollector {
     value: number,
     labels?: Record<string, string>,
   ): void {
-    const metric = this.metrics.get(name);
+    const metric = this?.metrics?.get(name);
     if (!metric) {
       throw new Error(`Metric ${name} is not registered`);
     }
@@ -103,15 +103,15 @@ export class MetricsCollector {
       type: metric.type,
     };
 
-    const values = this.values.get(name) || [];
+    const values = this?.values?.get(name) || [];
     values.push(metricValue);
 
     // Keep only last 1000 values per metric to prevent memory leaks
-    if (values.length > 1000) {
-      values.splice(0, values.length - 1000);
+    if (values?.length || 0 > 1000) {
+      values.splice(0, values?.length || 0 - 1000);
     }
 
-    this.values.set(name, values);
+    this?.values?.set(name, values);
   }
 
   increment(
@@ -119,19 +119,19 @@ export class MetricsCollector {
     labels?: Record<string, string>,
     value: number = 1,
   ): void {
-    const metric = this.metrics.get(name);
+    const metric = this?.metrics?.get(name);
     if (!metric || metric.type !== "counter") {
       throw new Error(`Metric ${name} is not a registered counter`);
     }
 
     // For counters, we need to get the current value and add to it
-    const values = this.values.get(name) || [];
+    const values = this?.values?.get(name) || [];
     const currentValue = this.getCurrentValue(name, labels);
     this.recordValue(name, currentValue + value, labels);
   }
 
   gauge(name: string, value: number, labels?: Record<string, string>): void {
-    const metric = this.metrics.get(name);
+    const metric = this?.metrics?.get(name);
     if (!metric || metric.type !== "gauge") {
       throw new Error(`Metric ${name} is not a registered gauge`);
     }
@@ -144,7 +144,7 @@ export class MetricsCollector {
     value: number,
     labels?: Record<string, string>,
   ): void {
-    const metric = this.metrics.get(name);
+    const metric = this?.metrics?.get(name);
     if (!metric || metric.type !== "histogram") {
       throw new Error(`Metric ${name} is not a registered histogram`);
     }
@@ -153,7 +153,7 @@ export class MetricsCollector {
   }
 
   summary(name: string, value: number, labels?: Record<string, string>): void {
-    const metric = this.metrics.get(name);
+    const metric = this?.metrics?.get(name);
     if (!metric || metric.type !== "summary") {
       throw new Error(`Metric ${name} is not a registered summary`);
     }
@@ -165,11 +165,11 @@ export class MetricsCollector {
     name: string,
     labels?: Record<string, string>,
   ): number {
-    const values = this.values.get(name) || [];
-    if (values.length === 0) return 0;
+    const values = this?.values?.get(name) || [];
+    if (values?.length || 0 === 0) return 0;
 
     // Find the most recent value with matching labels
-    for (let i = values.length - 1; i >= 0; i--) {
+    for (let i = values?.length || 0 - 1; i >= 0; i--) {
       const value = values[i];
       if (value && this.labelsMatch(value?.labels, labels)) {
         return value?.value ?? 0;
@@ -189,13 +189,13 @@ export class MetricsCollector {
     const keysA = Object.keys(a);
     const keysB = Object.keys(b);
 
-    if (keysA.length !== keysB.length) return false;
+    if (keysA?.length || 0 !== keysB?.length || 0) return false;
 
-    return keysA.every((key) => a[key] === b[key]);
+    return keysA.every((key: any) => a[key] === b[key]);
   }
 
   registerCollector(collector: MetricCollectorFunction): void {
-    this.collectors.push(collector);
+    this?.collectors?.push(collector);
   }
 
   async collectAll(): Promise<MetricSnapshot> {
@@ -210,7 +210,7 @@ export class MetricsCollector {
 
     // Return current snapshot
     const allValues: MetricValue[] = [];
-    for (const values of this.values.values()) {
+    for (const values of this?.values?.values()) {
       allValues.push(...values.slice(-1)); // Get only the latest value for each metric
     }
 
@@ -221,11 +221,11 @@ export class MetricsCollector {
   }
 
   getValues(name: string): MetricValue[] {
-    return this.values.get(name) || [];
+    return this?.values?.get(name) || [];
   }
 
   getMetrics(): MetricDefinition[] {
-    return Array.from(this.metrics.values());
+    return Array.from(this?.metrics?.values());
   }
 }
 
@@ -260,7 +260,7 @@ export class HealthMonitor {
   private intervalHandles: Map<string, NodeJS.Timeout> = new Map();
 
   registerCheck(check: HealthCheck): void {
-    this.checks.set(check.name, check);
+    this?.checks?.set(check.name, check);
 
     // Start periodic checking if interval is specified
     if (check.interval && check.interval > 0) {
@@ -268,23 +268,23 @@ export class HealthMonitor {
         this.runCheck(check.name).catch(console.error);
       }, check.interval);
 
-      this.intervalHandles.set(check.name, handle);
+      this?.intervalHandles?.set(check.name, handle);
     }
   }
 
   unregisterCheck(name: string): void {
-    this.checks.delete(name);
-    this.results.delete(name);
+    this?.checks?.delete(name);
+    this?.results?.delete(name);
 
-    const handle = this.intervalHandles.get(name);
+    const handle = this?.intervalHandles?.get(name);
     if (handle) {
       clearInterval(handle);
-      this.intervalHandles.delete(name);
+      this?.intervalHandles?.delete(name);
     }
   }
 
   async runCheck(name: string): Promise<HealthCheckResult> {
-    const check = this.checks.get(name);
+    const check = this?.checks?.get(name);
     if (!check) {
       throw new Error(`Health check ${name} not found`);
     }
@@ -298,7 +298,7 @@ export class HealthMonitor {
       const result = await Promise.race([
         check.check(),
         new Promise<HealthCheckResult>((_, reject) => {
-          controller.signal.addEventListener("abort", () => {
+          controller?.signal?.addEventListener("abort", () => {
             reject(new Error("Health check timeout"));
           });
         }),
@@ -307,7 +307,7 @@ export class HealthMonitor {
       clearTimeout(timeoutId);
       result.responseTime = Date.now() - startTime;
 
-      this.results.set(name, result);
+      this?.results?.set(name, result);
       return result;
     } catch (error) {
       const result: HealthCheckResult = {
@@ -316,13 +316,13 @@ export class HealthMonitor {
         responseTime: Date.now() - startTime,
       };
 
-      this.results.set(name, result);
+      this?.results?.set(name, result);
       return result;
     }
   }
 
   async runAllChecks(): Promise<Map<string, HealthCheckResult>> {
-    const promises = Array.from(this.checks.keys()).map(async (name) => {
+    const promises = Array.from(this?.checks?.keys()).map(async (name: any) => {
       const result = await this.runCheck(name);
       return [name, result] as [string, HealthCheckResult];
     });
@@ -331,7 +331,7 @@ export class HealthMonitor {
     const healthResults = new Map<string, HealthCheckResult>();
 
     results.forEach((result, index) => {
-      const checkName = Array.from(this.checks.keys())[index];
+      const checkName = Array.from(this?.checks?.keys())[index];
       if (result.status === "fulfilled") {
         healthResults.set(result.value[0], result.value[1]);
       } else {
@@ -364,7 +364,7 @@ export class HealthMonitor {
 
       if (result.status === "unhealthy") {
         hasUnhealthy = true;
-        const check = this.checks.get(name);
+        const check = this?.checks?.get(name);
         if (check?.critical) {
           overallStatus = "unhealthy";
         }
@@ -403,7 +403,7 @@ export class HealthMonitor {
   }
 
   getResult(name: string): HealthCheckResult | undefined {
-    return this.results.get(name);
+    return this?.results?.get(name);
   }
 
   getAllResults(): Map<string, HealthCheckResult> {
@@ -412,13 +412,13 @@ export class HealthMonitor {
 
   destroy(): void {
     // Clear all intervals
-    for (const handle of this.intervalHandles.values()) {
+    for (const handle of this?.intervalHandles?.values()) {
       clearInterval(handle);
     }
 
-    this.intervalHandles.clear();
-    this.checks.clear();
-    this.results.clear();
+    this?.intervalHandles?.clear();
+    this?.checks?.clear();
+    this?.results?.clear();
   }
 }
 
@@ -671,12 +671,12 @@ export const globalMetricsCollector = new MetricsCollector();
 export const globalHealthMonitor = new HealthMonitor();
 
 // Register default metrics
-defaultMetrics.forEach((metric) => {
+defaultMetrics.forEach((metric: any) => {
   globalMetricsCollector.registerMetric(metric);
 });
 
 // Register default health checks
-createDefaultHealthChecks().forEach((check) => {
+createDefaultHealthChecks().forEach((check: any) => {
   globalHealthMonitor.registerCheck(check);
 });
 

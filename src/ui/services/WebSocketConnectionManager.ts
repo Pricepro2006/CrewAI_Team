@@ -5,6 +5,8 @@
 
 import { EventEmitter } from 'events';
 
+// Environment variable detection
+
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'failed';
 
 interface ManagedConnection {
@@ -14,7 +16,7 @@ interface ManagedConnection {
   status: ConnectionStatus;
   attempts: number;
   lastActivity: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class WebSocketConnectionManager extends EventEmitter {
@@ -23,7 +25,7 @@ class WebSocketConnectionManager extends EventEmitter {
   private connectionLocks: Map<string, boolean> = new Map();
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
   private maxConnectionsPerUrl = 1;
-  private debugMode = process.env.NODE_ENV === 'development';
+  private debugMode = (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') || false;
 
   private constructor() {
     super();
@@ -45,7 +47,7 @@ class WebSocketConnectionManager extends EventEmitter {
     options: {
       id?: string;
       forceNew?: boolean;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       onOpen?: (event: Event) => void;
       onClose?: (event: CloseEvent) => void;
       onMessage?: (event: MessageEvent) => void;
@@ -69,7 +71,7 @@ class WebSocketConnectionManager extends EventEmitter {
         return existing.ws;
       } else if (existing.ws?.readyState === WebSocket.CONNECTING) {
         this.log('info', `Connection ${connectionId} is already connecting`);
-        return new Promise((resolve) => {
+        return new Promise<WebSocket | null>((resolve) => {
           const checkInterval = setInterval(() => {
             if (existing.ws?.readyState === WebSocket.OPEN) {
               clearInterval(checkInterval);
@@ -96,7 +98,7 @@ class WebSocketConnectionManager extends EventEmitter {
 
     if (urlConnections.length >= this.maxConnectionsPerUrl && !options.forceNew) {
       this.log('warn', `Max connections (${this.maxConnectionsPerUrl}) reached for ${url}`);
-      return urlConnections[0].ws;
+      return urlConnections[0]?.ws || null;
     }
 
     // Lock connection creation
@@ -125,7 +127,7 @@ class WebSocketConnectionManager extends EventEmitter {
       this.connections.set(connectionId, managedConnection);
       
       // Setup event handlers
-      ws.onopen = (event) => {
+      ws.onopen = (event: Event) => {
         this.log('info', `Connection ${connectionId} opened`);
         managedConnection.status = 'connected';
         managedConnection.attempts = 0;
@@ -136,7 +138,7 @@ class WebSocketConnectionManager extends EventEmitter {
         options.onOpen?.(event);
       };
 
-      ws.onclose = (event) => {
+      ws.onclose = (event: CloseEvent) => {
         this.log('info', `Connection ${connectionId} closed`, { code: event.code, reason: event.reason });
         managedConnection.status = 'disconnected';
         managedConnection.ws = null;
@@ -153,7 +155,7 @@ class WebSocketConnectionManager extends EventEmitter {
         }
       };
 
-      ws.onerror = (event) => {
+      ws.onerror = (event: Event) => {
         this.log('error', `Connection ${connectionId} error`);
         managedConnection.status = 'failed';
         
@@ -161,13 +163,13 @@ class WebSocketConnectionManager extends EventEmitter {
         options.onError?.(event);
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: MessageEvent) => {
         managedConnection.lastActivity = Date.now();
         options.onMessage?.(event);
       };
 
       // Wait for connection to open or fail
-      return new Promise((resolve) => {
+      return new Promise<WebSocket | null>((resolve) => {
         const timeout = setTimeout(() => {
           if (ws.readyState === WebSocket.CONNECTING) {
             ws.close();
@@ -218,7 +220,8 @@ class WebSocketConnectionManager extends EventEmitter {
   public closeAll(): void {
     this.log('info', 'Closing all connections');
     
-    for (const connectionId of this.connections.keys()) {
+    const connectionIds = Array.from(this.connections.keys());
+    for (const connectionId of connectionIds) {
       this.closeConnection(connectionId);
     }
   }
@@ -255,7 +258,7 @@ class WebSocketConnectionManager extends EventEmitter {
   /**
    * Send message through a managed connection
    */
-  public sendMessage(connectionId: string, data: any): boolean {
+  public sendMessage(connectionId: string, data: unknown): boolean {
     const connection = this.connections.get(connectionId);
     
     if (connection?.ws?.readyState === WebSocket.OPEN) {
@@ -280,7 +283,15 @@ class WebSocketConnectionManager extends EventEmitter {
   private scheduleReconnect(
     connectionId: string,
     url: string,
-    options: any
+    options: {
+      id?: string;
+      forceNew?: boolean;
+      metadata?: Record<string, unknown>;
+      onOpen?: (event: Event) => void;
+      onClose?: (event: CloseEvent) => void;
+      onMessage?: (event: MessageEvent) => void;
+      onError?: (event: Event) => void;
+    }
   ): void {
     const connection = this.connections.get(connectionId);
     if (!connection) return;
@@ -320,7 +331,7 @@ class WebSocketConnectionManager extends EventEmitter {
   private async waitForLock(connectionId: string, timeout: number = 5000): Promise<void> {
     const startTime = Date.now();
     
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       const checkInterval = setInterval(() => {
         if (!this.connectionLocks.get(connectionId) || Date.now() - startTime > timeout) {
           clearInterval(checkInterval);
@@ -345,7 +356,8 @@ class WebSocketConnectionManager extends EventEmitter {
       const staleTimeout = 5 * 60 * 1000; // 5 minutes
       const now = Date.now();
 
-      for (const [connectionId, connection] of this.connections.entries()) {
+      const connections = Array.from(this.connections.entries());
+      for (const [connectionId, connection] of connections) {
         if (
           connection.status === 'disconnected' &&
           now - connection.lastActivity > staleTimeout
@@ -360,7 +372,7 @@ class WebSocketConnectionManager extends EventEmitter {
   /**
    * Logging helper
    */
-  private log(level: 'info' | 'warn' | 'error', message: string, data?: any): void {
+  private log(level: 'info' | 'warn' | 'error', message: string, data?: unknown): void {
     if (!this.debugMode && level === 'info') return;
 
     const prefix = '[WebSocketManager]';

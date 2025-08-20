@@ -55,12 +55,12 @@ export class EmailQueueProcessor {
     try {
       // Initialize queue
       this.queue = new Queue("email-notifications", {
-        connection: this.config.redis,
+        connection: this?.config?.redis,
         defaultJobOptions: {
-          attempts: this.config.maxRetries,
+          attempts: this?.config?.maxRetries,
           backoff: {
             type: "exponential",
-            delay: this.config.retryDelay,
+            delay: this?.config?.retryDelay,
           },
           removeOnComplete: true,
           removeOnFail: false,
@@ -74,8 +74,8 @@ export class EmailQueueProcessor {
         "Email queue processor initialized with Redis",
         "EMAIL_QUEUE",
         {
-          concurrency: this.config.concurrency,
-          maxRetries: this.config.maxRetries,
+          concurrency: this?.config?.concurrency,
+          maxRetries: this?.config?.maxRetries,
         },
       );
     } catch (error) {
@@ -102,7 +102,7 @@ export class EmailQueueProcessor {
         });
 
         const processedEmail =
-          await this.emailService.processIncomingEmail(emailData);
+          await this?.emailService?.processIncomingEmail(emailData);
 
         // Broadcast to connected clients
         if (io) {
@@ -118,7 +118,7 @@ export class EmailQueueProcessor {
         return processedEmail.id;
       }
 
-      const job = await this.queue.add(
+      const job = await this?.queue?.add(
         {
           emailData,
           receivedAt: new Date(),
@@ -159,8 +159,8 @@ export class EmailQueueProcessor {
         return this.processEmailJob(job);
       },
       {
-        connection: this.config.redis,
-        concurrency: this.config.concurrency!,
+        connection: this?.config?.redis,
+        concurrency: this?.config?.concurrency!,
       },
     );
 
@@ -212,7 +212,7 @@ export class EmailQueueProcessor {
 
       // Process email through unified service
       const processedEmail =
-        await this.emailService.processIncomingEmail(emailData);
+        await this?.emailService?.processIncomingEmail(emailData);
 
       await job.updateProgress(90);
 
@@ -248,7 +248,7 @@ export class EmailQueueProcessor {
       });
 
       // Add to dead letter queue if max retries exceeded
-      if (job.attemptsMade >= this.config.maxRetries! - 1) {
+      if (job.attemptsMade >= this?.config?.maxRetries! - 1) {
         await this.addToDeadLetterQueue(job.data, error as Error);
       }
 
@@ -304,7 +304,7 @@ export class EmailQueueProcessor {
 
     const content =
       `${emailData.subject} ${emailData.body?.content}`.toLowerCase();
-    return criticalKeywords.some((keyword) => content.includes(keyword));
+    return criticalKeywords.some((keyword: any) => content.includes(keyword));
   }
 
   /**
@@ -320,7 +320,7 @@ export class EmailQueueProcessor {
       "@apple.com",
     ];
 
-    return vipDomains.some((domain) => email.endsWith(domain));
+    return vipDomains.some((domain: any) => email.endsWith(domain));
   }
 
   /**
@@ -352,7 +352,7 @@ export class EmailQueueProcessor {
         },
       };
 
-      await this.queue.add("dead-letter", deadLetterJob);
+      await this?.queue?.add("dead-letter", deadLetterJob);
 
       metrics.increment("email_queue.dead_letter_added");
     } catch (dlqError) {
@@ -372,11 +372,11 @@ export class EmailQueueProcessor {
 
     try {
       const [waiting, active, completed, failed, delayed] = await Promise.all([
-        this.queue.getWaitingCount(),
-        this.queue.getActiveCount(),
-        this.queue.getCompletedCount(),
-        this.queue.getFailedCount(),
-        this.queue.getDelayedCount(),
+        this?.queue?.getWaitingCount(),
+        this?.queue?.getActiveCount(),
+        this?.queue?.getCompletedCount(),
+        this?.queue?.getFailedCount(),
+        this?.queue?.getDelayedCount(),
       ]);
 
       const health = {
@@ -421,12 +421,12 @@ export class EmailQueueProcessor {
 
     const [waiting, active, completed, failed, delayed, paused] =
       await Promise.all([
-        this.queue.getWaitingCount(),
-        this.queue.getActiveCount(),
-        this.queue.getCompletedCount(),
-        this.queue.getFailedCount(),
-        this.queue.getDelayedCount(),
-        this.queue.isPaused(),
+        this?.queue?.getWaitingCount(),
+        this?.queue?.getActiveCount(),
+        this?.queue?.getCompletedCount(),
+        this?.queue?.getFailedCount(),
+        this?.queue?.getDelayedCount(),
+        this?.queue?.isPaused(),
       ]);
 
     return {
@@ -448,7 +448,7 @@ export class EmailQueueProcessor {
       logger.info("No queue to pause (Redis not connected)", "EMAIL_QUEUE");
       return;
     }
-    await this.queue.pause();
+    await this?.queue?.pause();
     logger.info("Email queue paused", "EMAIL_QUEUE");
   }
 
@@ -460,7 +460,7 @@ export class EmailQueueProcessor {
       logger.info("No queue to resume (Redis not connected)", "EMAIL_QUEUE");
       return;
     }
-    await this.queue.resume();
+    await this?.queue?.resume();
     logger.info("Email queue resumed", "EMAIL_QUEUE");
   }
 
@@ -476,13 +476,13 @@ export class EmailQueueProcessor {
     }
 
     // Stop accepting new jobs
-    await this.queue.pause();
+    await this?.queue?.pause();
 
     // Wait for active jobs to complete (max 30 seconds)
     const timeout = 30000;
     const startTime = Date.now();
 
-    while ((await this.queue.getActiveCount()) > 0) {
+    while ((await this?.queue?.getActiveCount()) > 0) {
       if (Date.now() - startTime > timeout) {
         logger.warn(
           "Timeout waiting for active jobs to complete",
@@ -490,11 +490,73 @@ export class EmailQueueProcessor {
         );
         break;
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve: any) => setTimeout(resolve, 1000));
     }
 
     // Close queue
-    await this.queue.close();
+    await this?.queue?.close();
     logger.info("Email queue processor shutdown complete", "EMAIL_QUEUE");
+  }
+
+  /**
+   * Initialize the queue processor (for compatibility)
+   */
+  async initialize(): Promise<void> {
+    logger.info("Initializing email queue processor", "EMAIL_QUEUE");
+    // Queue is already initialized in constructor
+    // This method exists for compatibility
+  }
+
+  /**
+   * Start the queue processor (for compatibility)
+   */
+  async start(): Promise<void> {
+    logger.info("Starting email queue processor", "EMAIL_QUEUE");
+    // Processing starts automatically when queue is created
+    // This method exists for compatibility
+    await this.resume();
+  }
+
+  /**
+   * Stop the queue processor
+   */
+  async stop(): Promise<void> {
+    logger.info("Stopping email queue processor", "EMAIL_QUEUE");
+    await this.shutdown();
+  }
+
+  /**
+   * Check if the queue is healthy
+   */
+  isHealthy(): boolean {
+    if (!this.queue) {
+      return false;
+    }
+    // Consider the queue healthy if it exists
+    return true;
+  }
+
+  /**
+   * Add an email processing job to the queue
+   */
+  async addEmailProcessingJob(jobData: any): Promise<string> {
+    if (!this.queue) {
+      throw new Error("Queue not initialized (Redis not connected)");
+    }
+
+    const job = await this.queue.add("process-email", jobData, {
+      attempts: this.config.maxRetries || 3,
+      backoff: {
+        type: "exponential",
+        delay: this.config.retryDelay || 5000,
+      },
+    });
+
+    logger.info("Email processing job added", "EMAIL_QUEUE", {
+      jobId: job.id,
+      data: jobData,
+    });
+
+    return job.id as string;
   }
 }

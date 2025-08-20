@@ -20,7 +20,7 @@ export class BaseGroceryError extends Error {
     retryable: boolean = false
   ) {
     super(message);
-    this.name = this.constructor.name;
+    this.name = this?.constructor?.name;
     this.code = code;
     this.component = component;
     this.severity = severity;
@@ -42,7 +42,7 @@ export class BaseGroceryError extends Error {
       component: this.component,
       severity: this.severity,
       context: this.context,
-      timestamp: this.timestamp.toISOString(),
+      timestamp: this?.timestamp?.toISOString(),
       retryable: this.retryable,
       stack: this.stack,
     };

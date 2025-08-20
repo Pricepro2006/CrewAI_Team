@@ -32,12 +32,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] =
-    useState<PasswordStrength | null>(null);
+    useState<PasswordStrength | undefined>(undefined);
   const [showPasswordStrength, setShowPasswordStrength] = useState(false);
 
   // Check password strength when password changes
   useEffect(() => {
-    if (formData.password && formData.password.length > 0) {
+    if (formData.password && formData?.password?.length > 0) {
       const checkStrength = async () => {
         try {
           const strength = await checkPasswordStrength(formData.password);
@@ -50,20 +50,21 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       const timer = setTimeout(checkStrength, 300); // Debounce
       return () => clearTimeout(timer);
     } else {
-      setPasswordStrength(null);
+      setPasswordStrength(undefined);
     }
+    return undefined; // Explicit return for the else case
   }, [formData.password, checkPasswordStrength]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev: any) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -80,7 +81,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     // Username validation
     if (!formData.username) {
       newErrors.username = "Username is required";
-    } else if (formData.username.length < 3) {
+    } else if (formData?.username?.length < 3) {
       newErrors.username = "Username must be at least 3 characters";
     } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
       newErrors.username =
@@ -269,8 +270,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                       color: getStrengthColor(passwordStrength.strength),
                     }}
                   >
-                    {passwordStrength.strength.charAt(0).toUpperCase() +
-                      passwordStrength.strength.slice(1)}{" "}
+                    {passwordStrength?.strength?.charAt(0).toUpperCase() +
+                      passwordStrength?.strength?.slice(1)}{" "}
                     Password
                   </span>
                   {passwordStrength.isCompromised && (
@@ -281,7 +282,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 </div>
                 {!passwordStrength.isValid && (
                   <ul className="strength-requirements">
-                    {passwordStrength.errors.map((error, index) => (
+                    {passwordStrength?.errors?.map((error, index) => (
                       <li key={index} className="requirement-error">
                         {error}
                       </li>
@@ -319,7 +320,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             type="submit"
             className={`auth-button primary ${isLoading ? "loading" : ""}`}
             disabled={
-              isLoading || (passwordStrength && !passwordStrength.isValid)
+              isLoading || (passwordStrength !== undefined && !passwordStrength.isValid)
             }
           >
             {isLoading ? "Creating Account..." : "Create Account"}

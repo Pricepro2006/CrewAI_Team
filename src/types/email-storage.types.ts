@@ -105,6 +105,24 @@ export interface Phase3Results {
   processing_time_ms: number;
   model_used: string;
   confidence_score: number;
+  
+  // Optional extended fields that EnhancedPhase3Results can override
+  strategic_context?: {
+    business_impact_score: number;
+    customer_relationship_risk: 'low' | 'medium' | 'high';
+    revenue_impact_category: 'minimal' | 'moderate' | 'significant' | 'critical';
+    operational_complexity: number;
+  };
+  stakeholder_analysis?: {
+    required_approvals: string[];
+    notification_list: string[];
+    escalation_path: string[];
+    timeline_constraints: {
+      sla_deadline?: string;
+      business_deadline?: string;
+      regulatory_deadline?: string;
+    };
+  };
 }
 
 // Database Operation Interfaces

@@ -7,9 +7,19 @@ import { AppError, ErrorCode } from "../../utils/error-handling/server.js";
  * Test comment for pre-commit hook verification
  */
 export const asyncHandler = (fn: RequestHandler): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
+/**
+ * Enhanced async handler with error processing
+ */
+export const enhancedAsyncHandler = (fn: RequestHandler): RequestHandler => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await Promise.resolve(fn(req, res, next));
+      const result = await Promise.resolve(fn(req, res, next));
+      return result;
     } catch (error) {
       // Log the error with request context
       logger.error("Async handler error", "ASYNC_HANDLER", {
@@ -24,14 +34,14 @@ export const asyncHandler = (fn: RequestHandler): RequestHandler => {
       let processedError = error;
       if (error instanceof Error && !(error instanceof AppError)) {
         // Check for common error patterns
-        if (error.message.includes("ECONNREFUSED")) {
+        if (error?.message?.includes("ECONNREFUSED")) {
           processedError = new AppError(
             ErrorCode.SERVICE_UNAVAILABLE,
             "Service connection refused",
             503,
             { originalError: error.message },
           );
-        } else if (error.message.includes("ETIMEDOUT")) {
+        } else if (error?.message?.includes("ETIMEDOUT")) {
           processedError = new AppError(
             ErrorCode.SERVICE_UNAVAILABLE,
             "Service request timed out",

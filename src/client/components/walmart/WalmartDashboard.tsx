@@ -107,13 +107,13 @@ const QuickStats: React.FC = () => {
   const metrics: DashboardMetric[] = [
     {
       label: 'Cart Value',
-      value: formatPrice(cart.items.reduce((sum: number, item: CartItem) => sum + (item.price * item.quantity), 0)),
+      value: formatPrice(cart?.items?.reduce((sum: number, item: CartItem) => sum + (item.price * item.quantity), 0)),
       icon: ShoppingCart,
       color: 'text-blue-600',
     },
     {
       label: 'Active Lists',
-      value: lists.length,
+      value: lists?.length || 0,
       icon: List,
       color: 'text-green-600',
     },
@@ -127,7 +127,7 @@ const QuickStats: React.FC = () => {
             return orderDate.getMonth() === now.getMonth() && 
                    orderDate.getFullYear() === now.getFullYear();
           })
-          .reduce((sum: number, o: Order) => sum + o.totals.total, 0)
+          .reduce((sum: number, o: Order) => sum + o?.totals?.total, 0)
       ),
       change: -12,
       icon: TrendingUp,
@@ -144,8 +144,8 @@ const QuickStats: React.FC = () => {
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {metrics.map((metric, index) => {
-        const Icon = metric.icon;
+      {metrics?.map((metric, index) => {
+        const Icon = metric?.icon;
         return (
           <Card key={index}>
             <CardContent className="p-6">
@@ -249,7 +249,7 @@ const FeaturedDeals: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="grid gap-3">
-          {deals.map(deal => (
+          {deals?.map(deal => (
             <div
               key={deal.id}
               className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
@@ -328,8 +328,8 @@ const RecentActivity: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map(activity => {
-            const Icon = activity.icon;
+          {activities?.map(activity => {
+            const Icon = activity?.icon;
             return (
               <div key={activity.id} className="flex items-start gap-3">
                 <div className={cn(
@@ -370,7 +370,7 @@ export const WalmartDashboard: React.FC<WalmartDashboardProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<WalmartProduct | null>(null);
   
   const { cart, lists, preferences } = useGroceryStore();
-  const cartItemCount = cart.items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+  const cartItemCount = cart?.items?.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
   
   const quickActions: QuickAction[] = [
     {
@@ -522,8 +522,8 @@ export const WalmartDashboard: React.FC<WalmartDashboardProps> = ({
             
             {/* Quick Actions */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {quickActions.map((action, index) => {
-                const Icon = action.icon;
+              {quickActions?.map((action, index) => {
+                const Icon = action?.icon;
                 return (
                   <button
                     key={index}

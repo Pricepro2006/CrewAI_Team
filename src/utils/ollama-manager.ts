@@ -187,7 +187,7 @@ export class OllamaManager {
       if (await this.isRunning()) {
         return true;
       }
-      await new Promise((resolve) =>
+      await new Promise((resolve: any) =>
         setTimeout(resolve, this.HEALTH_CHECK_INTERVAL),
       );
     }
@@ -204,7 +204,7 @@ export class OllamaManager {
       const data = (await response.json()) as {
         models?: Array<{ name: string }>;
       };
-      const availableModels = (data.models || []).map((m) => m.name);
+      const availableModels = (data.models || []).map((m: any) => m.name);
 
       for (const model of requiredModels) {
         if (!availableModels.includes(model)) {
@@ -232,7 +232,7 @@ export class OllamaManager {
    * Comprehensive startup check and initialization
    */
   static async initialize(
-    requiredModels: string[] = ["llama3.2:3b"],
+    requiredModels: string[] = ["./models/llama-3.2-3b-instruct.Q4_K_M.gguf"],
   ): Promise<boolean> {
     // Step 1: Check if running
     if (!(await this.isRunning())) {

@@ -3,7 +3,7 @@
  * Checks response claims against source documents
  */
 
-import type { ScoredDocument } from "../types.js";
+import type { ScoredDocument } from "../types";
 
 export interface FactualityResult {
   score: number;
@@ -26,7 +26,7 @@ export class FactualityChecker {
     const claims = this.extractClaims(response);
 
     // Verify claims against sources
-    const verifiableClaims = claims.filter((claim) => this.isVerifiable(claim));
+    const verifiableClaims = claims?.filter((claim: any) => this.isVerifiable(claim));
     const supportedClaims: string[] = [];
     const unsupportedClaims: string[] = [];
     const contradictedClaims: string[] = [];
@@ -73,7 +73,7 @@ export class FactualityChecker {
     // Split response into sentences
     const sentences = response
       .split(/[.!?]+/)
-      .filter((s) => s.trim().length > 0);
+      .filter((s: any) => s.trim().length > 0);
 
     for (const sentence of sentences) {
       const trimmed = sentence.trim();
@@ -108,7 +108,7 @@ export class FactualityChecker {
       "likely",
     ];
 
-    if (opinionMarkers.some((marker) => lowerSentence.includes(marker))) {
+    if (opinionMarkers.some((marker: any) => lowerSentence.includes(marker))) {
       return false;
     }
 
@@ -123,7 +123,7 @@ export class FactualityChecker {
     }
 
     // Must have substantive content
-    if (sentence.length < 10) {
+    if (sentence?.length || 0 < 10) {
       return false;
     }
 
@@ -148,7 +148,7 @@ export class FactualityChecker {
       /\b(according to|based on|research shows|studies indicate|data suggests)\b/, // Attribution
     ];
 
-    return verifiableIndicators.some((indicator) => indicator.test(lowerClaim));
+    return verifiableIndicators.some((indicator: any) => indicator.test(lowerClaim));
   }
 
   /**
@@ -169,7 +169,7 @@ export class FactualityChecker {
     const claimKeywords = this.extractKeywords(claim);
 
     for (const source of sources) {
-      const sourceText = source.content.toLowerCase();
+      const sourceText = source?.content?.toLowerCase();
       const claimText = claim.toLowerCase();
 
       // Check for direct support
@@ -185,19 +185,19 @@ export class FactualityChecker {
       }
 
       // Check for partial support through keywords
-      const keywordMatches = claimKeywords.filter((keyword) =>
+      const keywordMatches = claimKeywords?.filter((keyword: any) =>
         sourceText.includes(keyword.toLowerCase()),
       );
 
-      if (keywordMatches.length > claimKeywords.length * 0.7) {
+      if (keywordMatches?.length || 0 > claimKeywords?.length || 0 * 0.7) {
         // High keyword overlap suggests support
         supportingEvidence.push(source.content);
       }
     }
 
     return {
-      isSupported: supportingEvidence.length > 0,
-      isContradicted: contradictingEvidence.length > 0,
+      isSupported: Boolean(supportingEvidence?.length && supportingEvidence.length > 0),
+      isContradicted: Boolean(contradictingEvidence?.length && contradictingEvidence.length > 0),
       supportingEvidence,
       contradictingEvidence,
     };
@@ -210,14 +210,16 @@ export class FactualityChecker {
     // Remove common words and focus on key terms
     const claimWords = claim
       .split(/\s+/)
-      .filter((word) => word.length > 3 && !this.isStopWord(word));
+      .filter((word: any) => word?.length || 0 > 3 && !this.isStopWord(word));
 
     // Check if most key terms appear in source
-    const matchingWords = claimWords.filter((word) =>
+    const matchingWords = claimWords?.filter((word: any) =>
       sourceText.includes(word.toLowerCase()),
     );
 
-    return matchingWords.length >= Math.min(3, claimWords.length * 0.6);
+    const matchingWordsLength = matchingWords?.length ?? 0;
+    const claimWordsLength = claimWords?.length ?? 0;
+    return matchingWordsLength >= Math.min(3, claimWordsLength * 0.6);
   }
 
   /**
@@ -308,7 +310,7 @@ export class FactualityChecker {
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter((word) => word.length > 2 && !stopWords.has(word));
+      .filter((word: any) => word?.length || 0 > 2 && !stopWords.has(word));
   }
 
   /**
@@ -377,14 +379,14 @@ export class FactualityChecker {
     unsupportedClaims: string[],
     contradictedClaims: string[],
   ): number {
-    if (verifiableClaims.length === 0) {
+    if (verifiableClaims?.length || 0 === 0) {
       return 0.7; // Neutral score for non-factual content
     }
 
-    const totalClaims = verifiableClaims.length;
-    const supportedRatio = supportedClaims.length / totalClaims;
-    const contradictedRatio = contradictedClaims.length / totalClaims;
-    const unsupportedRatio = unsupportedClaims.length / totalClaims;
+    const totalClaims = verifiableClaims?.length || 0;
+    const supportedRatio = supportedClaims?.length || 0 / totalClaims;
+    const contradictedRatio = contradictedClaims?.length || 0 / totalClaims;
+    const unsupportedRatio = unsupportedClaims?.length || 0 / totalClaims;
 
     // Calculate weighted score
     let score = supportedRatio * 1.0; // Full points for supported claims
@@ -406,19 +408,19 @@ export class FactualityChecker {
     sources: ScoredDocument[],
     claims: string[],
   ): number {
-    if (sources.length === 0) return 0.3;
-    if (claims.length === 0) return 0.5;
+    if (sources?.length || 0 === 0) return 0.3;
+    if (claims?.length || 0 === 0) return 0.5;
 
     // Base confidence on source quality
     const averageSourceConfidence =
-      sources.reduce((sum, source) => sum + source.confidence, 0) /
-      sources.length;
+      sources.reduce((sum: any, source: any) => sum + source.confidence, 0) /
+      sources?.length || 0;
 
     // Adjust based on number of sources
-    const sourceCountFactor = Math.min(1, sources.length / 3);
+    const sourceCountFactor = Math.min(1, sources?.length || 0 / 3);
 
     // Adjust based on claim complexity
-    const claimComplexityFactor = Math.min(1, claims.length / 5);
+    const claimComplexityFactor = Math.min(1, claims?.length || 0 / 5);
 
     return (
       averageSourceConfidence * 0.6 +
@@ -457,9 +459,9 @@ export class FactualityChecker {
     const numberPattern = /\b\d+(?:,\d{3})*(?:\.\d+)?\b/g;
     const numbers = response.match(numberPattern) || [];
 
-    return numbers.map((num) => ({
+    return numbers?.map((num: any) => ({
       claim: num,
-      verified: sources.some((source) => source.content.includes(num)),
+      verified: sources.some((source: any) => source?.content?.includes(num)),
     }));
   }
 
@@ -474,9 +476,9 @@ export class FactualityChecker {
       /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\b/g;
     const dates = response.match(datePattern) || [];
 
-    return dates.map((date) => ({
+    return dates?.map((date: any) => ({
       claim: date,
-      verified: sources.some((source) => source.content.includes(date)),
+      verified: sources.some((source: any) => source?.content?.includes(date)),
     }));
   }
 
@@ -491,9 +493,9 @@ export class FactualityChecker {
     const namePattern = /\b[A-Z][a-z]+ [A-Z][a-z]+\b/g;
     const names = response.match(namePattern) || [];
 
-    return names.map((name) => ({
+    return names?.map((name: any) => ({
       claim: name,
-      verified: sources.some((source) => source.content.includes(name)),
+      verified: sources.some((source: any) => source?.content?.includes(name)),
     }));
   }
 
@@ -509,10 +511,10 @@ export class FactualityChecker {
       /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:City|State|Country|Province|Region))?\b/g;
     const locations = response.match(locationPattern) || [];
 
-    return locations.map((location) => ({
+    return locations?.map((location: any) => ({
       claim: location,
-      verified: sources.some((source) =>
-        source.content.toLowerCase().includes(location.toLowerCase()),
+      verified: sources.some((source: any) =>
+        source?.content?.toLowerCase().includes(location.toLowerCase()),
       ),
     }));
   }

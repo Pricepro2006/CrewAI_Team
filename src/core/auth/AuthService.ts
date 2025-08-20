@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import Database from "better-sqlite3";
+import crypto from "crypto";
 import { logger } from "../../utils/logger.js";
 import { TRPCError } from "@trpc/server";
 
@@ -31,18 +32,30 @@ export class AuthService {
   private jwtSecret: string;
   private tokenExpiry: string = "24h";
   private refreshTokenExpiry: string = "7d";
+  
+  // Rate limiting for authentication attempts
+  private loginAttempts: Map<string, { count: number; lastAttempt: number }> = new Map();
+  private readonly MAX_LOGIN_ATTEMPTS = 5;
+  private readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 
   constructor(databasePath: string = "./data/app.db") {
     this.db = new Database(databasePath);
-    this.jwtSecret =
-      process.env.JWT_SECRET || "dev-secret-key-change-in-production";
-
-    if (
-      this.jwtSecret === "dev-secret-key-change-in-production" &&
-      process.env.NODE_ENV === "production"
-    ) {
-      logger.error("Using default JWT secret in production!", "AUTH");
-      throw new Error("JWT_SECRET must be set in production");
+    
+    // JWT_SECRET is required in all environments for security
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "YOUR_JWT_SECRET_HERE") {
+      logger.error("JWT_SECRET environment variable is not set or using placeholder!", "AUTH");
+      throw new Error("JWT_SECRET must be set in environment variables. Generate one using: openssl rand -base64 64");
+    }
+    
+    this.jwtSecret = process.env.JWT_SECRET;
+    
+    // Additional validation for production
+    if (process.env.NODE_ENV === "production") {
+      // Ensure JWT secret is strong enough
+      if (this.jwtSecret.length < 32) {
+        logger.error("JWT_SECRET is too weak for production!", "AUTH");
+        throw new Error("JWT_SECRET must be at least 32 characters in production");
+      }
     }
 
     this.initializeUserTable();
@@ -146,6 +159,27 @@ export class AuthService {
    */
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
+      // Check rate limiting
+      const attempts = this.loginAttempts.get(email);
+      if (attempts) {
+        const timeSinceLastAttempt = Date.now() - attempts.lastAttempt;
+        
+        // Check if account is locked out
+        if (attempts.count >= this.MAX_LOGIN_ATTEMPTS && 
+            timeSinceLastAttempt < this.LOCKOUT_DURATION) {
+          const remainingLockout = Math.ceil((this.LOCKOUT_DURATION - timeSinceLastAttempt) / 60000);
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Account locked due to too many failed attempts. Try again in ${remainingLockout} minutes.`,
+          });
+        }
+        
+        // Reset attempts if lockout period has expired
+        if (timeSinceLastAttempt >= this.LOCKOUT_DURATION) {
+          this.loginAttempts.delete(email);
+        }
+      }
+      
       // Get user
       const user = this.db
         .prepare("SELECT * FROM users WHERE email = ? AND is_active = 1")
@@ -161,11 +195,21 @@ export class AuthService {
       // Verify password
       const isValid = await bcrypt.compare(password, user.password_hash);
       if (!isValid) {
+        // Record failed attempt
+        const currentAttempts = this.loginAttempts.get(email) || { count: 0, lastAttempt: 0 };
+        this.loginAttempts.set(email, {
+          count: currentAttempts.count + 1,
+          lastAttempt: Date.now()
+        });
+        
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "Invalid credentials",
         });
       }
+      
+      // Clear login attempts on successful login
+      this.loginAttempts.delete(email);
 
       // Update last login
       this.db
@@ -366,17 +410,19 @@ export class AuthService {
   }
 
   /**
-   * Generate session ID
+   * Generate cryptographically secure session ID
    */
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Use crypto.randomBytes for cryptographically secure random values
+    const randomBytes = crypto.randomBytes(16).toString('hex');
+    return `session_${Date.now()}_${randomBytes}`;
   }
 
   /**
    * Close database connection
    */
   close(): void {
-    this.db.close();
+    this.db?.close();
   }
 }
 

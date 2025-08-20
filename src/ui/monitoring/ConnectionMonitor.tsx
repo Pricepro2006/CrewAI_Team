@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { ConnectionInfo } from '../../services/MonitoringService';
+import type { ConnectionInfo } from '../../services/MonitoringService.js';
 
 interface ConnectionMonitorProps {
   connections: ConnectionInfo[];
@@ -26,7 +26,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({ connection
 
   // Calculate connection statistics
   const stats: ConnectionStats = useMemo(() => {
-    return connections.reduce((acc, conn) => {
+    return connections.reduce((acc: any, conn: any) => {
       acc.total++;
       
       if (conn.status === 'connected') acc.active++;
@@ -51,7 +51,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({ connection
 
   // Filter connections
   const filteredConnections = useMemo(() => {
-    return connections.filter(conn => {
+    return connections?.filter(conn => {
       if (filter !== 'all' && conn.type !== filter) return false;
       if (statusFilter !== 'all' && conn.status !== statusFilter) return false;
       return true;
@@ -120,7 +120,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({ connection
         <div className="connection-controls">
           <div className="filter-group">
             <label>Type:</label>
-            <select value={filter} onChange={(e) => setFilter(e.target.value as any)}>
+            <select value={filter} onChange={(e: any) => setFilter(e?.target?.value as any)}>
               <option value="all">All Types ({stats.total})</option>
               <option value="websocket">WebSocket ({stats.websocket})</option>
               <option value="http">HTTP ({stats.http})</option>
@@ -130,7 +130,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({ connection
           
           <div className="filter-group">
             <label>Status:</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}>
+            <select value={statusFilter} onChange={(e: any) => setStatusFilter(e?.target?.value as any)}>
               <option value="all">All Status</option>
               <option value="connected">Connected ({stats.active})</option>
               <option value="disconnected">Disconnected ({stats.disconnected})</option>
@@ -195,12 +195,12 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({ connection
 
       {/* Connection List */}
       <div className="connection-list">
-        {filteredConnections.length === 0 ? (
+        {filteredConnections?.length || 0 === 0 ? (
           <div className="no-connections">
             <p>No connections match the current filters</p>
           </div>
         ) : (
-          filteredConnections.map(connection => (
+          filteredConnections?.map(connection => (
             <div 
               key={connection.id} 
               className={`connection-item ${connection.status}`}
@@ -219,7 +219,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({ connection
                     <span className="connection-status">
                       {getStatusIcon(connection.status)}
                       <span style={{ color: getStatusColor(connection.status) }}>
-                        {connection.status.toUpperCase()}
+                        {connection?.status?.toUpperCase()}
                       </span>
                     </span>
                     
@@ -252,7 +252,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({ connection
                 {connection.status === 'error' && connection.metadata?.error && (
                   <div className="connection-error">
                     <div className="error-header">Error:</div>
-                    <div className="error-message">{connection.metadata.error}</div>
+                    <div className="error-message">{connection?.metadata?.error}</div>
                   </div>
                 )}
               </div>

@@ -4,9 +4,9 @@
  * Ensures PCI DSS and GDPR compliance for data at rest
  */
 
-import crypto from "crypto";
+import * as crypto from "crypto";
 import { logger } from "../../utils/logger.js";
-import type Database from "better-sqlite3";
+import type * as Database from "better-sqlite3";
 
 interface EncryptionConfig {
   algorithm: "aes-256-gcm";
@@ -42,7 +42,7 @@ export class DataEncryptionService {
     iterations: 100000,
   };
 
-  private masterKey: Buffer;
+  private masterKey!: Buffer; // Initialized in initializeMasterKey()
   private keyCache: Map<string, { key: Buffer; expiry: number }> = new Map();
   private readonly CACHE_TTL = 3600000; // 1 hour
 
@@ -69,7 +69,7 @@ export class DataEncryptionService {
       );
     }
 
-    if (masterKeyEnv.length < 64) {
+    if ((masterKeyEnv?.length || 0) < 64) {
       throw new Error(
         "ENCRYPTION_MASTER_KEY must be at least 64 characters for security"
       );
@@ -80,7 +80,7 @@ export class DataEncryptionService {
     this.masterKey = crypto.scryptSync(
       masterKeyEnv,
       salt,
-      this.config.keyLength
+      this?.config?.keyLength
     );
 
     logger.info("Data encryption service initialized", "ENCRYPTION");
@@ -93,7 +93,7 @@ export class DataEncryptionService {
     const cacheKey = `${fieldName}:${salt.toString("hex")}`;
     
     // Check cache
-    const cached = this.keyCache.get(cacheKey);
+    const cached = this?.keyCache?.get(cacheKey);
     if (cached && cached.expiry > Date.now()) {
       return cached.key;
     }
@@ -102,11 +102,11 @@ export class DataEncryptionService {
     const key = crypto.scryptSync(
       this.masterKey,
       Buffer.concat([Buffer.from(fieldName), salt]),
-      this.config.keyLength
+      this?.config?.keyLength
     );
 
     // Cache the derived key
-    this.keyCache.set(cacheKey, {
+    this?.keyCache?.set(cacheKey, {
       key,
       expiry: Date.now() + this.CACHE_TTL,
     });
@@ -124,9 +124,9 @@ export class DataEncryptionService {
    */
   private cleanKeyCache(): void {
     const now = Date.now();
-    for (const [key, value] of this.keyCache.entries()) {
+    const entries = Array.from(this?.keyCache?.entries() || []); for (const [key, value] of entries) {
       if (value.expiry < now) {
-        this.keyCache.delete(key);
+        this?.keyCache?.delete(key);
       }
     }
   }
@@ -137,14 +137,14 @@ export class DataEncryptionService {
   encrypt(plaintext: string, fieldName: string = "default"): string {
     try {
       // Generate random salt and IV
-      const salt = crypto.randomBytes(this.config.saltLength);
-      const iv = crypto.randomBytes(this.config.ivLength);
+      const salt = crypto.randomBytes(this?.config?.saltLength);
+      const iv = crypto.randomBytes(this?.config?.ivLength);
 
       // Derive field-specific key
       const key = this.deriveFieldKey(fieldName, salt);
 
       // Create cipher
-      const cipher = crypto.createCipheriv(this.config.algorithm, key, iv);
+      const cipher = crypto.createCipheriv(this?.config?.algorithm, key, iv);
 
       // Encrypt data
       let ciphertext = cipher.update(plaintext, "utf8", "hex");
@@ -159,7 +159,7 @@ export class DataEncryptionService {
         iv: iv.toString("hex"),
         authTag: authTag.toString("hex"),
         salt: salt.toString("hex"),
-        algorithm: this.config.algorithm,
+        algorithm: this?.config?.algorithm,
         version: 1,
       };
 
@@ -189,7 +189,7 @@ export class DataEncryptionService {
         throw new Error("Unsupported encryption version");
       }
 
-      if (encryptedData.algorithm !== this.config.algorithm) {
+      if (encryptedData.algorithm !== this?.config?.algorithm) {
         throw new Error("Unsupported encryption algorithm");
       }
 
@@ -202,7 +202,7 @@ export class DataEncryptionService {
       const key = this.deriveFieldKey(fieldName, salt);
 
       // Create decipher
-      const decipher = crypto.createDecipheriv(this.config.algorithm, key, iv);
+      const decipher = crypto.createDecipheriv(this?.config?.algorithm, key, iv);
       (decipher as any).setAuthTag(authTag);
 
       // Decrypt data
@@ -235,10 +235,10 @@ export class DataEncryptionService {
   verifyHash(data: string, hash: string): boolean {
     const [hashValue, salt] = hash.split(":");
     const computedHash = crypto
-      .pbkdf2Sync(data, salt, 10000, 32, "sha256")
+      .pbkdf2Sync(data, salt || "", 10000, 32, "sha256")
       .toString("hex");
     return crypto.timingSafeEqual(
-      Buffer.from(hashValue),
+      Buffer.from(hashValue || ""),
       Buffer.from(computedHash)
     );
   }
@@ -260,11 +260,11 @@ export class DataEncryptionService {
    * Mask sensitive data for display
    */
   mask(data: string, visibleChars: number = 4): string {
-    if (data.length <= visibleChars) {
-      return "*".repeat(data.length);
+    if (data?.length || 0 <= visibleChars) {
+      return "*".repeat(data?.length || 0);
     }
 
-    const masked = "*".repeat(data.length - visibleChars);
+    const masked = "*".repeat(data?.length || 0 - visibleChars);
     return masked + data.slice(-visibleChars);
   }
 
@@ -366,7 +366,7 @@ export class DataEncryptionService {
   /**
    * Apply encryption to database operations
    */
-  static applyEncryption(db: Database): void {
+  static applyEncryption(db: Database.Database): void {
     const encryption = DataEncryptionService.getInstance();
 
     // Hook into database operations to automatically encrypt/decrypt
@@ -414,7 +414,7 @@ export class DataEncryptionService {
 /**
  * Middleware to automatically encrypt/decrypt database fields
  */
-export function createEncryptionMiddleware(db: Database) {
+export function createEncryptionMiddleware(db: Database.Database) {
   const encryption = DataEncryptionService.getInstance();
 
   return {

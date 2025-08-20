@@ -75,7 +75,7 @@ class ConsulDiscoveryBackend implements DiscoveryBackend {
         ...registration.metadata
       },
       Check: {
-        HTTP: `${registration.protocol}://${registration.host}:${registration.port}${registration.endpoints.health}`,
+        HTTP: `${registration.protocol}://${registration.host}:${registration.port}${registration?.endpoints?.health}`,
         Interval: '10s',
         Timeout: '5s'
       }
@@ -116,11 +116,11 @@ class ConsulDiscoveryBackend implements DiscoveryBackend {
   }
 
   watch(serviceName: string, callback: (instances: ServiceInstance[]) => void): () => void {
-    if (!this.watchers.has(serviceName)) {
-      this.watchers.set(serviceName, new Set());
+    if (!this?.watchers?.has(serviceName)) {
+      this?.watchers?.set(serviceName, new Set());
     }
     
-    this.watchers.get(serviceName)!.add(callback);
+    this?.watchers?.get(serviceName)!.add(callback);
     
     // Mock watch setup
     logger.debug('Service watch established', 'SERVICE_DISCOVERY', {
@@ -129,7 +129,7 @@ class ConsulDiscoveryBackend implements DiscoveryBackend {
     
     // Return cleanup function
     return () => {
-      this.watchers.get(serviceName)?.delete(callback);
+      this?.watchers?.get(serviceName)?.delete(callback);
     };
   }
 }
@@ -142,7 +142,7 @@ class InMemoryDiscoveryBackend implements DiscoveryBackend {
   private watchers = new Map<string, Set<(instances: ServiceInstance[]) => void>>();
 
   async register(registration: ServiceRegistration): Promise<void> {
-    this.services.set(registration.id, registration);
+    this?.services?.set(registration.id, registration);
     
     // Notify watchers
     this.notifyWatchers(registration.name);
@@ -154,9 +154,9 @@ class InMemoryDiscoveryBackend implements DiscoveryBackend {
   }
 
   async deregister(serviceId: string): Promise<void> {
-    const service = this.services.get(serviceId);
+    const service = this?.services?.get(serviceId);
     if (service) {
-      this.services.delete(serviceId);
+      this?.services?.delete(serviceId);
       this.notifyWatchers(service.name);
       
       logger.info('Service deregistered from memory', 'SERVICE_DISCOVERY', {
@@ -167,8 +167,8 @@ class InMemoryDiscoveryBackend implements DiscoveryBackend {
   }
 
   async updateHeartbeat(serviceId: string): Promise<void> {
-    const service = this.services.get(serviceId);
-    if (service) {
+    const service = this.services?.get(serviceId);
+    if (service && service.metadata) {
       service.metadata.lastHeartbeat = Date.now();
       
       logger.debug('Heartbeat updated in memory', 'SERVICE_DISCOVERY', {
@@ -180,7 +180,8 @@ class InMemoryDiscoveryBackend implements DiscoveryBackend {
   async discover(serviceName: string): Promise<ServiceInstance[]> {
     const instances: ServiceInstance[] = [];
     
-    for (const service of this.services.values()) {
+    if (this.services) {
+      for (const service of Array.from(this.services.values())) {
       if (service.name === serviceName) {
         instances.push({
           id: service.id,
@@ -189,38 +190,39 @@ class InMemoryDiscoveryBackend implements DiscoveryBackend {
           host: service.host,
           port: service.port,
           protocol: service.protocol,
-          healthy: Date.now() - service.metadata.lastHeartbeat < 30000, // 30 seconds
-          lastSeen: service.metadata.lastHeartbeat,
+          healthy: Date.now() - service?.metadata?.lastHeartbeat < 30000, // 30 seconds
+          lastSeen: service?.metadata?.lastHeartbeat,
           metadata: service.metadata
         });
+      }
       }
     }
     
     logger.debug('Services discovered from memory', 'SERVICE_DISCOVERY', {
       serviceName,
-      instanceCount: instances.length
+      instanceCount: instances?.length || 0
     });
     
     return instances;
   }
 
   watch(serviceName: string, callback: (instances: ServiceInstance[]) => void): () => void {
-    if (!this.watchers.has(serviceName)) {
-      this.watchers.set(serviceName, new Set());
+    if (!this?.watchers?.has(serviceName)) {
+      this?.watchers?.set(serviceName, new Set());
     }
     
-    this.watchers.get(serviceName)!.add(callback);
+    this?.watchers?.get(serviceName)!.add(callback);
     
     // Initial callback
     this.discover(serviceName).then(callback);
     
     return () => {
-      this.watchers.get(serviceName)?.delete(callback);
+      this?.watchers?.get(serviceName)?.delete(callback);
     };
   }
 
   private notifyWatchers(serviceName: string): void {
-    const callbacks = this.watchers.get(serviceName);
+    const callbacks = this?.watchers?.get(serviceName);
     if (callbacks) {
       this.discover(serviceName).then(instances => {
         callbacks.forEach(callback => callback(instances));
@@ -244,16 +246,16 @@ export class ServiceDiscovery extends EventEmitter {
     this.config = config;
     
     // Initialize discovery backend
-    if (config.discovery.registryUrl) {
-      this.backend = new ConsulDiscoveryBackend(config.discovery.registryUrl);
+    if (config?.discovery?.registryUrl) {
+      this.backend = new ConsulDiscoveryBackend(config?.discovery?.registryUrl);
     } else {
       this.backend = new InMemoryDiscoveryBackend();
     }
     
     logger.info('Service Discovery initialized', 'SERVICE_DISCOVERY', {
-      enabled: config.discovery.enabled,
-      backend: config.discovery.registryUrl ? 'consul' : 'in-memory',
-      serviceName: config.discovery.serviceName
+      enabled: config?.discovery?.enabled,
+      backend: config?.discovery?.registryUrl ? 'consul' : 'in-memory',
+      serviceName: config?.discovery?.serviceName
     });
   }
 
@@ -261,7 +263,7 @@ export class ServiceDiscovery extends EventEmitter {
    * Start service discovery
    */
   async start(): Promise<void> {
-    if (!this.config.discovery.enabled) {
+    if (!this?.config?.discovery.enabled) {
       logger.info('Service discovery disabled', 'SERVICE_DISCOVERY');
       return;
     }
@@ -271,7 +273,7 @@ export class ServiceDiscovery extends EventEmitter {
       this.serviceRegistration = this.createServiceRegistration();
       
       // Register service
-      await this.backend.register(this.serviceRegistration);
+      await this?.backend?.register(this.serviceRegistration);
       
       // Start heartbeat
       this.startHeartbeat();
@@ -279,8 +281,8 @@ export class ServiceDiscovery extends EventEmitter {
       this.emit('registered', this.serviceRegistration);
       
       logger.info('Service discovery started', 'SERVICE_DISCOVERY', {
-        serviceId: this.serviceRegistration.id,
-        serviceName: this.serviceRegistration.name
+        serviceId: this?.serviceRegistration?.id,
+        serviceName: this?.serviceRegistration?.name
       });
       
     } catch (error) {
@@ -293,7 +295,7 @@ export class ServiceDiscovery extends EventEmitter {
    * Stop service discovery
    */
   async stop(): Promise<void> {
-    if (!this.config.discovery.enabled || !this.serviceRegistration) {
+    if (!this?.config?.discovery.enabled || !this.serviceRegistration) {
       return;
     }
 
@@ -305,12 +307,12 @@ export class ServiceDiscovery extends EventEmitter {
       this.cleanupWatches();
       
       // Deregister service
-      await this.backend.deregister(this.serviceRegistration.id);
+      await this?.backend?.deregister(this?.serviceRegistration?.id);
       
       this.emit('deregistered', this.serviceRegistration);
       
       logger.info('Service discovery stopped', 'SERVICE_DISCOVERY', {
-        serviceId: this.serviceRegistration.id
+        serviceId: this?.serviceRegistration?.id
       });
       
     } catch (error) {
@@ -324,11 +326,11 @@ export class ServiceDiscovery extends EventEmitter {
    */
   async discoverServices(serviceName: string): Promise<ServiceInstance[]> {
     try {
-      const instances = await this.backend.discover(serviceName);
+      const instances = await this?.backend?.discover(serviceName);
       
       logger.debug('Services discovered', 'SERVICE_DISCOVERY', {
         serviceName,
-        instanceCount: instances.length
+        instanceCount: instances?.length || 0
       });
       
       return instances;
@@ -348,8 +350,8 @@ export class ServiceDiscovery extends EventEmitter {
     serviceName: string,
     callback: (instances: ServiceInstance[]) => void
   ): () => void {
-    const cleanup = this.backend.watch(serviceName, callback);
-    this.watchCleanupFunctions.set(serviceName, cleanup);
+    const cleanup = this?.backend?.watch(serviceName, callback);
+    this?.watchCleanupFunctions?.set(serviceName, cleanup);
     
     logger.debug('Service watch started', 'SERVICE_DISCOVERY', {
       serviceName
@@ -373,13 +375,13 @@ export class ServiceDiscovery extends EventEmitter {
       return;
     }
 
-    Object.assign(this.serviceRegistration.metadata, metadata);
+    Object.assign(this?.serviceRegistration?.metadata, metadata);
     
     // Re-register with updated metadata
-    await this.backend.register(this.serviceRegistration);
+    await this?.backend?.register(this.serviceRegistration);
     
     logger.info('Service metadata updated', 'SERVICE_DISCOVERY', {
-      serviceId: this.serviceRegistration.id,
+      serviceId: this?.serviceRegistration?.id,
       metadata
     });
   }
@@ -388,16 +390,16 @@ export class ServiceDiscovery extends EventEmitter {
    * Create service registration object
    */
   private createServiceRegistration(): ServiceRegistration {
-    const serviceId = `${this.config.discovery.serviceName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const serviceId = `${this?.config?.discovery.serviceName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const now = Date.now();
     
     return {
       id: serviceId,
-      name: this.config.discovery.serviceName,
-      version: this.config.discovery.serviceVersion,
-      host: this.config.host,
-      port: this.config.port,
-      grpcPort: this.config.grpcPort,
+      name: this?.config?.discovery.serviceName,
+      version: this?.config?.discovery.serviceVersion,
+      host: this?.config?.host,
+      port: this?.config?.port,
+      grpcPort: this?.config?.grpcPort,
       protocol: 'http',
       endpoints: {
         health: '/health',
@@ -412,7 +414,7 @@ export class ServiceDiscovery extends EventEmitter {
           'entity-extraction',
           'intent-detection'
         ],
-        environment: this.config.environment,
+        environment: this?.config?.environment,
         startedAt: now,
         lastHeartbeat: now
       },
@@ -420,7 +422,7 @@ export class ServiceDiscovery extends EventEmitter {
         'nlp',
         'microservice',
         'grocery',
-        this.config.environment
+        this?.config?.environment
       ]
     };
   }
@@ -434,11 +436,15 @@ export class ServiceDiscovery extends EventEmitter {
     this.heartbeatInterval = setInterval(async () => {
       try {
         if (this.serviceRegistration) {
-          this.serviceRegistration.metadata.lastHeartbeat = Date.now();
-          await this.backend.updateHeartbeat(this.serviceRegistration.id);
+          if (this.serviceRegistration && this.serviceRegistration.metadata) {
+
+            this.serviceRegistration.metadata.lastHeartbeat = Date.now();
+
+          }
+          await this?.backend?.updateHeartbeat(this?.serviceRegistration?.id);
           
           this.emit('heartbeat', {
-            serviceId: this.serviceRegistration.id,
+            serviceId: this?.serviceRegistration?.id,
             timestamp: Date.now()
           });
         }
@@ -446,10 +452,10 @@ export class ServiceDiscovery extends EventEmitter {
         logger.error('Heartbeat failed', 'SERVICE_DISCOVERY', { error });
         this.emit('heartbeatFailed', error);
       }
-    }, this.config.discovery.heartbeatInterval);
+    }, this?.config?.discovery.heartbeatInterval);
     
     logger.debug('Heartbeat started', 'SERVICE_DISCOVERY', {
-      interval: this.config.discovery.heartbeatInterval
+      interval: this?.config?.discovery.heartbeatInterval
     });
   }
 
@@ -469,14 +475,14 @@ export class ServiceDiscovery extends EventEmitter {
    * Clean up all watches
    */
   private cleanupWatches(): void {
-    for (const [serviceName, cleanup] of this.watchCleanupFunctions) {
+    for (const [serviceName, cleanup] of Array.from(this.watchCleanupFunctions)) {
       cleanup();
       logger.debug('Service watch cleaned up', 'SERVICE_DISCOVERY', {
         serviceName
       });
     }
     
-    this.watchCleanupFunctions.clear();
+    this?.watchCleanupFunctions?.clear();
   }
 
   /**

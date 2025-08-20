@@ -3,7 +3,7 @@
  * Initializes comprehensive health monitoring at server startup
  */
 
-import { initializeHealthCheckService, getHealthCheckService } from "./HealthCheckService.js";
+import { healthCheckService } from "../../monitoring/HealthCheckService.js";
 import { logger } from "../../utils/logger.js";
 
 let isInitialized = false;
@@ -18,37 +18,53 @@ export async function initializeHealthCheck(): Promise<void> {
   }
 
   try {
-    // Initialize with custom configuration
-    const service = initializeHealthCheckService({
-      intervalMs: 30000,    // Check every 30 seconds
-      timeoutMs: 5000,      // 5 second timeout for each check
-      retries: 3,           // Retry failed checks 3 times
-      circuitBreakerThreshold: 5, // Open circuit after 5 failures
-    });
+    // Get the health check service instance
+    const service = healthCheckService;
+    
+    // Start health monitoring with custom configuration
+    // Note: The service is already configured, so we just start monitoring
+    service.startHealthMonitoring();
 
     // Set up event listeners for critical health events
-    service.on("health:critical", (health) => {
+    interface HealthData {
+      status: string;
+      services: Array<{
+        name: string;
+        status: string;
+      }>;
+    }
+    
+    service.on("health:critical", (health: HealthData) => {
       logger.error("CRITICAL: System health is unhealthy", "HEALTH", {
         status: health.status,
         failedServices: health.services
-          .filter(s => s.status === "unhealthy")
-          .map(s => s.name),
+          .filter((s: any) => s.status === "unhealthy")
+          .map((s: any) => s.name),
       });
       
       // In production, this would trigger alerts
       // sendAlert("System Critical", health);
     });
 
-    service.on("health:warning", (health) => {
+    service.on("health:warning", (health: HealthData) => {
       logger.warn("WARNING: System health is degraded", "HEALTH", {
         status: health.status,
         degradedServices: health.services
-          .filter(s => s.status === "degraded")
-          .map(s => s.name),
+          .filter((s: any) => s.status === "degraded")
+          .map((s: any) => s.name),
       });
     });
 
-    service.on("circuit:open", ({ service: serviceName, breaker }) => {
+    interface CircuitBreakerEvent {
+      service: string;
+      breaker: {
+        failures: number;
+        lastFailure: Date;
+        nextRetry: Date;
+      };
+    }
+    
+    service.on("circuit:open", ({ service: serviceName, breaker }: CircuitBreakerEvent) => {
       logger.error(`Circuit breaker opened for service: ${serviceName}`, "HEALTH", {
         failures: breaker.failures,
         lastFailure: breaker.lastFailure,
@@ -71,10 +87,8 @@ export async function initializeHealthCheck(): Promise<void> {
  * Shutdown the Health Check Service
  */
 export async function shutdownHealthCheck(): Promise<void> {
-  const service = getHealthCheckService();
-  
-  if (service) {
-    service.shutdown();
+  if (healthCheckService) {
+    healthCheckService.stopAllHealthChecks();
     isInitialized = false;
     logger.info("Health Check Service shutdown complete", "HEALTH");
   }

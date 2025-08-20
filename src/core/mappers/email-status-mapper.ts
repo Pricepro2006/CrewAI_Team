@@ -3,7 +3,7 @@
  * Provides type-safe mapping between database and application status values
  */
 
-import {
+import type {
   DatabaseEmailStatus,
   DatabaseWorkflowState,
   ApplicationEmailStatus,

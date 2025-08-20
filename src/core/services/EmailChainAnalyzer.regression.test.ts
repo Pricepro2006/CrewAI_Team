@@ -18,14 +18,14 @@
  * discovered in the production dataset analysis.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmailChainAnalyzer } from './EmailChainAnalyzer';
 
 // Mock database connection
-vi.mock("../../database/ConnectionPool.js", () => ({
+vi.mock('../../database/ConnectionPool', () => ({
   getDatabaseConnection: vi.fn(),
-  executeQuery: vi.fn((callback) => callback(mockDb)),
-  executeTransaction: vi.fn((callback) => callback(mockDb)),
+  executeQuery: vi.fn((callback: any) => callback(mockDb)),
+  executeTransaction: vi.fn((callback: any) => callback(mockDb)),
 }));
 
 let mockDb: any;
@@ -43,12 +43,12 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
         return {
           run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
           get: vi.fn().mockImplementation((id: string) => {
-            return mockDbData.find((email) => email.id === id) || null;
+            return mockDbData.find((email: any) => email.id === id) || null;
           }),
           all: vi.fn().mockImplementation((param?: string) => {
             if (typeof param === "string") {
-              return mockDbData.filter(
-                (email) =>
+              return mockDbData?.filter(
+                (email: any) =>
                   email.thread_id === param || email.conversation_id === param,
               );
             }
@@ -76,7 +76,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
         const scenarioType = i % 10; // 10 different scenario types
         const chain = generateVariedEmailScenario(scenarioType, i);
 
-        if (chain.length > 0) {
+        if (chain?.length || 0 > 0) {
           mockDbData = chain;
           const analysis = await analyzer.analyzeChain(chain[0].id);
           scores.push(analysis.completeness_score);
@@ -89,21 +89,21 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
       }
 
       // CRITICAL VALIDATION: Anti-Binary Pathology Checks
-      expect(scores.length).toBe(1000);
+      expect(scores?.length || 0).toBe(1000);
 
       // 1. Should not have binary distribution (only 0 and 100)
       const uniqueScores = new Set(scores);
       expect(uniqueScores.size).toBeGreaterThan(10); // Should have many different scores
 
       // 2. Check for intermediate scores (1-99%)
-      const intermediateScores = scores.filter(
-        (score) => score > 0 && score < 100,
+      const intermediateScores = scores?.filter(
+        (score: any) => score > 0 && score < 100,
       );
-      expect(intermediateScores.length).toBeGreaterThan(scores.length * 0.7); // At least 70% should be intermediate
+      expect(intermediateScores?.length || 0).toBeGreaterThan(scores?.length || 0 * 0.7); // At least 70% should be intermediate
 
       // 3. No score should dominate (prevent 50/50 split)
       const maxOccurrence = Math.max(...Object.values(scoreDistribution));
-      const dominanceRatio = maxOccurrence / scores.length;
+      const dominanceRatio = maxOccurrence / scores?.length || 0;
       expect(dominanceRatio).toBeLessThan(0.1); // No single score should be >10% of dataset
 
       // 4. Should have reasonable spread
@@ -113,7 +113,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
 
       // 5. Average should not be at extremes
       const average =
-        scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        scores.reduce((sum: any, score: any) => sum + score, 0) / scores?.length || 0;
       expect(average).toBeGreaterThan(20);
       expect(average).toBeLessThan(80);
 
@@ -121,7 +121,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
         Unique Scores: ${uniqueScores.size}
         Range: ${minScore} - ${maxScore}
         Average: ${average.toFixed(2)}
-        Intermediate Scores: ${intermediateScores.length}/${scores.length} (${((intermediateScores.length / scores.length) * 100).toFixed(1)}%)
+        Intermediate Scores: ${intermediateScores?.length || 0}/${scores?.length || 0} (${((intermediateScores?.length || 0 / scores?.length || 0) * 100).toFixed(1)}%)
         Max Single Score Occurrence: ${maxOccurrence} (${(dominanceRatio * 100).toFixed(1)}%)
       `);
     });
@@ -145,7 +145,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
       for (const scenario of testScenarios) {
         for (let variation = 0; variation < 10; variation++) {
           const chain = generateSpecificScenario(scenario, variation);
-          if (chain.length > 0) {
+          if (chain?.length || 0 > 0) {
             mockDbData = chain;
             const analysis = await analyzer.analyzeChain(chain[0].id);
             scores.push(analysis.completeness_score);
@@ -161,16 +161,16 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
       expect(uniqueScores.size).toBeGreaterThan(2);
 
       // Should not be clustered at only 0 and 100
-      const zeroScores = scores.filter((s) => s === 0).length;
-      const hundredScores = scores.filter((s) => s === 100).length;
-      const intermediateScores = scores.filter((s) => s > 0 && s < 100).length;
+      const zeroScores = scores?.filter((s: any) => s === 0).length;
+      const hundredScores = scores?.filter((s: any) => s === 100).length;
+      const intermediateScores = scores?.filter((s: any) => s > 0 && s < 100).length;
 
       // CRITICAL: Must have intermediate scores
       expect(intermediateScores).toBeGreaterThan(0);
       expect(intermediateScores).toBeGreaterThan(zeroScores + hundredScores);
 
       console.log(`Binary Pathology Check:
-        Total Scenarios: ${scores.length}
+        Total Scenarios: ${scores?.length || 0}
         0% Scores: ${zeroScores}
         100% Scores: ${hundredScores}  
         Intermediate (1-99%): ${intermediateScores}
@@ -280,7 +280,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
       }
 
       // Validate progression - longer chains should generally score higher
-      for (let i = 1; i < results.length; i++) {
+      for (let i = 1; i < results?.length || 0; i++) {
         const current = results[i];
         const previous = results[i - 1];
 
@@ -289,7 +289,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
       }
 
       console.log("Score Progression Validation:");
-      results.forEach((r) => {
+      results.forEach((r: any) => {
         console.log(`  ${r.scenario}: ${r.score}% (${r.chainLength} emails)`);
       });
     });
@@ -359,7 +359,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
       expect(analysis.is_complete).toBe(true); // >= 70% threshold
 
       // Should have quote number detection
-      expect(analysis.key_entities.quote_numbers).toContain("123456");
+      expect(analysis?.key_entities?.length).toContain("123456");
       expect(analysis.chain_type).toBe("quote_request");
 
       console.log(`Component Validation:
@@ -428,7 +428,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
         // Should handle gracefully without extreme scores
         expect(analysis.completeness_score).toBeGreaterThanOrEqual(0);
         expect(analysis.completeness_score).toBeLessThanOrEqual(100);
-        expect(analysis.chain_length).toBe(edgeCase.chain.length);
+        expect(analysis.chain_length).toBe(edgeCase?.chain?.length);
 
         // Should not be undefined or null
         expect(analysis.completeness_score).not.toBeUndefined();
@@ -522,7 +522,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
         }
 
         const chain = generateSpecificScenario(selectedType, i % 100);
-        if (chain.length > 0) {
+        if (chain?.length || 0 > 0) {
           mockDbData = chain;
           const analysis = await analyzer.analyzeChain(chain[0].id);
           scores.push(analysis.completeness_score);
@@ -534,10 +534,10 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
       }
 
       // CRITICAL VALIDATION: No binary pathology
-      const zeroScores = scores.filter((s) => s === 0).length;
-      const hundredScores = scores.filter((s) => s === 100).length;
+      const zeroScores = scores?.filter((s: any) => s === 0).length;
+      const hundredScores = scores?.filter((s: any) => s === 100).length;
       const totalExtremes = zeroScores + hundredScores;
-      const extremeRatio = totalExtremes / scores.length;
+      const extremeRatio = totalExtremes / scores?.length || 0;
 
       // Should not have 50/50 split at extremes
       expect(extremeRatio).toBeLessThan(0.3); // Less than 30% at extremes
@@ -548,7 +548,7 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
 
       // No single bucket should dominate
       const maxBucketCount = Math.max(...Object.values(scoreDistribution));
-      const dominanceRatio = maxBucketCount / scores.length;
+      const dominanceRatio = maxBucketCount / scores?.length || 0;
       expect(dominanceRatio).toBeLessThan(0.4); // No bucket >40%
 
       console.log(`Production Dataset Simulation (1000 samples):
@@ -557,13 +557,13 @@ describe("CRITICAL REGRESSION: Binary Scoring Pathology Fix", () => {
           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
           .map(
             ([bucket, count]) =>
-              `  ${bucket}%: ${count} (${((count / scores.length) * 100).toFixed(1)}%)`,
+              `  ${bucket}%: ${count} (${((count / scores?.length || 0) * 100).toFixed(1)}%)`,
           )
           .join("\n        ")}
         
         Binary Pathology Check:
-        - 0% scores: ${zeroScores} (${((zeroScores / scores.length) * 100).toFixed(1)}%)
-        - 100% scores: ${hundredScores} (${((hundredScores / scores.length) * 100).toFixed(1)}%)
+        - 0% scores: ${zeroScores} (${((zeroScores / scores?.length || 0) * 100).toFixed(1)}%)
+        - 100% scores: ${hundredScores} (${((hundredScores / scores?.length || 0) * 100).toFixed(1)}%)
         - Extreme ratio: ${(extremeRatio * 100).toFixed(1)}% (MUST be <30%)
         - Buckets with scores: ${bucketsWithScores}/10
         - Max bucket dominance: ${(dominanceRatio * 100).toFixed(1)}% (MUST be <40%)

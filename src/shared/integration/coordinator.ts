@@ -142,7 +142,7 @@ export class IntegrationCoordinator {
     // Additional custom handlers can be registered here
 
     // Handle uncaught exceptions
-    process.on("uncaughtException", (error) => {
+    process.on("uncaughtException", (error: any) => {
       console.error("Uncaught Exception:", error);
       const systemError = createSystemError(
         ERROR_CODES.INTERNAL_ERROR,
@@ -214,7 +214,7 @@ export class IntegrationCoordinator {
       console.warn(
         "⚠️  Some critical services are unhealthy:",
         Object.entries(health.services)
-          .filter(([_, service]) => (service as any)?.status === "unhealthy")
+          .filter(([_, service]) => (service as { status: string }).status === "unhealthy")
           .map(([name, _]) => name),
       );
     }
@@ -311,7 +311,7 @@ export class IntegrationCoordinator {
           id: "test-user-001",
           email: "test@crewai.local",
           username: "testuser",
-          password: "TestPassword123!",
+          password: process.env.TEST_USER_PASSWORD || "", // Set TEST_USER_PASSWORD in .env
           role: "user",
           permissions: ["read", "write"],
         },
@@ -319,7 +319,7 @@ export class IntegrationCoordinator {
           id: "admin-user-001",
           email: "admin@crewai.local",
           username: "admin",
-          password: "AdminPassword123!",
+          password: process.env.TEST_ADMIN_PASSWORD || "", // Set TEST_ADMIN_PASSWORD in .env
           role: "admin",
           permissions: ["read", "write", "admin", "delete"],
         },

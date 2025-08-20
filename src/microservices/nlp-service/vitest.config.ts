@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    testMatch: ['**/__tests__/**/*.test.ts'],
+    include: ['**/__tests__/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -26,9 +26,8 @@ export default defineConfig({
       }
     },
     setupFiles: ['./src/__tests__/setup.ts'],
-    timeout: 10000,
-    hookTimeout: 10000,
-    teardownTimeout: 5000
+    testTimeout: 10000,
+    hookTimeout: 10000
   },
   resolve: {
     alias: {

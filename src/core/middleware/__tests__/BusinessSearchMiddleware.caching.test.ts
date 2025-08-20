@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BusinessSearchMiddleware } from "../BusinessSearchMiddleware.js";
-import type { OllamaProvider } from "../../llm/OllamaProvider.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { BusinessSearchMiddleware } from '../BusinessSearchMiddleware';
+import type { OllamaProvider } from '../../llm/OllamaProvider';
 
 // Mock dependencies
 vi.mock("../../llm/OllamaProvider");
@@ -160,7 +160,7 @@ describe("BusinessSearchMiddleware - Caching Integration", () => {
       // Add artificial delay to mock provider
       (mockProvider.generate as any).mockImplementation(
         () =>
-          new Promise((resolve) => setTimeout(() => resolve("Response"), 100)),
+          new Promise((resolve: any) => setTimeout(() => resolve("Response"), 100)),
       );
 
       // First request - slow
@@ -266,8 +266,8 @@ describe("BusinessSearchMiddleware - Caching Integration", () => {
       const analysis = middleware.analyzeCachePerformance();
 
       expect(analysis.hotQueries).toBeDefined();
-      expect(analysis.hotQueries[0]?.query).toBe(hotQuery);
-      expect(analysis.hotQueries[0]?.hitCount).toBeGreaterThan(5);
+      expect(analysis.hotQueries[0]?.length).toBe(hotQuery);
+      expect(analysis.hotQueries[0]?.length).toBeGreaterThan(5);
       expect(analysis.memoryPressure).toBeGreaterThan(0);
     });
 

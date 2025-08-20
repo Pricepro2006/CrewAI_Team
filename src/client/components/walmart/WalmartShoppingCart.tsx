@@ -126,8 +126,8 @@ const CartItemRow: React.FC<CartItemRowProps> = ({
         <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
           {item.product?.thumbnailUrl ? (
             <img
-              src={item.product.thumbnailUrl}
-              alt={item.product.name}
+              src={item?.product?.thumbnailUrl}
+              alt={item?.product?.name}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -144,12 +144,12 @@ const CartItemRow: React.FC<CartItemRowProps> = ({
         <div className="flex-1 space-y-1">
           <h4 className="text-sm font-medium line-clamp-2">{item.product?.name}</h4>
           {item.product?.brand && (
-            <p className="text-xs text-muted-foreground">{item.product.brand}</p>
+            <p className="text-xs text-muted-foreground">{item?.product?.brand}</p>
           )}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{formatPrice(item.price)}</span>
             {item.product?.unit && (
-              <span className="text-xs text-muted-foreground">/ {item.product.unit}</span>
+              <span className="text-xs text-muted-foreground">/ {item?.product?.unit}</span>
             )}
             {deal && (
               <Badge variant="success" className="text-xs">
@@ -175,7 +175,7 @@ const CartItemRow: React.FC<CartItemRowProps> = ({
             <Input
               type="number"
               value={quantity}
-              onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+              onChange={(e: any) => handleQuantityChange(parseInt(e?.target?.value) || 1)}
               className="h-8 w-12 rounded-none border-x-0 text-center"
               min={1}
               max={99}
@@ -227,7 +227,7 @@ export const WalmartShoppingCart: React.FC<WalmartShoppingCartProps> = ({
   } = useCart();
 
   const { deals, totalSavings, analyzingDeals } = useWalmartDeals(
-    items.map(item => item.productId)
+    items?.map(item => item.productId)
   );
 
   const [showClearDialog, setShowClearDialog] = useState(false);
@@ -263,17 +263,17 @@ export const WalmartShoppingCart: React.FC<WalmartShoppingCartProps> = ({
           </div>
         </CardHeader>
         <CardContent className="pb-3">
-          {items.length === 0 ? (
+          {items?.length || 0 === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               Your cart is empty
             </p>
           ) : (
             <div className="space-y-2">
-              {items.map((item) => (
+              {items?.map((item: any) => (
                 <CartItemRow
                   key={item.productId}
                   item={item}
-                  onUpdateQuantity={(qty) => updateQuantity(item.productId, qty)}
+                  onUpdateQuantity={(qty: any) => updateQuantity(item.productId, qty)}
                   onRemove={() => removeItem(item.productId)}
                   deal={deals[item.productId]?.[0]}
                   compactMode
@@ -282,7 +282,7 @@ export const WalmartShoppingCart: React.FC<WalmartShoppingCartProps> = ({
             </div>
           )}
         </CardContent>
-        {items.length > 0 && (
+        {items?.length || 0 > 0 && (
           <CardFooter className="pt-3">
             <div className="w-full space-y-2">
               <div className="flex justify-between text-sm">
@@ -328,7 +328,7 @@ export const WalmartShoppingCart: React.FC<WalmartShoppingCartProps> = ({
         </CardHeader>
 
         <CardContent>
-          {items.length === 0 ? (
+          {items?.length || 0 === 0 ? (
             <div className="text-center py-12">
               <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <p className="text-lg font-medium mb-2">Your cart is empty</p>
@@ -341,11 +341,11 @@ export const WalmartShoppingCart: React.FC<WalmartShoppingCartProps> = ({
               className="space-y-0 divide-y overflow-y-auto"
               style={{ maxHeight }}
             >
-              {items.map((item) => (
+              {items?.map((item: any) => (
                 <CartItemRow
                   key={item.productId}
                   item={item}
-                  onUpdateQuantity={(qty) => updateQuantity(item.productId, qty)}
+                  onUpdateQuantity={(qty: any) => updateQuantity(item.productId, qty)}
                   onRemove={() => removeItem(item.productId)}
                   deal={deals[item.productId]?.[0]}
                 />
@@ -353,7 +353,7 @@ export const WalmartShoppingCart: React.FC<WalmartShoppingCartProps> = ({
             </div>
           )}
 
-          {items.length > 0 && (
+          {items?.length || 0 > 0 && (
             <>
               <Separator className="my-6" />
 
@@ -363,7 +363,7 @@ export const WalmartShoppingCart: React.FC<WalmartShoppingCartProps> = ({
                   <Input
                     placeholder="Enter promo code"
                     value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
+                    onChange={(e: any) => setPromoCode(e?.target?.value)}
                   />
                   <Button variant="secondary">Apply</Button>
                 </div>
@@ -417,7 +417,7 @@ export const WalmartShoppingCart: React.FC<WalmartShoppingCartProps> = ({
           )}
         </CardContent>
 
-        {items.length > 0 && (
+        {items?.length || 0 > 0 && (
           <CardFooter>
             <Button
               className="w-full"

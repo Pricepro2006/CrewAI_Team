@@ -5,7 +5,7 @@
 
 import { getDatabaseManager } from "../DatabaseManager.js";
 import { logger } from "../../utils/logger.js";
-import FixNegativeProcessingTimesMigration from "../migrations/006_fix_negative_processing_times";
+import { migration as FixNegativeProcessingTimesMigration } from "../migrations/006_fix_negative_processing_times.js";
 
 async function runMigrations() {
   logger.info("Starting manual database migration", "MIGRATION_RUNNER");
@@ -26,13 +26,15 @@ async function runMigrations() {
     
     // Run specific migrations
     logger.info("Running Fix Negative Processing Times migration...", "MIGRATION_RUNNER");
-    const migration = new FixNegativeProcessingTimesMigration(db);
+    // Run the migration directly using the exported function
+    const migration = FixNegativeProcessingTimesMigration;
     
     try {
-      await migration.up();
+      migration.up(db);
       logger.info("Migration completed successfully", "MIGRATION_RUNNER");
     } catch (error) {
-      if (error.message.includes("already exists") || error.message.includes("trigger") || error.message.includes("index")) {
+      const errorMessage = (error as Error)?.message || '';
+      if (errorMessage.includes("already exists") || errorMessage.includes("trigger") || errorMessage.includes("index")) {
         logger.info("Migration already applied or partially applied", "MIGRATION_RUNNER");
       } else {
         throw error;
@@ -61,9 +63,9 @@ async function runMigrations() {
     );
     
     // Check foreign key violations
-    const fkViolations = db.pragma("foreign_key_check");
-    if (fkViolations.length > 0) {
-      logger.warn(`Found ${fkViolations.length} foreign key violations:`, "MIGRATION_RUNNER");
+    const fkViolations = db.pragma("foreign_key_check") as any[];
+    if ((fkViolations?.length || 0) > 0) {
+      logger.warn(`Found ${fkViolations?.length || 0} foreign key violations:`, "MIGRATION_RUNNER");
       fkViolations.forEach((violation: any) => {
         logger.warn(`  Table: ${violation.table}, Row: ${violation.rowid}, Parent: ${violation.parent}`, "MIGRATION_RUNNER");
       });
@@ -74,10 +76,10 @@ async function runMigrations() {
     // Get database statistics
     const stats = await dbManager.getStatistics();
     logger.info(`Database Statistics:`, "MIGRATION_RUNNER");
-    logger.info(`  Tables: ${stats.sqlite.tables}`, "MIGRATION_RUNNER");
-    logger.info(`  Indexes: ${stats.sqlite.indexes}`, "MIGRATION_RUNNER");
-    logger.info(`  Emails: ${stats.sqlite.emails}`, "MIGRATION_RUNNER");
-    logger.info(`  Deals: ${stats.sqlite.deals}`, "MIGRATION_RUNNER");
+    logger.info(`  Tables: ${stats?.sqlite?.tables}`, "MIGRATION_RUNNER");
+    logger.info(`  Indexes: ${stats?.sqlite?.indexes}`, "MIGRATION_RUNNER");
+    logger.info(`  Emails: ${stats?.sqlite?.emails}`, "MIGRATION_RUNNER");
+    logger.info(`  Deals: ${stats?.sqlite?.deals}`, "MIGRATION_RUNNER");
     
     // Close database
     await dbManager.close();

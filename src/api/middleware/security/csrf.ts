@@ -13,7 +13,7 @@ const CSRF_TOKEN_LENGTH = 32; // 256 bits
 const CSRF_TOKEN_HEADER = "x-csrf-token";
 // FIX: Use __Host- prefix only in production with HTTPS, regular name in development
 // Dynamic function to support testing environment changes
-const getCSRFCookieName = () => process.env.NODE_ENV === 'production' 
+const getCSRFCookieName = (): string => process.env.NODE_ENV === 'production' 
   ? "__Host-csrf-token"  // Requires HTTPS, secure: true, path: /, no domain
   : "csrf-token";         // Works with HTTP in development
 const CSRF_SESSION_KEY = "csrfToken";
@@ -162,7 +162,7 @@ function cleanupOldTokens(): void {
   const now = Date.now();
   const expiredTokens: string[] = [];
 
-  for (const [token, metadata] of tokenMetadata.entries()) {
+  for (const [token, metadata] of Array.from(tokenMetadata.entries())) {
     if (now - metadata.lastUsedAt > CSRF_TOKEN_MAX_AGE) {
       expiredTokens.push(token);
     }
@@ -172,9 +172,9 @@ function cleanupOldTokens(): void {
     tokenMetadata.delete(token);
   }
 
-  if (expiredTokens.length > 0) {
+  if (expiredTokens?.length || 0 > 0) {
     logger.debug("Cleaned up expired CSRF tokens", "CSRF", {
-      count: expiredTokens.length,
+      count: expiredTokens?.length || 0,
     });
   }
 }
@@ -274,8 +274,8 @@ export function createEnhancedCSRFProtection(
         userId: ctx.user?.id,
         requestId: ctx.requestId,
         path,
-        ip: ctx.req.ip,
-        userAgent: ctx.req.headers["user-agent"],
+        ip: ctx?.req?.ip,
+        userAgent: ctx?.req?.headers["user-agent"],
       });
 
       throw new TRPCError({
@@ -374,7 +374,7 @@ export function getCSRFStats() {
 
   let totalRotations = 0;
 
-  for (const [token, metadata] of tokenMetadata.entries()) {
+  for (const [token, metadata] of Array.from(tokenMetadata.entries())) {
     if (now - metadata.lastUsedAt <= CSRF_TOKEN_MAX_AGE) {
       stats.activeTokens++;
     } else {
@@ -384,8 +384,8 @@ export function getCSRFStats() {
     totalRotations += metadata.rotationCount;
 
     if (metadata.userId) {
-      const count = stats.tokensByUser.get(metadata.userId) || 0;
-      stats.tokensByUser.set(metadata.userId, count + 1);
+      const count = stats?.tokensByUser?.get(metadata.userId) || 0;
+      stats?.tokensByUser?.set(metadata.userId, count + 1);
     }
   }
 

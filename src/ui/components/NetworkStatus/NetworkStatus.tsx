@@ -23,6 +23,8 @@ export function NetworkStatus({
   const [lastOnlineState, setLastOnlineState] = useState(isOnline);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+
     // Show banner when going offline
     if (!isOnline && lastOnlineState) {
       setShow(true);
@@ -37,12 +39,10 @@ export function NetworkStatus({
         setShow(true);
 
         if (autoHide) {
-          const timer = setTimeout(() => {
+          timer = setTimeout(() => {
             setShow(false);
             setIsReconnecting(false);
           }, autoHideDelay);
-
-          return () => clearTimeout(timer);
         }
       } else {
         // Hide immediately if not showing online status
@@ -52,6 +52,12 @@ export function NetworkStatus({
     }
 
     setLastOnlineState(isOnline);
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, [isOnline, lastOnlineState, showWhenOnline, autoHide, autoHideDelay]);
 
   if (!show) return null;

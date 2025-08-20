@@ -231,9 +231,9 @@ const MessageContent: React.FC<{ message: ChatMessage }> = ({ message }) => {
       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
       
       {/* Product cards */}
-      {message.products && message.products.length > 0 && (
+      {message.products && message?.products?.length > 0 && (
         <div className="grid gap-2">
-          {message.products.map(product => (
+          {message?.products?.map(product => (
             <div
               key={product.id}
               className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -269,10 +269,10 @@ const MessageContent: React.FC<{ message: ChatMessage }> = ({ message }) => {
       )}
       
       {/* Action buttons */}
-      {message.actions && message.actions.length > 0 && (
+      {message.actions && message?.actions?.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {message.actions.map((action, index) => {
-            const Icon = action.icon;
+          {message?.actions?.map((action, index) => {
+            const Icon = action?.icon;
             return (
               <Button
                 key={index}
@@ -289,9 +289,9 @@ const MessageContent: React.FC<{ message: ChatMessage }> = ({ message }) => {
       )}
       
       {/* Suggestions */}
-      {message.suggestions && message.suggestions.length > 0 && (
+      {message.suggestions && message?.suggestions?.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {message.suggestions.map((suggestion, index) => (
+          {message?.suggestions?.map((suggestion, index) => (
             <Badge
               key={index}
               variant="secondary"
@@ -380,21 +380,21 @@ export const WalmartChatInterface: React.FC<WalmartChatInterfaceProps> = ({
         actions: response.actions,
       };
       
-      setMessages(prev => prev.filter(m => !m.isLoading).concat(assistantMessage));
+      setMessages(prev => prev?.filter(m => !m.isLoading).concat(assistantMessage));
       setIsTyping(false);
     }, 1000 + Math.random() * 1000);
   };
   
   const handleFeedback = (messageId: string, feedback: 'positive' | 'negative') => {
     setMessages(prev =>
-      prev.map(msg =>
+      prev?.map(msg =>
         msg.id === messageId ? { ...msg, feedback } : msg
       )
     );
   };
   
   const handleCopyMessage = (content: string) => {
-    navigator.clipboard.writeText(content);
+    navigator?.clipboard?.writeText(content);
   };
   
   const handleVoiceInput = () => {
@@ -419,7 +419,7 @@ export const WalmartChatInterface: React.FC<WalmartChatInterfaceProps> = ({
                 <p>How can I help you shop today?</p>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {quickActions.slice(0, 2).map((action, index) => {
-                    const Icon = action.icon;
+                    const Icon = action?.icon;
                     return (
                       <Button
                         key={index}
@@ -443,8 +443,8 @@ export const WalmartChatInterface: React.FC<WalmartChatInterfaceProps> = ({
             <Input
               placeholder="Ask me anything..."
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
+              onChange={(e: any) => setInputValue(e?.target?.value)}
+              onKeyDown={(e: any) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage();
@@ -497,7 +497,7 @@ export const WalmartChatInterface: React.FC<WalmartChatInterfaceProps> = ({
       <CardContent className="flex-1 p-0 overflow-hidden">
         <ScrollArea className="h-full px-4" ref={scrollAreaRef}>
           <div className="py-4 space-y-4">
-            {messages.map((message, index) => {
+            {messages?.map((message, index) => {
               const isUser = message.type === 'user';
               
               return (
@@ -597,8 +597,8 @@ export const WalmartChatInterface: React.FC<WalmartChatInterfaceProps> = ({
           {/* Quick actions */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
             <Sparkles className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
+            {quickActions?.map((action, index) => {
+              const Icon = action?.icon;
               return (
                 <Button
                   key={index}
@@ -621,8 +621,8 @@ export const WalmartChatInterface: React.FC<WalmartChatInterfaceProps> = ({
                 ref={inputRef}
                 placeholder="Type your message..."
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
+                onChange={(e: any) => setInputValue(e?.target?.value)}
+                onKeyDown={(e: any) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     handleSendMessage();

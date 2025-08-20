@@ -1,6 +1,7 @@
-import jwt, { type SignOptions, type Secret } from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
+import type { SignOptions, Secret } from "jsonwebtoken";
 import type { StringValue } from "ms";
-import crypto from "crypto";
+import * as crypto from "crypto";
 import {
   type JWTPayload,
   type RefreshTokenPayload,
@@ -37,7 +38,7 @@ export class JWTManager {
   private readonly refreshTokenExpiry: StringValue;
 
   constructor() {
-    const jwtSecret = appConfig.security.jwtSecret;
+    const jwtSecret = appConfig?.security?.jwtSecret;
     if (!jwtSecret) {
       throw new Error("JWT_SECRET must be configured");
     }

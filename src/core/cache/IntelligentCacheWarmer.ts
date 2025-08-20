@@ -1,13 +1,14 @@
 import { EventEmitter } from 'events';
 import Redis from 'ioredis';
 import { z } from 'zod';
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { LLMResponseCache } from './LLMResponseCache.js';
 import { RedisCacheManager } from './RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';
 import Database from 'better-sqlite3';
-import path from 'path';
+import { join } from 'path';
+import { createHash } from 'crypto';
 
 /**
  * IntelligentCacheWarmer - Proactive cache warming for frequently accessed items
@@ -146,7 +147,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     
     // Create separate Redis connection for analytics (DB 2)
     this.analyticsRedis = redis.duplicate();
-    this.analyticsRedis.select(2);
+    this?.analyticsRedis?.select(2);
     
     this.cacheManager = cacheManager;
     this.llmCache = llmCache;
@@ -157,7 +158,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     // Load common grocery items
     this.initializeGroceryData();
     
-    if (this.config.enabled) {
+    if (this?.config?.enabled) {
       this.initialize();
     }
   }
@@ -176,11 +177,11 @@ export class IntelligentCacheWarmer extends EventEmitter {
     this.startAnalyticsCollection();
     
     this.emit('initialized', {
-      patternsLoaded: this.accessPatterns.size,
-      scheduledTasks: this.scheduledTasks.length
+      patternsLoaded: this?.accessPatterns?.size,
+      scheduledTasks: this?.scheduledTasks?.length
     });
     
-    console.log(`IntelligentCacheWarmer initialized with ${this.accessPatterns.size} patterns`);
+    console.log(`IntelligentCacheWarmer initialized with ${this?.accessPatterns?.size} patterns`);
   }
 
   // Analytics collection and tracking
@@ -194,12 +195,12 @@ export class IntelligentCacheWarmer extends EventEmitter {
       size?: number;
     }
   ): void {
-    if (!this.config.analytics.enabled) return;
+    if (!this?.config?.analytics.enabled) return;
     
     // Sample based on configured rate
-    if (Math.random() > this.config.analytics.sampleRate) return;
+    if (Math.random() > this?.config?.analytics.sampleRate) return;
     
-    const pattern = this.accessPatterns.get(itemId) || {
+    const pattern = this?.accessPatterns?.get(itemId) || {
       itemId,
       accessCount: 0,
       lastAccessed: Date.now(),
@@ -218,7 +219,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     // Track peak hours
     const currentHour = new Date().getHours();
     if (!pattern.peakHours) pattern.peakHours = [];
-    pattern.peakHours.push(currentHour);
+    pattern?.peakHours?.push(currentHour);
     
     // Add metadata
     if (metadata) {
@@ -229,7 +230,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     // Calculate importance score
     pattern.score = this.calculateImportanceScore(pattern);
     
-    this.accessPatterns.set(itemId, pattern);
+    this?.accessPatterns?.set(itemId, pattern);
     
     // Persist to Redis periodically
     this.scheduleAnalyticsPersistence();
@@ -239,7 +240,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     const recencyScore = this.calculateRecencyScore(pattern.lastAccessed);
     const frequencyScore = Math.min(pattern.accessCount / 100, 1); // Normalize to 0-1
     const performanceScore = 1 - Math.min(pattern.averageLoadTime / 5000, 1); // Faster = higher score
-    const hitRateScore = pattern.hitRate;
+    const hitRateScore = pattern?.hitRate;
     
     // Weighted combination
     return (
@@ -260,27 +261,27 @@ export class IntelligentCacheWarmer extends EventEmitter {
     const candidates: WarmingCandidate[] = [];
     
     // Strategy 1: Frequently accessed items
-    if (this.config.strategies.patternBasedWarming) {
+    if (this?.config?.strategies.patternBasedWarming) {
       const frequentItems = await this.getFrequentlyAccessedItems();
       candidates.push(...frequentItems);
     }
     
     // Strategy 2: Time-based predictions
-    if (this.config.strategies.timeBasedWarming) {
+    if (this?.config?.strategies.timeBasedWarming) {
       const timeBasedItems = await this.getTimeBasedPredictions();
       candidates.push(...timeBasedItems);
     }
     
     // Strategy 3: Related items
-    if (this.config.strategies.relatedItemsWarming) {
+    if (this?.config?.strategies.relatedItemsWarming) {
       const relatedItems = await this.getRelatedItems(
-        candidates.map(c => c.itemId)
+        candidates?.map(c => c.itemId)
       );
       candidates.push(...relatedItems);
     }
     
     // Strategy 4: Predictive warming based on patterns
-    if (this.config.strategies.predictiveWarming) {
+    if (this?.config?.strategies.predictiveWarming) {
       const predictedItems = await this.getPredictiveItems();
       candidates.push(...predictedItems);
     }
@@ -305,8 +306,8 @@ export class IntelligentCacheWarmer extends EventEmitter {
     const candidates: WarmingCandidate[] = [];
     
     for (const [itemId, pattern] of this.accessPatterns) {
-      if (pattern.accessCount >= this.config.analytics.minAccessCount &&
-          pattern.score >= this.config.warming.priorityThreshold) {
+      if (pattern.accessCount >= this?.config?.analytics.minAccessCount &&
+          pattern.score >= this?.config?.warming.priorityThreshold) {
         candidates.push({
           itemId,
           priority: pattern.score,
@@ -329,12 +330,12 @@ export class IntelligentCacheWarmer extends EventEmitter {
     
     // Find items frequently accessed at this hour
     for (const [itemId, pattern] of this.accessPatterns) {
-      if (!pattern.peakHours || pattern.peakHours.length === 0) continue;
+      if (!pattern.peakHours || pattern?.peakHours?.length === 0) continue;
       
       // Calculate hour frequency
-      const hourFrequency = pattern.peakHours.filter(h => 
+      const hourFrequency = pattern?.peakHours?.filter(h => 
         Math.abs(h - currentHour) <= 1 // Within 1 hour window
-      ).length / pattern.peakHours.length;
+      ).length / pattern?.peakHours?.length;
       
       if (hourFrequency > 0.3) { // 30% of accesses in this time window
         candidates.push({
@@ -358,14 +359,14 @@ export class IntelligentCacheWarmer extends EventEmitter {
     const processedRelated = new Set<string>();
     
     for (const itemId of primaryItems) {
-      const pattern = this.accessPatterns.get(itemId);
+      const pattern = this?.accessPatterns?.get(itemId);
       if (!pattern?.relatedItems) continue;
       
       for (const relatedId of pattern.relatedItems) {
         if (processedRelated.has(relatedId)) continue;
         processedRelated.add(relatedId);
         
-        const relatedPattern = this.accessPatterns.get(relatedId);
+        const relatedPattern = this?.accessPatterns?.get(relatedId);
         candidates.push({
           itemId: relatedId,
           priority: (relatedPattern?.score || 0.5) * 0.7, // 70% of original priority
@@ -390,7 +391,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     
     // Group patterns by category
     const categoryGroups = new Map<string, AccessPattern[]>();
-    for (const pattern of this.accessPatterns.values()) {
+    for (const pattern of this?.accessPatterns?.values()) {
       if (!pattern.category) continue;
       
       const group = categoryGroups.get(pattern.category) || [];
@@ -400,11 +401,11 @@ export class IntelligentCacheWarmer extends EventEmitter {
     
     // Find trending categories
     for (const [category, patterns] of categoryGroups) {
-      const recentAccesses = patterns.filter(p => 
+      const recentAccesses = patterns?.filter(p => 
         Date.now() - p.lastAccessed < 3600000 // Last hour
       );
       
-      if (recentAccesses.length > patterns.length * 0.3) { // 30% accessed recently
+      if (recentAccesses?.length || 0 > patterns?.length || 0 * 0.3) { // 30% accessed recently
         // Add top items from trending category
         const topItems = patterns
           .sort((a, b) => b.score - a.score)
@@ -418,7 +419,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
             estimatedSize: 1024 * 10,
             metadata: {
               category,
-              trendingScore: recentAccesses.length / patterns.length
+              trendingScore: recentAccesses?.length || 0 / patterns?.length || 0
             }
           });
         }
@@ -453,17 +454,17 @@ export class IntelligentCacheWarmer extends EventEmitter {
       const candidates = await this.identifyWarmingCandidates();
       
       this.emit('warming_started', {
-        candidatesCount: candidates.length,
+        candidatesCount: candidates?.length || 0,
         strategy,
-        memoryLimit: this.config.warming.memoryLimit
+        memoryLimit: this?.config?.warming.memoryLimit
       });
       
       // Process in batches
-      const batches = this.createBatches(candidates, this.config.warming.batchSize);
+      const batches = this.createBatches(candidates, this?.config?.warming.batchSize);
       
       for (const batch of batches) {
         const batchResults = await Promise.allSettled(
-          batch.map(candidate => this.warmItem(candidate))
+          batch?.map(candidate => this.warmItem(candidate))
         );
         
         for (const result of batchResults) {
@@ -478,7 +479,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
         }
         
         // Check memory limit
-        if (this.memoryUsage >= this.config.warming.memoryLimit) {
+        if (this.memoryUsage >= this?.config?.warming.memoryLimit) {
           errors.push('Memory limit reached');
           break;
         }
@@ -488,7 +489,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
       }
       
       const result: WarmingResult = {
-        totalCandidates: candidates.length,
+        totalCandidates: candidates?.length || 0,
         warmedItems,
         failedItems,
         memoryUsed: this.memoryUsage,
@@ -510,10 +511,10 @@ export class IntelligentCacheWarmer extends EventEmitter {
   private async warmItem(candidate: WarmingCandidate): Promise<boolean> {
     try {
       // Check if item is already cached
-      const exists = await this.cacheManager.exists(candidate.itemId);
+      const exists = await this?.cacheManager?.exists(candidate.itemId);
       if (exists) {
         // Extend TTL if needed
-        await this.cacheManager.expire(candidate.itemId, this.config.warming.ttlExtension);
+        await this?.cacheManager?.expire(candidate.itemId, this?.config?.warming.ttlExtension);
         return true;
       }
       
@@ -521,31 +522,31 @@ export class IntelligentCacheWarmer extends EventEmitter {
       let data: any;
       let size = 0;
       
-      if (candidate.itemId.startsWith('grocery:')) {
+      if (candidate?.itemId?.startsWith('grocery:')) {
         // Warm grocery item data
         data = await this.loadGroceryItem(candidate.itemId);
         size = JSON.stringify(data).length;
-      } else if (candidate.itemId.startsWith('ollama:')) {
+      } else if (candidate?.itemId?.startsWith('ollama:')) {
         // Warm Ollama response from SQLite cache
-        const queryHash = candidate.itemId.replace('ollama:', '');
+        const queryHash = candidate?.itemId?.replace('ollama:', '');
         if (this.sqliteDb && candidate.metadata?.query) {
           try {
-            const stmt = this.sqliteDb.prepare(`
+            const stmt = this?.sqliteDb?.prepare(`
               SELECT cached_response FROM ollama_queries WHERE query_hash = ?
             `);
             const row = stmt.get(queryHash) as any;
             if (row?.cached_response) {
               data = {
-                query: candidate.metadata.query,
+                query: candidate?.metadata?.query,
                 response: row.cached_response,
                 cached: true,
                 warmedAt: Date.now()
               };
-              size = row.cached_response.length;
+              size = row?.cached_response?.length;
               
               // Also warm in LLM cache
-              await this.llmCache.cacheLLMResponse(
-                candidate.metadata.query,
+              await this?.llmCache?.cacheLLMResponse(
+                candidate?.metadata?.query,
                 row.cached_response,
                 'llama3.2:3b',
                 { ttl: 7200 } // 2 hour TTL for warmed items
@@ -555,11 +556,11 @@ export class IntelligentCacheWarmer extends EventEmitter {
             logger.warn('Failed to warm Ollama query', 'CACHE_WARMER', { queryHash, error });
           }
         }
-      } else if (candidate.itemId.startsWith('llm:')) {
+      } else if (candidate?.itemId?.startsWith('llm:')) {
         // Warm LLM response (legacy support)
         const prompt = candidate.metadata?.prompt;
         if (prompt) {
-          const cached = await this.llmCache.getCachedLLMResponse(prompt, 'llama3.2:3b');
+          const cached = await this?.llmCache?.getCachedLLMResponse(prompt, 'llama3.2:3b');
           if (cached) {
             data = cached;
             size = JSON.stringify(cached).length;
@@ -573,15 +574,15 @@ export class IntelligentCacheWarmer extends EventEmitter {
       
       if (data) {
         // Cache the warmed data with appropriate namespace
-        const namespace = candidate.itemId.startsWith('grocery:') ? 'grocery' :
-                         candidate.itemId.startsWith('ollama:') ? 'llm' :
+        const namespace = candidate?.itemId?.startsWith('grocery:') ? 'grocery' :
+                         candidate?.itemId?.startsWith('ollama:') ? 'llm' :
                          'default';
         
-        await this.cacheManager.set(
+        await this?.cacheManager?.set(
           candidate.itemId,
           data,
           {
-            ttl: this.config.warming.ttlExtension / 1000,
+            ttl: this?.config?.warming.ttlExtension / 1000,
             namespace,
             tags: [candidate.reason, `priority:${candidate.priority}`]
           }
@@ -619,11 +620,11 @@ export class IntelligentCacheWarmer extends EventEmitter {
    */
   private initializeSQLite(): void {
     try {
-      const dbPath = path.join(process.cwd(), 'data', 'cache-analytics.db');
+      const dbPath = join(process.cwd(), 'data', 'cache-analytics.db');
       this.sqliteDb = new Database(dbPath);
       
       // Create analytics tables
-      this.sqliteDb.exec(`
+      this?.sqliteDb?.exec(`
         CREATE TABLE IF NOT EXISTS access_patterns (
           item_id TEXT PRIMARY KEY,
           access_count INTEGER DEFAULT 0,
@@ -702,19 +703,19 @@ export class IntelligentCacheWarmer extends EventEmitter {
       'paper towels', 'toilet paper', 'dish soap', 'laundry detergent', 'trash bags'
     ];
     
-    topGroceryItems.forEach(item => this.commonGroceryItems.add(item));
+    topGroceryItems.forEach(item => this?.commonGroceryItems?.add(item));
     
     // Category associations for predictive warming
-    this.categoryAssociations.set('dairy', ['milk', 'eggs', 'butter', 'cheese', 'yogurt']);
-    this.categoryAssociations.set('bakery', ['bread', 'bagels', 'tortillas', 'rolls']);
-    this.categoryAssociations.set('meat', ['chicken', 'beef', 'pork', 'turkey', 'bacon']);
-    this.categoryAssociations.set('produce', ['bananas', 'apples', 'lettuce', 'tomatoes']);
-    this.categoryAssociations.set('breakfast', ['eggs', 'bacon', 'bread', 'milk', 'cereal', 'coffee']);
-    this.categoryAssociations.set('dinner', ['chicken', 'pasta', 'rice', 'vegetables', 'sauce']);
+    this?.categoryAssociations?.set('dairy', ['milk', 'eggs', 'butter', 'cheese', 'yogurt']);
+    this?.categoryAssociations?.set('bakery', ['bread', 'bagels', 'tortillas', 'rolls']);
+    this?.categoryAssociations?.set('meat', ['chicken', 'beef', 'pork', 'turkey', 'bacon']);
+    this?.categoryAssociations?.set('produce', ['bananas', 'apples', 'lettuce', 'tomatoes']);
+    this?.categoryAssociations?.set('breakfast', ['eggs', 'bacon', 'bread', 'milk', 'cereal', 'coffee']);
+    this?.categoryAssociations?.set('dinner', ['chicken', 'pasta', 'rice', 'vegetables', 'sauce']);
     
     logger.info('Grocery data initialized', 'CACHE_WARMER', {
-      commonItems: this.commonGroceryItems.size,
-      categories: this.categoryAssociations.size
+      commonItems: this?.commonGroceryItems?.size,
+      categories: this?.categoryAssociations?.size
     });
   }
   
@@ -728,7 +729,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     response?: string
   ): void {
     const queryHash = this.hashQuery(query);
-    const pattern = this.ollamaQueryPatterns.get(queryHash) || {
+    const pattern = this?.ollamaQueryPatterns?.get(queryHash) || {
       query,
       frequency: 0,
       avgResponseTime: 0,
@@ -739,12 +740,12 @@ export class IntelligentCacheWarmer extends EventEmitter {
     pattern.avgResponseTime = (pattern.avgResponseTime * (pattern.frequency - 1) + responseTime) / pattern.frequency;
     pattern.lastUsed = Date.now();
     
-    this.ollamaQueryPatterns.set(queryHash, pattern);
+    this?.ollamaQueryPatterns?.set(queryHash, pattern);
     
     // Persist to SQLite
     if (this.sqliteDb) {
       try {
-        const stmt = this.sqliteDb.prepare(`
+        const stmt = this?.sqliteDb?.prepare(`
           INSERT INTO ollama_queries (query_hash, query, frequency, avg_response_time, last_used, cached_response)
           VALUES (?, ?, ?, ?, ?, ?)
           ON CONFLICT(query_hash) DO UPDATE SET
@@ -788,7 +789,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     
     try {
       // Get top frequent queries from last 24 hours
-      const stmt = this.sqliteDb.prepare(`
+      const stmt = this?.sqliteDb?.prepare(`
         SELECT query_hash, query, frequency, avg_response_time, cached_response
         FROM ollama_queries
         WHERE last_used > ? AND cached_response IS NOT NULL
@@ -804,7 +805,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
           itemId: `ollama:${row.query_hash}`,
           priority: Math.min(row.frequency / 10, 1), // Normalize to 0-1
           reason: 'frequent_ollama_query',
-          estimatedSize: row.cached_response ? row.cached_response.length : 5000,
+          estimatedSize: row.cached_response ? row?.cached_response?.length : 5000,
           metadata: {
             query: row.query,
             frequency: row.frequency,
@@ -814,7 +815,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
       }
       
       logger.debug('Predicted Ollama queries for warming', 'CACHE_WARMER', {
-        candidateCount: candidates.length
+        candidateCount: candidates?.length || 0
       });
     } catch (error) {
       logger.error('Failed to get predicted Ollama queries', 'CACHE_WARMER', { error });
@@ -833,7 +834,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     
     // Morning (6-10am): Breakfast items
     if (currentHour >= 6 && currentHour <= 10) {
-      const breakfastItems = this.categoryAssociations.get('breakfast') || [];
+      const breakfastItems = this?.categoryAssociations?.get('breakfast') || [];
       for (const item of breakfastItems) {
         candidates.push({
           itemId: `grocery:${item}`,
@@ -849,7 +850,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     if (currentHour >= 11 && currentHour <= 14) {
       const lunchItems = ['bread', 'deli meat', 'cheese', 'chips', 'soda'];
       for (const item of lunchItems) {
-        if (this.commonGroceryItems.has(item)) {
+        if (this?.commonGroceryItems?.has(item)) {
           candidates.push({
             itemId: `grocery:${item}`,
             priority: 0.8,
@@ -863,7 +864,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     
     // Dinner prep (4-7pm): Dinner ingredients
     if (currentHour >= 16 && currentHour <= 19) {
-      const dinnerItems = this.categoryAssociations.get('dinner') || [];
+      const dinnerItems = this?.categoryAssociations?.get('dinner') || [];
       for (const item of dinnerItems) {
         candidates.push({
           itemId: `grocery:${item}`,
@@ -906,8 +907,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
   }
   
   private hashQuery(query: string): string {
-    return require('crypto')
-      .createHash('sha256')
+    return createHash('sha256')
       .update(query.toLowerCase().trim())
       .digest('hex')
       .substring(0, 16);
@@ -919,7 +919,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     // Try to load from database first
     if (this.sqliteDb) {
       try {
-        const stmt = this.sqliteDb.prepare(`
+        const stmt = this?.sqliteDb?.prepare(`
           SELECT * FROM grocery_analytics WHERE item_name = ?
         `);
         const row = stmt.get(itemKey) as any;
@@ -1026,14 +1026,14 @@ export class IntelligentCacheWarmer extends EventEmitter {
     let estimatedMemory = this.memoryUsage;
     
     for (const candidate of candidates) {
-      if (estimatedMemory + candidate.estimatedSize > this.config.warming.memoryLimit) {
+      if (estimatedMemory + candidate.estimatedSize > this?.config?.warming.memoryLimit) {
         break;
       }
       
       limited.push(candidate);
       estimatedMemory += candidate.estimatedSize;
       
-      if (limited.length >= this.config.warming.maxItemsPerRun) {
+      if (limited?.length || 0 >= this?.config?.warming.maxItemsPerRun) {
         break;
       }
     }
@@ -1044,7 +1044,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
   private createBatches<T>(items: T[], batchSize: number): T[][] {
     const batches: T[][] = [];
     
-    for (let i = 0; i < items.length; i += batchSize) {
+    for (let i = 0; i < items?.length || 0; i += batchSize) {
       batches.push(items.slice(i, i + batchSize));
     }
     
@@ -1057,14 +1057,14 @@ export class IntelligentCacheWarmer extends EventEmitter {
 
   // Scheduled tasks
   private setupScheduledTasks(): void {
-    for (const schedule of this.config.schedules) {
+    for (const schedule of this?.config?.schedules) {
       try {
         const task = cron.schedule(schedule.cron, async () => {
           console.log(`Running scheduled warming: ${schedule.name}`);
           
-          if (schedule.items.length > 0) {
+          if (schedule?.items?.length > 0) {
             // Warm specific items
-            const candidates = schedule.items.map(itemId => ({
+            const candidates = schedule?.items?.map(itemId => ({
               itemId,
               priority: 1,
               reason: `scheduled_${schedule.name}`,
@@ -1080,7 +1080,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
           }
         });
         
-        this.scheduledTasks.push(task);
+        this?.scheduledTasks?.push(task);
         
       } catch (error) {
         console.error(`Failed to setup schedule ${schedule.name}:`, error);
@@ -1089,13 +1089,13 @@ export class IntelligentCacheWarmer extends EventEmitter {
   }
 
   private startContinuousWarming(): void {
-    if (!this.config.warming.interval) return;
+    if (!this?.config?.warming.interval) return;
     
     this.warmingTimer = setInterval(async () => {
       if (!this.isWarming) {
         await this.warmCache('continuous');
       }
-    }, this.config.warming.interval);
+    }, this?.config?.warming.interval);
   }
 
   private startAnalyticsCollection(): void {
@@ -1111,22 +1111,22 @@ export class IntelligentCacheWarmer extends EventEmitter {
   }
 
   private decayPatterns(): void {
-    const cutoffTime = Date.now() - (this.config.analytics.retentionDays * 24 * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - (this?.config?.analytics.retentionDays * 24 * 60 * 60 * 1000);
     
     for (const [itemId, pattern] of this.accessPatterns) {
       // Remove very old patterns
       if (pattern.lastAccessed < cutoffTime) {
-        this.accessPatterns.delete(itemId);
+        this?.accessPatterns?.delete(itemId);
         continue;
       }
       
       // Decay scores
-      pattern.score *= this.config.analytics.decayFactor;
-      pattern.accessCount = Math.floor(pattern.accessCount * this.config.analytics.decayFactor);
+      pattern.score *= this?.config?.analytics.decayFactor;
+      pattern.accessCount = Math.floor(pattern.accessCount * this?.config?.analytics.decayFactor);
       
       // Trim peak hours array
-      if (pattern.peakHours && pattern.peakHours.length > 168) { // Keep 1 week of hourly data
-        pattern.peakHours = pattern.peakHours.slice(-168);
+      if (pattern.peakHours && pattern?.peakHours?.length > 168) { // Keep 1 week of hourly data
+        pattern.peakHours = pattern?.peakHours?.slice(-168);
       }
     }
   }
@@ -1143,14 +1143,14 @@ export class IntelligentCacheWarmer extends EventEmitter {
 
   private async persistAnalytics(): Promise<void> {
     try {
-      const analyticsKey = `${this.config.redis.analyticsPrefix}patterns`;
-      const data = Array.from(this.accessPatterns.entries());
+      const analyticsKey = `${this?.config?.redis.analyticsPrefix}patterns`;
+      const data = Array.from(this?.accessPatterns?.entries());
       
-      await this.redis.set(
+      await this?.redis.set(
         analyticsKey,
         JSON.stringify(data),
         'EX',
-        this.config.analytics.retentionDays * 24 * 60 * 60
+        this?.config?.analytics.retentionDays * 24 * 60 * 60
       );
       
     } catch (error) {
@@ -1160,8 +1160,8 @@ export class IntelligentCacheWarmer extends EventEmitter {
 
   private async loadAnalytics(): Promise<void> {
     try {
-      const analyticsKey = `${this.config.redis.analyticsPrefix}patterns`;
-      const data = await this.redis.get(analyticsKey);
+      const analyticsKey = `${this?.config?.redis.analyticsPrefix}patterns`;
+      const data = await this?.redis.get(analyticsKey);
       
       if (data) {
         const patterns = JSON.parse(data) as Array<[string, AccessPattern]>;
@@ -1191,7 +1191,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
       commonItemsCached: number;
     };
   } {
-    const topItems = Array.from(this.accessPatterns.values())
+    const topItems = Array.from(this?.accessPatterns?.values())
       .sort((a, b) => b.score - a.score)
       .slice(0, 10)
       .map(p => ({
@@ -1203,36 +1203,36 @@ export class IntelligentCacheWarmer extends EventEmitter {
     // Calculate Ollama stats
     let totalOllamaResponseTime = 0;
     let ollamaHits = 0;
-    this.ollamaQueryPatterns.forEach(pattern => {
+    this?.ollamaQueryPatterns?.forEach(pattern => {
       totalOllamaResponseTime += pattern.avgResponseTime * pattern.frequency;
       if (pattern.frequency > 1) ollamaHits++;
     });
     
-    const avgOllamaResponseTime = this.ollamaQueryPatterns.size > 0 
-      ? totalOllamaResponseTime / Array.from(this.ollamaQueryPatterns.values())
-          .reduce((sum, p) => sum + p.frequency, 0)
+    const avgOllamaResponseTime = this?.ollamaQueryPatterns?.size > 0 
+      ? totalOllamaResponseTime / Array.from(this?.ollamaQueryPatterns?.values())
+          .reduce((sum: any, p: any) => sum + p.frequency, 0)
       : 0;
     
-    const ollamaCacheHitRate = this.ollamaQueryPatterns.size > 0
-      ? ollamaHits / this.ollamaQueryPatterns.size
+    const ollamaCacheHitRate = this?.ollamaQueryPatterns?.size > 0
+      ? ollamaHits / this?.ollamaQueryPatterns?.size
       : 0;
     
     return {
-      patternsTracked: this.accessPatterns.size,
+      patternsTracked: this?.accessPatterns?.size,
       memoryUsage: this.memoryUsage,
       lastWarmingRun: this.lastWarmingRun,
       isWarming: this.isWarming,
       topItems,
       ollamaStats: {
-        queriesTracked: this.ollamaQueryPatterns.size,
+        queriesTracked: this?.ollamaQueryPatterns?.size,
         avgResponseTime: avgOllamaResponseTime,
         cacheHitRate: ollamaCacheHitRate
       },
       groceryStats: {
-        itemsTracked: this.commonGroceryItems.size,
-        categoriesLoaded: this.categoryAssociations.size,
+        itemsTracked: this?.commonGroceryItems?.size,
+        categoriesLoaded: this?.categoryAssociations?.size,
         commonItemsCached: Array.from(this.commonGroceryItems).filter(item => 
-          this.accessPatterns.has(`grocery:${item}`)
+          this?.accessPatterns?.has(`grocery:${item}`)
         ).length
       }
     };
@@ -1242,8 +1242,8 @@ export class IntelligentCacheWarmer extends EventEmitter {
    * Warm specific grocery categories
    */
   public async warmGroceryCategory(category: string): Promise<WarmingResult> {
-    const items = this.categoryAssociations.get(category.toLowerCase()) || [];
-    const candidates = items.map(item => ({
+    const items = this?.categoryAssociations?.get(category.toLowerCase()) || [];
+    const candidates = items?.map(item => ({
       itemId: `grocery:${item}`,
       priority: 1,
       reason: `category_${category}`,
@@ -1270,7 +1270,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
       "Search for breakfast items"
     ];
     
-    const candidates: WarmingCandidate[] = commonQueries.map(query => ({
+    const candidates: WarmingCandidate[] = commonQueries?.map(query => ({
       itemId: `ollama:${this.hashQuery(query)}`,
       priority: 0.8,
       reason: 'common_nlp_query',
@@ -1302,14 +1302,14 @@ export class IntelligentCacheWarmer extends EventEmitter {
       }
       
       // Check memory limit
-      if (this.memoryUsage >= this.config.warming.memoryLimit) {
+      if (this.memoryUsage >= this?.config?.warming.memoryLimit) {
         errors.push('Memory limit reached');
         break;
       }
     }
     
     return {
-      totalCandidates: candidates.length,
+      totalCandidates: candidates?.length || 0,
       warmedItems,
       failedItems,
       memoryUsed: this.memoryUsage,
@@ -1320,7 +1320,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
   }
 
   public async forceWarm(itemIds: string[]): Promise<WarmingResult> {
-    const candidates = itemIds.map(itemId => ({
+    const candidates = itemIds?.map(itemId => ({
       itemId,
       priority: 1,
       reason: 'manual',
@@ -1341,7 +1341,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
     }
     
     return {
-      totalCandidates: candidates.length,
+      totalCandidates: candidates?.length || 0,
       warmedItems,
       failedItems,
       memoryUsed: this.memoryUsage,
@@ -1352,7 +1352,7 @@ export class IntelligentCacheWarmer extends EventEmitter {
   }
 
   public clearCache(): void {
-    this.accessPatterns.clear();
+    this?.accessPatterns?.clear();
     this.warmingQueue = [];
     this.memoryUsage = 0;
     

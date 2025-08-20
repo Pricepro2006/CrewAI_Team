@@ -21,7 +21,7 @@ import {
   Key,
   FileText
 } from 'lucide-react';
-import { api } from '../../../utils/trpc';
+import { trpc } from '../../../utils/trpc';
 import './Documentation.css';
 
 interface APIEndpoint {
@@ -297,14 +297,14 @@ export const APIExplorer: React.FC = () => {
     if (selectedCategory === 'all') {
       return API_ENDPOINTS;
     }
-    return API_ENDPOINTS.filter(endpoint => 
-      endpoint.category.toLowerCase() === selectedCategory.toLowerCase()
+    return API_ENDPOINTS?.filter(endpoint => 
+      endpoint?.category?.toLowerCase() === selectedCategory.toLowerCase()
     );
   }, [selectedCategory]);
   
   // Get unique categories
   const categories = useMemo(() => {
-    const cats = Array.from(new Set(API_ENDPOINTS.map(e => e.category)));
+    const cats = Array.from(new Set(API_ENDPOINTS?.map(e => e.category)));
     return ['all', ...cats];
   }, []);
   
@@ -342,7 +342,7 @@ export const APIExplorer: React.FC = () => {
     
     // Initialize request body with example
     if (endpoint.requestBody?.example) {
-      setTestBody(JSON.stringify(endpoint.requestBody.example, null, 2));
+      setTestBody(JSON.stringify(endpoint?.requestBody?.example, null, 2));
     } else {
       setTestBody('');
     }
@@ -406,7 +406,7 @@ export const APIExplorer: React.FC = () => {
       
       // Parse response
       let responseData;
-      const contentType = response.headers.get('content-type');
+      const contentType = response?.headers?.get('content-type');
       if (contentType?.includes('application/json')) {
         responseData = await response.json();
       } else {
@@ -415,7 +415,7 @@ export const APIExplorer: React.FC = () => {
       
       // Build headers object
       const headers: Record<string, string> = {};
-      response.headers.forEach((value, key) => {
+      response?.headers?.forEach((value, key) => {
         headers[key] = value;
       });
       
@@ -458,7 +458,7 @@ export const APIExplorer: React.FC = () => {
   const generateCodeExample = useCallback((language: 'javascript' | 'curl' | 'python') => {
     if (!selectedEndpoint) return '';
     
-    const url = `${window.location.origin}${selectedEndpoint.path}`;
+    const url = `${window?.location?.origin}${selectedEndpoint.path}`;
     
     switch (language) {
       case 'javascript':
@@ -504,7 +504,7 @@ headers = {
 
 ${selectedEndpoint.method !== 'GET' && testBody ? `data = json.dumps(${testBody})
 
-` : ''}response = requests.${selectedEndpoint.method.toLowerCase()}(url, headers=headers${selectedEndpoint.method !== 'GET' && testBody ? ', data=data' : ''})
+` : ''}response = requests.${selectedEndpoint?.method?.toLowerCase()}(url, headers=headers${selectedEndpoint.method !== 'GET' && testBody ? ', data=data' : ''})
 print(response.json())`;
       
       default:
@@ -517,7 +517,7 @@ print(response.json())`;
    */
   const copyToClipboard = useCallback(async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator?.clipboard?.writeText(text);
       // Could show a toast notification here
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
@@ -540,7 +540,7 @@ print(response.json())`;
               type="password"
               placeholder="API Token (optional)"
               value={authToken}
-              onChange={(e) => setAuthToken(e.target.value)}
+              onChange={(e: any) => setAuthToken(e?.target?.value)}
               className="auth-input"
             />
           </div>
@@ -554,7 +554,7 @@ print(response.json())`;
           <div className="category-filter">
             <h3>Categories</h3>
             <div className="category-list">
-              {categories.map(category => (
+              {categories?.map(category => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
@@ -576,12 +576,12 @@ print(response.json())`;
               ) : (
                 <ChevronRight size={16} />
               )}
-              <h3>Endpoints ({filteredEndpoints.length})</h3>
+              <h3>Endpoints ({filteredEndpoints?.length || 0})</h3>
             </div>
             
             {expandedSections.has('endpoints') && (
               <div className="endpoints-list">
-                {filteredEndpoints.map(endpoint => (
+                {filteredEndpoints?.map(endpoint => (
                   <div
                     key={endpoint.id}
                     onClick={() => selectEndpoint(endpoint)}
@@ -590,7 +590,7 @@ print(response.json())`;
                     } ${endpoint.deprecated ? 'deprecated' : ''}`}
                   >
                     <div className="endpoint-header">
-                      <span className={`method-badge method-${endpoint.method.toLowerCase()}`}>
+                      <span className={`method-badge method-${endpoint?.method?.toLowerCase()}`}>
                         {endpoint.method}
                       </span>
                       <span className="endpoint-name">{endpoint.name}</span>
@@ -613,7 +613,7 @@ print(response.json())`;
               {/* Endpoint Details */}
               <div className="endpoint-details">
                 <div className="endpoint-title">
-                  <span className={`method-badge method-${selectedEndpoint.method.toLowerCase()}`}>
+                  <span className={`method-badge method-${selectedEndpoint?.method?.toLowerCase()}`}>
                     {selectedEndpoint.method}
                   </span>
                   <h2>{selectedEndpoint.name}</h2>
@@ -632,7 +632,7 @@ print(response.json())`;
                   </div>
                   {selectedEndpoint.rateLimit && (
                     <div className="info-item">
-                      <strong>Rate Limit:</strong> {selectedEndpoint.rateLimit.requests} requests per {selectedEndpoint.rateLimit.window}
+                      <strong>Rate Limit:</strong> {selectedEndpoint?.rateLimit?.requests} requests per {selectedEndpoint?.rateLimit?.window}
                     </div>
                   )}
                 </div>
@@ -643,11 +643,11 @@ print(response.json())`;
                 <h3>Test This API</h3>
                 
                 {/* Parameters */}
-                {selectedEndpoint.parameters && selectedEndpoint.parameters.length > 0 && (
+                {selectedEndpoint.parameters && selectedEndpoint?.parameters?.length > 0 && (
                   <div className="parameters-section">
                     <h4>Parameters</h4>
                     <div className="parameters-grid">
-                      {selectedEndpoint.parameters.map(param => (
+                      {selectedEndpoint?.parameters?.map(param => (
                         <div key={param.name} className="parameter-item">
                           <label className="parameter-label">
                             {param.name}
@@ -658,11 +658,11 @@ print(response.json())`;
                           {param.enum ? (
                             <select
                               value={testParameters[param.name] || ''}
-                              onChange={(e) => updateTestParameter(param.name, e.target.value)}
+                              onChange={(e: any) => updateTestParameter(param.name, e?.target?.value)}
                               className="parameter-input"
                             >
                               <option value="">Select...</option>
-                              {param.enum.map(option => (
+                              {param?.enum?.map(option => (
                                 <option key={option} value={option}>{option}</option>
                               ))}
                             </select>
@@ -670,9 +670,9 @@ print(response.json())`;
                             <input
                               type={param.type === 'number' ? 'number' : 'text'}
                               value={testParameters[param.name] || ''}
-                              onChange={(e) => updateTestParameter(
+                              onChange={(e: any) => updateTestParameter(
                                 param.name,
-                                param.type === 'number' ? Number(e.target.value) : e.target.value
+                                param.type === 'number' ? Number(e?.target?.value) : e?.target?.value
                               )}
                               placeholder={param.example ? String(param.example) : ''}
                               className="parameter-input"
@@ -690,7 +690,7 @@ print(response.json())`;
                     <h4>Request Body</h4>
                     <textarea
                       value={testBody}
-                      onChange={(e) => setTestBody(e.target.value)}
+                      onChange={(e: any) => setTestBody(e?.target?.value)}
                       placeholder="Enter JSON request body..."
                       className="request-body-input"
                       rows={8}
@@ -730,7 +730,7 @@ print(response.json())`;
                       </span>
                       <span className="response-timing">
                         <Clock size={12} />
-                        {testResult.timing.duration}ms
+                        {testResult?.timing?.duration}ms
                       </span>
                     </div>
                   </div>

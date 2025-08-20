@@ -14,8 +14,8 @@
  * CRITICAL: These tests prevent regression of the binary scoring bug
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EmailChainAnalyzer } from './EmailChainAnalyzer';
 import Database from "better-sqlite3";
 
 // Create a shared mock db instance that can be accessed in mocks
@@ -53,19 +53,19 @@ const sharedMockDb = {
         
         let filteredData = mockDbData;
         
-        if (params.length === 1 && typeof params[0] === "string") {
+        if (params?.length === 1 && typeof params[0] === "string") {
           // Handle single param queries like conversation_id
           const conversationId = params[0];
-          filteredData = mockDbData.filter(
+          filteredData = mockDbData?.filter(
             (email: any) =>
               email.thread_id === conversationId || email.conversation_id === conversationId,
           );
-        } else if (params.length === 6) {
+        } else if (params?.length === 6) {
           // Handle complex subject + sender matching queries
           // params: [subjectPattern1, subjectPattern2, subjectPattern3, subjectPattern4, senderEmail, senderPattern]
           const [pattern1, pattern2, pattern3, pattern4, senderEmail, senderPattern] = params;
           
-          filteredData = mockDbData.filter((email: any) => {
+          filteredData = mockDbData?.filter((email: any) => {
             const subject = email.subject || '';
             const sender = email.from_address || email.sender_email || '';
             
@@ -91,7 +91,7 @@ const sharedMockDb = {
         }
         
         // Map results to expected database schema
-        return filteredData.map((item: any) => ({
+        return filteredData?.map((item: any) => ({
           id: item.id,
           internet_message_id: item.message_id || item.internet_message_id,
           subject: item.subject,
@@ -475,16 +475,16 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
           
           let filteredData = mockDbData;
           
-          if (params.length === 1 && typeof params[0] === "string") {
+          if (params?.length === 1 && typeof params[0] === "string") {
             const conversationId = params[0];
-            filteredData = mockDbData.filter(
+            filteredData = mockDbData?.filter(
               (email: any) =>
                 email.thread_id === conversationId || email.conversation_id === conversationId,
             );
-          } else if (params.length === 6) {
+          } else if (params?.length === 6) {
             const [pattern1, pattern2, pattern3, pattern4, senderEmail, senderPattern] = params;
             
-            filteredData = mockDbData.filter((email: any) => {
+            filteredData = mockDbData?.filter((email: any) => {
               const subject = email.subject || '';
               const sender = email.from_address || email.sender_email || '';
               
@@ -505,7 +505,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
             });
           }
           
-          return filteredData.map((item: any) => ({
+          return filteredData?.map((item: any) => ({
             id: item.id,
             message_id: item.message_id || item.internet_message_id,
             subject: item.subject,
@@ -625,9 +625,12 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       ];
 
       for (const chain of chains) {
+        if (!chain || chain.length === 0) continue;
         mockDbData.length = 0;
         mockDbData.push(...chain);
-        const analysis = await analyzer.analyzeChain(chain[0].id);
+        const firstEmail = chain[0];
+        if (!firstEmail) continue;
+        const analysis = await analyzer.analyzeChain(firstEmail.id);
 
         expect(analysis.has_start_point).toBe(true);
         expect(analysis.completeness_score).toBeGreaterThanOrEqual(30); // Base points for start
@@ -724,7 +727,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       const analysis = await analyzer.analyzeChain("quote-1");
 
       expect(analysis.chain_type).toBe("quote_request");
-      expect(analysis.key_entities.quote_numbers).toContain("987654");
+      expect(analysis?.key_entities?.quoteNumbers).toContain("987654");
       // Should not be penalized for missing quote number since it has one
       expect(analysis.completeness_score).toBeGreaterThanOrEqual(40);
     });
@@ -758,7 +761,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       const analysis = await analyzer.analyzeChain("order-1");
 
       expect(analysis.chain_type).toBe("order_processing");
-      expect(analysis.key_entities.po_numbers).toContain("456789");
+      expect(analysis?.key_entities?.poNumbers).toContain("456789");
       // Should not be penalized since it has PO number
       expect(analysis.completeness_score).toBeGreaterThanOrEqual(40);
     });
@@ -848,10 +851,12 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
       for (const scenario of testScenarios) {
         const chain = createEmailChain(scenario);
-        if (chain.length > 0) {
+        if (chain && chain.length > 0) {
           mockDbData.length = 0;
           mockDbData.push(...chain);
-          const analysis = await analyzer.analyzeChain(chain[0].id);
+          const firstEmail = chain[0];
+          if (!firstEmail) continue;
+          const analysis = await analyzer.analyzeChain(firstEmail.id);
           scores.push(analysis.completeness_score);
         }
       }
@@ -861,16 +866,16 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       expect(uniqueScores.size).toBeGreaterThan(2); // More than just 0 and 100
 
       // Check for scores in different ranges
-      const hasLowScores = scores.some((score) => score > 0 && score < 40);
+      const hasLowScores = scores.some((score: any) => score > 0 && score < 40);
       const hasMidRangeScores = scores.some(
-        (score) => score >= 40 && score < 70,
+        (score: any) => score >= 40 && score < 70,
       );
-      const hasHighScores = scores.some((score) => score >= 70 && score < 100);
+      const hasHighScores = scores.some((score: any) => score >= 70 && score < 100);
 
       expect(hasLowScores || hasMidRangeScores || hasHighScores).toBe(true);
 
       // Ensure no score is exactly 0 or 100 for these test cases
-      const noExtremeScores = scores.every((score) => score > 0 && score < 100);
+      const noExtremeScores = scores.every((score: any) => score > 0 && score < 100);
       expect(noExtremeScores).toBe(true);
     });
 
@@ -881,7 +886,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       for (let i = 0; i < 10; i++) {
         const baseChain = createEmailChain("incomplete_chain_no_resolution");
         // Slightly modify each chain
-        const modifiedChain = baseChain.map((email, index) => ({
+        const modifiedChain = baseChain?.map((email, index) => ({
           ...email,
           id: `test-${i}-${index}`,
           conversation_id: `chain-test-${i}`,
@@ -1092,7 +1097,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       for (const scenario of scenarios) {
         for (let variation = 0; variation < 3; variation++) {
           const chain = createEmailChain(scenario);
-          if (chain.length > 0) {
+          if (chain && chain.length > 0) {
             // Add variation to avoid identical chains
             const variedChain = chain.map((email, index) => ({
               ...email,
@@ -1103,7 +1108,9 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
             mockDbData.length = 0;
             mockDbData.push(...variedChain);
-            const analysis = await analyzer.analyzeChain(variedChain[0].id);
+            const firstEmail = variedChain[0];
+            if (!firstEmail) continue;
+            const analysis = await analyzer.analyzeChain(firstEmail.id);
             allScores.push(analysis.completeness_score);
           }
         }
@@ -1114,7 +1121,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
       // Calculate basic statistics
       const average =
-        allScores.reduce((sum, score) => sum + score, 0) / allScores.length;
+        allScores.reduce((sum: any, score: any) => sum + score, 0) / allScores.length;
       const min = Math.min(...allScores);
       const max = Math.max(...allScores);
 

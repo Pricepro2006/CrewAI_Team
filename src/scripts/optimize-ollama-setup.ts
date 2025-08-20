@@ -7,7 +7,7 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import axios from "axios";
-import { logger } from "../utils/logger.js";
+import { logger } from "../utils/logger";
 
 const execAsync = promisify(exec);
 
@@ -32,7 +32,7 @@ class OllamaSetupOptimizer {
         process.exit(1);
       }
 
-      logger.info("Ollama status:", status);
+      logger.info("Ollama status:", JSON.stringify(status));
 
       // 2. Install required models
       await this.installOptimizedModels();
@@ -52,7 +52,7 @@ class OllamaSetupOptimizer {
       this.printRecommendations();
 
     } catch (error) {
-      logger.error("Optimization failed:", error);
+      logger.error("Optimization failed:", error as string);
       process.exit(1);
     }
   }
@@ -60,7 +60,7 @@ class OllamaSetupOptimizer {
   private async checkOllamaStatus(): Promise<OllamaStatus> {
     try {
       const response = await axios.get(`${this.ollamaUrl}/api/tags`);
-      const models = response.data.models?.map((m: any) => m.name) || [];
+      const models = response?.data?.models?.map((m: any) => m.name) || [];
       
       // Check GPU availability
       let gpu = false;
@@ -73,7 +73,7 @@ class OllamaSetupOptimizer {
 
       return {
         running: true,
-        version: response.data.version,
+        version: response?.data?.version,
         models,
         gpu
       };
@@ -99,7 +99,7 @@ class OllamaSetupOptimizer {
         });
         logger.info(`✓ ${model.name} installed successfully`);
       } catch (error) {
-        logger.error(`Failed to install ${model.name}:`, error);
+        logger.error(`Failed to install ${model.name}:`, error as string);
       }
     }
   }
@@ -139,7 +139,7 @@ SYSTEM "You are a concise email analyzer. Respond only with JSON."`;
       });
       logger.info("✓ Created optimized llama3.2 model");
     } catch (error) {
-      logger.warn("Could not create optimized model:", error);
+      logger.warn("Could not create optimized model:", error as string);
     }
 
     // Create optimized modelfile for phi-4
@@ -170,7 +170,7 @@ SYSTEM "You are a strategic business analyst. Provide concise JSON analysis."`;
       });
       logger.info("✓ Created optimized phi-4 model");
     } catch (error) {
-      logger.warn("Could not create optimized phi-4 model:", error);
+      logger.warn("Could not create optimized phi-4 model:", error as string);
     }
   }
 
@@ -202,7 +202,7 @@ SYSTEM "You are a strategic business analyst. Provide concise JSON analysis."`;
         const loadTime = Date.now() - start;
         logger.info(`✓ ${model} loaded in ${loadTime}ms`);
       } catch (error) {
-        logger.error(`Failed to preload ${model}:`, error);
+        logger.error(`Failed to preload ${model}:`, error as string);
       }
     }
   }
@@ -243,12 +243,12 @@ Extract: workflow_state, priority, entities`;
           const elapsed = Date.now() - start;
           times.push(elapsed);
         } catch (error) {
-          logger.error(`Test failed for ${model}:`, error);
+          logger.error(`Test failed for ${model}:`, error as string);
         }
       }
 
-      if (times.length > 0) {
-        const avg = times.reduce((a, b) => a + b, 0) / times.length;
+      if (times?.length || 0 > 0) {
+        const avg = times.reduce((a: any, b: any) => a + b, 0) / times?.length || 0;
         const throughput = (1000 / avg) * 60; // emails per minute
         
         results.push({

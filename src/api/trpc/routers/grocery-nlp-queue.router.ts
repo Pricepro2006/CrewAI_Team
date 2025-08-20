@@ -8,6 +8,7 @@ import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure } from "../enhanced-router.js";
 import { getGroceryNLPQueue } from "../../services/GroceryNLPQueue.js";
 import { logger } from "../../../utils/logger.js";
+import type { QueueConfiguration } from "../../types/grocery-nlp.types.js";
 
 // Input validation schemas
 const processNLPInputSchema = z.object({
@@ -102,7 +103,7 @@ const queueStatusOutputSchema = z.object({
 const mockNLPOperation = async (query: string, metadata?: Record<string, any>) => {
   // Simulate processing time based on query complexity
   const baseTime = 500;
-  const complexityFactor = Math.min(query.length / 100, 2);
+  const complexityFactor = Math.min(query?.length || 0 / 100, 2);
   const processingTime = baseTime + (Math.random() * 1000 * complexityFactor);
   
   await new Promise(resolve => setTimeout(resolve, processingTime));
@@ -129,7 +130,7 @@ const mockNLPOperation = async (query: string, metadata?: Record<string, any>) =
     processedText: query.trim().toLowerCase(),
     entities,
     confidence: Math.random() * 0.3 + 0.7,
-    intent: entities.length > 0 ? entities[0] : "general_query",
+    intent: entities?.length || 0 > 0 ? entities[0] : "general_query",
     metadata,
     processingTime: Math.round(processingTime),
     timestamp: Date.now()
@@ -191,7 +192,7 @@ export const groceryNLPQueueRouter = router({
           userId: ctx?.user?.id
         });
         
-        if (error instanceof Error && error.message.includes("timeout")) {
+        if (error instanceof Error && error?.message?.includes("timeout")) {
           throw new TRPCError({
             code: "TIMEOUT",
             message: "Request timed out",
@@ -223,13 +224,13 @@ export const groceryNLPQueueRouter = router({
       try {
         logger.info("tRPC batch NLP processing request", "GROCERY_NLP_TRPC", {
           batchId: generatedBatchId,
-          queryCount: queries.length,
+          queryCount: queries?.length || 0,
           priority,
           userId: ctx?.user?.id
         });
         
         // Process all queries concurrently through the queue
-        const operations = queries.map((queryData, index) => 
+        const operations = queries?.map((queryData, index) => 
           () => mockNLPOperation(queryData.query, {
             ...queryData.metadata,
             batchId: generatedBatchId,
@@ -242,16 +243,16 @@ export const groceryNLPQueueRouter = router({
         const results = await queue.enqueueBatch(operations, priority);
         
         const totalProcessingTime = Date.now() - startTime;
-        const completedResults = results.filter(r => r !== null && r !== undefined);
-        const failedResults = results.filter(r => r === null || r === undefined);
+        const completedResults = results?.filter(r => r !== null && r !== undefined);
+        const failedResults = results?.filter(r => r === null || r === undefined);
         
         // Convert results to the expected format
-        const processedResults = results.map((result, index) => ({
+        const processedResults = results?.map((result, index) => ({
           success: result !== null && result !== undefined,
           result: result || undefined,
           error: result === null || result === undefined ? "Processing failed" : undefined,
           requestId: `${generatedBatchId}-${index}`,
-          processingTime: totalProcessingTime / queries.length,
+          processingTime: totalProcessingTime / queries?.length || 0,
           queueTime: 0 // Would be calculated properly in practice
         }));
         
@@ -260,15 +261,15 @@ export const groceryNLPQueueRouter = router({
           batchId: generatedBatchId,
           results: processedResults,
           totalProcessingTime,
-          completedCount: completedResults.length,
-          failedCount: failedResults.length
+          completedCount: completedResults?.length || 0,
+          failedCount: failedResults?.length || 0
         };
         
       } catch (error) {
         logger.error("tRPC batch NLP processing failed", "GROCERY_NLP_TRPC", {
           error,
           batchId: generatedBatchId,
-          queryCount: queries.length,
+          queryCount: queries?.length || 0,
           userId: ctx?.user?.id
         });
         
@@ -360,7 +361,7 @@ export const groceryNLPQueueRouter = router({
       
       return {
         items,
-        total: items.length
+        total: items?.length || 0
       };
     }),
 
@@ -408,7 +409,7 @@ export const groceryNLPQueueRouter = router({
         userRole: ctx?.user?.role
       });
       
-      queue.updateConfiguration(input);
+      queue.updateConfiguration(input as Partial<QueueConfiguration>);
       
       return {
         success: true,

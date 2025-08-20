@@ -3,9 +3,9 @@
  * Tests email list functionality and filtering
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
 // Mock EmailList component
@@ -45,10 +45,10 @@ const EmailList: React.FC<EmailListProps> = ({
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const filteredAndSortedEmails = React.useMemo(() => {
-    const filtered = emails.filter((email) => {
+    const filtered = emails?.filter((email: any) => {
       const matchesSearch = 
-        email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        email.sender.toLowerCase().includes(searchTerm.toLowerCase());
+        email?.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email?.sender?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === "all" || email.status === filterStatus;
       return matchesSearch && matchesStatus;
     });
@@ -62,7 +62,7 @@ const EmailList: React.FC<EmailListProps> = ({
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         }
         case "subject":
-          return a.subject.localeCompare(b.subject);
+          return a?.subject?.localeCompare(b.subject);
         default:
           return 0;
       }
@@ -92,12 +92,12 @@ const EmailList: React.FC<EmailListProps> = ({
           type="text"
           placeholder="Search emails..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e: any) => setSearchTerm(e?.target?.value)}
           data-testid="email-search"
         />
         <select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as any)}
+          onChange={(e: any) => setFilterStatus(e?.target?.value as any)}
           data-testid="status-filter"
         >
           <option value="all">All Status</option>
@@ -107,7 +107,7 @@ const EmailList: React.FC<EmailListProps> = ({
         </select>
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
+          onChange={(e: any) => setSortBy(e?.target?.value as any)}
           data-testid="sort-select"
         >
           <option value="timestamp">Sort by Date</option>
@@ -117,16 +117,16 @@ const EmailList: React.FC<EmailListProps> = ({
       </div>
 
       <div className="email-count" data-testid="email-count">
-        Showing {filteredAndSortedEmails.length} of {emails.length} emails
+        Showing {filteredAndSortedEmails?.length || 0} of {emails?.length || 0} emails
       </div>
 
-      {filteredAndSortedEmails.length === 0 ? (
+      {filteredAndSortedEmails?.length || 0 === 0 ? (
         <div data-testid="no-emails" className="no-emails">
           No emails found matching your criteria
         </div>
       ) : (
         <div className="emails-container" data-testid="emails-container">
-          {filteredAndSortedEmails.map((email) => (
+          {filteredAndSortedEmails?.map((email: any) => (
             <div
               key={email.id}
               className={`email-item ${email.id === selectedEmailId ? "selected" : ""} ${!email.isRead ? "unread" : ""}`}
@@ -137,7 +137,7 @@ const EmailList: React.FC<EmailListProps> = ({
                 <span className={`status-indicator ${email.status}`} data-testid={`status-${email.id}`}>
                   {email.status}
                 </span>
-                <span className={`priority-badge ${email.priority.toLowerCase()}`} data-testid={`priority-${email.id}`}>
+                <span className={`priority-badge ${email?.priority?.toLowerCase()}`} data-testid={`priority-${email.id}`}>
                   {email.priority}
                 </span>
                 {email.hasAttachments && (
@@ -163,10 +163,10 @@ const EmailList: React.FC<EmailListProps> = ({
                 </p>
               </div>
 
-              <div className="email-actions" onClick={(e) => e.stopPropagation()}>
+              <div className="email-actions" onClick={(e: any) => e.stopPropagation()}>
                 <select
                   value={email.status}
-                  onChange={(e) => onStatusChange?.(email.id, e.target.value as Email["status"])}
+                  onChange={(e: any) => onStatusChange?.(email.id, e?.target?.value as Email["status"])}
                   data-testid={`status-select-${email.id}`}
                 >
                   <option value="red">Critical</option>
@@ -237,7 +237,7 @@ describe("EmailList Component", () => {
     expect(screen.getByTestId("email-count")).toHaveTextContent("Showing 3 of 3 emails");
 
     // Check if all emails are rendered
-    mockEmails.forEach((email) => {
+    mockEmails.forEach((email: any) => {
       expect(screen.getByTestId(`email-item-${email.id}`)).toBeInTheDocument();
       expect(screen.getByTestId(`subject-${email.id}`)).toHaveTextContent(email.subject);
       expect(screen.getByTestId(`sender-${email.id}`)).toHaveTextContent(`From: ${email.sender}`);

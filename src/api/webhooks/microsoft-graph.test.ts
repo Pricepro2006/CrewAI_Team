@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Request, Response } from "express";
-import { graphWebhookHandler } from "./microsoft-graph.js";
+import { graphWebhookHandler } from './microsoft-graph';
 
 // Mock bullmq
 vi.mock("bullmq", () => ({
@@ -67,7 +67,7 @@ describe("Microsoft Graph Webhook Handler", () => {
             resource:
               "/users/user@tdsynnex.com/mailFolders/inbox/messages/msg-123",
             resourceData: {
-              "@odata.type": "#microsoft.graph.message",
+              "@odata.type": "#microsoft?.graph?.message",
               "@odata.id": "messages/msg-123",
               "@odata.etag": 'W/"etag123"',
               id: "msg-123",

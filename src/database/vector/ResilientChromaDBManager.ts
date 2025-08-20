@@ -49,7 +49,7 @@ export class ResilientChromaDBManager {
   private collections: Map<string, Collection> = new Map();
   private mode: StorageMode = StorageMode.CHROMADB;
   private config: Required<ResilientConfig["fallback"]>;
-  private syncTimer?: NodeJS.Timer;
+  private syncTimer?: NodeJS.Timeout;
   private pendingOperations: Map<string, ProcessedDocument[]> = new Map();
   private isInitialized: boolean = false;
 
@@ -62,6 +62,7 @@ export class ResilientChromaDBManager {
 
     // Initialize in-memory fallback
     this.inMemoryStore = new InMemoryVectorStore({
+      type: "resilient",
       collectionName: "fallback",
       path: "",
       baseUrl: "",
@@ -90,15 +91,15 @@ export class ResilientChromaDBManager {
     logger.info("Initializing Resilient ChromaDB Manager", "RESILIENT_CHROMADB");
 
     // Initialize in-memory store
-    await this.inMemoryStore.initialize();
+    await this?.inMemoryStore?.initialize();
 
     // Try to connect to ChromaDB
-    const connected = await this.connectionManager.connect();
+    const connected = await this?.connectionManager?.connect();
 
     if (connected) {
       this.mode = StorageMode.CHROMADB;
       logger.info("ChromaDB connected - using persistent storage", "RESILIENT_CHROMADB");
-    } else if (this.config.enabled) {
+    } else if (this?.config?.enabled) {
       this.mode = StorageMode.IN_MEMORY;
       logger.warn(
         "ChromaDB unavailable - falling back to in-memory storage",
@@ -120,11 +121,11 @@ export class ResilientChromaDBManager {
    * Set up event listeners for connection state changes
    */
   private setupEventListeners(): void {
-    this.connectionManager.on("connected", () => {
+    this?.connectionManager?.on("connected", () => {
       this.onChromaDBConnected();
     });
 
-    this.connectionManager.on("disconnected", (error: string) => {
+    this?.connectionManager?.on("disconnected", (error: string) => {
       this.onChromaDBDisconnected(error);
     });
   }
@@ -135,7 +136,7 @@ export class ResilientChromaDBManager {
   private async onChromaDBConnected(): Promise<void> {
     logger.info("ChromaDB connection restored", "RESILIENT_CHROMADB");
 
-    if (this.mode === StorageMode.IN_MEMORY && this.config.preserveDataOnSwitch) {
+    if (this.mode === StorageMode.IN_MEMORY && this?.config?.preserveDataOnSwitch) {
       // Sync in-memory data to ChromaDB
       await this.syncInMemoryToChromaDB();
     }
@@ -150,7 +151,7 @@ export class ResilientChromaDBManager {
   private onChromaDBDisconnected(error: string): void {
     logger.warn(`ChromaDB disconnected: ${error}`, "RESILIENT_CHROMADB");
 
-    if (this.config.enabled) {
+    if (this?.config?.enabled) {
       this.mode = StorageMode.IN_MEMORY;
       this.startSyncTimer();
       logger.info("Switched to in-memory fallback mode", "RESILIENT_CHROMADB");
@@ -167,7 +168,7 @@ export class ResilientChromaDBManager {
 
     this.syncTimer = setInterval(async () => {
       await this.attemptSync();
-    }, this.config.syncInterval);
+    }, this?.config?.syncInterval) as NodeJS.Timeout;
   }
 
   /**
@@ -188,7 +189,7 @@ export class ResilientChromaDBManager {
       return;
     }
 
-    const connected = await this.connectionManager.connect();
+    const connected = await this?.connectionManager?.connect();
     if (connected) {
       await this.syncInMemoryToChromaDB();
     }
@@ -202,11 +203,11 @@ export class ResilientChromaDBManager {
 
     try {
       // Get all documents from in-memory store
-      const documents = await this.inMemoryStore.getAllDocuments(
-        this.config.maxInMemoryDocuments
+      const documents = await this?.inMemoryStore?.getAllDocuments(
+        this?.config?.maxInMemoryDocuments
       );
 
-      if (documents.length === 0) {
+      if (documents?.length || 0 === 0) {
         logger.info("No documents to sync", "RESILIENT_CHROMADB");
         return;
       }
@@ -215,7 +216,7 @@ export class ResilientChromaDBManager {
       const documentsByCollection = new Map<string, ProcessedDocument[]>();
 
       for (const doc of documents) {
-        const collectionName = doc.metadata.collection || "default";
+        const collectionName = (doc?.metadata as any)?.collection || "default";
         if (!documentsByCollection.has(collectionName)) {
           documentsByCollection.set(collectionName, []);
         }
@@ -227,11 +228,11 @@ export class ResilientChromaDBManager {
       }
 
       // Sync each collection
-      for (const [collectionName, docs] of documentsByCollection) {
+      for (const [collectionName, docs] of Array.from(documentsByCollection.entries())) {
         try {
           await this.addDocumentsToChromaDB(collectionName, docs);
           logger.info(
-            `Synced ${docs.length} documents to collection ${collectionName}`,
+            `Synced ${docs?.length || 0} documents to collection ${collectionName}`,
             "RESILIENT_CHROMADB"
           );
         } catch (error) {
@@ -243,7 +244,7 @@ export class ResilientChromaDBManager {
       }
 
       // Clear in-memory store after successful sync
-      await this.inMemoryStore.clear();
+      await this?.inMemoryStore?.clear();
       logger.info("Data sync completed successfully", "RESILIENT_CHROMADB");
     } catch (error) {
       logger.error(`Data sync failed: ${error}`, "RESILIENT_CHROMADB");
@@ -257,13 +258,13 @@ export class ResilientChromaDBManager {
     collectionName: string,
     documents: ProcessedDocument[]
   ): Promise<void> {
-    const client = this.connectionManager.getClient();
+    const client = this?.connectionManager?.getClient();
     if (!client) {
       throw new Error("ChromaDB client not available");
     }
 
     // Get or create collection
-    let collection = this.collections.get(collectionName);
+    let collection = this?.collections?.get(collectionName);
     if (!collection) {
       try {
         collection = await client.getCollection({ name: collectionName } as any);
@@ -273,18 +274,18 @@ export class ResilientChromaDBManager {
           metadata: { created_at: new Date().toISOString() },
         });
       }
-      this.collections.set(collectionName, collection);
+      this?.collections?.set(collectionName, collection);
     }
 
     // Add documents in batches
     const batchSize = 100;
-    for (let i = 0; i < documents.length; i += batchSize) {
+    for (let i = 0; i < documents?.length || 0; i += batchSize) {
       const batch = documents.slice(i, i + batchSize);
       
       await collection.add({
-        ids: batch.map(d => d.id),
-        documents: batch.map(d => d.content),
-        metadatas: batch.map(d => d.metadata) as any[],
+        ids: batch?.map(d => d.id),
+        documents: batch?.map(d => d.content),
+        metadatas: batch?.map(d => d.metadata) as any[],
       });
     }
   }
@@ -301,10 +302,11 @@ export class ResilientChromaDBManager {
       await this.initialize();
     }
 
-    const processedDocs: ProcessedDocument[] = documents.map(doc => ({
+    const processedDocs: ProcessedDocument[] = documents?.map(doc => ({
       id: doc.id,
       content: doc.content,
       metadata: {
+        sourceId: doc.id,
         ...doc.metadata,
         collection: collectionName,
       },
@@ -314,7 +316,7 @@ export class ResilientChromaDBManager {
       try {
         await this.addDocumentsToChromaDB(collectionName, processedDocs);
         logger.info(
-          `Added ${documents.length} documents to ChromaDB collection ${collectionName}`,
+          `Added ${documents?.length || 0} documents to ChromaDB collection ${collectionName}`,
           "RESILIENT_CHROMADB"
         );
       } catch (error) {
@@ -323,29 +325,29 @@ export class ResilientChromaDBManager {
           "RESILIENT_CHROMADB"
         );
         
-        if (this.config.enabled) {
+        if (this?.config?.enabled) {
           // Switch to in-memory mode
           this.mode = StorageMode.IN_MEMORY;
-          await this.inMemoryStore.addDocuments(processedDocs);
+          await this?.inMemoryStore?.addDocuments(processedDocs);
           
           // Store for later sync
-          if (!this.pendingOperations.has(collectionName)) {
-            this.pendingOperations.set(collectionName, []);
+          if (!this?.pendingOperations?.has(collectionName)) {
+            this?.pendingOperations?.set(collectionName, []);
           }
-          this.pendingOperations.get(collectionName)!.push(...processedDocs);
+          this?.pendingOperations?.get(collectionName)!.push(...processedDocs);
         } else {
           throw error;
         }
       }
     } else {
       // In-memory mode
-      await this.inMemoryStore.addDocuments(processedDocs);
+      await this?.inMemoryStore?.addDocuments(processedDocs);
       
       // Store for later sync
-      if (!this.pendingOperations.has(collectionName)) {
-        this.pendingOperations.set(collectionName, []);
+      if (!this?.pendingOperations?.has(collectionName)) {
+        this?.pendingOperations?.set(collectionName, []);
       }
-      this.pendingOperations.get(collectionName)!.push(...processedDocs);
+      this?.pendingOperations?.get(collectionName)!.push(...processedDocs);
     }
   }
 
@@ -366,12 +368,12 @@ export class ResilientChromaDBManager {
 
     if (this.mode === StorageMode.IN_MEMORY) {
       // Use in-memory search (text-based, no embeddings)
-      const results = await this.inMemoryStore.search(
+      const results = await this?.inMemoryStore?.search(
         "", // Query text not available here
         options.nResults
       );
 
-      return results.map(r => ({
+      return results?.map(r => ({
         id: r.id,
         content: r.content,
         metadata: r.metadata,
@@ -381,11 +383,11 @@ export class ResilientChromaDBManager {
     }
 
     // ChromaDB mode
-    const client = this.connectionManager.getClient();
+    const client = this?.connectionManager?.getClient();
     if (!client) {
       // Fallback to in-memory
-      const results = await this.inMemoryStore.search("", options.nResults);
-      return results.map(r => ({
+      const results = await this?.inMemoryStore?.search("", options.nResults);
+      return results?.map(r => ({
         id: r.id,
         content: r.content,
         metadata: r.metadata,
@@ -411,8 +413,8 @@ export class ResilientChromaDBManager {
       );
       
       // Fallback to in-memory
-      const results = await this.inMemoryStore.search("", options.nResults);
-      return results.map(r => ({
+      const results = await this?.inMemoryStore?.search("", options.nResults);
+      return results?.map(r => ({
         id: r.id,
         content: r.content,
         metadata: r.metadata,
@@ -428,7 +430,7 @@ export class ResilientChromaDBManager {
   private formatQueryResults(chromaResults: any): ChromaQueryResult[] {
     const results: ChromaQueryResult[] = [];
 
-    if (!chromaResults.ids || chromaResults.ids.length === 0) {
+    if (!chromaResults.ids || chromaResults?.ids?.length === 0) {
       return results;
     }
 
@@ -472,12 +474,12 @@ export class ResilientChromaDBManager {
     };
     message: string;
   }> {
-    const chromadbHealth = await this.connectionManager.healthCheck();
-    const inMemoryCount = await this.inMemoryStore.getDocumentCount();
+    const chromadbHealth = await this?.connectionManager?.healthCheck();
+    const inMemoryCount = await this?.inMemoryStore?.getDocumentCount();
     
     let pendingCount = 0;
-    for (const docs of this.pendingOperations.values()) {
-      pendingCount += docs.length;
+    for (const docs of Array.from(this?.pendingOperations?.values() || [])) {
+      pendingCount += docs?.length || 0;
     }
 
     const status = 
@@ -512,7 +514,7 @@ export class ResilientChromaDBManager {
    * Force switch to in-memory mode (for testing)
    */
   async switchToInMemory(): Promise<void> {
-    await this.connectionManager.disconnect();
+    await this?.connectionManager?.disconnect();
     this.mode = StorageMode.IN_MEMORY;
     logger.info("Manually switched to in-memory mode", "RESILIENT_CHROMADB");
   }
@@ -521,7 +523,7 @@ export class ResilientChromaDBManager {
    * Force reconnect to ChromaDB
    */
   async reconnect(): Promise<boolean> {
-    const connected = await this.connectionManager.connect();
+    const connected = await this?.connectionManager?.connect();
     if (connected) {
       await this.onChromaDBConnected();
     }
@@ -533,7 +535,7 @@ export class ResilientChromaDBManager {
    */
   async shutdown(): Promise<void> {
     this.stopSyncTimer();
-    await this.connectionManager.disconnect();
+    await this?.connectionManager?.disconnect();
     logger.info("Resilient ChromaDB Manager shutdown", "RESILIENT_CHROMADB");
   }
 }

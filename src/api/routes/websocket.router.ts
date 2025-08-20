@@ -21,64 +21,64 @@ export const websocketRouter: Router<any> = router({
       }),
     )
     .subscription(({ input }) => {
-      return observable((observer) => {
+      return observable((observer: any) => {
         // Create handlers for each message type
         const handlers: Record<string, (message: any) => void> = {
-          "agent.status": (message) => {
+          "agent.status": (message: any) => {
             if (
               !input.filter?.agentId ||
-              message.agentId === input.filter.agentId
+              message.agentId === input?.filter?.agentId
             ) {
               observer.next(message);
             }
           },
-          "agent.task": (message) => {
+          "agent.task": (message: any) => {
             if (
               !input.filter?.agentId ||
-              message.agentId === input.filter.agentId
+              message.agentId === input?.filter?.agentId
             ) {
               observer.next(message);
             }
           },
-          "plan.update": (message) => {
+          "plan.update": (message: any) => {
             if (
               !input.filter?.planId ||
-              message.planId === input.filter.planId
+              message.planId === input?.filter?.planId
             ) {
               observer.next(message);
             }
           },
-          "chat.message": (message) => {
+          "chat.message": (message: any) => {
             if (
               !input.filter?.conversationId ||
-              message.conversationId === input.filter.conversationId
+              message.conversationId === input?.filter?.conversationId
             ) {
               observer.next(message);
             }
           },
-          "task.update": (message) => {
+          "task.update": (message: any) => {
             if (
               !input.filter?.taskId ||
-              message.taskId === input.filter.taskId
+              message.taskId === input?.filter?.taskId
             ) {
               observer.next(message);
             }
           },
-          "rag.operation": (message) => {
+          "rag.operation": (message: any) => {
             observer.next(message);
           },
-          "system.health": (message) => {
+          "system.health": (message: any) => {
             observer.next(message);
           },
         };
 
         // Subscribe to requested types
-        const subscribedTypes = input.types.includes("*")
+        const subscribedTypes = input?.types?.includes("*")
           ? Object.keys(handlers)
-          : input.types.filter((type) => handlers[type]);
+          : input?.types?.filter((type: any) => handlers[type]);
 
         // Register listeners
-        subscribedTypes.forEach((type) => {
+        subscribedTypes.forEach((type: any) => {
           const handler = handlers[type];
           if (handler) {
             wsService.on(type, handler);
@@ -87,7 +87,7 @@ export const websocketRouter: Router<any> = router({
 
         // Cleanup function
         return () => {
-          subscribedTypes.forEach((type) => {
+          subscribedTypes.forEach((type: any) => {
             const handler = handlers[type];
             if (handler) {
               wsService.off(type, handler);
@@ -105,7 +105,7 @@ export const websocketRouter: Router<any> = router({
       }),
     )
     .subscription(({ input }) => {
-      return observable((observer) => {
+      return observable((observer: any) => {
         const handler = (message: any) => {
           if (
             message.type === "agent.status" &&
@@ -135,7 +135,7 @@ export const websocketRouter: Router<any> = router({
       }),
     )
     .subscription(({ input }) => {
-      return observable((observer) => {
+      return observable((observer: any) => {
         const handler = (message: any) => {
           if (
             message.type === "plan.update" &&
@@ -159,7 +159,7 @@ export const websocketRouter: Router<any> = router({
 
   // Subscribe to task queue updates
   taskQueue: publicProcedure.subscription(() => {
-    return observable((observer) => {
+    return observable((observer: any) => {
       const handler = (message: any) => {
         if (message.type === "task.update") {
           observer.next({
@@ -181,7 +181,7 @@ export const websocketRouter: Router<any> = router({
 
   // Subscribe to RAG operations
   ragOperations: publicProcedure.subscription(() => {
-    return observable((observer) => {
+    return observable((observer: any) => {
       const handler = (message: any) => {
         if (message.type === "rag.operation") {
           observer.next({
@@ -203,7 +203,7 @@ export const websocketRouter: Router<any> = router({
 
   // Subscribe to system health updates
   systemHealth: publicProcedure.subscription(() => {
-    return observable((observer) => {
+    return observable((observer: any) => {
       const handler = (message: any) => {
         if (message.type === "system.health") {
           observer.next({

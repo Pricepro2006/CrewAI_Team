@@ -52,17 +52,17 @@ export class SafeDatabaseOperations {
     whereClause?: string,
     params: any[] = []
   ): Promise<SafeQueryResult<T>> {
-    return this.errorHandler.safeExecute(() => {
-      const { query, availableColumns, missingColumns } = this.adapter.createSafeSelectQuery(
+    return this?.errorHandler?.safeExecute(() => {
+      const { query, availableColumns, missingColumns } = this?.adapter?.createSafeSelectQuery(
         tableName,
-        columns[0] === '*' ? this.adapter.getTableColumns(tableName) : columns,
+        columns[0] === '*' ? this?.adapter?.getTableColumns(tableName) : columns,
         whereClause
       );
 
-      const results = this.adapter.executeSafeQuery<T>(query, params);
+      const results = this?.adapter?.executeSafeQuery<T>(query, params);
       
       const warnings: string[] = [];
-      if (missingColumns.length > 0) {
+      if (missingColumns?.length || 0 > 0) {
         warnings.push(`Missing columns: ${missingColumns.join(', ')}`);
       }
 
@@ -82,14 +82,14 @@ export class SafeDatabaseOperations {
     tableName: string,
     data: Record<string, any>
   ): Promise<SafeOperationResult> {
-    return this.errorHandler.safeExecute(() => {
-      const { query, values, skippedColumns } = this.adapter.createSafeInsertQuery(tableName, data);
+    return this?.errorHandler?.safeExecute(() => {
+      const { query, values, skippedColumns } = this?.adapter?.createSafeInsertQuery(tableName, data);
       
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const result = stmt.run(...values);
       
       const warnings: string[] = [];
-      if (skippedColumns.length > 0) {
+      if (skippedColumns?.length || 0 > 0) {
         warnings.push(`Skipped invalid columns: ${skippedColumns.join(', ')}`);
       }
 
@@ -117,19 +117,19 @@ export class SafeDatabaseOperations {
     whereClause: string,
     whereParams: any[] = []
   ): Promise<SafeOperationResult> {
-    return this.errorHandler.safeExecute(() => {
-      const { query, values, skippedColumns } = this.adapter.createSafeUpdateQuery(
+    return this?.errorHandler?.safeExecute(() => {
+      const { query, values, skippedColumns } = this?.adapter?.createSafeUpdateQuery(
         tableName,
         data,
         whereClause
       );
       
       const allParams = [...values, ...whereParams];
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const result = stmt.run(...allParams);
       
       const warnings: string[] = [];
-      if (skippedColumns.length > 0) {
+      if (skippedColumns?.length || 0 > 0) {
         warnings.push(`Skipped invalid columns: ${skippedColumns.join(', ')}`);
       }
 
@@ -156,10 +156,10 @@ export class SafeDatabaseOperations {
     whereClause: string,
     params: any[] = []
   ): Promise<SafeOperationResult> {
-    return this.errorHandler.safeExecute(() => {
+    return this?.errorHandler?.safeExecute(() => {
       const query = `DELETE FROM ${tableName} WHERE ${whereClause}`;
       
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const result = stmt.run(...params);
 
       logger.debug("Safe DELETE executed", "SAFE_DB_OPS", {
@@ -180,8 +180,8 @@ export class SafeDatabaseOperations {
    * Check if table exists
    */
   async tableExists(tableName: string): Promise<boolean> {
-    return this.errorHandler.safeExecute(() => {
-      const result = this.db.prepare(`
+    return this?.errorHandler?.safeExecute(() => {
+      const result = this?.db?.prepare(`
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name=?
       `).get(tableName);
@@ -194,8 +194,8 @@ export class SafeDatabaseOperations {
    * Get safe column list for a table
    */
   async getTableColumns(tableName: string): Promise<string[]> {
-    return this.errorHandler.safeExecute(() => {
-      return this.adapter.getTableColumns(tableName);
+    return this?.errorHandler?.safeExecute(() => {
+      return this?.adapter?.getTableColumns(tableName);
     }, { table: tableName, operation: 'SCHEMA_INFO' });
   }
 
@@ -206,9 +206,19 @@ export class SafeDatabaseOperations {
     query: string,
     params: any[] = []
   ): Promise<T[]> {
-    return this.errorHandler.safeExecute(() => {
-      return this.adapter.executeSafeQuery<T>(query, params);
+    return this?.errorHandler?.safeExecute(() => {
+      return this?.adapter?.executeSafeQuery<T>(query, params);
     }, { operation: 'CUSTOM_QUERY' });
+  }
+
+  /**
+   * Execute a general query - alias for customQuery for backward compatibility
+   */
+  async query<T = any>(
+    sql: string,
+    params: any[] = []
+  ): Promise<T[]> {
+    return this.customQuery<T>(sql, params);
   }
 }
 
@@ -273,23 +283,30 @@ export function createSchemaValidatedMiddleware(
   requiredTables: Record<string, string[]> // table -> required columns
 ) {
   return middleware(async ({ ctx, next }) => {
-    // First apply database middleware
-    const dbMiddleware = databaseMiddleware;
-    const enhancedResult = await dbMiddleware({ ctx, next: async ({ ctx: dbCtx }) => {
-      const databaseCtx = dbCtx as DatabaseContext;
+    // Apply database enhancements to context
+    const dbManager = getWalmartDatabaseManager();
+    const dbAdapter = createSchemaAdapter(dbManager.getDatabase());
+    const dbErrorHandler = createDatabaseErrorHandler(dbManager.getDatabase(), dbAdapter);
+    
+    const databaseCtx: DatabaseContext = {
+      ...ctx,
+      dbAdapter,
+      dbErrorHandler,
+      safeDb: new SafeDatabaseOperations(dbManager.getDatabase(), dbAdapter, dbErrorHandler)
+    };
       
       // Validate required schema
       const validationErrors: string[] = [];
       
       for (const [tableName, requiredColumns] of Object.entries(requiredTables)) {
         for (const column of requiredColumns) {
-          if (!databaseCtx.dbAdapter.columnExists(tableName, column)) {
+          if (!databaseCtx?.dbAdapter?.columnExists(tableName, column)) {
             validationErrors.push(`Missing column '${column}' in table '${tableName}'`);
           }
         }
       }
 
-      if (validationErrors.length > 0) {
+      if (validationErrors?.length || 0 > 0) {
         logger.error("Schema validation failed", "SCHEMA_VALIDATION", {
           errors: validationErrors,
           requiredSchema: requiredTables
@@ -297,18 +314,11 @@ export function createSchemaValidatedMiddleware(
 
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
-          message: 'Database schema validation failed',
-          data: {
-            validationErrors,
-            requiredSchema: requiredTables
-          }
+          message: `Database schema validation failed: ${validationErrors.join(', ')}`,
         });
       }
 
-      return next({ ctx: databaseCtx });
-    }});
-
-    return enhancedResult;
+    return next({ ctx: databaseCtx });
   });
 }
 

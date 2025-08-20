@@ -118,14 +118,14 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
     return withUnitOfWork(async (uow: IUnitOfWork) => {
       try {
         // Check if already analyzed
-        const existingAnalysis = await uow.analyses.findByEmailId(email.id);
+        const existingAnalysis = await uow?.analyses?.findByEmailId(email.id);
         if (existingAnalysis && !options.skipCache) {
           logger.info(`Found existing analysis for email ${email.id}`);
           return this.reconstructResults(existingAnalysis);
         }
 
         // Update email status to analyzing
-        await uow.emails.updateAnalysisStatus(
+        await uow?.emails?.updateAnalysisStatus(
           email.id,
           AnalysisStatus.ANALYZING,
         );
@@ -140,7 +140,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
 
         // Check chain completeness
         const isCompleteChain =
-          phase1Results.basic_classification.requires_response || false;
+          phase1Results?.basic_classification?.requires_response || false;
         const chainAnalysis = await this.performChainAnalysis(email, uow);
 
         logger.info(
@@ -196,17 +196,17 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         );
 
         // Update email status
-        await uow.emails.markAsAnalyzed(email.id, new Date());
+        await uow?.emails?.markAsAnalyzed(email.id, new Date());
 
         // Track performance
         const totalTime = Date.now() - startTime;
-        this.performanceMonitor.trackOperation(
+        this?.performanceMonitor?.trackOperation(
           "three_phase_analysis",
           totalTime,
           true,
         );
 
-        const phasesCompleted = Object.prototype.hasOwnProperty.call(
+        const phasesCompleted = Object?.prototype?.hasOwnProperty.call(
           finalResults,
           "strategic_analysis",
         )
@@ -225,7 +225,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         return finalResults;
       } catch (error) {
         // Update email status to failed
-        await uow.emails.updateAnalysisStatus(
+        await uow?.emails?.updateAnalysisStatus(
           email.id,
           AnalysisStatus.FAILED,
           error instanceof Error ? error.message : "Unknown error",
@@ -252,38 +252,40 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       if (email.thread_emails) {
         conversationEmails = email.thread_emails;
       } else if (email.message_id) {
-        const emailRecord = await uow.emails.findByMessageId(email.message_id);
+        const emailRecord = await uow?.emails?.findByMessageId(email.message_id);
         if (emailRecord?.conversation_id) {
-          conversationEmails = await uow.emails.findByConversationId(
+          conversationEmails = await uow?.emails?.findByConversationId(
             emailRecord.conversation_id,
           );
         }
       }
 
-      if (conversationEmails.length === 0) {
+      if (conversationEmails?.length || 0 === 0) {
         return null;
       }
 
       // Analyze chain
-      const chainAnalysis = await this.chainAnalyzer.analyzeChain(email.id);
+      const chainAnalysis = await this?.chainAnalyzer?.analyzeChain(email.id);
 
       // Create or update chain in repository
       const chain: Omit<EmailChain, "id"> = {
         chain_id: chainAnalysis.chain_id,
         conversation_id: email.id,
-        email_ids: conversationEmails.map((e) => e.id),
-        email_count: conversationEmails.length,
+        email_ids: conversationEmails?.map((e: any) => e.id),
+        email_count: conversationEmails?.length || 0,
         chain_type: chainAnalysis.chain_type as any,
         completeness_score: chainAnalysis.completeness_score,
         is_complete: chainAnalysis.is_complete,
         missing_stages: [],
-        start_time: new Date(conversationEmails[0].received_time),
-        end_time: new Date(
-          conversationEmails[conversationEmails.length - 1].received_time,
-        ),
+        start_time: conversationEmails && conversationEmails.length > 0 && conversationEmails[0]
+          ? new Date(conversationEmails[0].received_time)
+          : new Date(),
+        end_time: conversationEmails && conversationEmails.length > 0
+          ? new Date(conversationEmails[conversationEmails.length - 1]?.received_time || new Date())
+          : new Date(),
         duration_hours: 0, // Calculate from times
         participants: Array.from(
-          new Set(conversationEmails.map((e) => e.from_address)),
+          new Set(conversationEmails?.map((e: any) => e.from_address)),
         ),
         key_entities: this.extractChainEntities(chainAnalysis),
         workflow_state: chainAnalysis.workflow_states?.[0] || "unknown",
@@ -291,13 +293,13 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       };
 
       // Calculate duration
-      chain.duration_hours =
-        (chain.end_time.getTime() - chain.start_time.getTime()) /
-        (1000 * 60 * 60);
+      chain.duration_hours = chain?.end_time && chain?.start_time
+        ? (chain.end_time.getTime() - chain.start_time.getTime()) / (1000 * 60 * 60)
+        : 0;
 
-      return await uow.chains.upsert(chain as EmailChain);
+      return await uow?.chains?.upsert(chain as EmailChain);
     } catch (error) {
-      logger.error("Chain analysis failed", error);
+      logger.error("Chain analysis failed", error as string);
       return null;
     }
   }
@@ -335,17 +337,16 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
           : undefined,
       final_summary: {
         email_id: email.id,
-        overall_priority: results.enhanced_classification.primary_intent,
-        recommended_actions: results.action_items.map((a) => a.task),
-        key_insights: results.contextual_insights.recommended_actions,
+        overall_priority: (results as Phase2Results).enhanced_classification?.primary_intent || '',
+        recommended_actions: (results as Phase2Results).action_items?.map((a: any) => a.task) || [],
+        key_insights: (results as Phase2Results).contextual_insights?.recommended_actions || [],
         workflow_recommendations:
-          "workflow_intelligence" in results
-            ? (results as Phase3Results).workflow_intelligence
-                .predicted_next_steps
+          "strategic_analysis" in results
+            ? [(results as Phase3Results).predictive_insights?.next_likely_action].filter(Boolean)
             : [],
-        confidence_score: results.enhanced_classification.confidence,
+        confidence_score: (results as Phase2Results).enhanced_classification?.confidence || 0,
       },
-      confidence_score: results.enhanced_classification.confidence,
+      confidence_score: (results as Phase2Results).enhanced_classification?.confidence || 0,
       workflow_type: chain?.chain_type || "unknown",
       chain_id: chain?.id,
       is_complete_chain: chain?.is_complete || false,
@@ -354,21 +355,22 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       created_at: new Date(),
     };
 
-    await uow.analyses.create(analysis);
+    await uow?.analyses?.create(analysis);
 
     // Update email with analysis results
     if ("enhanced_classification" in results) {
-      await uow.emails.updateWorkflowState(
+      const phase2Results = results as Phase2Results;
+      await uow?.emails?.updateWorkflowState(
         email.id,
-        results.enhanced_classification.primary_intent,
-        results.enhanced_classification.confidence,
+        phase2Results.enhanced_classification?.primary_intent || 'unknown',
+        phase2Results.enhanced_classification?.confidence || 0,
       );
     }
 
     // Store entities
     const entities = this.extractEntities(results);
     for (const entity of entities) {
-      await uow.emails.create({
+      await uow?.emails?.create({
         message_id: `entity_${email.id}_${entity.type}_${entity.value}`,
         subject: `Entity: ${entity.type}`,
         body_text: entity.value,
@@ -450,7 +452,6 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         efficiency_gain: 0,
         automation_potential: 0,
       },
-      workflow_intelligence: results.workflow_intelligence,
       processing_time_ms: results.processing_time_ms || 0,
     };
   }
@@ -465,7 +466,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
     if (chainAnalysis.key_entities) {
       Object.entries(chainAnalysis.key_entities).forEach(([type, values]) => {
         if (Array.isArray(values)) {
-          values.forEach((value) => {
+          values.forEach((value: any) => {
             entities.push({
               type,
               value: String(value),
@@ -493,7 +494,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
     if (results.entities) {
       Object.entries(results.entities).forEach(([type, values]) => {
         if (Array.isArray(values)) {
-          values.forEach((value) => entities.push({ type, value }));
+          values.forEach((value: any) => entities.push({ type, value }));
         }
       });
     }
@@ -502,7 +503,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
     if (results.missed_entities) {
       Object.entries(results.missed_entities).forEach(([type, values]) => {
         if (Array.isArray(values)) {
-          values.forEach((value) =>
+          values.forEach((value: any) =>
             entities.push({ type: `missed_${type}`, value }),
           );
         }
@@ -596,20 +597,20 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
     try {
       // Call LLM for enhancement
       const emailCharacteristics: EmailCharacteristics = {
-        hasOrderReferences: phase1Results.entities.parts.length > 0,
-        hasQuoteRequests: phase1Results.entities.quotes.length > 0,
-        isEscalation: phase1Results.basic_classification.priority === "high",
-        isFromKeyCustomer: false,
-        hasTechnicalIssues: false,
-        urgencyScore: phase1Results.basic_classification.urgency ? 7 : 3,
-        financialImpact: 0,
+        hasAttachments: false,
+        hasLinks: false,
+        sentiment: phase1Results?.sentiment || 'neutral',
+        urgency: phase1Results?.basic_classification?.urgency ? 'high' : 'normal',
+        category: phase1Results?.basic_classification?.type || 'general',
+        length: email.body?.length || 0
       };
       const prompt = enhancePromptForEmailType(
         PHASE2_ENHANCED_PROMPT,
         emailCharacteristics,
       );
 
-      const llmResponse = await this.callLLM("llama3.2", prompt, {
+      const promptString = `${prompt.system}\n\n${prompt.user}`;
+      const llmResponse = await this.callLLM("llama3.2", promptString, {
         temperature: 0.3,
       });
       const enhanced = this.parseLLMResponse(llmResponse);
@@ -618,7 +619,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         ...phase1Results,
         enhanced_classification: {
           primary_intent:
-            enhanced.workflow_type || phase1Results.basic_classification.type,
+            enhanced.workflow_type || phase1Results?.basic_classification?.type,
           secondary_intents: enhanced.secondary_intents || [],
           confidence: enhanced.confidence || 0.7,
         },
@@ -632,17 +633,22 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         processing_time_ms: Date.now() - startTime,
       };
     } catch (error) {
-      logger.error("Phase 2 LLM call failed", error);
+      logger.error("Phase 2 LLM call failed", error as string);
 
       // Fallback to phase 1 results
       return {
         ...phase1Results,
         enhanced_classification: {
-          primary_intent: phase1Results.basic_classification.type,
+          primary_intent: phase1Results?.basic_classification?.type,
           secondary_intents: [],
           confidence: 0.5,
         },
-        missed_entities: {},
+        missed_entities: {
+          company_names: [],
+          people: [],
+          technical_terms: [],
+          deadlines: []
+        },
         action_items: [],
         contextual_insights: {
           business_impact: "unknown",
@@ -668,20 +674,20 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
     try {
       // Call advanced LLM for strategic analysis
       const emailCharacteristics: EmailCharacteristics = {
-        hasOrderReferences: phase1Results.entities.parts.length > 0,
-        hasQuoteRequests: phase1Results.entities.quotes.length > 0,
-        isEscalation: phase1Results.basic_classification.priority === "high",
-        isFromKeyCustomer: false,
-        hasTechnicalIssues: false,
-        urgencyScore: phase1Results.basic_classification.urgency ? 7 : 3,
-        financialImpact: 0,
+        hasAttachments: false,
+        hasLinks: false,
+        sentiment: phase1Results?.sentiment || 'neutral',
+        urgency: phase1Results?.basic_classification?.urgency ? 'high' : 'normal',
+        category: phase1Results?.basic_classification?.type || 'general',
+        length: email.body?.length || 0
       };
       const prompt = enhancePromptForEmailType(
         PHASE3_STRATEGIC_PROMPT,
         emailCharacteristics,
       );
 
-      const llmResponse = await this.callLLM("phi-4", prompt, {
+      const promptString = `${prompt.system}\n\n${prompt.user}`;
+      const llmResponse = await this.callLLM("phi-4", promptString, {
         temperature: 0.2,
       });
       const strategic = this.parseLLMResponse(llmResponse);
@@ -714,7 +720,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         processing_time_ms: Date.now() - startTime,
       };
     } catch (error) {
-      logger.error("Phase 3 LLM call failed", error);
+      logger.error("Phase 3 LLM call failed", error as string);
 
       // Return phase 2 results with defaults
       return {
@@ -766,9 +772,9 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
   }
 
   private calculatePriority(email: EmailInput, entities: any): string {
-    if (email.importance === "high" || entities.po_numbers.length > 0)
+    if (email.importance === "high" || entities?.po_numbers?.length > 0)
       return "high";
-    if (entities.cases.length > 0) return "medium";
+    if (entities?.cases?.length > 0) return "medium";
     return "low";
   }
 
@@ -782,7 +788,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       "request",
       "?",
     ];
-    return responseIndicators.some((indicator) => text.includes(indicator));
+    return responseIndicators.some((indicator: any) => text.includes(indicator));
   }
 
   private extractKeyPhrases(text: string): string[] {
@@ -801,8 +807,8 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       "disappointed",
     ];
 
-    const posCount = positive.filter((word) => text.includes(word)).length;
-    const negCount = negative.filter((word) => text.includes(word)).length;
+    const posCount = positive?.filter((word: any) => text.includes(word)).length;
+    const negCount = negative?.filter((word: any) => text.includes(word)).length;
 
     if (posCount > negCount) return "positive";
     if (negCount > posCount) return "negative";
@@ -816,7 +822,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
   ): Promise<string> {
     try {
       // Use NLP queue to prevent bottlenecks from concurrent Ollama requests
-      const responseData = await this.nlpQueue.enqueue(
+      const responseData = await this?.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post("http://localhost:11434/api/generate", {
             model,
@@ -824,17 +830,17 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
             stream: false,
             options,
           });
-          return response.data.response;
+          return response?.data?.response;
         },
         "normal", // default priority
         30000, // default timeout
         `llm-call-${model}-${prompt.substring(0, 50)}`, // query for deduplication
-        { model, promptLength: prompt.length } // metadata
+        { model, promptLength: prompt?.length || 0 } // metadata
       );
 
       return responseData;
     } catch (error) {
-      logger.error(`LLM call failed for model ${model}`, error);
+      logger.error(`LLM call failed for model ${model}`, error as string);
       throw error;
     }
   }
@@ -854,7 +860,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         risk_level: "medium",
       };
     } catch (error) {
-      logger.error("Failed to parse LLM response", error);
+      logger.error("Failed to parse LLM response", error as string);
       return {};
     }
   }

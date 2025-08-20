@@ -7,10 +7,10 @@
 export const MODEL_CONFIG = {
   // Model definitions
   models: {
-    primary: "llama3.2:3b",
-    fallback: "llama3.2:3b", // Same model for consistency
+    primary: "./models/llama-3.2-3b-instruct.Q4_K_M.gguf",
+    fallback: "./models/llama-3.2-3b-instruct.Q4_K_M.gguf", // Same model for consistency
     critical: "doomgrave/phi-4:14b-tools-Q3_K_S",
-    embedding: "llama3.2:3b", // Use same model for embeddings
+    embedding: process.env.OLLAMA_MODEL_EMBEDDING || "nomic-embed-text", // Optimized embedding model
     pattern: "iteration-script", // Local pattern matching
   },
 
@@ -35,7 +35,7 @@ export const MODEL_CONFIG = {
   // Memory configurations
   memory: {
     modelSizes: {
-      "llama3.2:3b": 4 * 1024 * 1024 * 1024, // 4GB
+      "./models/llama-3.2-3b-instruct.Q4_K_M.gguf": 4 * 1024 * 1024 * 1024, // 4GB
       "doomgrave/phi-4:14b-tools-Q3_K_S": 8 * 1024 * 1024 * 1024, // 8GB estimated
     },
     maxMemoryUsage: 50 * 1024 * 1024 * 1024, // 50GB limit
@@ -88,7 +88,7 @@ export const MODEL_CONFIG = {
     minAcceptableScore: 6.0,
     targetScore: 8.5,
     currentScores: {
-      "llama3.2:3b": 6.56,
+      "./models/llama-3.2-3b-instruct.Q4_K_M.gguf": 6.56,
       "doomgrave/phi-4:14b-tools-Q3_K_S": 7.75, // Estimated
       pattern: 4.6,
     },
@@ -104,7 +104,7 @@ export function getModelConfig(modelType: keyof typeof MODEL_CONFIG.models) {
 export function getModelTimeout(modelType: keyof typeof MODEL_CONFIG.models) {
   return (
     MODEL_CONFIG.timeouts[modelType as keyof typeof MODEL_CONFIG.timeouts] ||
-    MODEL_CONFIG.timeouts.primary
+    MODEL_CONFIG?.timeouts?.primary
   );
 }
 
@@ -113,18 +113,18 @@ export function getModelBatchSize(modelType: keyof typeof MODEL_CONFIG.models) {
   return (
     MODEL_CONFIG.batchSizes[
       modelType as keyof typeof MODEL_CONFIG.batchSizes
-    ] || MODEL_CONFIG.batchSizes.primary
+    ] || MODEL_CONFIG?.batchSizes?.primary
   );
 }
 
 // Helper function to check if we have enough memory for a model
 export function canRunModel(modelName: string): boolean {
   const modelSize =
-    MODEL_CONFIG.memory.modelSizes[
+    MODEL_CONFIG?.memory?.modelSizes[
       modelName as keyof typeof MODEL_CONFIG.memory.modelSizes
     ] || 4 * 1024 * 1024 * 1024; // Default 4GB
   const availableMemory =
-    MODEL_CONFIG.memory.maxMemoryUsage - MODEL_CONFIG.memory.reservedMemory;
+    MODEL_CONFIG?.memory?.maxMemoryUsage - MODEL_CONFIG?.memory?.reservedMemory;
   return modelSize <= availableMemory;
 }
 

@@ -2,9 +2,9 @@
  * Unit tests for PipelineAnalysisAdapter
  */
 
-import { describe, it, expect, vi } from "vitest";
-import { PipelineAnalysisAdapter } from "../PipelineAnalysisAdapter.js";
-import type { PipelineEmailAnalysis } from "../../types/pipeline-analysis.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { PipelineAnalysisAdapter } from '../PipelineAnalysisAdapter';
+import type { PipelineEmailAnalysis } from '../../types/pipeline-analysis';
 
 describe("PipelineAnalysisAdapter", () => {
   let adapter: PipelineAnalysisAdapter;
@@ -64,37 +64,37 @@ describe("PipelineAnalysisAdapter", () => {
       expect(result.emailId).toBe("test-email-001");
 
       // Check quick analysis
-      expect(result.quick.priority).toBe("Critical");
-      expect(result.quick.urgency).toBe("Immediate");
-      expect(result.quick.workflow).toBe("IN_PROGRESS");
-      expect(result.quick.intent).toBe("Request");
-      expect(result.quick.category).toBe("Order Management");
+      expect(result?.quick?.length).toBe("Critical");
+      expect(result?.quick?.length).toBe("Immediate");
+      expect(result?.quick?.length).toBe("IN_PROGRESS");
+      expect(result?.quick?.length).toBe("Request");
+      expect(result?.quick?.length).toBe("Order Management");
 
       // Check deep analysis
-      expect(result.deep.summary).toBe("Critical order from key customer");
-      expect(result.deep.workflowState).toBe("IN_PROGRESS");
-      expect(result.deep.businessProcess).toBe("Order Management");
-      expect(result.deep.actionItems).toHaveLength(1);
-      expect(result.deep.actionItems[0].task).toBe("Process PO12345678");
-      expect(result.deep.slaStatus).toBe("At risk - 2 hours remaining");
+      expect(result?.deep?.length).toBe("Critical order from key customer");
+      expect(result?.deep?.length).toBe("IN_PROGRESS");
+      expect(result?.deep?.length).toBe("Order Management");
+      expect(result?.deep?.length).toHaveLength(1);
+      expect(result?.deep?.actionItems[0].task).toBe("Process PO12345678");
+      expect(result?.deep?.length).toBe("At risk - 2 hours remaining");
 
       // Check entities
-      expect(result.deep.entities.po_numbers).toEqual(["PO12345678"]);
-      expect(result.deep.entities.quote_numbers).toEqual(["Q-2024-001"]);
-      expect(result.deep.entities.part_numbers).toEqual(["PN123", "PN456"]);
-      expect(result.deep.entities.companies).toEqual(["ACME Corp"]);
+      expect(result?.deep?.entities.po_numbers).toEqual(["PO12345678"]);
+      expect(result?.deep?.entities.quote_numbers).toEqual(["Q-2024-001"]);
+      expect(result?.deep?.entities.part_numbers).toEqual(["PN123", "PN456"]);
+      expect(result?.deep?.entities.companies).toEqual(["ACME Corp"]);
 
       // Check business impact
-      expect(result.deep.businessImpact.revenue).toBe(50000);
-      expect(result.deep.businessImpact.customerSatisfaction).toBe("Critical");
-      expect(result.deep.businessImpact.urgencyReason).toBe(
+      expect(result?.deep?.businessImpact.revenue).toBe(50000);
+      expect(result?.deep?.businessImpact.customerSatisfaction).toBe("Critical");
+      expect(result?.deep?.businessImpact.urgencyReason).toBe(
         "Customer escalation",
       );
 
       // Check metadata
-      expect(result.metadata.model).toBe("phi4-14b");
-      expect(result.metadata.confidence).toBe(0.95);
-      expect(result.metadata.dataSource).toBe("pipeline");
+      expect(result?.metadata?.length).toBe("phi4-14b");
+      expect(result?.metadata?.length).toBe(0.95);
+      expect(result?.metadata?.length).toBe("pipeline");
     });
 
     it("should handle Stage 2 (Llama only) data", () => {
@@ -123,12 +123,12 @@ describe("PipelineAnalysisAdapter", () => {
 
       const result = adapter.fromDatabase(pipelineData);
 
-      expect(result.quick.priority).toBe("High");
-      expect(result.quick.urgency).toBe("High");
-      expect(result.deep.summary).toBe("Quote request for standard items");
-      expect(result.deep.businessProcess).toBe("Quote Processing");
-      expect(result.metadata.model).toBe("llama-3.2:3b");
-      expect(result.metadata.confidence).toBe(0.85);
+      expect(result?.quick?.length).toBe("High");
+      expect(result?.quick?.length).toBe("High");
+      expect(result?.deep?.length).toBe("Quote request for standard items");
+      expect(result?.deep?.length).toBe("Quote Processing");
+      expect(result?.metadata?.length).toBe("llama-3.2:3b");
+      expect(result?.metadata?.length).toBe(0.85);
     });
 
     it("should handle Stage 1 (pattern only) data", () => {
@@ -145,13 +145,13 @@ describe("PipelineAnalysisAdapter", () => {
 
       const result = adapter.fromDatabase(pipelineData);
 
-      expect(result.quick.priority).toBe("Low");
-      expect(result.quick.urgency).toBe("Low");
-      expect(result.quick.workflow).toBe("NEW");
-      expect(result.deep.summary).toBe("No detailed analysis available");
-      expect(result.deep.businessProcess).toBe("General");
-      expect(result.metadata.model).toBe("pattern");
-      expect(result.metadata.confidence).toBe(0.65);
+      expect(result?.quick?.length).toBe("Low");
+      expect(result?.quick?.length).toBe("Low");
+      expect(result?.quick?.length).toBe("NEW");
+      expect(result?.deep?.length).toBe("No detailed analysis available");
+      expect(result?.deep?.length).toBe("General");
+      expect(result?.metadata?.length).toBe("pattern");
+      expect(result?.metadata?.length).toBe(0.65);
     });
 
     it("should handle malformed JSON gracefully", () => {
@@ -169,9 +169,9 @@ describe("PipelineAnalysisAdapter", () => {
       const result = adapter.fromDatabase(pipelineData);
 
       expect(result.emailId).toBe("test-email-004");
-      expect(result.quick.priority).toBe("Medium");
-      expect(result.deep.workflowState).toBe("NEW");
-      expect(result.deep.entities.po_numbers).toEqual([]);
+      expect(result?.quick?.length).toBe("Medium");
+      expect(result?.deep?.length).toBe("NEW");
+      expect(result?.deep?.entities.po_numbers).toEqual([]);
     });
   });
 
@@ -278,10 +278,10 @@ describe("PipelineAnalysisAdapter", () => {
       const results = await adapter.batchFromDatabase(pipelineData);
 
       // Should still return successfully transformed records
-      expect(results.length).toBeLessThanOrEqual(pipelineData.length);
+      expect(results?.length || 0).toBeLessThanOrEqual(pipelineData?.length || 0);
 
       // Should log errors
-      if (results.length < pipelineData.length) {
+      if (results?.length || 0 < pipelineData?.length || 0) {
         expect(loggerSpy).toHaveBeenCalled();
       }
     });

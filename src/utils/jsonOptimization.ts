@@ -7,6 +7,7 @@ import { logger } from "./logger.js";
 import { Transform, Readable } from "stream";
 import { promisify } from "util";
 import { pipeline } from "stream";
+import { JSONObject, JSONValue } from '../shared/types/utility.types';
 
 const pipelineAsync = promisify(pipeline);
 
@@ -21,7 +22,7 @@ export interface JSONOptimizationConfig {
   maxDepth: number;
   maxArrayLength: number;
   enableCircularDetection: boolean;
-  customReplacer?: (key: string, value: any) => any;
+  customReplacer?: (key: string, value: JSONValue) => JSONValue;
   prettyPrint: boolean;
 }
 
@@ -50,17 +51,17 @@ export class OptimizedJSONSerializer {
   /**
    * Serialize data with optimizations based on size and complexity
    */
-  async serialize(data: any): Promise<string | Readable> {
+  async serialize(data: JSONValue): Promise<string | Readable> {
     const startTime = Date.now();
     
     try {
       // Quick size estimation
       const estimatedSize = this.estimateSize(data);
       
-      if (this.config.enableStreaming && estimatedSize > this.config.streamThreshold) {
+      if (this?.config?.enableStreaming && estimatedSize > this?.config?.streamThreshold) {
         logger.debug("Using streaming serialization", "JSON_OPTIMIZATION", {
           estimatedSize,
-          threshold: this.config.streamThreshold,
+          threshold: this?.config?.streamThreshold,
         });
         return this.streamingSerialize(data);
       } else {
@@ -68,7 +69,7 @@ export class OptimizedJSONSerializer {
         const serializationTime = Date.now() - startTime;
         
         logger.debug("Synchronous serialization completed", "JSON_OPTIMIZATION", {
-          dataSize: result.length,
+          dataSize: result?.length || 0,
           serializationTime,
         });
         
@@ -87,14 +88,14 @@ export class OptimizedJSONSerializer {
   /**
    * Synchronous serialization with optimizations
    */
-  private synchronousSerialize(data: any): string {
-    if (this.config.enableCircularDetection) {
+  private synchronousSerialize(data: JSONValue): string {
+    if (this?.config?.enableCircularDetection) {
       this.circularRefs = new WeakSet();
     }
 
     const replacer = this.createOptimizedReplacer();
     
-    if (this.config.prettyPrint) {
+    if (this?.config?.prettyPrint) {
       return JSON.stringify(data, replacer, 2);
     } else {
       return JSON.stringify(data, replacer);
@@ -104,7 +105,7 @@ export class OptimizedJSONSerializer {
   /**
    * Streaming serialization for large datasets
    */
-  private streamingSerialize(data: any): Readable {
+  private streamingSerialize(data: JSONValue): Readable {
     const stream = new JSONStream(this.config);
     
     // Start serialization asynchronously
@@ -123,35 +124,35 @@ export class OptimizedJSONSerializer {
   /**
    * Create optimized JSON replacer function
    */
-  private createOptimizedReplacer(): (key: string, value: any) => any {
+  private createOptimizedReplacer(): (key: string, value: JSONValue) => JSONValue {
     let depth = 0;
     
-    return (key: string, value: any) => {
+    return (key: string, value: JSONValue) => {
       // Handle depth limiting
-      if (depth > this.config.maxDepth) {
+      if (depth > this?.config?.maxDepth) {
         return '[Maximum depth exceeded]';
       }
       
       // Handle circular references
-      if (this.config.enableCircularDetection && 
+      if (this?.config?.enableCircularDetection && 
           value !== null && 
           typeof value === 'object') {
-        if (this.circularRefs.has(value)) {
+        if (this?.circularRefs?.has(value)) {
           return '[Circular Reference]';
         }
-        this.circularRefs.add(value);
+        this?.circularRefs?.add(value);
       }
       
       // Handle large arrays
-      if (Array.isArray(value) && value.length > this.config.maxArrayLength) {
-        const truncated = value.slice(0, this.config.maxArrayLength);
-        truncated.push(`[... ${value.length - this.config.maxArrayLength} more items]`);
+      if (Array.isArray(value) && value?.length || 0 > this?.config?.maxArrayLength) {
+        const truncated = value.slice(0, this?.config?.maxArrayLength);
+        truncated.push(`[... ${value?.length || 0 - this?.config?.maxArrayLength} more items]`);
         return truncated;
       }
       
       // Apply custom replacer if provided
-      if (this.config.customReplacer) {
-        value = this.config.customReplacer(key, value);
+      if (this?.config?.customReplacer) {
+        value = this?.config?.customReplacer(key, value);
       }
       
       // Optimize common patterns
@@ -168,7 +169,7 @@ export class OptimizedJSONSerializer {
   /**
    * Optimize individual values during serialization
    */
-  private optimizeValue(key: string, value: any): any {
+  private optimizeValue(key: string, value: JSONValue): JSONValue {
     // Remove null/undefined from objects to reduce size
     if (value === null || value === undefined) {
       return undefined; // Will be excluded from JSON
@@ -204,7 +205,7 @@ export class OptimizedJSONSerializer {
   /**
    * Estimate serialized size without full serialization
    */
-  private estimateSize(data: any, depth: number = 0): number {
+  private estimateSize(data: JSONValue, depth: number = 0): number {
     if (depth > 5) return 100; // Prevent deep recursion in estimation
     
     if (data === null || data === undefined) return 4; // "null"
@@ -213,15 +214,15 @@ export class OptimizedJSONSerializer {
     
     if (typeof data === 'number') return String(data).length;
     
-    if (typeof data === 'string') return data.length + 2; // Add quotes
+    if (typeof data === 'string') return data?.length || 0 + 2; // Add quotes
     
     if (Array.isArray(data)) {
       let size = 2; // []
-      for (let i = 0; i < Math.min(data.length, 100); i++) { // Sample first 100 items
+      for (let i = 0; i < Math.min(data?.length || 0, 100); i++) { // Sample first 100 items
         size += this.estimateSize(data[i], depth + 1);
         if (i > 0) size += 1; // comma
       }
-      return size * (data.length / Math.min(data.length, 100)); // Extrapolate
+      return size * (data?.length || 0 / Math.min(data?.length || 0, 100)); // Extrapolate
     }
     
     if (typeof data === 'object') {
@@ -231,7 +232,7 @@ export class OptimizedJSONSerializer {
       for (const [key, value] of Object.entries(data)) {
         if (count >= 50) break; // Sample first 50 properties
         
-        size += key.length + 3; // "key":
+        size += key?.length || 0 + 3; // "key":
         size += this.estimateSize(value, depth + 1);
         if (count > 0) size += 1; // comma
         count++;
@@ -264,7 +265,7 @@ class JSONStream extends Readable {
     // Readable stream interface implementation
   }
 
-  writeData(data: any): void {
+  writeData(data: JSONValue): void {
     try {
       if (Array.isArray(data)) {
         this.writeArray(data);
@@ -278,11 +279,11 @@ class JSONStream extends Readable {
     }
   }
 
-  private writeArray(array: any[]): void {
+  private writeArray(array: JSONValue[]): void {
     this.push('[');
     this.isArrayStarted = true;
     
-    for (let i = 0; i < array.length; i++) {
+    for (let i = 0; i < array?.length || 0; i++) {
       if (i > 0) {
         this.push(',');
       }
@@ -290,7 +291,7 @@ class JSONStream extends Readable {
       this.writeValue(array[i]);
       
       // Flush buffer periodically
-      if (this.buffer.length > this.config.chunkSize) {
+      if (this?.buffer?.length > this?.config?.chunkSize) {
         this.flushBuffer();
       }
     }
@@ -299,13 +300,13 @@ class JSONStream extends Readable {
     this.flushBuffer();
   }
 
-  private writeObject(obj: Record<string, any>): void {
+  private writeObject(obj: JSONObject): void {
     this.push('{');
     this.isObjectStarted = true;
     
     const entries = Object.entries(obj);
     
-    for (let i = 0; i < entries.length; i++) {
+    for (let i = 0; i < entries?.length || 0; i++) {
       const entry = entries[i];
       if (!entry) continue;
       
@@ -319,7 +320,7 @@ class JSONStream extends Readable {
       this.writeValue(value);
       
       // Flush buffer periodically
-      if (this.buffer.length > this.config.chunkSize) {
+      if (this?.buffer?.length > this?.config?.chunkSize) {
         this.flushBuffer();
       }
     }
@@ -328,7 +329,7 @@ class JSONStream extends Readable {
     this.flushBuffer();
   }
 
-  private writeValue(value: any): void {
+  private writeValue(value: JSONValue): void {
     if (value === null) {
       this.push('null');
     } else if (typeof value === 'boolean') {
@@ -356,7 +357,7 @@ class JSONStream extends Readable {
   }
 
   private flushBuffer(): void {
-    if (this.buffer.length > 0) {
+    if (this?.buffer?.length > 0) {
       this.push(this.buffer);
       this.buffer = '';
     }
@@ -365,7 +366,7 @@ class JSONStream extends Readable {
   override push(chunk: string | null): boolean {
     if (chunk === null) {
       // End of stream
-      if (this.buffer.length > 0) {
+      if (this?.buffer?.length > 0) {
         super.push(this.buffer);
         this.buffer = '';
       }
@@ -374,7 +375,7 @@ class JSONStream extends Readable {
     
     this.buffer += chunk;
     
-    if (this.buffer.length >= this.config.chunkSize) {
+    if (this?.buffer?.length >= this?.config?.chunkSize) {
       const result = super.push(this.buffer);
       this.buffer = '';
       return result;
@@ -397,7 +398,7 @@ export class OptimizedJSONParser {
   /**
    * Parse JSON with optimizations and error handling
    */
-  parse<T = any>(jsonString: string): T {
+  parse<T = JSONValue>(jsonString: string): T {
     const startTime = Date.now();
     
     try {
@@ -407,7 +408,7 @@ export class OptimizedJSONParser {
       }
       
       // Size validation
-      if (jsonString.length > 50 * 1024 * 1024) { // 50MB limit
+      if (jsonString?.length || 0 > 50 * 1024 * 1024) { // 50MB limit
         throw new Error('JSON input too large');
       }
       
@@ -415,7 +416,7 @@ export class OptimizedJSONParser {
       const parseTime = Date.now() - startTime;
       
       logger.debug("JSON parsing completed", "JSON_OPTIMIZATION", {
-        inputSize: jsonString.length,
+        inputSize: jsonString?.length || 0,
         parseTime,
       });
       
@@ -425,7 +426,7 @@ export class OptimizedJSONParser {
       logger.error("JSON parsing failed", "JSON_OPTIMIZATION", {
         error,
         parseTime,
-        inputLength: jsonString.length,
+        inputLength: jsonString?.length || 0,
       });
       throw error;
     }
@@ -434,8 +435,8 @@ export class OptimizedJSONParser {
   /**
    * Create JSON reviver function for parsing optimizations
    */
-  private createReviver(): (key: string, value: any) => any {
-    return (key: string, value: any) => {
+  private createReviver(): (key: string, value: JSONValue) => JSONValue {
+    return (key: string, value: JSONValue) => {
       // Parse ISO date strings
       if (typeof value === 'string' && 
           /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
@@ -461,7 +462,7 @@ export class OptimizedJSONParser {
   /**
    * Stream parse large JSON data
    */
-  async streamParse<T = any>(stream: Readable): Promise<T> {
+  async streamParse<T = JSONValue>(stream: Readable): Promise<T> {
     let jsonString = '';
     
     for await (const chunk of stream) {
@@ -479,7 +480,7 @@ export const JSONOptimization = {
   /**
    * Minify JSON by removing unnecessary whitespace and null values
    */
-  minify(obj: any): any {
+  minify(obj: JSONValue): JSONValue {
     return JSON.parse(JSON.stringify(obj, (key, value) => {
       if (value === null || value === undefined || value === '') {
         return undefined;
@@ -492,12 +493,12 @@ export const JSONOptimization = {
    * Compress large arrays by sampling
    */
   compressArray<T>(arr: T[], maxLength: number = 1000): T[] | { sample: T[]; total: number } {
-    if (arr.length <= maxLength) {
+    if (arr?.length || 0 <= maxLength) {
       return arr;
     }
     
     // Sample evenly distributed items
-    const step = arr.length / maxLength;
+    const step = arr?.length || 0 / maxLength;
     const sample: T[] = [];
     
     for (let i = 0; i < maxLength; i++) {
@@ -510,20 +511,20 @@ export const JSONOptimization = {
     
     return {
       sample,
-      total: arr.length,
+      total: arr?.length || 0,
     };
   },
 
   /**
    * Optimize object by removing empty nested objects
    */
-  removeEmptyObjects(obj: any): any {
+  removeEmptyObjects(obj: JSONValue): JSONValue {
     if (Array.isArray(obj)) {
-      return obj.map(this.removeEmptyObjects).filter(item => item !== null);
+      return obj?.map(this.removeEmptyObjects).filter(item => item !== null);
     }
     
     if (obj && typeof obj === 'object') {
-      const cleaned: any = {};
+      const cleaned: JSONObject = {};
       
       for (const [key, value] of Object.entries(obj)) {
         const cleanedValue = this.removeEmptyObjects(value);
@@ -543,7 +544,7 @@ export const JSONOptimization = {
   /**
    * Calculate JSON payload size
    */
-  calculateSize(obj: any): { bytes: number; compressed: number } {
+  calculateSize(obj: JSONValue): { bytes: number; compressed: number } {
     const jsonString = JSON.stringify(obj);
     const bytes = Buffer.byteLength(jsonString, 'utf8');
     
@@ -556,7 +557,7 @@ export const JSONOptimization = {
   /**
    * Performance benchmark for different serialization strategies
    */
-  benchmark(data: any, iterations: number = 100): {
+  benchmark(data: JSONValue, iterations: number = 100): {
     standard: number;
     optimized: number;
     streaming: number;
@@ -601,7 +602,7 @@ export function createJSONOptimizationMiddleware(config?: Partial<JSONOptimizati
   const serializer = new OptimizedJSONSerializer(config);
   const parser = new OptimizedJSONParser(config);
 
-  return async ({ next, input }: { next: () => Promise<any>; input: any }) => {
+  return async ({ next, input }: { next: () => Promise<JSONValue>; input: JSONValue }) => {
     // Optimize input if it's a large object
     if (input && typeof input === 'object') {
       input = JSONOptimization.removeEmptyObjects(input);

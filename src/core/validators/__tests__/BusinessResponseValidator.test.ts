@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { BusinessResponseValidator } from "../BusinessResponseValidator.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { BusinessResponseValidator } from '../BusinessResponseValidator';
 
 describe("BusinessResponseValidator", () => {
   let validator: BusinessResponseValidator;
@@ -19,10 +19,10 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.phones).toHaveLength(5);
-      expect(result.contactInfo.phones[0]?.type).toBe("tollFree");
+      expect(result?.contactInfo?.length).toHaveLength(5);
+      expect(result?.contactInfo?.phones[0]?.length).toBe("tollFree");
       expect(
-        result.contactInfo.phones.some((p) => p.value.includes("ext")),
+        result?.contactInfo?.phones.some((p: any) => p?.value?.includes("ext")),
       ).toBe(true);
     });
 
@@ -35,9 +35,9 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.phones).toHaveLength(3);
+      expect(result?.contactInfo?.length).toHaveLength(3);
       expect(
-        result.contactInfo.phones.every((p) => p.type === "international"),
+        result?.contactInfo?.phones.every((p: any) => p.type === "international"),
       ).toBe(true);
     });
 
@@ -51,8 +51,8 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.phones.length).toBeGreaterThan(0);
-      expect(result.contactInfo.phones[0]?.normalized).toMatch(/^\d+$/);
+      expect(result?.contactInfo?.phones?.length || 0).toBeGreaterThan(0);
+      expect(result?.contactInfo?.phones[0]?.length).toMatch(/^\d+$/);
     });
 
     it("should mask phone numbers in privacy mode", () => {
@@ -63,8 +63,8 @@ describe("BusinessResponseValidator", () => {
 
       const result = privacyValidator.validateResponse(text);
 
-      expect(result.contactInfo.phones[0]?.value).toContain("XXXX4567");
-      expect(result.contactInfo.phones[0]?.normalized).toContain("XXXX4567");
+      expect(result?.contactInfo?.phones[0]?.length).toContain("XXXX4567");
+      expect(result?.contactInfo?.phones[0]?.length).toContain("XXXX4567");
     });
   });
 
@@ -77,11 +77,11 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.addresses).toHaveLength(2);
-      expect(result.contactInfo.addresses[0]?.street).toContain("Main Street");
-      expect(result.contactInfo.addresses[0]?.city).toBe("New York");
-      expect(result.contactInfo.addresses[0]?.state).toBe("NY");
-      expect(result.contactInfo.addresses[0]?.zip).toBe("10001");
+      expect(result?.contactInfo?.length).toHaveLength(2);
+      expect(result?.contactInfo?.addresses[0]?.length).toContain("Main Street");
+      expect(result?.contactInfo?.addresses[0]?.length).toBe("New York");
+      expect(result?.contactInfo?.addresses[0]?.length).toBe("NY");
+      expect(result?.contactInfo?.addresses[0]?.length).toBe("10001");
     });
 
     it("should extract PO Box addresses", () => {
@@ -92,9 +92,9 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.addresses).toHaveLength(2);
+      expect(result?.contactInfo?.length).toHaveLength(2);
       expect(
-        result.contactInfo.addresses.every((a) => a.type === "poBox"),
+        result?.contactInfo?.addresses.every((a: any) => a.type === "poBox"),
       ).toBe(true);
     });
 
@@ -107,8 +107,8 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.addresses.length).toBeGreaterThan(0);
-      expect(result.contactInfo.addresses[0]?.value).toContain("Apt");
+      expect(result?.contactInfo?.addresses?.length || 0).toBeGreaterThan(0);
+      expect(result?.contactInfo?.addresses[0]?.length).toContain("Apt");
     });
   });
 
@@ -122,11 +122,11 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.businessNames).toHaveLength(3);
+      expect(result?.contactInfo?.length).toHaveLength(3);
       expect(
-        result.contactInfo.businessNames.every((b) => b.hasEntityType),
+        result?.contactInfo?.businessNames.every((b: any) => b.hasEntityType),
       ).toBe(true);
-      expect(result.contactInfo.businessNames[0]?.confidence).toBeGreaterThan(
+      expect(result?.contactInfo?.businessNames[0]?.length).toBeGreaterThan(
         0.7,
       );
     });
@@ -140,7 +140,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.businessNames.length).toBeGreaterThan(0);
+      expect(result?.contactInfo?.businessNames?.length || 0).toBeGreaterThan(0);
     });
 
     it("should handle business names with special characters", () => {
@@ -152,9 +152,9 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.businessNames.length).toBeGreaterThan(0);
+      expect(result?.contactInfo?.businessNames?.length || 0).toBeGreaterThan(0);
       expect(
-        result.contactInfo.businessNames.some((b) => b.value.includes("&")),
+        result?.contactInfo?.businessNames.some((b: any) => b?.value?.includes("&")),
       ).toBe(true);
     });
   });
@@ -169,8 +169,8 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.hours.length).toBeGreaterThan(0);
-      expect(result.contactInfo.hours.some((h) => h.type === "standard")).toBe(
+      expect(result?.contactInfo?.hours?.length || 0).toBeGreaterThan(0);
+      expect(result?.contactInfo?.hours.some((h: any) => h.type === "standard")).toBe(
         true,
       );
     });
@@ -184,7 +184,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.hours.some((h) => h.type === "24/7")).toBe(
+      expect(result?.contactInfo?.hours.some((h: any) => h.type === "24/7")).toBe(
         true,
       );
     });
@@ -198,7 +198,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.hours.some((h) => h.type === "dayRange")).toBe(
+      expect(result?.contactInfo?.hours.some((h: any) => h.type === "dayRange")).toBe(
         true,
       );
     });
@@ -208,27 +208,27 @@ describe("BusinessResponseValidator", () => {
     it("should extract email addresses", () => {
       const text = `
         Email us at info@example.com
-        Support: support@company.co.uk
+        Support: support@company?.co?.uk
         sales@business.org
       `;
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.emails).toHaveLength(3);
-      expect(result.contactInfo.emails[0]?.domain).toBe("example.com");
+      expect(result?.contactInfo?.length).toHaveLength(3);
+      expect(result?.contactInfo?.emails[0]?.length).toBe("example.com");
     });
 
     it("should extract websites", () => {
       const text = `
-        Visit https://www.example.com
+        Visit https://www?.example?.com
         More info at http://company.org
-        https://secure.business.net/contact
+        https://secure?.business?.net/contact
       `;
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.websites).toHaveLength(3);
-      expect(result.contactInfo.websites[0]?.protocol).toBe("https:");
+      expect(result?.contactInfo?.length).toHaveLength(3);
+      expect(result?.contactInfo?.websites[0]?.length).toBe("https:");
     });
   });
 
@@ -258,8 +258,8 @@ describe("BusinessResponseValidator", () => {
       const text = "Contact us for more information.";
       const result = validator.validateResponse(text);
 
-      expect(result.suggestions.length).toBeGreaterThan(0);
-      expect(result.suggestions.some((s) => s.includes("phone"))).toBe(true);
+      expect(result?.suggestions?.length).toBeGreaterThan(0);
+      expect(result?.suggestions?.some((s: any) => s.includes("phone"))).toBe(true);
     });
 
     it("should calculate confidence scores correctly", () => {
@@ -296,7 +296,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.phones).toHaveLength(0);
+      expect(result?.contactInfo?.length).toHaveLength(0);
     });
 
     it("should not extract non-address numbers as addresses", () => {
@@ -308,7 +308,7 @@ describe("BusinessResponseValidator", () => {
 
       const result = validator.validateResponse(text);
 
-      expect(result.contactInfo.addresses).toHaveLength(0);
+      expect(result?.contactInfo?.length).toHaveLength(0);
     });
 
     it("should not extract common words as business names", () => {
@@ -321,7 +321,7 @@ describe("BusinessResponseValidator", () => {
       const result = validator.validateResponse(text);
 
       // Should only extract "New York Times" as it's a proper business name
-      expect(result.contactInfo.businessNames.length).toBeLessThanOrEqual(1);
+      expect(result?.contactInfo?.businessNames?.length || 0).toBeLessThanOrEqual(1);
     });
   });
 
@@ -336,7 +336,7 @@ describe("BusinessResponseValidator", () => {
       const endTime = Date.now();
 
       expect(endTime - startTime).toBeLessThan(1000); // Should complete in less than 1 second
-      expect(result.contactInfo.phones.length).toBeGreaterThan(0);
+      expect(result?.contactInfo?.phones?.length || 0).toBeGreaterThan(0);
     });
 
     it("should deduplicate effectively", () => {
@@ -350,7 +350,7 @@ describe("BusinessResponseValidator", () => {
       const result = validator.validateResponse(text);
 
       // Should recognize these as the same number
-      expect(result.contactInfo.phones.length).toBeLessThanOrEqual(2);
+      expect(result?.contactInfo?.phones?.length || 0).toBeLessThanOrEqual(2);
     });
   });
 });

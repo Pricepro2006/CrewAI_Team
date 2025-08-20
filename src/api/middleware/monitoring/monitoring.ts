@@ -27,12 +27,12 @@ export const performanceMonitoringMiddleware = (
     method: req.method,
     url: req.url,
     userAgent: req.headers['user-agent'],
-    ip: req.ip || req.connection.remoteAddress
+    ip: req.ip || req?.connection?.remoteAddress
   });
 
   // Override res.end to capture response data
-  const originalEnd = res.end;
-  const originalSend = res.send;
+  const originalEnd = res?.end;
+  const originalSend = res?.send;
   const originalJson = res.json;
 
   let responseSize = 0;
@@ -44,7 +44,7 @@ export const performanceMonitoringMiddleware = (
     if (typeof body === 'string') {
       responseSize = Buffer.byteLength(body, 'utf8');
     } else if (Buffer.isBuffer(body)) {
-      responseSize = body.length;
+      responseSize = body?.length || 0;
     } else {
       responseSize = Buffer.byteLength(JSON.stringify(body), 'utf8');
     }
@@ -67,7 +67,7 @@ export const performanceMonitoringMiddleware = (
     // Check for errors
     const isError = res.statusCode >= 400;
     const errorMessage = isError && responseBody?.error ? 
-      (typeof responseBody.error === 'string' ? responseBody.error : responseBody.error.message) : 
+      (typeof responseBody.error === 'string' ? responseBody.error : responseBody?.error?.message) : 
       undefined;
 
     // Record API performance
@@ -80,16 +80,16 @@ export const performanceMonitoringMiddleware = (
     );
 
     // Record additional metrics
-    monitoringService.recordMetric('http.request.size', 
+    monitoringService.recordMetric('http?.request?.size', 
       parseInt(req.headers['content-length'] as string) || 0, 
       { method: req.method, endpoint }, 
       'gauge', 
       'bytes'
     );
 
-    monitoringService.recordMetric('http.response.size', 
+    monitoringService.recordMetric('http?.response?.size', 
       responseSize, 
-      { method: req.method, endpoint, status: res.statusCode.toString() }, 
+      { method: req.method, endpoint, status: res?.statusCode?.toString() }, 
       'gauge', 
       'bytes'
     );
@@ -283,7 +283,7 @@ export const requestSizeMonitoringMiddleware = (maxSize: number = 10 * 1024 * 10
     const contentLength = parseInt(req.headers['content-length'] as string) || 0;
     
     // Record request size
-    monitoringService.recordMetric('http.request.size', 
+    monitoringService.recordMetric('http?.request?.size', 
       contentLength, 
       { method: req.method, endpoint: req.path }, 
       'histogram', 

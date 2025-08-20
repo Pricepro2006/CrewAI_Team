@@ -1,3 +1,4 @@
+import { getDatabase, OptimizedQueryExecutor } from "../../database/index.js";
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
 import type {
@@ -33,11 +34,11 @@ export enum UserRole {
  */
 
 export class UserService {
-  private db: Database.Database;
+  private db: OptimizedQueryExecutor;
 
   constructor(dbPath?: string) {
-    const path = dbPath || appConfig.database.path;
-    this.db = new Database(path);
+    const path = dbPath || appConfig?.database?.path;
+    this.db = getDatabase(path);
   }
 
   /**
@@ -50,7 +51,7 @@ export class UserService {
     );
     if (!passwordValidation.isValid) {
       throw new Error(
-        `Password validation failed: ${passwordValidation.errors.join(", ")}`,
+        `Password validation failed: ${passwordValidation?.errors?.join(", ")}`,
       );
     }
 
@@ -69,7 +70,7 @@ export class UserService {
     const userId = randomUUID();
     const now = new Date().toISOString();
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO users (
         id, email, username, password_hash, first_name, last_name, 
         avatar_url, role, is_active, is_verified, created_at, updated_at
@@ -78,7 +79,7 @@ export class UserService {
 
     stmt.run(
       userId,
-      input.email.toLowerCase(),
+      input?.email?.toLowerCase(),
       input.username,
       passwordHash,
       input.first_name || null,
@@ -103,7 +104,7 @@ export class UserService {
    * Get user by ID
    */
   getUserById(id: string): User | null {
-    const stmt = this.db.prepare("SELECT * FROM users WHERE id = ?");
+    const stmt = this?.db?.prepare("SELECT * FROM users WHERE id = ?");
     return stmt.get(id) as User | null;
   }
 
@@ -136,7 +137,7 @@ export class UserService {
    * Get user by email
    */
   getUserByEmail(email: string): User | null {
-    const stmt = this.db.prepare("SELECT * FROM users WHERE email = ?");
+    const stmt = this?.db?.prepare("SELECT * FROM users WHERE email = ?");
     return stmt.get(email.toLowerCase()) as User | null;
   }
 
@@ -144,7 +145,7 @@ export class UserService {
    * Get user by username
    */
   getUserByUsername(username: string): User | null {
-    const stmt = this.db.prepare("SELECT * FROM users WHERE username = ?");
+    const stmt = this?.db?.prepare("SELECT * FROM users WHERE username = ?");
     return stmt.get(username) as User | null;
   }
 
@@ -177,7 +178,7 @@ export class UserService {
 
     if (input.email !== undefined) {
       updateFields.push("email = ?");
-      updateValues.push(input.email.toLowerCase());
+      updateValues.push(input?.email?.toLowerCase());
     }
     if (input.username !== undefined) {
       updateFields.push("username = ?");
@@ -212,7 +213,7 @@ export class UserService {
     updateValues.push(new Date().toISOString());
     updateValues.push(id);
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE users SET ${updateFields.join(", ")} WHERE id = ?
     `);
     stmt.run(...updateValues);
@@ -248,7 +249,7 @@ export class UserService {
     );
     if (!passwordValidation.isValid) {
       throw new Error(
-        `Password validation failed: ${passwordValidation.errors.join(", ")}`,
+        `Password validation failed: ${passwordValidation?.errors?.join(", ")}`,
       );
     }
 
@@ -258,7 +259,7 @@ export class UserService {
     );
 
     // Update password
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?
     `);
     stmt.run(newPasswordHash, new Date().toISOString(), userId);
@@ -296,7 +297,7 @@ export class UserService {
     }
 
     // Update last login time
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE users SET last_login_at = ? WHERE id = ?
     `);
     stmt.run(new Date().toISOString(), user.id);
@@ -347,17 +348,17 @@ export class UserService {
     }
 
     const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      conditions?.length || 0 > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const orderClause = `ORDER BY ${sort_by} ${sort_order.toUpperCase()}`;
 
     // Get total count
-    const countStmt = this.db.prepare(`
+    const countStmt = this?.db?.prepare(`
       SELECT COUNT(*) as total FROM users ${whereClause}
     `);
     const { total } = countStmt.get(...params) as { total: number };
 
     // Get users
-    const usersStmt = this.db.prepare(`
+    const usersStmt = this?.db?.prepare(`
       SELECT * FROM users ${whereClause} ${orderClause} LIMIT ? OFFSET ?
     `);
     const users = usersStmt.all(...params, limit, offset) as User[];
@@ -365,7 +366,7 @@ export class UserService {
     const pages = Math.ceil(total / limit);
 
     return {
-      users: users.map((user) => this.toPublicUser(user)),
+      users: users?.map((user: any) => this.toPublicUser(user)),
       pagination: {
         page,
         limit,
@@ -387,7 +388,7 @@ export class UserService {
     }
 
     // Deactivate instead of hard delete
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE users SET is_active = false, updated_at = ? WHERE id = ?
     `);
     stmt.run(new Date().toISOString(), id);
@@ -409,7 +410,7 @@ export class UserService {
     const tokenHash = jwtManager.hashToken(token);
     const now = new Date().toISOString();
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at)
       VALUES (?, ?, ?, ?, ?)
     `);
@@ -429,7 +430,7 @@ export class UserService {
    * Get refresh token by ID
    */
   getRefreshToken(tokenId: string): RefreshToken | null {
-    const stmt = this.db.prepare(
+    const stmt = this?.db?.prepare(
       "SELECT * FROM refresh_tokens WHERE id = ? AND revoked = false",
     );
     return stmt.get(tokenId) as RefreshToken | null;
@@ -439,7 +440,7 @@ export class UserService {
    * Revoke refresh token
    */
   revokeRefreshToken(tokenId: string): void {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE refresh_tokens SET revoked = true WHERE id = ?
     `);
     stmt.run(tokenId);
@@ -449,7 +450,7 @@ export class UserService {
    * Revoke all user refresh tokens
    */
   revokeAllUserRefreshTokens(userId: string): void {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE refresh_tokens SET revoked = true WHERE user_id = ?
     `);
     stmt.run(userId);
@@ -473,14 +474,14 @@ export class UserService {
       for (const table of tables) {
         try {
           // Check if table exists
-          const checkStmt = this.db.prepare(`
+          const checkStmt = this?.db?.prepare(`
             SELECT name FROM sqlite_master WHERE type='table' AND name=?
           `);
           const tableExists = checkStmt.get(table);
 
           if (tableExists) {
             // Delete expired tokens from this table
-            const deleteStmt = this.db.prepare(`
+            const deleteStmt = this?.db?.prepare(`
               DELETE FROM ${table} WHERE expires_at < ?
             `);
             deleteStmt.run(now);
@@ -519,7 +520,7 @@ export class UserService {
     const now = new Date().toISOString();
     const expires = expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO user_sessions (
         id, user_id, session_token, device_info, ip_address, user_agent,
         expires_at, created_at, last_activity_at
@@ -555,7 +556,7 @@ export class UserService {
    * Revoke all user sessions
    */
   revokeAllUserSessions(userId: string): void {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       DELETE FROM user_sessions WHERE user_id = ?
     `);
     stmt.run(userId);
@@ -573,6 +574,6 @@ export class UserService {
    * Close database connection
    */
   close(): void {
-    this.db.close();
+    this?.db?.close();
   }
 }

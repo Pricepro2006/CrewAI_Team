@@ -76,8 +76,8 @@ export class GracefulShutdownHandler extends EventEmitter {
       shutdown: async () => {
         logger.info("Saving active checkpoints...");
         const checkpoints = await checkpointManager.getCheckpoints();
-        logger.info(`Found ${checkpoints.length} active checkpoints`);
-        this.metrics!.checkpointsSaved = checkpoints.length;
+        logger.info(`Found ${checkpoints ? checkpoints.length : 0} active checkpoints`);
+        this.metrics!.checkpointsSaved = checkpoints ? checkpoints.length : 0;
       },
     });
 
@@ -88,7 +88,7 @@ export class GracefulShutdownHandler extends EventEmitter {
       shutdown: async () => {
         logger.info("Rolling back active transactions...");
         const activeTransactions = transactionManager.getActiveTransactionIds();
-        if (activeTransactions.length > 0) {
+        if (activeTransactions && activeTransactions.length > 0) {
           logger.warn(
             `Found ${activeTransactions.length} active transactions, rolling back...`,
           );
@@ -126,7 +126,7 @@ export class GracefulShutdownHandler extends EventEmitter {
         // The retry manager doesn't need explicit shutdown
         // but we log metrics
         const metrics = retryManager.getMetrics();
-        logger.info("Retry metrics at shutdown:", metrics);
+        logger.info("Retry metrics at shutdown:", typeof metrics === 'object' && metrics !== null ? JSON.stringify(metrics) : String(metrics));
       },
     });
   }
@@ -136,37 +136,37 @@ export class GracefulShutdownHandler extends EventEmitter {
    */
   private installSignalHandlers(): void {
     this.SIGNALS.forEach((signal) => {
-      process.on(signal as any, async () => {
+      process.on(signal, async () => {
         logger.info(`Received ${signal}, initiating graceful shutdown...`);
         try {
           await this.shutdown();
           process.exit(0);
         } catch (error) {
-          logger.error("Graceful shutdown failed:", error);
+          logger.error("Graceful shutdown failed:", error instanceof Error ? error.message : String(error));
           process.exit(1);
         }
       });
     });
 
     // Handle uncaught exceptions
-    process.on("uncaughtException", async (error) => {
-      logger.error("Uncaught exception, initiating emergency shutdown:", error);
+    process.on("uncaughtException", async (error: Error) => {
+      logger.error("Uncaught exception, initiating emergency shutdown:", error.message);
       try {
         await this.shutdown({ timeout: 5000, forceAfterTimeout: true });
       } catch (shutdownError) {
-        logger.error("Emergency shutdown failed:", shutdownError);
+        logger.error("Emergency shutdown failed:", shutdownError instanceof Error ? shutdownError.message : String(shutdownError));
       }
       process.exit(1);
     });
 
     // Handle unhandled promise rejections
-    process.on("unhandledRejection", async (reason, promise) => {
-      logger.error("Unhandled promise rejection:", reason);
-      logger.error("Promise:", promise);
+    process.on("unhandledRejection", async (reason: any, promise: Promise<any>) => {
+      logger.error("Unhandled promise rejection:", reason instanceof Error ? reason.message : String(reason));
+      logger.error("Promise:", '[Promise object]');
       try {
         await this.shutdown({ timeout: 5000, forceAfterTimeout: true });
       } catch (shutdownError) {
-        logger.error("Emergency shutdown failed:", shutdownError);
+        logger.error("Emergency shutdown failed:", shutdownError instanceof Error ? shutdownError.message : String(shutdownError));
       }
       process.exit(1);
     });
@@ -232,16 +232,20 @@ export class GracefulShutdownHandler extends EventEmitter {
 
     try {
       await this.shutdownPromise;
-      this.metrics.endTime = Date.now();
-      this.metrics.duration = this.metrics.endTime - this.metrics.startTime;
+      if (this.metrics) {
+        this.metrics.endTime = Date.now();
+        this.metrics.duration = this.metrics.endTime - this.metrics.startTime;
+      }
 
-      logger.info("Graceful shutdown completed", this.metrics);
+      logger.info("Graceful shutdown completed", JSON.stringify(this.metrics));
       this.emit("shutdown:completed", this.metrics);
     } catch (error) {
-      this.metrics.endTime = Date.now();
-      this.metrics.duration = this.metrics.endTime - this.metrics.startTime;
+      if (this.metrics) {
+        this.metrics.endTime = Date.now();
+        this.metrics.duration = this.metrics.endTime - this.metrics.startTime;
+      }
 
-      logger.error("Graceful shutdown failed", error);
+      logger.error("Graceful shutdown failed", error as string);
       this.emit("shutdown:failed", { error, metrics: this.metrics });
       throw error;
     }
@@ -358,7 +362,7 @@ export class GracefulShutdownHandler extends EventEmitter {
       // Additional checkpoint logic can be added here
       logger.info("Checkpoints saved successfully");
     } catch (error) {
-      logger.error("Failed to save checkpoints:", error);
+      logger.error("Failed to save checkpoints:", error as string);
       throw error;
     }
   }
@@ -388,7 +392,7 @@ export class GracefulShutdownHandler extends EventEmitter {
         this.metrics!.componentsShutdown.push(component.name);
         logger.info(`${component.name} shutdown completed`);
       } catch (error) {
-        logger.error(`Failed to shutdown ${component.name}:`, error);
+        logger.error(`Failed to shutdown ${component.name}:`, error as string);
         this.metrics!.componentsFailed.push(component.name);
         // Continue with other components
       }
@@ -408,12 +412,12 @@ export class GracefulShutdownHandler extends EventEmitter {
 
       // Remove signal handlers to prevent loops
       this.SIGNALS.forEach((signal) => {
-        process.removeAllListeners(signal as any);
+        process.removeAllListeners(signal as NodeJS.Signals);
       });
 
       logger.info("Final cleanup completed");
     } catch (error) {
-      logger.error("Final cleanup failed:", error);
+      logger.error("Final cleanup failed:", error as string);
     }
   }
 
@@ -435,7 +439,7 @@ export class GracefulShutdownHandler extends EventEmitter {
    * Delay helper
    */
   private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise<void>((resolve) => setTimeout(resolve, ms));
   }
 
   /**

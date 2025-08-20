@@ -4,18 +4,18 @@
  * Validates that the optimized pipeline meets performance targets.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { performance } from "perf_hooks";
 import Database from "better-sqlite3";
 import { Redis } from "ioredis";
-import { EmailProcessingWorkerPool } from "../../core/workers/EmailProcessingWorkerPool.js";
-import { EmailProcessingQueueService } from "../../core/services/EmailProcessingQueueService.js";
-import { EmailProcessingMonitor } from "../../core/monitoring/EmailProcessingMonitor.js";
-import { OllamaManager } from "../../utils/ollama-manager.js";
+import { EmailProcessingWorkerPool } from '../../core/workers/EmailProcessingWorkerPool';
+import { EmailProcessingQueueService } from '../../core/services/EmailProcessingQueueService';
+import { EmailProcessingMonitor } from '../../core/monitoring/EmailProcessingMonitor';
+import { OllamaManager } from '../../utils/ollama-manager';
 import type {
   EmailProcessingJob,
   EmailJobData,
-} from "../../core/workers/EmailProcessingWorkerPool.js";
+} from '../../core/workers/EmailProcessingWorkerPool';
 
 // Test configuration
 const TEST_CONFIG = {
@@ -81,14 +81,14 @@ describe("Email Processing Performance Benchmarks", () => {
     });
 
     // Wait for initialization
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve: any) => setTimeout(resolve, 3000));
   }, 60000); // 60 second timeout for setup
 
   afterAll(async () => {
     await workerPool?.shutdown();
     await queueService?.shutdown();
     monitor?.stop();
-    await redis?.quit();
+    await redis.quit();
     db?.close();
   });
 
@@ -115,8 +115,8 @@ describe("Email Processing Performance Benchmarks", () => {
       const checkInterval = 500;
       let elapsed = 0;
 
-      while (processedCount < testEmails.length && elapsed < timeout) {
-        await new Promise((resolve) => setTimeout(resolve, checkInterval));
+      while (processedCount < testEmails?.length || 0 && elapsed < timeout) {
+        await new Promise((resolve: any) => setTimeout(resolve, checkInterval));
         elapsed += checkInterval;
       }
 
@@ -141,16 +141,16 @@ describe("Email Processing Performance Benchmarks", () => {
     const jobs = createTestJobs(batchEmails);
 
     // Track individual job latencies
-    const jobPromises = jobs.map(async (job) => {
+    const jobPromises = jobs?.map(async (job: any) => {
       const startTime = performance.now();
       await workerPool.addJobs([job]);
 
-      return new Promise<number>((resolve) => {
+      return new Promise<number>((resolve: any) => {
         const handler = ({ conversationId }: any) => {
           if (conversationId === job.conversationId) {
             workerPool.off("jobComplete", handler);
             const latency = performance.now() - startTime;
-            resolve(latency / job.emails.length); // Average per email
+            resolve(latency / job?.emails?.length); // Average per email
           }
         };
         workerPool.on("jobComplete", handler);
@@ -161,7 +161,7 @@ describe("Email Processing Performance Benchmarks", () => {
     latencies.push(...results);
 
     const averageLatency =
-      latencies.reduce((sum, l) => sum + l, 0) / latencies.length;
+      latencies.reduce((sum: any, l: any) => sum + l, 0) / latencies?.length || 0;
     console.log(`Average latency: ${averageLatency.toFixed(0)}ms per email`);
 
     expect(averageLatency).toBeLessThanOrEqual(
@@ -184,7 +184,7 @@ describe("Email Processing Performance Benchmarks", () => {
 
     // Process all batches concurrently
     const results = await Promise.all(
-      batches.map((jobs) => processJobBatch(workerPool, jobs)),
+      batches?.map((jobs: any) => processJobBatch(workerPool, jobs)),
     );
 
     const totalTime = performance.now() - startTime;
@@ -219,16 +219,16 @@ describe("Email Processing Performance Benchmarks", () => {
     await workerPool.addJobs(jobs);
 
     // Wait for completion
-    await new Promise((resolve) => {
+    await new Promise((resolve: any) => {
       const interval = setInterval(() => {
-        if (successCount + errorCount >= testBatch.length) {
+        if (successCount + errorCount >= testBatch?.length || 0) {
           clearInterval(interval);
           resolve(undefined);
         }
       }, 100);
     });
 
-    const successRate = (successCount / testBatch.length) * 100;
+    const successRate = (successCount / testBatch?.length || 0) * 100;
     console.log(`Success rate: ${successRate.toFixed(1)}%`);
 
     expect(successRate).toBeGreaterThanOrEqual(
@@ -253,7 +253,7 @@ describe("Email Processing Performance Benchmarks", () => {
           enableAutoScaling: false,
         });
 
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve: any) => setTimeout(resolve, 2000));
 
         // Measure throughput
         const throughput = await measureThroughput(
@@ -266,9 +266,9 @@ describe("Email Processing Performance Benchmarks", () => {
       }
 
       console.log("Worker scaling results:");
-      results.forEach((r) => {
+      results.forEach((r: any) => {
         console.log(
-          `  ${r.workers} workers: ${r.throughput.toFixed(1)} emails/min`,
+          `  ${r.workers} workers: ${r?.throughput?.toFixed(1)} emails/min`,
         );
       });
 
@@ -299,7 +299,7 @@ describe("Email Processing Performance Benchmarks", () => {
     }, 1000);
 
     // Wait for completion
-    await new Promise((resolve) => setTimeout(resolve, 60000));
+    await new Promise((resolve: any) => setTimeout(resolve, 60000));
     clearInterval(memoryInterval);
 
     const peakMemory = Math.max(...memoryReadings);
@@ -323,7 +323,7 @@ describe("Email Processing Performance Benchmarks", () => {
     const parallelTime = performance.now() - parallelStart;
 
     // Simulate sequential processing time (20 seconds per email)
-    const sequentialTime = testBatch.length * 20000; // 20s per email
+    const sequentialTime = testBatch?.length || 0 * 20000; // 20s per email
 
     const improvement =
       ((sequentialTime - parallelTime) / sequentialTime) * 100;
@@ -394,7 +394,7 @@ function generateSubject(index: number): string {
     "FW: Bulk Order Inquiry - 500 Units",
     "Meeting Request: Quarterly Business Review",
   ];
-  return subjects[index % subjects.length];
+  return subjects[index % subjects?.length || 0];
 }
 
 function generateBody(index: number): string {
@@ -405,15 +405,15 @@ function generateBody(index: number): string {
     "We are interested in placing a bulk order for 500 units of product SKU-12345. Please provide volume discount pricing and delivery timeline.",
     "I would like to schedule our quarterly business review to discuss performance metrics and upcoming opportunities.",
   ];
-  return bodies[index % bodies.length];
+  return bodies[index % bodies?.length || 0];
 }
 
 function createTestJobs(emails: EmailJobData[]): EmailProcessingJob[] {
   // Group emails by conversation
   const conversations = new Map<string, EmailJobData[]>();
 
-  emails.forEach((email) => {
-    const convId = email.conversation_id;
+  emails.forEach((email: any) => {
+    const convId = email?.conversation_id;
     if (!conversations.has(convId)) {
       conversations.set(convId, []);
     }
@@ -439,9 +439,9 @@ async function processJobBatch(
   pool: EmailProcessingWorkerPool,
   jobs: EmailProcessingJob[],
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise((resolve: any) => {
     let completed = 0;
-    const total = jobs.reduce((sum, job) => sum + job.emails.length, 0);
+    const total = jobs.reduce((sum: any, job: any) => sum + job?.emails?.length, 0);
 
     const handler = ({ emailCount }: any) => {
       completed += emailCount;
@@ -466,5 +466,5 @@ async function measureThroughput(
   await processJobBatch(pool, jobs);
 
   const totalTime = performance.now() - startTime;
-  return emails.length / (totalTime / 60000);
+  return emails?.length || 0 / (totalTime / 60000);
 }

@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "../../../lib/trpc.js";
-import { MessageList } from "./MessageList.js";
-import { InputBox } from "./InputBox.js";
-import { AgentMonitor } from "../AgentStatus/AgentMonitor.js";
-import type { Message } from "./types.js";
+import { api } from "../../../lib/trpc";
+import { MessageList } from "./MessageList";
+import { InputBox } from "./InputBox";
+import { AgentMonitor } from "../AgentStatus/AgentMonitor";
+import type { Message } from "./types";
 import "./ChatInterface.css";
 
 export const ChatInterface: React.FC = () => {
@@ -17,12 +17,16 @@ export const ChatInterface: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
-  const createConversation = (api.chat as any).create.useMutation();
-  const sendMessage = (api.chat as any).message.useMutation();
-  const conversationHistory = (api.chat as any).history.useQuery(
+  const createConversation = api.chat?.create?.useMutation?.() || { 
+    mutateAsync: async () => Promise.resolve(null) 
+  };
+  const sendMessage = api.chat?.message?.useMutation?.() || { 
+    mutateAsync: async () => Promise.resolve(null) 
+  };
+  const conversationHistory = api.chat?.history?.useQuery?.(
     { conversationId: conversationId! },
     { enabled: !!conversationId },
-  );
+  ) || { data: [] };
 
   // Load conversation history
   useEffect(() => {
@@ -32,16 +36,24 @@ export const ChatInterface: React.FC = () => {
   }, [conversationHistory.data]);
 
   // Subscribe to real-time updates
-  (api.chat as any).onMessage.useSubscription(
-    { conversationId: conversationId! },
-    {
-      enabled: !!conversationId,
-      onData: (data: unknown) => {
-        const message = data as Message;
-        setMessages((prev) => [...prev, message]);
-      },
-    },
-  );
+  React.useEffect(() => {
+    if (conversationId && api.chat?.onMessage?.useSubscription) {
+      try {
+        api.chat.onMessage.useSubscription(
+          { conversationId },
+          {
+            enabled: true,
+            onData: (data: unknown) => {
+              const message = data as Message;
+              setMessages((prev: Message[]) => [...prev, message]);
+            },
+          },
+        );
+      } catch (error) {
+        console.warn('WebSocket subscription failed:', error);
+      }
+    }
+  }, [conversationId]);
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isProcessing) return;
@@ -54,31 +66,41 @@ export const ChatInterface: React.FC = () => {
         const userMessage: Message = { role: "user", content: text };
         setMessages([userMessage]);
 
-        const result = await createConversation.mutateAsync({
+        const result = await createConversation?.mutateAsync({
           message: text,
         });
 
-        setConversationId(result.conversationId);
-        navigate(`/chat/${result.conversationId}`);
+        if (!result) {
+          throw new Error('Failed to create conversation');
+        }
 
-        setMessages((prev) => [
+        const typedResult = result as { conversationId: string; response: string };
+
+        setConversationId(typedResult.conversationId);
+        navigate(`/chat/${typedResult.conversationId}`);
+
+        setMessages((prev: Message[]) => [
           ...prev,
           {
             role: "assistant",
-            content: result.response,
+            content: typedResult.response,
           },
         ]);
       } else {
         // Continue conversation
         const userMessage: Message = { role: "user", content: text };
-        setMessages((prev) => [...prev, userMessage]);
+        setMessages((prev: Message[]) => [...prev, userMessage]);
 
-        const result = await sendMessage.mutateAsync({
+        const result = await sendMessage?.mutateAsync({
           conversationId,
           message: text,
         });
 
-        setMessages((prev) => [
+        if (!result) {
+          throw new Error('Failed to send message');
+        }
+
+        setMessages((prev: Message[]) => [
           ...prev,
           {
             role: "assistant",
@@ -88,7 +110,7 @@ export const ChatInterface: React.FC = () => {
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      setMessages((prev) => [
+      setMessages((prev: Message[]) => [
         ...prev,
         {
           role: "system",
