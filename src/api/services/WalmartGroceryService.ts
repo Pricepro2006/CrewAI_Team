@@ -226,10 +226,17 @@ export class WalmartGroceryService {
       // Transform database GroceryList to expected type
       return this.transformDatabaseListToType(list);
     } catch (error) {
+      const errorDetails = error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : {
+        message: String(error),
+        error
+      };
+      
       logger.error("Failed to create grocery list", "WALMART_SERVICE", { 
-        error, 
-        message: error?.message,
-        code: error?.code,
+        ...errorDetails,
         userId,
         name,
         description,
@@ -327,12 +334,24 @@ export class WalmartGroceryService {
       });
 
     } catch (error) {
-      logger.error("Failed to add items to list", "WALMART_SERVICE", { 
-        error: error?.message || error,
-        stack: error?.stack,
-        code: error?.code,
-        errno: error?.errno
-      });
+      const errorDetails: Record<string, any> = error instanceof Error ? {
+        error: error.message,
+        stack: error.stack,
+        name: error.name
+      } : {
+        error: String(error)
+      };
+      
+      // Check for specific error properties if it's a system error
+      const systemError = error as any;
+      if (systemError?.code) {
+        errorDetails.code = systemError.code;
+      }
+      if (systemError?.errno) {
+        errorDetails.errno = systemError.errno;
+      }
+      
+      logger.error("Failed to add items to list", "WALMART_SERVICE", errorDetails);
       throw error;
     } finally {
       // Update list total asynchronously to avoid blocking

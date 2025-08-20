@@ -50,7 +50,11 @@ export class JWTManager {
       ...(payload.exp && { exp: payload.exp })
     };
     // Use proper SignOptions type and ensure type compatibility
-    const options: SignOptions = expiresIn ? { expiresIn } : {};
+    const options: SignOptions = {};
+    if (expiresIn) {
+      // expiresIn can be a string (e.g., '7d') or number (seconds)
+      options.expiresIn = expiresIn as any;
+    }
     return jwt.sign(plainPayload as jwt.JwtPayload, this.secret, options);
   }
 
@@ -149,7 +153,11 @@ export function generateToken(payload: JWTPayload, secret: string = process.env.
   }
   
   // Cast payload to any type for jwt.sign compatibility
-  const options: SignOptions = expiresIn ? { expiresIn } : {};
+  const options: SignOptions = {};
+  if (expiresIn) {
+    // expiresIn can be a string (e.g., '7d') or number (seconds)
+    options.expiresIn = expiresIn as any;
+  }
   return jwt.sign(payload as jwt.JwtPayload, secret as Secret, options);
 }
 

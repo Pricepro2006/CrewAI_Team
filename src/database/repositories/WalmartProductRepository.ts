@@ -379,7 +379,8 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
       try {
         return JSON.parse(jsonString);
       } catch (error) {
-        logger.warn("Failed to parse JSON field", "WALMART_REPO", { jsonString, error: error.message });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.warn("Failed to parse JSON field", "WALMART_REPO", { jsonString, error: errorMessage });
         return defaultValue;
       }
     };

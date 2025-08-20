@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,7 +16,14 @@ export default defineConfig({
       // Optimize JSX runtime
       jsxRuntime: "automatic",
     }),
-  ],
+    // Bundle analyzer - only run when ANALYZE env var is set
+    process.env.ANALYZE === 'true' && visualizer({
+      open: true,
+      filename: './dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ].filter(Boolean),
   root: ".",
   publicDir: "public",
   optimizeDeps: {

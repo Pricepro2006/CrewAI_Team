@@ -43,6 +43,7 @@ import { priceAlertsRouter } from "./price-alerts.router.js";
 import { cartRouter } from "./cart.router.js";
 import { healthCheckRouter } from "./health-check.router.js";
 import { walmartGroceryRouter as walmartGroceryTRPCRouter } from "./walmart-grocery.router.js";
+import { walmartRealTimeRouter } from "../routes/walmart-realtime.router.js";
 
 // Import the router function from enhanced-router
 import { router } from "./enhanced-router.js";
@@ -74,6 +75,7 @@ export const appRouter = router({
   cart: cartRouter, // Shopping cart management
   healthCheck: healthCheckRouter, // Health monitoring endpoints
   walmartGroceryTRPC: walmartGroceryTRPCRouter, // Enhanced Walmart grocery endpoints
+  walmartRealTime: walmartRealTimeRouter, // Real-time Walmart product data and live prices
 });
 
 export type AppRouter = typeof appRouter;
