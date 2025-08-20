@@ -205,13 +205,14 @@ export class WalmartGroceryService {
   /**
    * Create a new grocery list
    */
-  async createGroceryList(userId: string, name: string, description?: string): Promise<RepoGroceryList> {
+  async createGroceryList(userId: string, name: string, description?: string, budget?: number): Promise<RepoGroceryList> {
     try {
       const list = await this?.listRepo?.createList({
         id: uuidv4(),  // Generate ID here
         user_id: userId,
         list_name: name,
         description,
+        budget_limit: budget,
         list_type: "shopping",
         status: "active"
       } as RepoGroceryList);
@@ -225,7 +226,15 @@ export class WalmartGroceryService {
       // Transform database GroceryList to expected type
       return this.transformDatabaseListToType(list);
     } catch (error) {
-      logger.error("Failed to create grocery list", "WALMART_SERVICE", { error });
+      logger.error("Failed to create grocery list", "WALMART_SERVICE", { 
+        error, 
+        message: error?.message,
+        code: error?.code,
+        userId,
+        name,
+        description,
+        budget
+      });
       throw error;
     }
   }
@@ -235,11 +244,22 @@ export class WalmartGroceryService {
    */
   async addItemsToList(listId: string, items: CartItem[]): Promise<RepoGroceryItem[]> {
     try {
-      if (items?.length || 0 === 0) return [];
+      if (!items?.length || items.length === 0) return [];
 
       // OPTIMIZATION: Batch fetch all products at once instead of N queries
       const productIds = items?.map(item => item.productId);
+      logger.info("Starting addItemsToList", "WALMART_SERVICE", { 
+        listId, 
+        itemCount: items.length,
+        productIds 
+      });
+      
       const products = await this?.productRepo?.findByIds(productIds);
+      logger.info("Found products", "WALMART_SERVICE", { 
+        productCount: products.length,
+        productIds: products.map(p => p.product_id)
+      });
+      
       const productMap = new Map(products?.map(p => [p.product_id, p]));
 
       // Use database transaction for consistency
@@ -247,6 +267,11 @@ export class WalmartGroceryService {
         const addedItems: RepoGroceryItem[] = [];
 
         for (const item of items) {
+          logger.info("Processing item", "WALMART_SERVICE", { 
+            productId: item.productId,
+            quantity: item.quantity 
+          });
+          
           const productEntity = productMap.get(item.productId);
           
           if (!productEntity) {
@@ -258,6 +283,21 @@ export class WalmartGroceryService {
 
           // Convert entity to product format
           const product = this?.productRepo?.entityToProduct(productEntity);
+          logger.info("Converted product entity", "WALMART_SERVICE", { 
+            productName: product.name,
+            productId: product.product_id,
+            currentPrice: product.current_price,
+            regularPrice: product.regular_price
+          });
+
+          logger.info("About to add item to database", "WALMART_SERVICE", {
+            listId,
+            itemName: product.name,
+            productId: product.product_id,
+            quantity: item.quantity,
+            price: product.current_price,
+            allFields: Object.keys(product).join(', ')
+          });
 
           const groceryItem = await this?.itemRepo?.addItem({
             id: uuidv4(),  // Generate ID here
@@ -269,6 +309,10 @@ export class WalmartGroceryService {
             estimated_price: product.current_price,
             notes: item.notes
           } as RepoGroceryItem);
+
+          logger.info("Successfully added item", "WALMART_SERVICE", { 
+            itemId: groceryItem.id 
+          });
 
           addedItems.push(convertRepoGroceryItemToService(groceryItem));
         }
@@ -283,7 +327,12 @@ export class WalmartGroceryService {
       });
 
     } catch (error) {
-      logger.error("Failed to add items to list", "WALMART_SERVICE", { error });
+      logger.error("Failed to add items to list", "WALMART_SERVICE", { 
+        error: error?.message || error,
+        stack: error?.stack,
+        code: error?.code,
+        errno: error?.errno
+      });
       throw error;
     } finally {
       // Update list total asynchronously to avoid blocking

@@ -352,7 +352,7 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
   }
 
   async findByIds(productIds: string[]): Promise<WalmartProduct[]> {
-    if (productIds?.length || 0 === 0) return [];
+    if (!productIds?.length || productIds.length === 0) return [];
     
     const placeholders = productIds?.map(() => '?').join(',');
     const rows = this.db
@@ -373,18 +373,25 @@ export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
   }
 
   private mapRowToProduct(row: any): WalmartProduct {
+    // Helper function to safely parse JSON
+    const safeJsonParse = (jsonString: any, defaultValue: any) => {
+      if (!jsonString || typeof jsonString !== 'string' || jsonString.trim() === '') return defaultValue;
+      try {
+        return JSON.parse(jsonString);
+      } catch (error) {
+        logger.warn("Failed to parse JSON field", "WALMART_REPO", { jsonString, error: error.message });
+        return defaultValue;
+      }
+    };
+
     return {
       ...row,
       in_stock: !!row.in_stock,
       online_only: !!row.online_only,
       store_only: !!row.store_only,
-      nutritional_info: row.nutritional_info
-        ? JSON.parse(row.nutritional_info)
-        : null,
-      allergens: row.allergens ? JSON.parse(row.allergens) : [],
-      product_attributes: row.product_attributes
-        ? JSON.parse(row.product_attributes)
-        : null,
+      nutritional_info: safeJsonParse(row.nutritional_info, null),
+      allergens: safeJsonParse(row.allergens, []),
+      product_attributes: safeJsonParse(row.product_attributes, null),
     };
   }
 }

@@ -284,6 +284,20 @@ app.use("/api/database", databasePerformanceRouter);
 // Optimization metrics routes (for OptimizedQueryExecutor and CachedLLMProvider)
 app.use("/api/optimization", optimizationMetricsRouter);
 
+// Debug middleware for tRPC input issues
+app.use("/trpc", (req, res, next) => {
+  console.log("DEBUG - tRPC Request:", {
+    method: req.method,
+    path: req.path,
+    body: req.body,
+    bodyType: typeof req.body,
+    hasBody: !!req.body,
+    contentType: req.headers['content-type'],
+    contentLength: req.headers['content-length']
+  });
+  next();
+});
+
 // tRPC middleware
 app.use(
   "/trpc",
