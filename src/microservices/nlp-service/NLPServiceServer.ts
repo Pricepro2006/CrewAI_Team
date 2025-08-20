@@ -5,7 +5,7 @@
 
 import express from "express";
 import cors from "cors";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import { getSimplifiedQwenProcessor } from "./SimplifiedQwenProcessor.js";
 
 const app = express();

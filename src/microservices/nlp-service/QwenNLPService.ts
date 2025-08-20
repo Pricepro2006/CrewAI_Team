@@ -3,7 +3,7 @@
  * Lightweight NLP for grocery intent detection and entity extraction
  */
 
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import { walmartConfig } from "../../config/walmart.config.js";
 import axios, { AxiosInstance } from "axios";
 
