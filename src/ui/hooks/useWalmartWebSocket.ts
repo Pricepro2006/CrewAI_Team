@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export interface WSMessage {
   type: "nlp_processing" | "nlp_result" | "cart_update" | "price_update" | "product_match" | "error";
-  data: any;
+  data: unknown;
   timestamp: string;
   sessionId?: string;
   userId?: string;
@@ -47,8 +47,8 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
   const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
   const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
   const [nlpProcessing, setNlpProcessing] = useState(false);
-  const [nlpResult, setNlpResult] = useState<any>(null);
-  const [productMatches, setProductMatches] = useState<any[]>([]);
+  const [nlpResult, setNlpResult] = useState<unknown>(null);
+  const [productMatches, setProductMatches] = useState<unknown[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
@@ -176,12 +176,12 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         startHeartbeat(ws);
       };
 
-      ws.onmessage = (event: any) => {
+      ws.onmessage = (event: unknown) => {
         try {
           const message: WSMessage = JSON.parse(event.data);
           
           // Handle pong messages for heartbeat
-          if ((message as any).type === "pong") {
+          if ((message as unknown).type === "pong") {
             missedPongsRef.current = 0;
             return;
           }
@@ -192,13 +192,13 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         }
       };
 
-      ws.onerror = (event: any) => {
+      ws.onerror = (event: unknown) => {
         clearTimeout(connectionTimeout);
         console.error("WebSocket: Error occurred:", event);
         setError("WebSocket connection error");
       };
 
-      ws.onclose = (event: any) => {
+      ws.onclose = (event: unknown) => {
         clearTimeout(connectionTimeout);
         console.log(`WebSocket: Closed (code: ${event.code}, reason: ${event.reason || 'No reason'})`);
         
@@ -250,7 +250,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
    * Start heartbeat mechanism
    */
   const startHeartbeat = useCallback((ws: WebSocket) => {
-    // Clear any existing heartbeat
+    // Clear unknown existing heartbeat
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
     }
@@ -293,7 +293,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
   /**
    * Send message to server
    */
-  const sendMessage = useCallback((message: any) => {
+  const sendMessage = useCallback((message: unknown) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef?.current?.send(JSON.stringify(message));
       return true;

@@ -13,6 +13,23 @@ import { EventEmitter } from "events";
 import { logger } from "../../utils/logger.js";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout.js";
 
+// Type definitions for better type safety
+interface ChatObserver {
+  next: (data: unknown) => void;
+  error?: (error: Error) => void;
+  complete?: () => void;
+}
+
+interface MasterOrchestrator {
+  llm?: {
+    generate: (prompt: string) => Promise<string | { response: string }>;
+  };
+}
+
+interface LLMResponse {
+  response?: string;
+}
+
 // Event emitter for real-time updates
 const chatEvents = new EventEmitter();
 
@@ -201,7 +218,7 @@ export const chatRouter = createFeatureRouter(
         }),
       )
       .subscription(({ input }) => {
-        return observable((observer: any) => {
+        return observable((observer: ChatObserver) => {
           const handler = (data: {
             conversationId: string;
             message: unknown;
@@ -252,7 +269,7 @@ export const chatRouter = createFeatureRouter(
       `;
 
         // Type-safe LLM access with proper error handling
-        const orchestrator = ctx.masterOrchestrator as any;
+        const orchestrator = ctx.masterOrchestrator as MasterOrchestrator | undefined;
         if (!orchestrator?.llm?.generate) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
@@ -272,7 +289,7 @@ export const chatRouter = createFeatureRouter(
         // Extract string from LLM response with validation
         const title = typeof response === 'string' 
           ? response.substring(0, 50).trim() 
-          : (response as any)?.response?.substring(0, 50).trim() || 'Untitled Chat';
+          : (response as LLMResponse)?.response?.substring(0, 50).trim() || 'Untitled Chat';
 
         await ctx?.conversationService?.updateTitle(
           input.conversationId,

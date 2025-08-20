@@ -40,7 +40,7 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-export const useAuthState = (): AuthState => {
+export const useAuthState = (): AuthContextType => {
   const [state, setState] = useState<AuthState>({
     user: null,
     token: null,
@@ -200,7 +200,7 @@ export const useAuthState = (): AuthState => {
     logout,
     refreshToken,
     clearError
-  } as any;
+  };
 };
 
 /**
@@ -228,7 +228,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const auth = useAuthState();
   return React.createElement(
     AuthContext.Provider,
-    { value: auth } as any,
+    { value: auth },
     children
   );
 };

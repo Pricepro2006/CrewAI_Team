@@ -27,7 +27,7 @@ export enum WebSocketEventType {
 
 export interface WebSocketMessage {
   type: string;
-  data: any;
+  data: unknown;
   timestamp: string;
   sessionId?: string;
   userId?: string;

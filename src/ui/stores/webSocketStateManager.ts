@@ -18,7 +18,7 @@ import type {
 interface PendingUpdate {
   id: string;
   type: string;
-  data: any;
+  data: unknown;
   timestamp: Date;
   retries: number;
   maxRetries: number;
@@ -27,8 +27,8 @@ interface PendingUpdate {
 interface OptimisticUpdate {
   id: string;
   type: string;
-  apply: (state: any) => void;
-  rollback: (state: any) => void;
+  apply: (state: unknown) => void;
+  rollback: (state: unknown) => void;
   timestamp: Date;
   confirmed: boolean;
 }
@@ -50,7 +50,7 @@ interface WebSocketStateManager {
   
   // Email state cache
   emailCache: Map<string, {
-    data: any;
+    data: unknown;
     version: number;
     lastUpdated: Date;
   }>;
@@ -84,8 +84,8 @@ interface WebSocketStateManager {
   confirmOptimisticUpdate: (updateId: string) => void;
   rollbackOptimisticUpdate: (updateId: string) => void;
   
-  updateEmailCache: (emailId: string, data: any) => void;
-  updateStatsCache: (stats: any) => void;
+  updateEmailCache: (emailId: string, data: unknown) => void;
+  updateStatsCache: (stats: unknown) => void;
   
   addError: (error: WebSocketError) => void;
   clearErrors: () => void;
@@ -104,7 +104,7 @@ interface WebSocketStateManager {
 // Event deduplication helper
 const getEventKey = (event: WebSocketEvent): string => {
   if ('data' in event && event.data && typeof event.data === 'object') {
-    const data = event.data as any;
+    const data = event.data as unknown;
     if ('emailId' in data) return `${event.type}:${data.emailId}`;
     if ('taskId' in data) return `${event.type}:${data.taskId}`;
   }
@@ -195,13 +195,13 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
           if (event.type === 'email:stats_updated') {
             set((state: WebSocketStateManager) => {
               if (state.updateStatsCache) {
-                state.updateStatsCache((event as any).data.stats);
+                state.updateStatsCache((event as unknown).data.stats);
               }
             });
           } else if (event?.type?.startsWith('email:')) {
             const emailEvent = event as EmailWebSocketEvent;
             if ('data' in emailEvent && 'emailId' in emailEvent.data) {
-              const emailId = (emailEvent.data as any).emailId;
+              const emailId = (emailEvent.data as unknown).emailId;
               set((state: WebSocketStateManager) => {
                 if (state.updateEmailCache) {
                   state.updateEmailCache(emailId, emailEvent.data);
@@ -305,7 +305,7 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
       },
 
       // Cache management
-      updateEmailCache: (emailId: string, data: any) => {
+      updateEmailCache: (emailId: string, data: unknown) => {
         set((state: WebSocketStateManager) => {
           const existing = state?.emailCache?.get(emailId);
           state?.emailCache?.set(emailId, {
@@ -317,7 +317,7 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
           // Limit cache size
           if (state?.emailCache?.size > 500) {
             // Remove oldest entries
-            const entries: Array<[string, { data: any; version: number; lastUpdated: Date }]> = 
+            const entries: Array<[string, { data: unknown; version: number; lastUpdated: Date }]> = 
               Array.from(state?.emailCache?.entries() || []);
             entries.sort((a, b) => 
               a[1].lastUpdated.getTime() - b[1].lastUpdated.getTime()
@@ -329,7 +329,7 @@ export const useWebSocketStateManager = create<WebSocketStateManager>()(
         });
       },
 
-      updateStatsCache: (stats: any) => {
+      updateStatsCache: (stats: unknown) => {
         set((state: WebSocketStateManager) => {
           state.statsCache = {
             ...stats,

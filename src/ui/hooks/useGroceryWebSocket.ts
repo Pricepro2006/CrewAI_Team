@@ -17,7 +17,7 @@ export type GroceryWebSocketEventType =
 
 export interface GroceryWebSocketEvent {
   type: GroceryWebSocketEventType;
-  data: any;
+  data: unknown;
   timestamp: number;
   conversationId?: string;
   userId?: string;
@@ -91,7 +91,7 @@ export function useGroceryWebSocket(
   const isMountedRef = useRef(true);
 
   // Log helper
-  const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: any) => {
+  const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: unknown) => {
     if (enableLogging) {
       logger[level](message, "GROCERY_WS", data);
     }
@@ -169,7 +169,7 @@ export function useGroceryWebSocket(
             }
           }
         },
-        onClose: (event: any) => {
+        onClose: (event: unknown) => {
           if (!isMountedRef.current) return;
 
           log("WebSocket disconnected", 'warn', { code: event?.code, reason: event?.reason });

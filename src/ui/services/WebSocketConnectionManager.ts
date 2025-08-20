@@ -16,7 +16,7 @@ interface ManagedConnection {
   status: ConnectionStatus;
   attempts: number;
   lastActivity: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class WebSocketConnectionManager extends EventEmitter {
@@ -47,7 +47,7 @@ class WebSocketConnectionManager extends EventEmitter {
     options: {
       id?: string;
       forceNew?: boolean;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       onOpen?: (event: Event) => void;
       onClose?: (event: CloseEvent) => void;
       onMessage?: (event: MessageEvent) => void;
@@ -258,7 +258,7 @@ class WebSocketConnectionManager extends EventEmitter {
   /**
    * Send message through a managed connection
    */
-  public sendMessage(connectionId: string, data: any): boolean {
+  public sendMessage(connectionId: string, data: unknown): boolean {
     const connection = this.connections.get(connectionId);
     
     if (connection?.ws?.readyState === WebSocket.OPEN) {
@@ -286,7 +286,7 @@ class WebSocketConnectionManager extends EventEmitter {
     options: {
       id?: string;
       forceNew?: boolean;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       onOpen?: (event: Event) => void;
       onClose?: (event: CloseEvent) => void;
       onMessage?: (event: MessageEvent) => void;
@@ -372,7 +372,7 @@ class WebSocketConnectionManager extends EventEmitter {
   /**
    * Logging helper
    */
-  private log(level: 'info' | 'warn' | 'error', message: string, data?: any): void {
+  private log(level: 'info' | 'warn' | 'error', message: string, data?: unknown): void {
     if (!this.debugMode && level === 'info') return;
 
     const prefix = '[WebSocketManager]';

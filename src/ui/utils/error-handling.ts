@@ -10,7 +10,7 @@ export interface AppError extends Error {
   statusCode?: number;
   isOperational?: boolean;
   timestamp?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export enum ErrorCode {
@@ -31,7 +31,7 @@ export function createAppError(
   message: string,
   code: ErrorCode = ErrorCode.INTERNAL_ERROR,
   statusCode: number = 500,
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
 ): AppError {
   const error = new Error(message) as AppError;
   error.code = code;
@@ -127,8 +127,8 @@ export function isOperationalError(error: Error): boolean {
 /**
  * Sanitizes error for logging (removes sensitive data)
  */
-export function sanitizeError(error: Error): any {
-  const sanitized: any = {
+export function sanitizeError(error: Error): unknown {
+  const sanitized: unknown = {
     name: error.name,
     message: error.message,
     stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
@@ -150,16 +150,16 @@ export function sanitizeError(error: Error): any {
         "authorization",
         "cookie",
       ];
-      sanitized.details = Object.keys(appError.details).reduce((acc: any, key: any) => {
+      sanitized.details = Object.keys(appError.details).reduce((acc: unknown, key: unknown) => {
         if (
-          sensitiveFields.some((field: any) => key.toLowerCase().includes(field))
+          sensitiveFields.some((field: unknown) => key.toLowerCase().includes(field))
         ) {
           acc[key] = "[REDACTED]";
         } else {
           acc[key] = appError.details![key];
         }
         return acc;
-      }, {} as any);
+      }, {} as unknown);
     }
   }
 
@@ -169,7 +169,7 @@ export function sanitizeError(error: Error): any {
 /**
  * Async error wrapper for React components
  */
-export function asyncErrorWrapper<T extends (...args: any[]) => Promise<any>>(
+export function asyncErrorWrapper<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   errorHandler?: (error: Error) => void,
 ): T {
@@ -214,7 +214,7 @@ export function tryCatch<T extends (...args: unknown[]) => unknown>(
 
       if (errorHandler) {
         errorHandler(err);
-        return undefined as any; // Return undefined when error is handled
+        return undefined as unknown; // Return undefined when error is handled
       } else {
         throw err;
       }
@@ -263,7 +263,7 @@ export const errorRecovery = {
           },
         );
 
-        await new Promise((resolve: any) => setTimeout(resolve, delay));
+        await new Promise((resolve: unknown) => setTimeout(resolve, delay));
       }
     }
 
@@ -273,7 +273,7 @@ export const errorRecovery = {
   /**
    * Circuit breaker pattern for repeated failures
    */
-  createCircuitBreaker<T extends (...args: any[]) => Promise<any>>(
+  createCircuitBreaker<T extends (...args: unknown[]) => Promise<unknown>>(
     fn: T,
     failureThreshold: number = 5,
     resetTimeout: number = 60000,
@@ -358,7 +358,7 @@ export const performance = {
   /**
    * Measure async function execution time
    */
-  measureAsync<T extends (...args: any[]) => Promise<any>>(
+  measureAsync<T extends (...args: unknown[]) => Promise<unknown>>(
     fn: T,
     name?: string,
   ): T {

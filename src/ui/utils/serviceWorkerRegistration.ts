@@ -45,7 +45,7 @@ export function register(config?: Config) {
 function registerValidSW(swUrl: string, config?: Config) {
   navigator.serviceWorker
     .register(swUrl)
-    .then((registration: any) => {
+    .then((registration: unknown) => {
       console.log('Service Worker registered successfully');
       
       registration.onupdatefound = () => {
@@ -76,7 +76,7 @@ function registerValidSW(swUrl: string, config?: Config) {
         };
       };
     })
-    .catch((error: any) => {
+    .catch((error: unknown) => {
       console.error('Service Worker registration failed:', error);
     });
 }
@@ -86,14 +86,14 @@ function checkValidServiceWorker(swUrl: string, config?: Config) {
   fetch(swUrl, {
     headers: { 'Service-Worker': 'script' },
   })
-    .then((response: any) => {
+    .then((response: unknown) => {
       const contentType = response?.headers?.get('content-type');
       if (
         response.status === 404 ||
         (contentType != null && contentType.indexOf('javascript') === -1)
       ) {
         // Service worker not found; reload the page
-        navigator?.serviceWorker?.ready.then((registration: any) => {
+        navigator?.serviceWorker?.ready.then((registration: unknown) => {
           registration.unregister().then(() => {
             window?.location?.reload();
           });
@@ -111,28 +111,28 @@ function checkValidServiceWorker(swUrl: string, config?: Config) {
 export function unregister() {
   if ('serviceWorker' in navigator) {
     navigator?.serviceWorker?.ready
-      .then((registration: any) => {
+      .then((registration: unknown) => {
         registration.unregister();
         console.log('Service Worker unregistered');
       })
-      .catch((error: any) => {
+      .catch((error: unknown) => {
         console.error('Service Worker unregistration failed:', error);
       });
   }
 }
 
 // Get performance metrics from service worker
-export async function getServiceWorkerMetrics(): Promise<any> {
+export async function getServiceWorkerMetrics(): Promise<unknown> {
   if (!('serviceWorker' in navigator) || !navigator?.serviceWorker?.controller) {
     return null;
   }
 
-  return new Promise((resolve: any) => {
+  return new Promise((resolve: unknown) => {
     const messageChannel = new MessageChannel();
     
     // Fix: Cannot assign to optional property - use proper null check
     if (messageChannel.port1) {
-      messageChannel.port1.onmessage = (event: any) => {
+      messageChannel.port1.onmessage = (event: unknown) => {
         resolve(event.data);
       };
     }
@@ -193,7 +193,7 @@ export function monitorNetworkStatus(
 // React hook for service worker status
 export function useServiceWorker() {
   const [swStatus, setSwStatus] = React.useState<'loading' | 'ready' | 'offline' | 'update-available'>('loading');
-  const [metrics, setMetrics] = React.useState<any>(null);
+  const [metrics, setMetrics] = React.useState<unknown>(null);
 
   React.useEffect(() => {
     // Register service worker

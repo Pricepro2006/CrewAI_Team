@@ -4,7 +4,7 @@ interface ErrorLogEntry {
   timestamp: string;
   level: "error" | "warning" | "info";
   message: string;
-  error?: any;
+  error?: unknown;
   context?: string;
   userAction?: string;
   stackTrace?: string;
@@ -65,7 +65,7 @@ class ErrorLogger {
   public log(
     level: ErrorLogEntry["level"],
     message: string,
-    error?: any,
+    error?: unknown,
     context?: string,
     userAction?: string
   ) {
@@ -124,21 +124,21 @@ class ErrorLogger {
     );
   }
 
-  private serializeError(error: any): any {
+  private serializeError(error: unknown): unknown {
     if (error instanceof Error) {
       // Get all enumerable properties from the error, excluding the built-in ones we handle explicitly
-      const customProps = Object.getOwnPropertyNames(error).reduce((acc: any, key: any) => {
+      const customProps = Object.getOwnPropertyNames(error).reduce((acc: unknown, key: unknown) => {
         if (!['name', 'message', 'stack'].includes(key)) {
-          acc[key] = (error as any)[key];
+          acc[key] = (error as unknown)[key];
         }
         return acc;
-      }, {} as Record<string, any>);
+      }, {} as Record<string, unknown>);
 
       return {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        ...customProps, // Include any custom properties without duplicates
+        ...customProps, // Include unknown custom properties without duplicates
       };
     }
     return error;

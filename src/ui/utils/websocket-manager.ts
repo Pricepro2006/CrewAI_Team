@@ -9,7 +9,7 @@ import { logger } from "../../utils/logger.js";
 
 export interface WebSocketMessage {
   type: string;
-  data: any;
+  data: unknown;
   timestamp: string;
   id?: string;
 }
@@ -36,7 +36,7 @@ export class WebSocketManager {
   private connectionTimeoutId: NodeJS.Timeout | null = null;
   private isConnecting = false;
   private isManuallyDisconnected = false;
-  private listeners: Map<string, Set<(data: any) => void>> = new Map();
+  private listeners: Map<string, Set<(data: unknown) => void>> = new Map();
   
   // Callback options
   private onConnect?: () => void;
@@ -204,7 +204,7 @@ export class WebSocketManager {
   /**
    * Send message to WebSocket server
    */
-  send(type: string, data: any): boolean {
+  send(type: string, data: unknown): boolean {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       logger.warn("Cannot send message - WebSocket not connected", "WEBSOCKET_MANAGER", { type });
       return false;
@@ -230,7 +230,7 @@ export class WebSocketManager {
   /**
    * Subscribe to specific message types
    */
-  on(messageType: string, listener: (data: any) => void): () => void {
+  on(messageType: string, listener: (data: unknown) => void): () => void {
     if (!this.listeners.has(messageType)) {
       this.listeners.set(messageType, new Set());
     }
@@ -252,7 +252,7 @@ export class WebSocketManager {
   /**
    * Remove listener for specific message type
    */
-  off(messageType: string, listener: (data: any) => void): void {
+  off(messageType: string, listener: (data: unknown) => void): void {
     const typeListeners = this.listeners.get(messageType);
     if (typeListeners) {
       typeListeners.delete(listener);
@@ -358,11 +358,11 @@ export function useWebSocket(options?: WebSocketManagerOptions) {
     manager.disconnect();
   }, [manager]);
 
-  const send = React.useCallback((type: string, data: any) => {
+  const send = React.useCallback((type: string, data: unknown) => {
     return manager.send(type, data);
   }, [manager]);
 
-  const subscribe = React.useCallback((messageType: string, listener: (data: any) => void) => {
+  const subscribe = React.useCallback((messageType: string, listener: (data: unknown) => void) => {
     return manager.on(messageType, listener);
   }, [manager]);
 

@@ -4,6 +4,8 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 import { hostname } from 'node:os';
 import { sentryErrorTracker } from './SentryErrorTracker.js';
 import { piiRedactor } from '../utils/PIIRedactor.js';
+import { JSONObject, JSONValue } from '../shared/types/utility.types';
+import { LogEntry } from '../shared/types/monitoring.types';
 
 // Extended log levels for better granularity
 export const LOG_LEVELS = {
@@ -48,7 +50,7 @@ export interface StructuredLogEntry {
       system: number;
     };
   };
-  context?: Record<string, any>;
+  context?: JSONObject;
   error?: {
     name: string;
     message: string;
@@ -112,7 +114,7 @@ export class StructuredLogger {
       formats.push(winston?.format.json());
     } else {
       formats.push(
-        winston?.format?.printf((info: any) => {
+        winston?.format?.printf((info: LogEntry) => {
           const { timestamp, level, message, component, operation, traceId, ...meta } = info;
           let log = `${timestamp} [${level.toUpperCase()}] ${component || 'UNKNOWN'}`;
           
@@ -201,7 +203,7 @@ export class StructuredLogger {
             } : undefined,
           },
           index: `grocery-agent-logs-${this.environment}`,
-          transformer: (logData: any) => {
+          transformer: (logData: LogEntry) => {
             return {
               '@timestamp': new Date().toISOString(),
               level: logData.level,
@@ -260,7 +262,7 @@ export class StructuredLogger {
       requestId?: string;
       duration?: number;
       error?: Error;
-      data?: Record<string, any>;
+      data?: JSONObject;
       tags?: string[];
     }
   ): void {
@@ -296,7 +298,7 @@ export class StructuredLogger {
         name: redactedContext?.error?.name,
         message: piiRedactor.redact(redactedContext?.error?.message),
         stack: redactedContext?.error?.stack ? piiRedactor.redact(redactedContext?.error?.stack) : undefined,
-        code: (redactedContext.error as any).code,
+        code: (redactedContext.error as Error & { code?: string | number }).code,
       } : undefined,
       tags: redactedContext?.tags,
     };
@@ -362,39 +364,39 @@ export class StructuredLogger {
   }
 
   // Convenience methods for different log levels
-  emergency(message: string, component: string, context?: any): void {
+  emergency(message: string, component: string, context?: JSONObject): void {
     this.log('emergency', message, component, context);
   }
 
-  alert(message: string, component: string, context?: any): void {
+  alert(message: string, component: string, context?: JSONObject): void {
     this.log('alert', message, component, context);
   }
 
-  critical(message: string, component: string, context?: any): void {
+  critical(message: string, component: string, context?: JSONObject): void {
     this.log('critical', message, component, context);
   }
 
-  error(message: string, component: string, context?: any): void {
+  error(message: string, component: string, context?: JSONObject): void {
     this.log('error', message, component, context);
   }
 
-  warning(message: string, component: string, context?: any): void {
+  warning(message: string, component: string, context?: JSONObject): void {
     this.log('warning', message, component, context);
   }
 
-  notice(message: string, component: string, context?: any): void {
+  notice(message: string, component: string, context?: JSONObject): void {
     this.log('notice', message, component, context);
   }
 
-  info(message: string, component: string, context?: any): void {
+  info(message: string, component: string, context?: JSONObject): void {
     this.log('info', message, component, context);
   }
 
-  debug(message: string, component: string, context?: any): void {
+  debug(message: string, component: string, context?: JSONObject): void {
     this.log('debug', message, component, context);
   }
 
-  trace(message: string, component: string, context?: any): void {
+  trace(message: string, component: string, context?: JSONObject): void {
     this.log('trace', message, component, context);
   }
 
@@ -404,7 +406,7 @@ export class StructuredLogger {
     query: string,
     confidence: number,
     parseTime: number,
-    context?: any
+    context?: JSONObject
   ): void {
     this.info('NLP parsing completed', 'NLP_PARSER', {
       operation: 'parse_query',
@@ -424,7 +426,7 @@ export class StructuredLogger {
     matchType: 'exact' | 'fuzzy' | 'none',
     confidence: number,
     searchTime: number,
-    context?: any
+    context?: JSONObject
   ): void {
     this.info('Product matching completed', 'PRODUCT_MATCHER', {
       operation: 'match_product',
@@ -444,7 +446,7 @@ export class StructuredLogger {
     success: boolean,
     responseTime: number,
     storeId?: string,
-    context?: any
+    context?: JSONObject
   ): void {
     this.info('Price fetching completed', 'PRICE_FETCHER', {
       operation: 'fetch_price',
@@ -463,7 +465,7 @@ export class StructuredLogger {
     productId: string,
     dealsFound: number,
     detectionTime: number,
-    context?: any
+    context?: JSONObject
   ): void {
     this.info('Deal detection completed', 'DEAL_DETECTOR', {
       operation: 'detect_deals',
@@ -481,7 +483,7 @@ export class StructuredLogger {
     sessionId: string,
     userId: string,
     action: string,
-    context?: any
+    context?: JSONObject
   ): void {
     this.info(`User session ${action}`, 'USER_SESSION', {
       operation: action,
@@ -495,7 +497,7 @@ export class StructuredLogger {
   webSocketEvent(
     event: string,
     connectionId: string,
-    context?: any
+    context?: JSONObject
   ): void {
     this.debug(`WebSocket ${event}`, 'WEBSOCKET', {
       operation: event,
@@ -511,7 +513,7 @@ export class StructuredLogger {
     statusCode: number,
     responseTime: number,
     userId?: string,
-    context?: any
+    context?: JSONObject
   ): void {
     const level = statusCode >= 500 ? 'error' : 
                   statusCode >= 400 ? 'warning' : 'info';
@@ -534,7 +536,7 @@ export class StructuredLogger {
     query: string,
     duration: number,
     success: boolean,
-    context?: any
+    context?: JSONObject
   ): void {
     const level = success ? 'debug' : 'error';
     
@@ -676,13 +678,13 @@ export class StructuredLogger {
     return aggregations.sort((a, b) => b?.lastSeen?.getTime() - a?.lastSeen?.getTime());
   }
 
-  getLogStats(hours = 1): Record<string, any> {
+  getLogStats(hours = 1): JSONObject {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
     const recentAggregations = Array.from(this?.aggregations?.values())
       .filter(a => a.lastSeen >= cutoff);
 
-    const stats = {
-      totalLogs: recentAggregations.reduce((sum: any, a: any) => sum + a.count, 0),
+    const stats: JSONObject = {
+      totalLogs: recentAggregations.reduce((sum: number, a: LogAggregation) => sum + a.count, 0),
       uniqueComponents: new Set(recentAggregations?.map(a => a.component)).size,
       logsByLevel: {} as Record<string, number>,
       logsByComponent: {} as Record<string, number>,
@@ -790,7 +792,7 @@ export class StructuredLogger {
     clearInterval(this.bufferFlushInterval);
     
     // Wait for Winston to finish writing
-    await new Promise<void>((resolve: any) => {
+    await new Promise<void>((resolve) => {
       this?.winston?.on('finish', resolve);
       this?.winston?.end();
     });

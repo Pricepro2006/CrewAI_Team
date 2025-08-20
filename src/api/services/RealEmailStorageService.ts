@@ -10,22 +10,208 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { logger } from '../../utils/logger.js';
 import { wsService } from './WebSocketService.js';
+import type { 
+  EmailDatabaseRow,
+  DatabaseRow,
+  DatabaseRunResult,
+  EmailRecord,
+  EmailAnalysisResult,
+  EmailEntity,
+  ProcessingError,
+  ExecutionResult,
+  TokenUsage,
+  Timestamp
+} from '../../shared/types/api.types.js';
+
+// Enhanced email database row with all fields from emails_enhanced table
+export interface EmailEnhancedRow extends EmailDatabaseRow {
+  email_alias?: string;
+  requested_by?: string;
+  body_preview?: string;
+  body_content?: string;
+  business_summary?: string;
+  workflow_type?: string;
+  workflow_state?: string;
+  priority?: string;
+  status?: string;
+  confidence_score?: number;
+  action_items?: string; // JSON string
+  categories?: string; // JSON string
+  next_steps?: string;
+  revenue_impact?: string;
+  urgency_reason?: string;
+  suggested_response?: string;
+  phase_completed?: number;
+  analyzed_at?: string;
+  is_read?: string; // 'true' | 'false' as string in DB
+}
+
+// Dashboard stats response interface
+export interface DashboardStats {
+  totalEmails: number;
+  criticalCount: number;
+  inProgressCount: number;
+  completedCount: number;
+  statusDistribution: Record<string, number>;
+  processingStats: {
+    ruleBasedOnly: number;
+    llmAnalyzed: number;
+    strategicAnalyzed: number;
+    unprocessed: number;
+  };
+}
+
+// Workflow analytics response interface
+export interface WorkflowAnalytics {
+  totalEmails: number;
+  workflowDistribution: Record<string, number>;
+  slaCompliance: Record<string, number>;
+  averageProcessingTime: number;
+}
+
+// Agent processing status interface
+export interface AgentProcessingStatus {
+  isRunning: boolean;
+  processedToday: number;
+  queueSize: number;
+  lastProcessedAt?: string;
+  activeAgents: string[];
+  averageProcessingTime: number;
+  errorRate: number;
+}
+
+// Agent processing metrics interface
+export interface AgentProcessingMetrics {
+  totalProcessed: number;
+  averageTime: number;
+  successRate: number;
+  agentPerformance: Record<string, {
+    processed: number;
+    averageTime: number;
+    successRate: number;
+  }>;
+  throughput: {
+    emailsPerHour: number;
+    emailsPerDay: number;
+  };
+  qualityMetrics: {
+    accuracyScore: number;
+    confidenceScore: number;
+    userSatisfaction: number;
+  };
+}
+
+// Email analysis processing result
+export interface EmailProcessingResult {
+  quick: {
+    workflow: {
+      primary: string;
+      secondary: string[];
+    };
+    priority: string;
+    intent: string;
+    urgency: string;
+    confidence: number;
+    suggestedState: string;
+  };
+  deep: {
+    detailedWorkflow: {
+      primary: string;
+      confidence: number;
+    };
+    entities: {
+      poNumbers: string[];
+      quoteNumbers: string[];
+      caseNumbers: string[];
+      partNumbers: string[];
+      orderReferences: string[];
+      contacts: string[];
+    };
+    actionItems: string[];
+    workflowState: {
+      current: string;
+      suggestedNext: string;
+      blockers: string[];
+      estimatedCompletion: string | null;
+    };
+    businessImpact: {
+      revenue: number | null;
+      customerSatisfaction: string;
+      urgencyReason: string | null;
+    };
+    contextualSummary: string;
+    suggestedResponse?: string;
+    relatedEmails: string[];
+  };
+  actionSummary: string;
+  processingMetadata: {
+    stage1Time: number;
+    stage2Time: number;
+    totalTime: number;
+    models: {
+      stage1: string;
+      stage2: string;
+    };
+    agentsUsed?: string[];
+  };
+}
+
+// Formatted email for frontend
+export interface FormattedEmail {
+  id: string;
+  subject: string;
+  from: {
+    emailAddress: {
+      name: string;
+      address: string;
+    };
+  };
+  to: Array<{
+    emailAddress: {
+      name?: string;
+      address: string;
+    };
+  }>;
+  receivedDateTime: string;
+  isRead: boolean;
+  hasAttachments: boolean;
+  bodyPreview?: string;
+  body?: string;
+  importance?: string;
+  categories: string[];
+  analysis?: EmailProcessingResult;
+}
+
+// Workflow pattern interface
+export interface WorkflowPattern {
+  id: string;
+  name: string;
+  workflow_type: string;
+  usage_count: number;
+  confidence_score: number;
+  template_data: Record<string, unknown>;
+  key_stages: string[];
+  required_entities: string[];
+}
+
+// Email table view item type
+export interface EmailTableViewItem {
+  id: string;
+  email_alias: string;
+  requested_by: string;
+  subject: string;
+  summary: string;
+  status: string;
+  status_text: string;
+  workflow_state: string;
+  priority: string;
+  received_date: string;
+  is_read: boolean;
+  has_attachments: boolean;
+}
 
 export interface EmailTableViewResult {
-  emails: Array<{
-    id: string;
-    email_alias: string;
-    requested_by: string;
-    subject: string;
-    summary: string;
-    status: string;
-    status_text: string;
-    workflow_state: string;
-    priority: string;
-    received_date: string;
-    is_read: boolean;
-    has_attachments: boolean;
-  }>;
+  emails: EmailTableViewItem[];
   totalCount: number;
   totalPages: number;
   fromCache?: boolean;
@@ -75,7 +261,7 @@ export class RealEmailStorageService {
     try {
       // Build WHERE clauses - Show all emails, not just LLM analyzed ones
       const whereClauses: string[] = [];
-      const params: any[] = [];
+      const params: (string | number | boolean | null)[] = [];
       
       // Add search filter
       if (options.search) {
@@ -143,7 +329,23 @@ export class RealEmailStorageService {
       `;
       
       const emailsStmt = this?.db?.prepare(emailsQuery);
-      const emails = emailsStmt.all(...params, pageSize, offset) as any[];
+      const rawEmails = emailsStmt.all(...params, pageSize, offset) as EmailEnhancedRow[];
+      
+      // Map to EmailTableViewItem format
+      const emails: EmailTableViewItem[] = rawEmails.map(email => ({
+        id: email.id,
+        email_alias: email.sender_email || '',
+        requested_by: email.sender_name || email.sender_email || '',
+        subject: email.subject,
+        summary: email.business_summary || email.body_preview || 'No summary available',
+        status: String(email.status || 'red'),
+        status_text: String(email.status || 'Processing Status Unknown'),
+        workflow_state: email.workflow_state || 'NEW',
+        priority: email.priority || 'medium',
+        received_date: email.received_date_time || '',
+        is_read: email.is_read === 'true',
+        has_attachments: email.has_attachments === 'true'
+      }));
       
       const queryTime = Date.now() - startTime;
       
@@ -175,19 +377,18 @@ export class RealEmailStorageService {
     }
   }
   
-  async getDashboardStats(): Promise<{
-    totalEmails: number;
-    criticalCount: number;
-    inProgressCount: number;
-    completedCount: number;
-    statusDistribution: Record<string, number>;
-    processingStats: {
-      ruleBasedOnly: number;
-      llmAnalyzed: number;
-      strategicAnalyzed: number;
-      unprocessed: number;
-    };
-  }> {
+  async getDashboardStats(): Promise<DashboardStats> {
+    interface StatsRow extends DatabaseRow {
+      totalEmails: number;
+      criticalCount: number;
+      inProgressCount: number;
+      completedCount: number;
+      unprocessedCount: number;
+      phase1Count: number;
+      phase2Count: number;
+      phase3Count: number;
+    }
+
     try {
       const stats = this?.db?.prepare(`
         SELECT 
@@ -200,7 +401,11 @@ export class RealEmailStorageService {
           COUNT(CASE WHEN phase_completed = 2 THEN 1 END) as phase2Count,
           COUNT(CASE WHEN phase_completed = 3 THEN 1 END) as phase3Count
         FROM emails_enhanced
-      `).get() as any;
+      `).get() as StatsRow | undefined;
+      
+      if (!stats) {
+        throw new Error('Failed to retrieve dashboard stats');
+      }
       
       return {
         totalEmails: stats.totalEmails,
@@ -226,12 +431,12 @@ export class RealEmailStorageService {
     }
   }
   
-  async getWorkflowAnalytics(): Promise<{
-    totalEmails: number;
-    workflowDistribution: Record<string, number>;
-    slaCompliance: Record<string, number>;
-    averageProcessingTime: number;
-  }> {
+  async getWorkflowAnalytics(): Promise<WorkflowAnalytics> {
+    interface WorkflowStatRow extends DatabaseRow {
+      workflow_type: string;
+      count: number;
+    }
+
     try {
       const workflowStats = this?.db?.prepare(`
         SELECT 
@@ -240,14 +445,21 @@ export class RealEmailStorageService {
         FROM emails_enhanced
         WHERE workflow_type IS NOT NULL
         GROUP BY workflow_type
-      `).all() as Array<{ workflow_type: string; count: number }>;
+      `).all() as WorkflowStatRow[];
       
       const workflowDistribution: Record<string, number> = {};
       workflowStats.forEach(stat => {
         workflowDistribution[stat.workflow_type] = stat.count;
       });
       
-      const totalCount = this?.db?.prepare('SELECT COUNT(*) as count FROM emails_enhanced').get() as { count: number };
+      interface CountRow extends DatabaseRow {
+        count: number;
+      }
+      const totalCount = this?.db?.prepare('SELECT COUNT(*) as count FROM emails_enhanced').get() as CountRow | undefined;
+      
+      if (!totalCount) {
+        throw new Error('Failed to get total count');
+      }
       
       return {
         totalEmails: totalCount.count,
@@ -265,7 +477,7 @@ export class RealEmailStorageService {
     }
   }
   
-  async getEmailsByWorkflow(workflow: string, limit = 50, offset = 0): Promise<any[]> {
+  async getEmailsByWorkflow(workflow: string, limit = 50, offset = 0): Promise<FormattedEmail[]> {
     try {
       const emails = this?.db?.prepare(`
         SELECT 
@@ -284,7 +496,7 @@ export class RealEmailStorageService {
         WHERE workflow_type = ?
         ORDER BY analyzed_at DESC
         LIMIT ? OFFSET ?
-      `).all(workflow, limit, offset) as any[];
+      `).all(workflow, limit, offset) as EmailEnhancedRow[];
       
       return emails?.map(email => ({
         id: email.id,
@@ -337,11 +549,11 @@ export class RealEmailStorageService {
     }
   }
   
-  async getEmailWithAnalysis(emailId: string): Promise<any | null> {
+  async getEmailWithAnalysis(emailId: string): Promise<FormattedEmail | null> {
     try {
       const email = this?.db?.prepare(`
         SELECT * FROM emails_enhanced WHERE id = ?
-      `).get(emailId) as any;
+      `).get(emailId) as EmailEnhancedRow | undefined;
       
       if (!email) return null;
       
@@ -361,7 +573,7 @@ export class RealEmailStorageService {
         bodyPreview: email.body_preview,
         body: email.body_content,
         importance: email.importance,
-        categories: email.categories ? JSON.parse(email.categories) : [],
+        categories: email.categories ? JSON.parse(email.categories) as string[] : [],
         analysis: {
           quick: {
             workflow: {
@@ -387,7 +599,7 @@ export class RealEmailStorageService {
               orderReferences: [],
               contacts: []
             },
-            actionItems: email.action_items ? JSON.parse(email.action_items) : [],
+            actionItems: email.action_items ? JSON.parse(email.action_items) as string[] : [],
             workflowState: {
               current: email.workflow_state || 'NEW',
               suggestedNext: email.next_steps || 'Review',
@@ -440,7 +652,7 @@ export class RealEmailStorageService {
     }
   }
   
-  async updateEmailStatus(emailId: string, status: any, statusText?: string, changedBy?: string): Promise<void> {
+  async updateEmailStatus(emailId: string, status: string, statusText?: string, changedBy?: string): Promise<void> {
     try {
       const stmt = this?.db?.prepare(`
         UPDATE emails_enhanced 
@@ -459,11 +671,11 @@ export class RealEmailStorageService {
     }
   }
   
-  async getEmail(emailId: string): Promise<any | null> {
+  async getEmail(emailId: string): Promise<EmailEnhancedRow | null> {
     try {
       const email = this?.db?.prepare(`
         SELECT * FROM emails_enhanced WHERE id = ?
-      `).get(emailId) as any;
+      `).get(emailId) as EmailEnhancedRow | undefined;
       
       return email;
     } catch (error) {
@@ -472,7 +684,7 @@ export class RealEmailStorageService {
     }
   }
   
-  async updateEmail(emailId: string, updates: any): Promise<void> {
+  async updateEmail(emailId: string, updates: Partial<EmailEnhancedRow>): Promise<void> {
     try {
       const fields = Object.keys(updates).map(key => `${key} = ?`).join(', ');
       const values = Object.values(updates);
@@ -493,7 +705,13 @@ export class RealEmailStorageService {
     }
   }
   
-  async getWorkflowPatterns(): Promise<any[]> {
+  async getWorkflowPatterns(): Promise<WorkflowPattern[]> {
+    interface PatternRow extends DatabaseRow {
+      workflow_type: string;
+      count: number;
+      avg_confidence: number | null;
+    }
+
     try {
       const patterns = this?.db?.prepare(`
         SELECT 
@@ -504,7 +722,7 @@ export class RealEmailStorageService {
         WHERE workflow_type IS NOT NULL
         GROUP BY workflow_type
         ORDER BY count DESC
-      `).all() as any[];
+      `).all() as PatternRow[];
       
       return patterns?.map(p => ({
         id: p.workflow_type,
@@ -522,7 +740,20 @@ export class RealEmailStorageService {
     }
   }
   
-  async createEmail(emailData: any): Promise<string> {
+  async createEmail(emailData: {
+    messageId?: string;
+    subject: string;
+    emailAlias: string;
+    requestedBy: string;
+    receivedDate?: Date;
+    body?: string;
+    summary?: string;
+    workflowType?: string;
+    workflowState?: string;
+    priority?: string;
+    isRead?: boolean;
+    hasAttachments?: boolean;
+  }): Promise<string> {
     try {
       const id = emailData.messageId || `email_${Date.now()}`;
       
@@ -600,13 +831,20 @@ export class RealEmailStorageService {
     
     try {
       // Get unprocessed emails
+      interface UnprocessedEmailRow extends DatabaseRow {
+        id: string;
+        subject: string;
+        sender_email: string;
+        phase_completed: number;
+      }
+
       const unprocessedEmails = this?.db?.prepare(`
         SELECT id, subject, sender_email, phase_completed
         FROM emails_enhanced 
         WHERE phase_completed < 2 
         ORDER BY received_date_time DESC
         LIMIT ?
-      `).all(maxEmails) as any[];
+      `).all(maxEmails) as UnprocessedEmailRow[];
 
       logger.info(`Found ${unprocessedEmails?.length || 0} emails for agent processing`, 'REAL_EMAIL_STORAGE');
       
@@ -646,15 +884,15 @@ export class RealEmailStorageService {
   /**
    * Get agent processing status
    */
-  async getAgentProcessingStatus(): Promise<{
-    isRunning: boolean;
-    processedToday: number;
-    queueSize: number;
-    lastProcessedAt?: string;
-    activeAgents: string[];
-    averageProcessingTime: number;
-    errorRate: number;
-  }> {
+  async getAgentProcessingStatus(): Promise<AgentProcessingStatus> {
+    interface CountRow extends DatabaseRow {
+      count: number;
+    }
+
+    interface LastTimeRow extends DatabaseRow {
+      last_time: string | null;
+    }
+
     try {
       // Get processing stats from database
       const todayStart = new Date();
@@ -665,25 +903,25 @@ export class RealEmailStorageService {
         FROM emails_enhanced 
         WHERE phase_completed >= 2 
         AND updated_at >= ?
-      `).get(todayStart.toISOString()) as { count: number };
+      `).get(todayStart.toISOString()) as CountRow | undefined;
 
       const queueSize = this?.db?.prepare(`
         SELECT COUNT(*) as count 
         FROM emails_enhanced 
         WHERE phase_completed < 2
-      `).get() as { count: number };
+      `).get() as CountRow | undefined;
 
       const lastProcessed = this?.db?.prepare(`
         SELECT MAX(updated_at) as last_time 
         FROM emails_enhanced 
         WHERE phase_completed >= 2
-      `).get() as { last_time: string | null };
+      `).get() as LastTimeRow | undefined;
 
       return {
         isRunning: false, // Stub: Would check actual agent status
-        processedToday: processedToday.count || 0,
-        queueSize: queueSize.count || 0,
-        lastProcessedAt: lastProcessed.last_time || undefined,
+        processedToday: processedToday?.count || 0,
+        queueSize: queueSize?.count || 0,
+        lastProcessedAt: lastProcessed?.last_time || undefined,
         activeAgents: [], // Stub: Would list active agent instances
         averageProcessingTime: 1500, // Stub: 1.5 seconds average
         errorRate: 0.02 // Stub: 2% error rate
@@ -697,12 +935,7 @@ export class RealEmailStorageService {
   /**
    * Process single email through agents
    */
-  async processEmailThroughAgents(email: any): Promise<{
-    quick: any;
-    deep: any;
-    actionSummary: string;
-    processingMetadata: any;
-  }> {
+  async processEmailThroughAgents(email: EmailEnhancedRow): Promise<EmailProcessingResult> {
     logger.info(`Processing email through agents: ${email.id}`, 'REAL_EMAIL_STORAGE');
     
     try {
@@ -784,25 +1017,7 @@ export class RealEmailStorageService {
     agentType?: string;
     start?: Date;
     end?: Date;
-  }): Promise<{
-    totalProcessed: number;
-    averageTime: number;
-    successRate: number;
-    agentPerformance: Record<string, {
-      processed: number;
-      averageTime: number;
-      successRate: number;
-    }>;
-    throughput: {
-      emailsPerHour: number;
-      emailsPerDay: number;
-    };
-    qualityMetrics: {
-      accuracyScore: number;
-      confidenceScore: number;
-      userSatisfaction: number;
-    };
-  }> {
+  }): Promise<AgentProcessingMetrics> {
     try {
       const timeRange = options?.timeRange || 'day';
       let timeFilter = '';
@@ -822,6 +1037,11 @@ export class RealEmailStorageService {
           break;
       }
 
+      interface ProcessedStatsRow extends DatabaseRow {
+        total_processed: number;
+        success_rate: number;
+      }
+
       const processedStats = this?.db?.prepare(`
         SELECT 
           COUNT(*) as total_processed,
@@ -831,27 +1051,27 @@ export class RealEmailStorageService {
           END) as success_rate
         FROM emails_enhanced 
         WHERE phase_completed >= 1 ${timeFilter}
-      `).get() as { total_processed: number; success_rate: number };
+      `).get() as ProcessedStatsRow | undefined;
 
       return {
-        totalProcessed: processedStats.total_processed || 0,
+        totalProcessed: processedStats?.total_processed || 0,
         averageTime: 1200, // Stub: 1.2 seconds
-        successRate: processedStats.success_rate || 0.95,
+        successRate: processedStats?.success_rate || 0.95,
         agentPerformance: {
           'EmailAnalysisAgent': {
-            processed: processedStats.total_processed || 0,
+            processed: processedStats?.total_processed || 0,
             averageTime: 1200,
             successRate: 0.95
           },
           'ResearchAgent': {
-            processed: Math.floor((processedStats.total_processed || 0) * 0.3),
+            processed: Math.floor((processedStats?.total_processed || 0) * 0.3),
             averageTime: 2400,
             successRate: 0.92
           }
         },
         throughput: {
-          emailsPerHour: Math.floor((processedStats.total_processed || 0) / 24),
-          emailsPerDay: processedStats.total_processed || 0
+          emailsPerHour: Math.floor((processedStats?.total_processed || 0) / 24),
+          emailsPerDay: processedStats?.total_processed || 0
         },
         qualityMetrics: {
           accuracyScore: 0.88,

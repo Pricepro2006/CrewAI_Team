@@ -22,7 +22,7 @@ export interface ConnectionOptions {
   maxReconnectAttempts?: number;
   onModeChange?: (mode: ConnectionMode) => void;
   onQualityChange?: (quality: ConnectionQuality) => void;
-  onDataUpdate?: (data: any) => void;
+  onDataUpdate?: (data: unknown) => void;
 }
 
 export interface ConnectionState {
@@ -75,7 +75,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const metricsTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionStartRef = useRef<number>(Date.now());
-  const lastDataRef = useRef<any>(null);
+  const lastDataRef = useRef<unknown>(null);
   const latencyMeasurementsRef = useRef<number[]>([]);
   const websocketFailuresRef = useRef<number>(0);
   const isPollingActiveRef = useRef<boolean>(false);
@@ -133,7 +133,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
     }
 
     const avgLatency = latencyMeasurementsRef?.current?.length > 0
-      ? Math.round(latencyMeasurementsRef?.current?.reduce((a: any, b: any) => a + b, 0) / latencyMeasurementsRef?.current?.length)
+      ? Math.round(latencyMeasurementsRef?.current?.reduce((a: unknown, b: unknown) => a + b, 0) / latencyMeasurementsRef?.current?.length)
       : 0;
 
     const uptime = Date.now() - sessionStartRef.current;
@@ -264,7 +264,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
           pollingTimerRef.current = setTimeout(poll, nextInterval);
         }
       } catch (error) {
-        logger.error('Polling error', 'CONNECTION', error as any);
+        logger.error('Polling error', 'CONNECTION', error as unknown);
         
         // Retry with backoff
         pollingTimerRef.current = setTimeout(poll, Math.min(pollingInterval * 2, 30000));
@@ -428,7 +428,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
   /**
    * Send message (WebSocket only)
    */
-  const sendMessage = useCallback((message: any) => {
+  const sendMessage = useCallback((message: unknown) => {
     if (state.mode === 'websocket' || state.mode === 'hybrid') {
       return websocket.sendMessage(message);
     } else {

@@ -7,7 +7,6 @@
 
 import { parentPort, workerData } from "worker_threads";
 import { Agent } from "http";
-import { Ollama } from "ollama";
 import Database from "better-sqlite3";
 import { z } from "zod";
 import { Logger } from "../../utils/logger.js";
@@ -15,6 +14,19 @@ import type {
   EmailProcessingJob,
   EmailJobData,
 } from "./EmailProcessingWorkerPool.js";
+import type {
+  Phase1Results,
+  Phase2Results,
+  Phase3Results
+} from "../services/EmailThreePhaseAnalysisService.js";
+import type {
+  DatabaseRecord,
+  ActionItem,
+  BatchPrompt,
+  WorkerOptions,
+  PatternMatch,
+  ContactInfo
+} from "../../shared/types/core.types.js";
 
 const logger = new Logger(`Worker-${workerData.workerId}`);
 
@@ -74,8 +86,8 @@ interface BatchPrompt {
   emailId: string;
 }
 
-interface OllamaConnection {
-  instance: Ollama;
+interface LlamaCppConnection {
+  provider: any; // Will be LlamaCppHttpProvider instance
   lastUsed: number;
   requestCount: number;
 }
@@ -87,8 +99,8 @@ interface OllamaConnection {
 class EmailProcessingWorker {
   private workerId: string;
   private db: Database.Database;
-  private ollamaPool: Map<string, OllamaConnection> = new Map();
-  private maxOllamaConnections = 3;
+  private llamaCppProvider: any; // LlamaCppHttpProvider instance
+  private isProviderInitialized = false;
   private connectionIndex = 0;
   private memoryCheckInterval?: NodeJS.Timeout;
   private metricsInterval?: NodeJS.Timeout;
@@ -135,8 +147,8 @@ class EmailProcessingWorker {
     this?.db?.pragma("cache_size = 10000");
     this?.db?.pragma("temp_store = MEMORY");
 
-    // Create Ollama connection pool
-    this.initializeOllamaPool();
+    // Initialize LlamaCpp provider
+    this.initializeLlamaCppProvider();
 
     // Start monitoring
     this.startMemoryMonitoring();
@@ -158,46 +170,30 @@ class EmailProcessingWorker {
   }
 
   /**
-   * Initialize Ollama connection pool
+   * Initialize LlamaCpp HTTP provider
    */
-  private initializeOllamaPool(): void {
-    for (let i = 0; i < this.maxOllamaConnections; i++) {
-      const connectionId = `conn_${i}`;
-      this?.ollamaPool?.set(connectionId, {
-        instance: new Ollama({
-          host: "http://localhost:11434",
-          // Enable keep-alive for connection reuse
-          fetch: (url, options) =>
-            fetch(url, {
-              ...options,
-              keepalive: true,
-              // @ts-expect-error - Node.js specific option
-              agent: new Agent({
-                keepAlive: true,
-                keepAliveMsecs: 30000,
-                maxSockets: 10,
-              }),
-            }),
-        }),
-        lastUsed: Date.now(),
-        requestCount: 0,
-      });
+  private async initializeLlamaCppProvider(): Promise<void> {
+    try {
+      // Dynamically import to avoid circular dependencies
+      const { LlamaCppHttpProvider } = await import('../llm/LlamaCppHttpProvider.js');
+      this.llamaCppProvider = new LlamaCppHttpProvider('http://localhost:8081');
+      await this.llamaCppProvider.initialize();
+      this.isProviderInitialized = true;
+      logger.info('LlamaCpp provider initialized on port 8081', 'WORKER');
+    } catch (error) {
+      logger.error('Failed to initialize LlamaCpp provider:', error as string);
+      // Fallback behavior will be handled in generate methods
     }
   }
 
   /**
-   * Get an Ollama connection from the pool
+   * Get the LlamaCpp provider
    */
-  private getOllamaConnection(): OllamaConnection {
-    // Round-robin selection
-    const connectionId = `conn_${this.connectionIndex % this.maxOllamaConnections}`;
-    this.connectionIndex++;
-
-    const connection = this?.ollamaPool?.get(connectionId)!;
-    connection.lastUsed = Date.now();
-    connection.requestCount++;
-
-    return connection;
+  private async getLlamaCppProvider(): Promise<any> {
+    if (!this.isProviderInitialized) {
+      await this.initializeLlamaCppProvider();
+    }
+    return this.llamaCppProvider;
   }
 
   /**
@@ -206,7 +202,7 @@ class EmailProcessingWorker {
   private setupMessageHandlers(): void {
     if (!parentPort) return;
 
-    parentPort.on("message", async (message: any) => {
+    parentPort.on("message", async (message: EmailProcessingJob) => {
       switch (message.type) {
         case "processJob":
           await this.processJob(message.job, message.jobId);
@@ -272,7 +268,7 @@ class EmailProcessingWorker {
         data: {
           emailCount: job?.emails?.length,
           processingTime,
-          results: results?.map((r: any) => ({
+          results: results?.map((r: Phase1Results) => ({
             emailId: r.emailId,
             phases: r.phases,
             priority: r.priority,
@@ -297,12 +293,12 @@ class EmailProcessingWorker {
   private async processBatch(
     emails: EmailJobData[],
     options: EmailProcessingJob["options"],
-  ): Promise<any[]> {
+  ): Promise<Phase1Results[]> {
     const results = [];
 
     // Phase 1: Rule-based analysis (parallel)
     const phase1Results = await Promise.all(
-      emails?.map((email: any) => this.runPhase1(email)),
+      emails?.map((email: EmailJobData) => this.runPhase1(email)),
     );
 
     // Phase 2: LLM enhancement (batched)
@@ -319,16 +315,16 @@ class EmailProcessingWorker {
     });
 
     // Phase 3: Strategic analysis (batched for complete chains)
-    let phase3Results: any[] = [];
+    let phase3Results: Phase1Results[] = [];
     if (phase3Candidates?.length || 0 > 0) {
       const phase3Indices = emails
         .map((email, index) => (phase3Candidates.includes(email) ? index : -1))
-        .filter((i: any) => i >= 0);
+        .filter((i: number) => i >= 0);
 
       phase3Results = await this.runPhase3Batch(
         phase3Candidates,
-        phase3Indices?.map((i: any) => phase1Results[i]),
-        phase3Indices?.map((i: any) => phase2Results[i]),
+        phase3Indices?.map((i: number) => phase1Results[i]),
+        phase3Indices?.map((i: number) => phase2Results[i]),
         options,
       );
     }
@@ -364,7 +360,7 @@ class EmailProcessingWorker {
   /**
    * Phase 1: Rule-based analysis
    */
-  private async runPhase1(email: EmailJobData): Promise<any> {
+  private async runPhase1(email: EmailJobData): Promise<Phase1Results> {
     const startTime = Date.now();
     const content = `${email.subject} ${email.body}`.toLowerCase();
 
@@ -421,10 +417,10 @@ class EmailProcessingWorker {
    */
   private async runPhase2Batch(
     emails: EmailJobData[],
-    phase1Results: any[],
+    phase1Results: Phase1Results[],
     options: EmailProcessingJob["options"],
-  ): Promise<any[]> {
-    const connection = this.getOllamaConnection();
+  ): Promise<Phase1Results[]> {
+    const provider = await this.getLlamaCppProvider();
     const results = [];
 
     // Create batch prompts
@@ -438,7 +434,7 @@ class EmailProcessingWorker {
     const llmBatchSize = 3;
     for (let i = 0; i < prompts?.length || 0; i += llmBatchSize) {
       const batch = prompts.slice(i, i + llmBatchSize);
-      const batchResults = await this.callLlamaBatch(connection, batch, {
+      const batchResults = await this.callLlamaBatch(provider, batch, {
         temperature: 0.1,
         num_predict: 1200,
         format: "json",
@@ -478,11 +474,11 @@ class EmailProcessingWorker {
    */
   private async runPhase3Batch(
     emails: EmailJobData[],
-    phase1Results: any[],
-    phase2Results: any[],
+    phase1Results: Phase1Results[],
+    phase2Results: Phase1Results[],
     options: EmailProcessingJob["options"],
-  ): Promise<any[]> {
-    const connection = this.getOllamaConnection();
+  ): Promise<Phase1Results[]> {
+    const provider = await this.getLlamaCppProvider();
     const results = [];
 
     // Create batch prompts
@@ -500,7 +496,7 @@ class EmailProcessingWorker {
     const llmBatchSize = 2; // Smaller batch for larger model
     for (let i = 0; i < prompts?.length || 0; i += llmBatchSize) {
       const batch = prompts.slice(i, i + llmBatchSize);
-      const batchResults = await this.callPhiBatch(connection, batch, {
+      const batchResults = await this.callPhiBatch(provider, batch, {
         temperature: 0.3,
         num_predict: 2000,
         format: "json",
@@ -538,24 +534,24 @@ class EmailProcessingWorker {
    * Call Llama 3.2 with batch prompts
    */
   private async callLlamaBatch(
-    connection: OllamaConnection,
+    provider: any,
     prompts: BatchPrompt[],
-    options: any,
+    options: WorkerOptions,
   ): Promise<string[]> {
     const results = await Promise.all(
-      prompts?.map(async (prompt: any) => {
+      prompts?.map(async (prompt: BatchPrompt) => {
         try {
-          const response = await connection?.instance?.generate({
-            model: "llama3.2:3b",
-            prompt: prompt.prompt,
-            stream: false,
-            format: options.format,
-            options: {
-              temperature: options.temperature,
-              num_predict: options.num_predict,
-            },
+          if (!provider) {
+            throw new Error('LlamaCpp provider not available');
+          }
+          
+          const response = await provider.generate(prompt.prompt, {
+            temperature: options.temperature,
+            maxTokens: options.num_predict,
+            format: options.format === 'json' ? 'json' : undefined,
           });
-          return response.response;
+          
+          return typeof response === 'string' ? response : response.response;
         } catch (error) {
           logger.error(`Llama call failed for ${prompt.id}:`, error as string);
           return "{}"; // Return empty JSON on error
@@ -570,24 +566,26 @@ class EmailProcessingWorker {
    * Call Phi-4 with batch prompts
    */
   private async callPhiBatch(
-    connection: OllamaConnection,
+    provider: any,
     prompts: BatchPrompt[],
-    options: any,
+    options: WorkerOptions,
   ): Promise<string[]> {
     const results = await Promise.all(
-      prompts?.map(async (prompt: any) => {
+      prompts?.map(async (prompt: BatchPrompt) => {
         try {
-          const response = await connection?.instance?.generate({
-            model: "doomgrave/phi-4:14b-tools-Q3_K_S",
-            prompt: prompt.prompt,
-            stream: false,
-            format: options.format,
-            options: {
-              temperature: options.temperature,
-              num_predict: options.num_predict,
-            },
+          if (!provider) {
+            throw new Error('LlamaCpp provider not available');
+          }
+          
+          // For Phi-4, we may need to switch models or use the same provider
+          // Since llama.cpp can load different models, we'll use the same provider
+          const response = await provider.generate(prompt.prompt, {
+            temperature: options.temperature,
+            maxTokens: options.num_predict,
+            format: options.format === 'json' ? 'json' : undefined,
           });
-          return response.response;
+          
+          return typeof response === 'string' ? response : response.response;
         } catch (error) {
           logger.error(`Phi call failed for ${prompt.id}:`, error as string);
           return "{}"; // Return empty JSON on error
@@ -601,7 +599,7 @@ class EmailProcessingWorker {
   /**
    * Build Phase 2 prompt
    */
-  private buildPhase2Prompt(email: EmailJobData, phase1Results: any): string {
+  private buildPhase2Prompt(email: EmailJobData, phase1Results: Phase1Results): string {
     return `Analyze this business email and enhance the initial analysis.
 
 Email:
@@ -646,8 +644,8 @@ Provide enhanced analysis in this exact JSON format:
    */
   private buildPhase3Prompt(
     email: EmailJobData,
-    phase1Results: any,
-    phase2Results: any,
+    phase1Results: Phase1Results,
+    phase2Results: Phase2Results,
   ): string {
     return `Provide strategic analysis for this complete email chain.
 
@@ -696,9 +694,9 @@ Provide strategic insights in this exact JSON format:
     const results = new Set<string>();
     const upperText = text.toUpperCase();
 
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = upperText.match(pattern) || [];
-      matches.forEach((m: any) => {
+      matches.forEach((m: string) => {
         if (!m.match(/^(THE|AND|FOR|WITH|FROM|THIS|THAT|HAVE|WILL|BEEN)$/)) {
           results.add(m);
         }
@@ -716,9 +714,9 @@ Provide strategic insights in this exact JSON format:
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = text.match(pattern) || [];
-      matches.forEach((m: any) => results.add(m));
+      matches.forEach((m: string) => results.add(m));
     });
 
     return Array.from(results);
@@ -733,7 +731,7 @@ Provide strategic insights in this exact JSON format:
     const emails = text.match(emailPattern) || [];
     const phones = text.match(phonePattern) || [];
 
-    [...emails, ...phones].forEach((contact: any) => results.add(contact));
+    [...emails, ...phones].forEach((contact: string) => results.add(contact));
     return Array.from(results).slice(0, 10);
   }
 
@@ -751,7 +749,7 @@ Provide strategic insights in this exact JSON format:
     };
 
     for (const [state, keywords] of Object.entries(stateKeywords)) {
-      if (keywords.some((keyword: any) => content.includes(keyword))) {
+      if (keywords.some((keyword: string) => content.includes(keyword))) {
         return state;
       }
     }
@@ -788,9 +786,9 @@ Provide strategic insights in this exact JSON format:
    */
   private calculateFinancialImpact(amounts: string[]): number {
     return amounts
-      .map((amt: any) => parseFloat(amt.replace(/[$,]/g, "")))
-      .filter((amt: any) => !isNaN(amt))
-      .reduce((sum: any, amt: any) => sum + amt, 0);
+      .map((amt: string) => parseFloat(amt.replace(/[$,]/g, "")))
+      .filter((amt: string) => !isNaN(amt))
+      .reduce((sum: number, amt: number) => sum + amt, 0);
   }
 
   /**
@@ -805,9 +803,9 @@ Provide strategic insights in this exact JSON format:
     ];
 
     const phrases = new Set<string>();
-    patterns.forEach((pattern: any) => {
+    patterns.forEach((pattern: RegExp) => {
       const matches = content.match(pattern) || [];
-      matches.forEach((m: any) => phrases.add(m));
+      matches.forEach((m: string) => phrases.add(m));
     });
 
     return Array.from(phrases).slice(0, 10);
@@ -826,7 +824,7 @@ Provide strategic insights in this exact JSON format:
     };
 
     for (const [category, patterns] of Object.entries(categories)) {
-      if (patterns.some((pattern: any) => lowerEmail.includes(pattern))) {
+      if (patterns.some((pattern: RegExp) => lowerEmail.includes(pattern))) {
         return category;
       }
     }
@@ -837,7 +835,7 @@ Provide strategic insights in this exact JSON format:
   /**
    * Detect patterns
    */
-  private detectPatterns(content: string, entities: any): string[] {
+  private detectPatterns(content: string, entities: EntityExtractionResult): string[] {
     const patterns = [];
 
     if (entities?.part_numbers?.length > 5) patterns.push("bulk_order");
@@ -856,7 +854,7 @@ Provide strategic insights in this exact JSON format:
   /**
    * Get chain analysis from database
    */
-  private async getChainAnalysis(conversationId: string): Promise<any> {
+  private async getChainAnalysis(conversationId: string): Promise<Phase1Results> {
     try {
       const stmt = this?.db?.prepare(`
         SELECT 
@@ -870,7 +868,7 @@ Provide strategic insights in this exact JSON format:
         GROUP BY conversation_id
       `);
 
-      const result = stmt.get(conversationId) as any;
+      const result = stmt.get(conversationId) as DatabaseRecord;
       if (!result) return null;
 
       // Simple completeness check based on chain length and duration
@@ -904,7 +902,7 @@ Provide strategic insights in this exact JSON format:
   /**
    * Get Phase 2 fallback
    */
-  private getPhase2Fallback(phase1Results: any): any {
+  private getPhase2Fallback(phase1Results: Phase1Results): Phase2Results {
     return {
       ...phase1Results,
       workflow_validation: `Confirmed: ${phase1Results.workflow_state}`,
@@ -931,7 +929,7 @@ Provide strategic insights in this exact JSON format:
   /**
    * Get Phase 3 fallback
    */
-  private getPhase3Fallback(phase2Results: any): any {
+  private getPhase3Fallback(phase2Results: Phase2Results): Phase3Results {
     return {
       strategic_insights: {
         opportunity: "Standard processing opportunity",
@@ -954,8 +952,8 @@ Provide strategic insights in this exact JSON format:
   /**
    * Save results to database
    */
-  private async saveResults(results: any[]): Promise<void> {
-    const transaction = this?.db?.transaction((results: any[]) => {
+  private async saveResults(results: Phase1Results[]): Promise<void> {
+    const transaction = this?.db?.transaction((results: Phase1Results[]) => {
       const stmt = this?.db?.prepare(`
         UPDATE emails_enhanced SET
           workflow_state = ?,
@@ -1052,8 +1050,10 @@ Provide strategic insights in this exact JSON format:
     // Close database
     this?.db?.close();
 
-    // Clear connection pool
-    this?.ollamaPool?.clear();
+    // Clean up LlamaCpp provider
+    if (this.llamaCppProvider?.cleanup) {
+      await this.llamaCppProvider.cleanup();
+    }
 
     logger.info("Worker shutdown complete");
     process.exit(0);

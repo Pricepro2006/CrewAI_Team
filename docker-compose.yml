@@ -39,23 +39,39 @@ services:
       timeout: 10s
       retries: 3
 
-  # Ollama for LLM services (optional)
-  ollama:
-    image: ollama/ollama:latest
-    container_name: crewai-ollama
+  # Llama.cpp server for LLM services
+  llama-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.llama-cpp
+    container_name: crewai-llama-server
     restart: unless-stopped
     ports:
-      - "11434:11434"
+      - "8081:8081"
     volumes:
-      - ollama-data:/root/.ollama
+      - ./models:/app/models:ro
+      - llama-logs:/app/logs
+    environment:
+      - LLAMA_PROFILE=${LLAMA_PROFILE:-balanced}
+      - LLAMA_MODEL=${LLAMA_MODEL:-llama-3.2-3b-instruct.Q4_K_M.gguf}
+      - LLAMA_PORT=8081
+      - LLAMA_HOST=0.0.0.0
     networks:
       - crewai-network
     deploy:
       resources:
         limits:
-          memory: 8G
+          memory: 16G
+          cpus: '12'
         reservations:
-          memory: 4G
+          memory: 8G
+          cpus: '8'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
   # Main application
   app:
@@ -76,7 +92,7 @@ services:
       - WALMART_DB_PATH=/app/data/walmart_grocery.db
       - REDIS_URL=redis://redis:6379
       - CHROMA_URL=http://chromadb:8000
-      - OLLAMA_URL=http://ollama:11434
+      - LLAMA_SERVER_URL=http://llama-server:8081
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
     volumes:
@@ -88,6 +104,8 @@ services:
       redis:
         condition: service_healthy
       chromadb:
+        condition: service_healthy
+      llama-server:
         condition: service_healthy
     networks:
       - crewai-network
@@ -165,7 +183,7 @@ volumes:
     driver: local
   chromadb-data:
     driver: local
-  ollama-data:
+  llama-logs:
     driver: local
   prometheus-data:
     driver: local

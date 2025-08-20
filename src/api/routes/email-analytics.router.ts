@@ -7,6 +7,31 @@ import {
 import { EmailAnalyticsService } from "../../core/database/EmailAnalyticsService.js";
 import { EmailQueryBuilder } from "../../core/database/EmailQueryBuilder.js";
 import Database from "better-sqlite3";
+import type { DatabaseRow } from "../../shared/types/api.types.js";
+
+// Database result interfaces
+interface ExtractionStatsRow extends DatabaseRow {
+  count: number;
+  avg_confidence: number;
+}
+
+interface WorkflowStatsRow extends DatabaseRow {
+  workflow_category: string;
+  count: number;
+  avg_dollar_value: number;
+}
+
+interface EntityStatsRow extends DatabaseRow {
+  entity_type: string;
+  count: number;
+  avg_confidence: number;
+}
+
+interface DistributionRow extends DatabaseRow {
+  category: string;
+  count: number;
+  percentage?: number;
+}
 
 // Input validation schemas
 const dateRangeSchema = z.object({
@@ -106,9 +131,9 @@ export const emailAnalyticsRouter = router({
 
       return {
         entities: results,
-        totalExtractions: results.reduce((sum: any, r: any) => sum + r.count, 0),
+        totalExtractions: results.reduce((sum: number, r: ExtractionStatsRow) => sum + r.count, 0),
         avgConfidence:
-          results.reduce((sum: any, r: any) => sum + r.avg_confidence, 0) /
+          results.reduce((sum: number, r: ExtractionStatsRow) => sum + r.avg_confidence, 0) /
             results?.length || 0 || 0,
       };
     } catch (error) {
@@ -147,10 +172,10 @@ export const emailAnalyticsRouter = router({
         avg_processing_time: number;
       }[];
 
-      const total = results.reduce((sum: any, r: any) => sum + r.count, 0);
+      const total = results.reduce((sum: number, r: WorkflowStatsRow) => sum + r.count, 0);
 
       return {
-        workflows: results?.map((r: any) => ({
+        workflows: results?.map((r: WorkflowStatsRow) => ({
           ...r,
           percentage: (r.count / total) * 100,
         })),
@@ -211,7 +236,7 @@ export const emailAnalyticsRouter = router({
         return {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          data: results?.map((r: any) => ({
+          data: results?.map((r: EntityStatsRow) => ({
             ...r,
             success_rate:
               ((r.processed_count - r.error_count) / r.processed_count) * 100,
@@ -257,10 +282,10 @@ export const emailAnalyticsRouter = router({
         count: number;
       }[];
 
-      const total = results.reduce((sum: any, r: any) => sum + r.count, 0);
+      const total = results.reduce((sum: number, r: WorkflowStatsRow) => sum + r.count, 0);
 
       return {
-        distribution: results?.map((r: any) => ({
+        distribution: results?.map((r: DistributionRow) => ({
           level: r.urgency_level,
           count: r.count,
           percentage: (r.count / total) * 100,

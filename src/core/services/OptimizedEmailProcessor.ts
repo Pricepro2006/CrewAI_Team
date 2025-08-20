@@ -7,9 +7,9 @@
 import { EventEmitter } from "events";
 import PQueue from "p-queue";
 import { logger } from "../../utils/logger.js";
-import { OllamaOptimizer } from "./OllamaOptimizer.js";
 import { EmailAnalysisCache } from "../cache/EmailAnalysisCache.js";
 import { performance } from "perf_hooks";
+import { LlamaCppHttpProvider, type LlamaCppRequestContext } from "../llm/LlamaCppHttpProvider.js";
 
 interface EmailInput {
   id: string;
@@ -61,18 +61,25 @@ interface ProcessingMetrics {
 }
 
 export class OptimizedEmailProcessor extends EventEmitter {
-  private optimizer: OllamaOptimizer;
+  private llamaProvider: LlamaCppHttpProvider;
   private cache: EmailAnalysisCache;
   private processingQueue: PQueue;
   private options: ProcessingOptions;
   private metrics: ProcessingMetrics;
   private latencyHistory: number[] = [];
+  private isProviderInitialized = false;
+  private requestContext?: LlamaCppRequestContext;
 
-  constructor(optimizer?: OllamaOptimizer, options?: Partial<ProcessingOptions>) {
+  constructor(options?: Partial<ProcessingOptions> & { context?: LlamaCppRequestContext }) {
     super();
     
-    this.optimizer = optimizer || new OllamaOptimizer();
+    this.llamaProvider = new LlamaCppHttpProvider('http://localhost:8081');
     this.cache = new EmailAnalysisCache({ maxSize: 5000, ttl: 7200000 }); // 2 hour TTL
+    
+    // Extract context for request identification
+    this.requestContext = options?.context;
+    const cleanOptions = { ...options };
+    delete cleanOptions.context;
     
     // Default options optimized for throughput
     this.options = {
@@ -88,7 +95,7 @@ export class OptimizedEmailProcessor extends EventEmitter {
       phase3Timeout: 10000, // 10 seconds
       minConfidence: 0.6,
       maxRetries: 1,
-      ...options
+      ...cleanOptions
     };
 
     // Initialize metrics
@@ -142,8 +149,7 @@ export class OptimizedEmailProcessor extends EventEmitter {
         this.options.minConfidence = 0.5;
         this.options.maxRetries = 0;
         
-        // Configure optimizer for speed
-        this.optimizer?.optimizeForWorkload("batch");
+        // Speed mode configuration applied
         logger.info("Configured for SPEED mode", "OPTIMIZED_PROCESSOR");
         break;
         
@@ -156,15 +162,13 @@ export class OptimizedEmailProcessor extends EventEmitter {
         this.options.minConfidence = 0.8;
         this.options.maxRetries = 2;
         
-        // Configure optimizer for quality
-        this.optimizer?.optimizeForWorkload("realtime");
+        // Quality mode configuration applied
         logger.info("Configured for QUALITY mode", "OPTIMIZED_PROCESSOR");
         break;
         
       case "balanced":
       default:
-        // Balanced approach
-        this.optimizer?.optimizeForWorkload("mixed");
+        // Balanced mode configuration applied
         logger.info("Configured for BALANCED mode", "OPTIMIZED_PROCESSOR");
         break;
     }
@@ -380,10 +384,11 @@ export class OptimizedEmailProcessor extends EventEmitter {
     try {
       const phase2Timeout = this.options?.phase2Timeout ?? 5000;
       const response = await Promise.race([
-        this.optimizer?.generate(prompt, model, {
+        this.llamaProvider.generate(prompt, {
           temperature: 0.1,
-          num_predict: 800, // Reduced for speed
-          format: "json"
+          maxTokens: 800, // Reduced for speed
+          format: "json",
+          context: this.requestContext // Pass request context for proper client identification
         }),
         new Promise<string>((_, reject) => 
           setTimeout(() => reject(new Error("Phase 2 timeout")), phase2Timeout)
@@ -422,10 +427,11 @@ export class OptimizedEmailProcessor extends EventEmitter {
     try {
       const phase3Timeout = this.options?.phase3Timeout ?? 10000;
       const response = await Promise.race([
-        this.optimizer?.generate(prompt, model, {
+        this.llamaProvider.generate(prompt, {
           temperature: 0.2,
-          num_predict: 600, // Reduced for speed
-          format: "json"
+          maxTokens: 600, // Reduced for speed
+          format: "json",
+          context: this.requestContext // Pass request context for proper client identification
         }),
         new Promise<string>((_, reject) => 
           setTimeout(() => reject(new Error("Phase 3 timeout")), phase3Timeout)
@@ -583,7 +589,7 @@ JSON only, maximum 100 words total.`;
   getMetrics(): ProcessingMetrics & { ollamaMetrics: any } {
     return {
       ...this.metrics,
-      ollamaMetrics: this?.optimizer?.getMetrics()
+      providerInfo: this.llamaProvider?.getModelInfo ? this.llamaProvider.getModelInfo() : null
     };
   }
 
@@ -602,10 +608,12 @@ JSON only, maximum 100 words total.`;
   async shutdown(): Promise<void> {
     logger.info("Shutting down optimized processor", "OPTIMIZED_PROCESSOR");
     await this.processingQueue?.onEmpty();
-    await this.optimizer?.shutdown();
+    if (this.llamaProvider?.cleanup) {
+      await this.llamaProvider.cleanup();
+    }
     this.removeAllListeners();
   }
 }
 
-// Export singleton
+// Export singleton - no longer takes optimizer parameter
 export const optimizedProcessor = new OptimizedEmailProcessor();

@@ -8,6 +8,7 @@ import type {
   StepResult,
   Context,
 } from "./types.js";
+import type { DocumentChunk } from "../../shared/types/core.types.js";
 import { wsService } from "../../api/services/WebSocketService.js";
 import {
   withTimeout,
@@ -92,7 +93,7 @@ export class PlanExecutor {
     }
 
     // Broadcast plan completion
-    const success = results.every((r: any) => r.success);
+    const success = results.every((r: StepResult) => r.success);
     wsService.broadcastPlanUpdate(plan.id, success ? "completed" : "failed", {
       completed: executedSteps.size,
       total: sortedSteps?.length || 0,
@@ -102,9 +103,9 @@ export class PlanExecutor {
       success,
       results,
       summary: this.summarizeResults(results),
-      completedSteps: results?.filter((r: any) => r.success).length,
-      failedSteps: results?.filter((r: any) => !r.success).length,
-      error: !success ? results.find((r: any) => !r.success)?.error : undefined,
+      completedSteps: results?.filter((r: StepResult) => r.success).length,
+      failedSteps: results?.filter((r: StepResult) => !r.success).length,
+      error: !success ? results.find((r: StepResult) => !r.success)?.error : undefined,
     };
   }
 
@@ -169,7 +170,7 @@ export class PlanExecutor {
     });
 
     // Broadcast plan completion
-    const success = results.every((r: any) => r.success);
+    const success = results.every((r: StepResult) => r.success);
     wsService.broadcastPlanUpdate(plan.id, success ? "completed" : "failed", {
       completed: executedSteps.size,
       total: sortedSteps?.length || 0,
@@ -179,14 +180,14 @@ export class PlanExecutor {
       success,
       results,
       summary: this.summarizeResults(results),
-      completedSteps: results?.filter((r: any) => r.success).length,
-      failedSteps: results?.filter((r: any) => !r.success).length,
-      error: !success ? results.find((r: any) => !r.success)?.error : undefined,
+      completedSteps: results?.filter((r: StepResult) => r.success).length,
+      failedSteps: results?.filter((r: StepResult) => !r.success).length,
+      error: !success ? results.find((r: StepResult) => !r.success)?.error : undefined,
     };
   }
 
   private async gatherContext(step: PlanStep): Promise<Context> {
-    let documents: any[] = [];
+    let documents: DocumentChunk[] = [];
     let relevance = 0;
 
     try {
@@ -233,7 +234,7 @@ export class PlanExecutor {
     }
 
     // Try primary agent first
-    let agent = await this?.agentRegistry?.getAgent(step.agentType as any);
+    let agent = await this?.agentRegistry?.getAgent(step.agentType);
     let tool = agent.getTool(step.toolName);
 
     if (!tool) {
@@ -241,7 +242,7 @@ export class PlanExecutor {
       const fallbackAgents = this.getFallbackAgents(step.agentType);
       for (const fallbackType of fallbackAgents) {
         console.log(`Primary agent ${step.agentType} lacks tool ${step.toolName}, trying fallback ${fallbackType}`);
-        const fallbackAgent = await this?.agentRegistry?.getAgent(fallbackType as any);
+        const fallbackAgent = await this?.agentRegistry?.getAgent(fallbackType);
         const fallbackTool = fallbackAgent.getTool(step.toolName);
         if (fallbackTool) {
           agent = fallbackAgent;
@@ -305,7 +306,7 @@ export class PlanExecutor {
           if (fallbackAgents.length > attempt) {
             const fallbackType = fallbackAgents[attempt];
             console.log(`Retrying with fallback agent ${fallbackType} after error: ${lastError.message}`);
-            agent = await this?.agentRegistry?.getAgent(fallbackType as any);
+            agent = await this?.agentRegistry?.getAgent(fallbackType);
             const fallbackTool = agent.getTool(step.toolName);
             if (fallbackTool) {
               tool = fallbackTool;
@@ -336,7 +337,7 @@ export class PlanExecutor {
     step: PlanStep,
     context: Context,
   ): Promise<StepResult> {
-    const agent = await this?.agentRegistry?.getAgent(step.agentType as any);
+    const agent = await this?.agentRegistry?.getAgent(step.agentType);
 
     const result = await withTimeout(
       agent.execute(step.description, {
@@ -360,18 +361,18 @@ export class PlanExecutor {
     };
   }
 
-  private calculateRelevance(documents: any[], _step: PlanStep): number {
+  private calculateRelevance(documents: DocumentChunk[], _step: PlanStep): number {
     if (documents?.length || 0 === 0) return 0;
 
     // Average relevance score of top documents
-    const scores = documents.slice(0, 3).map((doc: any) => doc.score || 0);
+    const scores = documents.slice(0, 3).map((doc: DocumentChunk) => doc.score || 0);
 
-    return scores.reduce((a: any, b: any) => a + b, 0) / scores?.length || 0;
+    return scores.reduce((a: number, b: number) => a + b, 0) / scores?.length || 0;
   }
 
   private shouldContinue(results: StepResult[]): boolean {
     // Stop if too many failures
-    const failures = results?.filter((r: any) => !r.success).length;
+    const failures = results?.filter((r: StepResult) => !r.success).length;
     const total = results?.length || 0;
 
     if (total > 0 && failures / total > 0.5) {
@@ -380,21 +381,21 @@ export class PlanExecutor {
 
     // Stop if critical error
     const hasCriticalError = results.some(
-      (r: any) => r.metadata?.["errorType"] === "CriticalError",
+      (r: StepResult) => r.metadata?.["errorType"] === "CriticalError",
     );
 
     return !hasCriticalError;
   }
 
   private summarizeResults(results: StepResult[]): string {
-    const successful = results?.filter((r: any) => r.success);
-    const failed = results?.filter((r: any) => !r.success);
+    const successful = results?.filter((r: StepResult) => r.success);
+    const failed = results?.filter((r: StepResult) => !r.success);
 
     const parts: string[] = [];
 
     if (successful?.length || 0 > 0) {
       parts.push("Completed Steps:");
-      successful.forEach((r: any) => {
+      successful.forEach((r: StepResult) => {
         if (r.output) {
           parts.push(r.output);
         }
@@ -403,7 +404,7 @@ export class PlanExecutor {
 
     if (failed?.length || 0 > 0) {
       parts.push("\nFailed Steps:");
-      failed.forEach((r: any) => {
+      failed.forEach((r: StepResult) => {
         parts.push(`- ${r.stepId}: ${r.error || "Unknown error"}`);
       });
     }
@@ -417,16 +418,16 @@ export class PlanExecutor {
     const adjList = new Map<string, string[]>();
 
     // Build graph
-    steps.forEach((step: any) => {
+    steps.forEach((step: PlanStep) => {
       graph.set(step.id, step);
       inDegree.set(step.id, 0);
       adjList.set(step.id, []);
     });
 
     // Calculate in-degrees and adjacency list
-    steps.forEach((step: any) => {
+    steps.forEach((step: PlanStep) => {
       const dependencies = step.dependencies || [];
-      dependencies.forEach((dep: any) => {
+      dependencies.forEach((dep: string) => {
         if (graph.has(dep)) {
           inDegree.set(step.id, (inDegree.get(step.id) || 0) + 1);
           adjList.get(dep)?.push(step.id);
@@ -450,7 +451,7 @@ export class PlanExecutor {
       sorted.push(step);
 
       // Update neighbors
-      adjList.get(current)?.forEach((neighbor: any) => {
+      adjList.get(current)?.forEach((neighbor: string) => {
         const newDegree = (inDegree.get(neighbor) || 0) - 1;
         inDegree.set(neighbor, newDegree);
 
@@ -474,7 +475,7 @@ export class PlanExecutor {
     step: PlanStep,
     executedSteps: Set<string>,
   ): boolean {
-    return (step.dependencies || []).every((dep: any) => executedSteps.has(dep));
+    return (step.dependencies || []).every((dep: string) => executedSteps.has(dep));
   }
 
   buildRAGQuery(step: PlanStep): string {

@@ -202,7 +202,7 @@ function getPermissionsForRole(role: string): string[] {
 }
 
 // Security headers and request validation
-function validateRequest(req: any) {
+function validateRequest(req: Request) {
   const ip = req.ip || req?.connection?.remoteAddress || "unknown";
   const userAgent = req.headers["user-agent"] || "unknown";
 
@@ -243,9 +243,20 @@ export type TRPCContext = {
   walmartGroceryService: WalmartGroceryService;
   emailIngestionService?: EmailIngestionServiceImpl;
   eventEmitter: EventEmitter;
-  agentRegistry: any;
-  ragSystem: any;
-  mcpTools: any;
+  agentRegistry: {
+    getAgent: (name: string) => Promise<unknown>;
+    listAgents: () => Promise<Array<{ name: string; status: string }>>;
+    registerAgent: (name: string, agent: unknown) => Promise<void>;
+  };
+  ragSystem: {
+    query: (query: string, options?: Record<string, unknown>) => Promise<unknown[]>;
+    addDocuments: (docs: unknown[]) => Promise<void>;
+    getStatus: () => Promise<{ status: string; documentCount: number }>;
+  };
+  mcpTools: {
+    callTool: (name: string, params: Record<string, unknown>) => Promise<unknown>;
+    listTools: () => Promise<Array<{ name: string; description: string }>>;
+  };
 };
 
 export async function createContext({

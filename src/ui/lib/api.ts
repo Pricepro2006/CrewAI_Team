@@ -6,6 +6,7 @@
 import { trpc } from "../../lib/trpc.js";
 import type { AppRouter } from "../../api/trpc/router.js";
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
+import type { TRPCReactClient } from "../../lib/trpc.js";
 
 /**
  * Main API object that provides access to all tRPC routers
@@ -13,21 +14,20 @@ import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
  */
 export const api = trpc;
 
-// Re-export individual routers for convenience (available routers)
-export const {
-  walmartGrocery,
-  walmartPrice,
-  auth,
-  health,
-  chat,
-  agent,
-  task,
-  rag,
-  emails,
-  deals,
-  security,
-  monitoring,
-} = api;
+// Re-export individual routers for convenience
+// We use the api object directly to maintain proper typing
+export const walmartGrocery = api.walmartGrocery;
+export const walmartPrice = api.walmartPrice;
+export const auth = api.auth;
+export const health = api.health;
+export const chat = api.chat;
+export const agent = api.agent;
+export const task = api.task;
+export const rag = api.rag;
+export const emails = api.emails;
+export const deals = api.deals;
+export const security = api.security;
+export const monitoring = api.monitoring;
 
 // Helper types for inputs and outputs
 export type RouterInputs = inferRouterInputs<AppRouter>;

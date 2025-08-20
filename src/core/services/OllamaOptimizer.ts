@@ -1,7 +1,8 @@
 /**
- * Ollama Performance Optimizer
- * Implements high-throughput optimizations for local LLM inference
+ * LlamaCpp Performance Optimizer (formerly OllamaOptimizer)
+ * Implements high-throughput optimizations for local LLM inference using llama.cpp
  * Target: 60+ emails/minute (1+ email/second)
+ * NOTE: This service maintains the OllamaOptimizer name for backward compatibility
  */
 
 import axios from "axios";
@@ -75,7 +76,7 @@ export class OllamaOptimizer extends EventEmitter {
   private metricsTimer?: NodeJS.Timeout;
 
   constructor(
-    baseUrl: string = "http://localhost:11434",
+    baseUrl: string = "http://localhost:8081",
     config?: Partial<OptimizationConfig>,
   ) {
     super();
@@ -435,11 +436,8 @@ export class OllamaOptimizer extends EventEmitter {
       async () => {
         for (const model of this.warmModels) {
           try {
-            await this?.axiosInstance?.post("/api/generate", {
-              model,
-              prompt: "",
-              keep_alive: this?.config?.modelKeepAlive,
-            });
+            // Keep-alive using health check endpoint
+            await this?.axiosInstance?.get("/health");
           } catch (error) {
             logger.debug(`Keep-alive failed for ${model}`, "OLLAMA_OPTIMIZER");
           }

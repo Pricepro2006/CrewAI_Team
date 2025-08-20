@@ -2,18 +2,28 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
 import { setupRedisQueueSystem } from '../examples/redis-queue-integration';
+import { 
+  MockRedisClient,
+  QueueTestJob,
+  TestPromise
+} from '../../shared/types/test.types';
+import { JSONObject } from '../../shared/types/utility.types';
 
 // Mock external dependencies
 vi.mock('ioredis', () => {
-  const mockRedis = {
+  const mockRedis: MockRedisClient & Record<string, unknown> = {
     connect: vi.fn().mockResolvedValue(undefined),
     quit: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue('OK'),
+    del: vi.fn().mockResolvedValue(1),
+    exists: vi.fn().mockResolvedValue(0),
+    expire: vi.fn().mockResolvedValue(1),
+    flushall: vi.fn().mockResolvedValue('OK'),
     xadd: vi.fn().mockResolvedValue('stream-id-123'),
     xreadgroup: vi.fn().mockResolvedValue([]),
     xgroup: vi.fn().mockResolvedValue('OK'),
-    exists: vi.fn().mockResolvedValue(0),
     zadd: vi.fn().mockResolvedValue(1),
-    del: vi.fn().mockResolvedValue(1),
     on: vi.fn().mockReturnThis(),
     emit: vi.fn().mockReturnThis(),
     sendCommand: vi.fn().mockResolvedValue('OK')
@@ -28,9 +38,22 @@ vi.mock('nanoid', () => ({
   nanoid: vi.fn(() => 'test-nanoid-123')
 }));
 
+interface QueueSystemType {
+  messageQueue: {
+    isActive(): boolean;
+    shutdown(): Promise<void>;
+  };
+  groceryPipeline: {
+    isActive(): boolean;
+    shutdown(): Promise<void>;
+  };
+  cacheManager: Record<string, unknown>;
+  router: Record<string, unknown>;
+}
+
 describe('Redis Queue Integration Tests', () => {
   let app: Express;
-  let queueSystem: any;
+  let queueSystem: QueueSystemType | null;
 
   beforeAll(async () => {
     // Setup Express app
@@ -38,7 +61,7 @@ describe('Redis Queue Integration Tests', () => {
     app.use(express.json());
 
     // Initialize Redis queue system with Express app
-    queueSystem = await setupRedisQueueSystem(app);
+    queueSystem = await setupRedisQueueSystem(app) as QueueSystemType;
   });
 
   afterAll(async () => {
@@ -68,7 +91,7 @@ describe('Redis Queue Integration Tests', () => {
           .expect(200);
 
         expect(response.body).toMatchObject({
-          status: expect.any(String),
+          status: expect.stringMatching(/^(healthy|unhealthy|degraded)$/),
           pipeline: {
             active: expect.any(Boolean),
             uptime: expect.any(Number)
@@ -77,7 +100,7 @@ describe('Redis Queue Integration Tests', () => {
             total: expect.any(Number),
             active: expect.any(Number)
           },
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
 
@@ -89,11 +112,11 @@ describe('Redis Queue Integration Tests', () => {
         expect(response.body).toMatchObject({
           pipeline: {
             active: expect.any(Boolean),
-            startedAt: expect.any(String)
+            startedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
           },
           queues: expect.any(Array),
           processing: expect.any(Object),
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
 
@@ -107,12 +130,12 @@ describe('Redis Queue Integration Tests', () => {
             totalJobsCompleted: expect.any(Number),
             totalJobsFailed: expect.any(Number),
             totalRetries: expect.any(Number),
-            successRate: expect.any(String),
-            avgProcessingTime: expect.any(String)
+            successRate: expect.stringMatching(/^\d+(\.\d+)?%$/),
+            avgProcessingTime: expect.stringMatching(/^\d+(\.\d+)?(ms|s)$/)
           },
           queues: expect.any(Array),
           processing: expect.any(Object),
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
     });
@@ -136,10 +159,10 @@ describe('Redis Queue Integration Tests', () => {
           .expect(201);
 
         expect(response.body).toMatchObject({
-          jobId: expect.any(String),
+          jobId: expect.stringMatching(/^[a-zA-Z0-9\-_]+$/),
           type: 'price_update',
           status: 'queued',
-          submittedAt: expect.any(String),
+          submittedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
           productId: 'TEST_PROD_001',
           storeId: 'TEST_STORE_001'
         });
@@ -163,6 +186,12 @@ describe('Redis Queue Integration Tests', () => {
           error: 'Invalid price update data',
           details: expect.any(Array)
         });
+        
+        expect(response.body.details.length).toBeGreaterThan(0);
+        response.body.details.forEach((detail: JSONObject) => {
+          expect(detail).toHaveProperty('field');
+          expect(detail).toHaveProperty('message');
+        });
       });
 
       it('should submit inventory sync job', async () => {
@@ -182,10 +211,10 @@ describe('Redis Queue Integration Tests', () => {
           .expect(201);
 
         expect(response.body).toMatchObject({
-          jobId: expect.any(String),
+          jobId: expect.stringMatching(/^[a-zA-Z0-9\-_]+$/),
           type: 'inventory_sync',
           status: 'queued',
-          submittedAt: expect.any(String),
+          submittedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
           productId: 'TEST_INVENTORY_PROD',
           storeId: 'TEST_INVENTORY_STORE'
         });
@@ -211,10 +240,10 @@ describe('Redis Queue Integration Tests', () => {
           .expect(201);
 
         expect(response.body).toMatchObject({
-          jobId: expect.any(String),
+          jobId: expect.stringMatching(/^[a-zA-Z0-9\-_]+$/),
           type: 'product_match',
           status: 'queued',
-          submittedAt: expect.any(String),
+          submittedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
           sourceProductId: 'PROD_A_123',
           targetProductId: 'PROD_B_456'
         });
@@ -231,10 +260,10 @@ describe('Redis Queue Integration Tests', () => {
           .expect(201);
 
         expect(response.body).toMatchObject({
-          jobId: expect.any(String),
+          jobId: expect.stringMatching(/^[a-zA-Z0-9\-_]+$/),
           type: 'nutrition_fetch',
           status: 'queued',
-          submittedAt: expect.any(String),
+          submittedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
           productId: 'NUTRITION_PROD_789'
         });
       });
@@ -284,16 +313,22 @@ describe('Redis Queue Integration Tests', () => {
             total: 3,
             successful: expect.any(Number),
             failed: expect.any(Number),
-            submittedAt: expect.any(String)
+            submittedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
           },
           jobs: expect.arrayContaining([
             expect.objectContaining({
-              jobId: expect.any(String),
-              type: expect.any(String),
-              status: expect.any(String),
+              jobId: expect.stringMatching(/^[a-zA-Z0-9\-_]+$/),
+              type: expect.stringMatching(/^(price_update|inventory_sync|nutrition_fetch)$/),
+              status: expect.stringMatching(/^(queued|processing|completed|failed)$/),
               success: expect.any(Boolean)
             })
           ])
+        });
+        
+        expect(response.body.jobs).toHaveLength(3);
+        response.body.jobs.forEach((job: QueueTestJob) => {
+          expect(job.id).toBeDefined();
+          expect(['price_update', 'inventory_sync', 'nutrition_fetch']).toContain(job.data.type);
         });
       });
     });
@@ -306,9 +341,9 @@ describe('Redis Queue Integration Tests', () => {
 
         expect(response.body).toMatchObject({
           jobId: 'test-job-123',
-          status: expect.any(String),
+          status: expect.stringMatching(/^(queued|processing|completed|failed)$/),
           progress: expect.any(Number),
-          submittedAt: expect.any(String),
+          submittedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
           message: expect.any(String)
         });
       });
@@ -325,10 +360,10 @@ describe('Redis Queue Integration Tests', () => {
           limit: expect.any(Number)
         });
 
-        if (response?.body?.logs?.length || 0 > 0) {
-          expect(response?.body?.logs[0]).toMatchObject({
-            timestamp: expect.any(String),
-            level: expect.any(String),
+        if (response?.body?.logs?.length > 0) {
+          expect(response.body.logs[0]).toMatchObject({
+            timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
+            level: expect.stringMatching(/^(error|warn|info|debug)$/),
             message: expect.any(String),
             data: expect.any(Object)
           });
@@ -342,7 +377,7 @@ describe('Redis Queue Integration Tests', () => {
 
         expect(response.body).toMatchObject({
           queues: expect.any(Array),
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
     });
@@ -357,7 +392,7 @@ describe('Redis Queue Integration Tests', () => {
           action: 'start',
           success: true,
           message: 'Pipeline started successfully',
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
 
@@ -370,7 +405,7 @@ describe('Redis Queue Integration Tests', () => {
           action: 'stop',
           success: true,
           message: 'Pipeline stopped successfully',
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
 
@@ -383,7 +418,7 @@ describe('Redis Queue Integration Tests', () => {
           action: 'restart',
           success: true,
           message: 'Pipeline restarted successfully',
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
 
@@ -402,7 +437,7 @@ describe('Redis Queue Integration Tests', () => {
           action: 'pause',
           queueName: 'test_queue',
           success: true,
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
 
@@ -416,7 +451,7 @@ describe('Redis Queue Integration Tests', () => {
           action: 'retry',
           success: true,
           message: 'Job queued for retry',
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
 
@@ -430,7 +465,7 @@ describe('Redis Queue Integration Tests', () => {
           action: 'delete',
           success: true,
           message: 'Job deleted successfully',
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
     });
@@ -443,7 +478,7 @@ describe('Redis Queue Integration Tests', () => {
 
         expect(response.body).toMatchObject({
           metrics: expect.any(Object),
-          timestamp: expect.any(String),
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
           uptime: expect.any(Number)
         });
       });
@@ -456,10 +491,10 @@ describe('Redis Queue Integration Tests', () => {
         expect(response.body).toMatchObject({
           performance: {
             memory: {
-              rss: expect.any(String),
-              heapUsed: expect.any(String),
-              heapTotal: expect.any(String),
-              external: expect.any(String)
+              rss: expect.stringMatching(/^\d+(\.\d+)?(B|KB|MB|GB)$/),
+              heapUsed: expect.stringMatching(/^\d+(\.\d+)?(B|KB|MB|GB)$/),
+              heapTotal: expect.stringMatching(/^\d+(\.\d+)?(B|KB|MB|GB)$/),
+              external: expect.stringMatching(/^\d+(\.\d+)?(B|KB|MB|GB)$/)
             },
             cpu: {
               uptime: expect.any(Number),
@@ -470,7 +505,7 @@ describe('Redis Queue Integration Tests', () => {
               totalJobs: expect.any(Number)
             }
           },
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
 
@@ -486,7 +521,7 @@ describe('Redis Queue Integration Tests', () => {
             overallErrorRate: expect.any(Number)
           },
           byQueue: expect.any(Object),
-          timestamp: expect.any(String)
+          timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
         });
       });
     });
@@ -527,8 +562,8 @@ describe('Redis Queue Integration Tests', () => {
       const responses = await Promise.all(requests);
       
       // At least one should succeed
-      const successfulResponses = responses?.filter(r => r.status === 200);
-      expect(successfulResponses?.length || 0).toBeGreaterThan(0);
+      const successfulResponses = responses.filter(r => r.status === 200);
+      expect(successfulResponses.length).toBeGreaterThan(0);
     });
   });
 
@@ -549,8 +584,8 @@ describe('Redis Queue Integration Tests', () => {
         .expect(400);
 
       expect(response.body).toMatchObject({
-        error: 'Invalid batch job data',
-        details: expect.any(Array)
+      error: 'Invalid batch job data',
+      details: expect.any(Array)
       });
     });
 
@@ -565,8 +600,8 @@ describe('Redis Queue Integration Tests', () => {
         .expect(400);
 
       expect(response.body).toMatchObject({
-        error: 'Invalid price update data',
-        details: expect.any(Array)
+      error: 'Invalid price update data',
+      details: expect.any(Array)
       });
     });
 
@@ -581,8 +616,8 @@ describe('Redis Queue Integration Tests', () => {
         .expect(400);
 
       expect(response.body).toMatchObject({
-        error: 'Invalid control request',
-        details: expect.any(Array)
+      error: 'Invalid control request',
+      details: expect.any(Array)
       });
     });
   });
@@ -604,22 +639,24 @@ describe('Redis Queue Integration Tests', () => {
         })
         .expect(201);
 
-      const jobId = priceUpdateResponse?.body?.jobId;
+      const jobId = priceUpdateResponse.body?.jobId as string;
       expect(jobId).toBeDefined();
+      expect(typeof jobId).toBe('string');
 
       // 2. Check job status
       const statusResponse = await request(app)
         .get(`/api/grocery-queue/jobs/${jobId}`)
         .expect(200);
 
-      expect(statusResponse?.body?.jobId).toBe(jobId);
+      expect(statusResponse.body?.jobId).toBe(jobId);
 
       // 3. Check system stats were updated
       const statsResponse = await request(app)
         .get('/api/grocery-queue/stats')
         .expect(200);
 
-      expect(statsResponse?.body?.overview).toBeDefined();
+      expect(statsResponse.body?.overview).toBeDefined();
+      expect(typeof statsResponse.body.overview).toBe('object');
     });
 
     it('should handle batch processing workflow', async () => {
@@ -655,15 +692,17 @@ describe('Redis Queue Integration Tests', () => {
         })
         .expect(201);
 
-      expect(batchResponse?.body?.batch.total).toBe(2);
-      expect(batchResponse?.body?.jobs).toHaveLength(2);
+      expect(batchResponse.body?.batch.total).toBe(2);
+      expect(batchResponse.body?.jobs).toHaveLength(2);
+      expect(Array.isArray(batchResponse.body.jobs)).toBe(true);
 
       // Check that processing metrics reflect the batch
       const metricsResponse = await request(app)
         .get('/api/grocery-queue/metrics/processing')
         .expect(200);
 
-      expect(metricsResponse?.body?.metrics).toBeDefined();
+      expect(metricsResponse.body?.metrics).toBeDefined();
+      expect(typeof metricsResponse.body.metrics).toBe('object');
     });
   });
 });

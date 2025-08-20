@@ -92,9 +92,9 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
   // Mutations - these endpoints don't exist in the router yet
   // For now, we'll create stub implementations that return null
   // TODO: Implement these mutations in the router when needed
-  const searchMutation = null as any; // trpc.walmartRealTime.searchProducts.useMutation();
-  const setPriceAlertMutation = null as any; // trpc.walmartRealTime.setPriceAlert.useMutation();
-  const checkAvailabilityMutation = null as any; // trpc.walmartRealTime.checkStoreAvailability.useMutation();
+  const searchMutation = null; // trpc.walmartRealTime.searchProducts.useMutation();
+  const setPriceAlertMutation = null; // trpc.walmartRealTime.setPriceAlert.useMutation();
+  const checkAvailabilityMutation = null; // trpc.walmartRealTime.checkStoreAvailability.useMutation();
 
   // Subscription for live updates
   const priceSubscription = trpc.walmartRealTime.subscribeToPriceUpdates.useSubscription(

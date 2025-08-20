@@ -142,7 +142,7 @@ export function useEnhancedWebSocket(
     const handler = options.handlers?.[handlerKey];
     if (handler) {
       try {
-        handler(event as any);
+        handler(event as unknown);
       } catch (error) {
         console.error(`Error in WebSocket handler ${handlerKey}:`, error);
       }
@@ -267,7 +267,7 @@ export function useEnhancedWebSocket(
         await processMessageQueue();
       });
 
-      ws.addEventListener('close', (event: any) => {
+      ws.addEventListener('close', (event: unknown) => {
         clearHeartbeat();
 
         updateState({
@@ -307,7 +307,7 @@ export function useEnhancedWebSocket(
         }
       });
 
-      ws.addEventListener('error', (error: any) => {
+      ws.addEventListener('error', (error: unknown) => {
         const wsError: WebSocketError = {
           code: 'CONNECTION_FAILED',
           message: 'WebSocket connection error',
@@ -322,7 +322,7 @@ export function useEnhancedWebSocket(
         console.error('WebSocket error:', error);
       });
 
-      ws.addEventListener('message', (event: any) => {
+      ws.addEventListener('message', (event: unknown) => {
         try {
           const data = JSON.parse(event.data);
           handleEvent(data);

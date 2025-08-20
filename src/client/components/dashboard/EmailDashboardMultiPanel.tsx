@@ -53,7 +53,7 @@ export const EmailDashboardMultiPanel = React.memo(({
     () =>
       emails
         .filter(
-          (email: any) =>
+          (email: EmailRecord) =>
             email?.email_alias?.toLowerCase().includes("marketing") ||
             email?.email_alias?.toLowerCase().includes("splunk"),
         )
@@ -65,7 +65,7 @@ export const EmailDashboardMultiPanel = React.memo(({
     () =>
       emails
         .filter(
-          (email: any) =>
+          (email: EmailRecord) =>
             email?.email_alias?.toLowerCase().includes("vmware") ||
             email?.email_alias?.toLowerCase().includes("tdsynnex"),
         )

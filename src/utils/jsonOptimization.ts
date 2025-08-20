@@ -7,6 +7,7 @@ import { logger } from "./logger.js";
 import { Transform, Readable } from "stream";
 import { promisify } from "util";
 import { pipeline } from "stream";
+import { JSONObject, JSONValue } from '../shared/types/utility.types';
 
 const pipelineAsync = promisify(pipeline);
 
@@ -21,7 +22,7 @@ export interface JSONOptimizationConfig {
   maxDepth: number;
   maxArrayLength: number;
   enableCircularDetection: boolean;
-  customReplacer?: (key: string, value: any) => any;
+  customReplacer?: (key: string, value: JSONValue) => JSONValue;
   prettyPrint: boolean;
 }
 
@@ -50,7 +51,7 @@ export class OptimizedJSONSerializer {
   /**
    * Serialize data with optimizations based on size and complexity
    */
-  async serialize(data: any): Promise<string | Readable> {
+  async serialize(data: JSONValue): Promise<string | Readable> {
     const startTime = Date.now();
     
     try {
@@ -87,7 +88,7 @@ export class OptimizedJSONSerializer {
   /**
    * Synchronous serialization with optimizations
    */
-  private synchronousSerialize(data: any): string {
+  private synchronousSerialize(data: JSONValue): string {
     if (this?.config?.enableCircularDetection) {
       this.circularRefs = new WeakSet();
     }
@@ -104,7 +105,7 @@ export class OptimizedJSONSerializer {
   /**
    * Streaming serialization for large datasets
    */
-  private streamingSerialize(data: any): Readable {
+  private streamingSerialize(data: JSONValue): Readable {
     const stream = new JSONStream(this.config);
     
     // Start serialization asynchronously
@@ -123,10 +124,10 @@ export class OptimizedJSONSerializer {
   /**
    * Create optimized JSON replacer function
    */
-  private createOptimizedReplacer(): (key: string, value: any) => any {
+  private createOptimizedReplacer(): (key: string, value: JSONValue) => JSONValue {
     let depth = 0;
     
-    return (key: string, value: any) => {
+    return (key: string, value: JSONValue) => {
       // Handle depth limiting
       if (depth > this?.config?.maxDepth) {
         return '[Maximum depth exceeded]';
@@ -168,7 +169,7 @@ export class OptimizedJSONSerializer {
   /**
    * Optimize individual values during serialization
    */
-  private optimizeValue(key: string, value: any): any {
+  private optimizeValue(key: string, value: JSONValue): JSONValue {
     // Remove null/undefined from objects to reduce size
     if (value === null || value === undefined) {
       return undefined; // Will be excluded from JSON
@@ -204,7 +205,7 @@ export class OptimizedJSONSerializer {
   /**
    * Estimate serialized size without full serialization
    */
-  private estimateSize(data: any, depth: number = 0): number {
+  private estimateSize(data: JSONValue, depth: number = 0): number {
     if (depth > 5) return 100; // Prevent deep recursion in estimation
     
     if (data === null || data === undefined) return 4; // "null"
@@ -264,7 +265,7 @@ class JSONStream extends Readable {
     // Readable stream interface implementation
   }
 
-  writeData(data: any): void {
+  writeData(data: JSONValue): void {
     try {
       if (Array.isArray(data)) {
         this.writeArray(data);
@@ -278,7 +279,7 @@ class JSONStream extends Readable {
     }
   }
 
-  private writeArray(array: any[]): void {
+  private writeArray(array: JSONValue[]): void {
     this.push('[');
     this.isArrayStarted = true;
     
@@ -299,7 +300,7 @@ class JSONStream extends Readable {
     this.flushBuffer();
   }
 
-  private writeObject(obj: Record<string, any>): void {
+  private writeObject(obj: JSONObject): void {
     this.push('{');
     this.isObjectStarted = true;
     
@@ -328,7 +329,7 @@ class JSONStream extends Readable {
     this.flushBuffer();
   }
 
-  private writeValue(value: any): void {
+  private writeValue(value: JSONValue): void {
     if (value === null) {
       this.push('null');
     } else if (typeof value === 'boolean') {
@@ -397,7 +398,7 @@ export class OptimizedJSONParser {
   /**
    * Parse JSON with optimizations and error handling
    */
-  parse<T = any>(jsonString: string): T {
+  parse<T = JSONValue>(jsonString: string): T {
     const startTime = Date.now();
     
     try {
@@ -434,8 +435,8 @@ export class OptimizedJSONParser {
   /**
    * Create JSON reviver function for parsing optimizations
    */
-  private createReviver(): (key: string, value: any) => any {
-    return (key: string, value: any) => {
+  private createReviver(): (key: string, value: JSONValue) => JSONValue {
+    return (key: string, value: JSONValue) => {
       // Parse ISO date strings
       if (typeof value === 'string' && 
           /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
@@ -461,7 +462,7 @@ export class OptimizedJSONParser {
   /**
    * Stream parse large JSON data
    */
-  async streamParse<T = any>(stream: Readable): Promise<T> {
+  async streamParse<T = JSONValue>(stream: Readable): Promise<T> {
     let jsonString = '';
     
     for await (const chunk of stream) {
@@ -479,7 +480,7 @@ export const JSONOptimization = {
   /**
    * Minify JSON by removing unnecessary whitespace and null values
    */
-  minify(obj: any): any {
+  minify(obj: JSONValue): JSONValue {
     return JSON.parse(JSON.stringify(obj, (key, value) => {
       if (value === null || value === undefined || value === '') {
         return undefined;
@@ -517,13 +518,13 @@ export const JSONOptimization = {
   /**
    * Optimize object by removing empty nested objects
    */
-  removeEmptyObjects(obj: any): any {
+  removeEmptyObjects(obj: JSONValue): JSONValue {
     if (Array.isArray(obj)) {
       return obj?.map(this.removeEmptyObjects).filter(item => item !== null);
     }
     
     if (obj && typeof obj === 'object') {
-      const cleaned: any = {};
+      const cleaned: JSONObject = {};
       
       for (const [key, value] of Object.entries(obj)) {
         const cleanedValue = this.removeEmptyObjects(value);
@@ -543,7 +544,7 @@ export const JSONOptimization = {
   /**
    * Calculate JSON payload size
    */
-  calculateSize(obj: any): { bytes: number; compressed: number } {
+  calculateSize(obj: JSONValue): { bytes: number; compressed: number } {
     const jsonString = JSON.stringify(obj);
     const bytes = Buffer.byteLength(jsonString, 'utf8');
     
@@ -556,7 +557,7 @@ export const JSONOptimization = {
   /**
    * Performance benchmark for different serialization strategies
    */
-  benchmark(data: any, iterations: number = 100): {
+  benchmark(data: JSONValue, iterations: number = 100): {
     standard: number;
     optimized: number;
     streaming: number;
@@ -601,7 +602,7 @@ export function createJSONOptimizationMiddleware(config?: Partial<JSONOptimizati
   const serializer = new OptimizedJSONSerializer(config);
   const parser = new OptimizedJSONParser(config);
 
-  return async ({ next, input }: { next: () => Promise<any>; input: any }) => {
+  return async ({ next, input }: { next: () => Promise<JSONValue>; input: JSONValue }) => {
     // Optimize input if it's a large object
     if (input && typeof input === 'object') {
       input = JSONOptimization.removeEmptyObjects(input);

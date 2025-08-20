@@ -6,9 +6,23 @@
 import { z } from "zod";
 import { logger } from "./logger.js";
 import { TRPCError } from "@trpc/server";
+import { JSONObject, JSONValue } from '../shared/types/utility.types';
+
+// Repository interface for type safety
+export interface ProductRepository {
+  create(product: JSONObject): Promise<JSONObject>;
+  update(id: string, data: JSONObject): Promise<JSONObject>;
+  delete(id: string): Promise<JSONObject>;
+  findById(id: string): Promise<JSONObject | null>;
+  transaction<T>(callback: () => Promise<T>): Promise<T>;
+  checkDependencies?(id: string): Promise<string[]>;
+  updatePrice?(id: string, price: number): Promise<JSONObject>;
+  addPriceHistory?(data: JSONObject): Promise<JSONObject>;
+  updateInventory?(productId: string, stockLevel: number, location?: string): Promise<JSONObject>;
+}
 
 // Batch operation types
-export interface BatchOperationResult<T = any> {
+export interface BatchOperationResult<T = JSONValue> {
   success: boolean;
   data?: T;
   error?: string;
@@ -16,7 +30,7 @@ export interface BatchOperationResult<T = any> {
   operationId?: string;
 }
 
-export interface BatchResult<T = any> {
+export interface BatchResult<T = JSONValue> {
   results: BatchOperationResult<T>[];
   summary: {
     total: number;
@@ -51,7 +65,7 @@ const defaultBatchConfig: BatchOperationConfig = {
 
 // Validation schemas
 export const batchOperationSchema = z.object({
-  operations: z.array(z.any()).min(1).max(1000),
+  operations: z.array(z.unknown()).min(1).max(1000),
   config: z.object({
     batchSize: z.number().min(1).max(500).optional(),
     maxConcurrency: z.number().min(1).max(10).optional(),
@@ -64,14 +78,14 @@ export const batchOperationSchema = z.object({
 });
 
 export const bulkCreateSchema = z.object({
-  items: z.array(z.record(z.any())).min(1).max(1000),
+  items: z.array(z.record(z.string(), z.unknown())).min(1).max(1000),
   config: batchOperationSchema.shape.config.optional(),
 });
 
 export const bulkUpdateSchema = z.object({
   updates: z.array(z.object({
     id: z.string(),
-    data: z.record(z.any()),
+    data: z.record(z.string(), z.unknown()),
   })).min(1).max(1000),
   config: batchOperationSchema.shape.config.optional(),
 });
@@ -88,7 +102,7 @@ export type BulkDeleteInput = z.infer<typeof bulkDeleteSchema>;
 /**
  * High-performance batch operation processor
  */
-export class BatchProcessor<T = any> {
+export class BatchProcessor<T = JSONValue> {
   private config: BatchOperationConfig;
 
   constructor(config: Partial<BatchOperationConfig> = {}) {
@@ -301,7 +315,7 @@ class Semaphore {
   }
 
   async acquire(): Promise<() => void> {
-    return new Promise<() => void>((resolve: any) => {
+    return new Promise<() => void>((resolve) => {
       if (this.permits > 0) {
         this.permits--;
         resolve(() => this.release());
@@ -340,13 +354,13 @@ export class WalmartBatchOperations {
    * Bulk create products with validation
    */
   async bulkCreateProducts(
-    products: any[],
-    repository: any,
+    products: JSONObject[],
+    repository: ProductRepository,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
     return this.processor.processBatch(
       products,
-      async (batch: any) => {
+      async (batch: JSONObject[]) => {
         // Use repository transaction for consistency
         return repository.transaction(async () => {
           const results = [];
@@ -365,13 +379,13 @@ export class WalmartBatchOperations {
    * Bulk update products with optimistic locking
    */
   async bulkUpdateProducts(
-    updates: Array<{ id: string; data: any; version?: number }>,
-    repository: any,
+    updates: Array<{ id: string; data: JSONObject; version?: number }>,
+    repository: ProductRepository,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
     return this.processor.processBatch(
       updates,
-      async (batch: any) => {
+      async (batch: Array<{ id: string; data: JSONObject; version?: number }>) => {
         return repository.transaction(async () => {
           const results = [];
           for (const { id, data, version } of batch) {
@@ -398,12 +412,12 @@ export class WalmartBatchOperations {
    */
   async bulkDeleteProducts(
     ids: string[],
-    repository: any,
+    repository: ProductRepository,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
     return this.processor.processBatch(
       ids,
-      async (batch: any) => {
+      async (batch: string[]) => {
         return repository.transaction(async () => {
           const results = [];
           for (const id of batch) {
@@ -428,12 +442,12 @@ export class WalmartBatchOperations {
    */
   async bulkUpdatePrices(
     priceUpdates: Array<{ productId: string; newPrice: number; reason?: string }>,
-    repository: any,
+    repository: ProductRepository,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
     return this.processor.processBatch(
       priceUpdates,
-      async (batch: any) => {
+      async (batch: Array<{ productId: string; newPrice: number; reason?: string }>) => {
         return repository.transaction(async () => {
           const results = [];
           for (const { productId, newPrice, reason } of batch) {
@@ -471,16 +485,16 @@ export class WalmartBatchOperations {
    */
   async bulkSyncInventory(
     inventoryUpdates: Array<{ productId: string; stockLevel: number; location?: string }>,
-    repository: any,
+    repository: ProductRepository,
     config?: Partial<BatchOperationConfig>
   ): Promise<BatchResult> {
     return this.processor.processBatch(
       inventoryUpdates,
-      async (batch: any) => {
-        const results: any[] = [];
+      async (batch: Array<{ productId: string; stockLevel: number; location?: string }>) => {
+        const results: JSONObject[] = [];
         
         // Group by location for efficiency
-        const byLocation = batch.reduce((acc: any, item: any) => {
+        const byLocation = batch.reduce((acc: Record<string, typeof batch>, item) => {
           const location = item.location || 'default';
           if (!acc[location]) acc[location] = [];
           acc[location].push(item);
@@ -489,7 +503,7 @@ export class WalmartBatchOperations {
         
         for (const [location, items] of Object.entries(byLocation)) {
           await repository.transaction(async () => {
-            for (const { productId, stockLevel } of (items as any[])) {
+            for (const { productId, stockLevel } of items) {
               const updated = await repository.updateInventory?.(productId, stockLevel, location);
               results.push(updated);
             }
@@ -556,7 +570,7 @@ export class BatchOperationMonitor {
   /**
    * Get metrics for operation type
    */
-  static getMetrics(operationType?: string): Record<string, any> | null {
+  static getMetrics(operationType?: string): JSONObject | null {
     if (operationType) {
       return this.metrics.get(operationType) || null;
     }
@@ -579,7 +593,7 @@ export const BatchUtils = {
   /**
    * Validate batch operation limits
    */
-  validateBatchSize(operations: any[], maxSize: number = 1000): void {
+  validateBatchSize(operations: unknown[], maxSize: number = 1000): void {
     if ((operations?.length ?? 0) > maxSize) {
       throw new TRPCError({
         code: "BAD_REQUEST",

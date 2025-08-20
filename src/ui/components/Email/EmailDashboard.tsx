@@ -178,7 +178,7 @@ export const EmailDashboard: React.FC = () => {
 
   // Set up real-time tRPC subscription for email processing updates
   useEffect(() => {
-    let subscription: any = null;
+    let subscription: unknown = null;
     
     // Subscribe to email processing updates using tRPC subscriptions if available
     if (api.emails?.subscribeToEmailUpdates?.useSubscription) {
@@ -186,7 +186,7 @@ export const EmailDashboard: React.FC = () => {
         subscription = api.emails.subscribeToEmailUpdates.useSubscription(
           {}, // Provide empty object instead of undefined
           {
-            onData: (data: any) => {
+            onData: (data: unknown) => {
               console.log('📧 Email processing update received:', data);
               
               // Handle different event types
@@ -210,7 +210,7 @@ export const EmailDashboard: React.FC = () => {
                   break;
               }
             },
-            onError: (error: any) => {
+            onError: (error: unknown) => {
               console.warn('📧 Email processing subscription error:', error);
             },
           }
@@ -272,7 +272,7 @@ export const EmailDashboard: React.FC = () => {
     // Reduced polling interval since we have tRPC subscriptions
     const fallbackInterval = setInterval(() => {
       // Only poll if both subscription and WebSocket are down
-      const shouldPoll = (!subscription || (subscription as any)?.error) && (!ws || ws.readyState !== WebSocket.OPEN);
+      const shouldPoll = (!subscription || (subscription as unknown)?.error) && (!ws || ws.readyState !== WebSocket.OPEN);
       if (shouldPoll) {
         utils.emails.getAnalytics.invalidate();
         utils.emails.getTableData.invalidate();
@@ -283,8 +283,8 @@ export const EmailDashboard: React.FC = () => {
     return () => {
       // Clean up subscription
       try {
-        if (subscription && typeof (subscription as any)?.unsubscribe === 'function') {
-          (subscription as any).unsubscribe();
+        if (subscription && typeof (subscription as unknown)?.unsubscribe === 'function') {
+          (subscription as unknown).unsubscribe();
         }
       } catch (error) {
         console.warn('Error cleaning up subscription:', error);
@@ -329,7 +329,7 @@ export const EmailDashboard: React.FC = () => {
       }
       
       // Count emails by date
-      tableData?.data?.emails?.forEach((email: any) => {
+      tableData?.data?.emails?.forEach((email: unknown) => {
         const emailDate = new Date(email.receivedDate).toISOString().split('T')[0];
         if (emailDate && volumeByDate.has(emailDate)) {
           volumeByDate.set(emailDate, (volumeByDate.get(emailDate) || 0) + 1);
@@ -368,13 +368,13 @@ export const EmailDashboard: React.FC = () => {
 
   // Chart configurations with improved visibility
   const lineChartData = {
-    labels: stats?.dailyVolume?.map((d: any) =>
+    labels: stats?.dailyVolume?.map((d: unknown) =>
       new Date(d.date).toLocaleDateString("en-US", { weekday: "short" }),
     ),
     datasets: [
       {
         label: "Email Volume",
-        data: stats?.dailyVolume?.map((d: any) => d.count),
+        data: stats?.dailyVolume?.map((d: unknown) => d.count),
         fill: true,
         backgroundColor: "rgba(59, 130, 246, 0.1)",
         borderColor: "rgb(59, 130, 246)",
@@ -542,7 +542,7 @@ export const EmailDashboard: React.FC = () => {
         {/* Key Metrics Cards */}
         <div
           className="metrics-grid section-anchor section-animate"
-          ref={(el: any) => {
+          ref={(el: unknown) => {
             if (el) sectionsRef.current[1] = el;
           }}
         >
@@ -662,7 +662,7 @@ export const EmailDashboard: React.FC = () => {
         {/* Charts Section */}
         <div
           className="charts-grid section-anchor section-animate"
-          ref={(el: any) => {
+          ref={(el: unknown) => {
             if (el) sectionsRef.current[2] = el;
           }}
         >
@@ -691,7 +691,7 @@ export const EmailDashboard: React.FC = () => {
         {/* Recent Activity Section */}
         <div
           className="activity-section section-anchor section-animate"
-          ref={(el: any) => {
+          ref={(el: unknown) => {
             if (el) sectionsRef.current[3] = el;
           }}
         >
@@ -816,12 +816,12 @@ export const EmailDashboard: React.FC = () => {
         ORDER_REF: 0,
       };
       
-      tableData?.data?.emails?.forEach((email: any) => {
+      tableData?.data?.emails?.forEach((email: unknown) => {
         if (email.entities && Array.isArray(email.entities)) {
           email?.entities?.forEach((entity: { type: string; value: string }) => {
             const type = entity.type?.toUpperCase() || '';
             if (type in counts) {
-              (counts as any)[type]++;
+              (counts as unknown)[type]++;
             }
           });
         }
@@ -922,7 +922,7 @@ export const EmailDashboard: React.FC = () => {
             <div className="chart-wrapper">
               <Bar
                 data={{
-                  labels: stats?.dailyVolume?.map((d: any) =>
+                  labels: stats?.dailyVolume?.map((d: unknown) =>
                     new Date(d.date).toLocaleDateString("en-US", {
                       weekday: "short",
                     }),
@@ -1043,8 +1043,8 @@ export const EmailDashboard: React.FC = () => {
 
   const renderAutomation = () => {
     // Fetch automation rules from the database/API (handle missing endpoint gracefully)
-    const automationQuery = (api as any)?.emails?.getAutomationRules?.useQuery ? 
-      (api as any).emails.getAutomationRules.useQuery({}) : 
+    const automationQuery = (api as unknown)?.emails?.getAutomationRules?.useQuery ? 
+      (api as unknown).emails.getAutomationRules.useQuery({}) : 
       { data: null, isLoading: false };
     const { data: automationRules, isLoading: rulesLoading } = automationQuery;
     
@@ -1070,7 +1070,7 @@ export const EmailDashboard: React.FC = () => {
               <p>Loading automation rules...</p>
             </div>
           ) : automationRules?.data?.length > 0 ? (
-            automationRules?.data?.map((rule: any) => (
+            automationRules?.data?.map((rule: unknown) => (
               <div key={rule.id} className="rule-card">
                 <div className="rule-header">
                   <h3 className="rule-title">{rule.name}</h3>
@@ -1136,7 +1136,7 @@ export const EmailDashboard: React.FC = () => {
           <h3 className="report-title">Entity Extraction Report</h3>
           <p className="report-description">
             Detailed analysis of extracted entities including PO numbers,
-            quotes, and company information
+            quotes, and compunknown information
           </p>
           <button className="btn-generate">Generate Report</button>
         </div>
@@ -1283,7 +1283,7 @@ export const EmailDashboard: React.FC = () => {
       {/* Header Section */}
       <div
         className="dashboard-header section-anchor section-animate"
-        ref={(el: any) => {
+        ref={(el: unknown) => {
           if (el) sectionsRef.current[0] = el;
         }}
       >
@@ -1295,7 +1295,7 @@ export const EmailDashboard: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="dashboard-nav">
-        {tabs?.map((tab: any) => {
+        {tabs?.map((tab: unknown) => {
           const IconComponent = tab?.icon;
           return (
             <button

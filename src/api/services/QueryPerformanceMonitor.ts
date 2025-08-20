@@ -178,13 +178,13 @@ export class QueryPerformanceMonitor {
     const averageTime = totalTime / recentQueries?.length || 0;
 
     const slowQueries = recentQueries?.filter(
-      (q: any) => q.executionTime > this?.alertThresholds?.slowQueryTime,
+      (q: QueryPerformanceEntry) => q.executionTime > this?.alertThresholds?.slowQueryTime,
     );
     const criticalQueries = recentQueries?.filter(
-      (q: any) => q.executionTime > this?.alertThresholds?.criticalQueryTime,
+      (q: QueryPerformanceEntry) => q.executionTime > this?.alertThresholds?.criticalQueryTime,
     );
 
-    const errors = recentQueries?.filter((q: any) => q.error);
+    const errors = recentQueries?.filter((q: QueryPerformanceEntry) => q.error);
     const errorRate = (errors?.length || 0 / recentQueries?.length || 0) * 100;
 
     return {
@@ -338,7 +338,7 @@ export class QueryPerformanceMonitor {
     }
 
     // Process alerts
-    alerts.forEach((alert: any) => this.processAlert(alert));
+    alerts.forEach((alert: PerformanceAlert) => this.processAlert(alert));
   }
 
   private processAlert(alert: PerformanceAlert): void {
@@ -367,7 +367,7 @@ export class QueryPerformanceMonitor {
   }
 
   private updateQueryMonitor(entry: QueryPerformanceEntry): void {
-    this?.monitors?.forEach((monitor: any) => {
+    this?.monitors?.forEach((monitor: MonitorInfo) => {
       if (this.matchesPattern(entry.query, monitor.pattern)) {
         monitor.statistics.totalQueries++;
         monitor.statistics.totalExecutionTime += entry.executionTime;
@@ -437,14 +437,14 @@ export class QueryPerformanceMonitor {
 
   private getRecentQueries(timeWindow: number): QueryPerformanceEntry[] {
     const cutoff = Date.now() - timeWindow;
-    return this?.performanceHistory?.filter((entry: any) => entry.timestamp > cutoff);
+    return this?.performanceHistory?.filter((entry: QueryPerformanceEntry) => entry.timestamp > cutoff);
   }
 
   private calculateCacheHitRatio(queries: QueryPerformanceEntry[]): number {
-    const cacheableQueries = queries?.filter((q: any) => q.cacheHit !== undefined);
+    const cacheableQueries = queries?.filter((q: QueryPerformanceEntry) => q.cacheHit !== undefined);
     if (cacheableQueries?.length || 0 === 0) return 0;
 
-    const hits = cacheableQueries?.filter((q: any) => q.cacheHit).length;
+    const hits = cacheableQueries?.filter((q: QueryPerformanceEntry) => q.cacheHit).length;
     return Math.round((hits / cacheableQueries?.length || 0) * 100);
   }
 
@@ -453,10 +453,10 @@ export class QueryPerformanceMonitor {
     limit: number,
   ): Array<{ query: string; time: number }> {
     return queries
-      .filter((q: any) => !q.error)
+      .filter((q: QueryPerformanceEntry) => !q.error)
       .sort((a, b) => b.executionTime - a.executionTime)
       .slice(0, limit)
-      .map((q: any) => ({
+      .map((q: QueryPerformanceEntry) => ({
         query: q?.query?.substring(0, 200),
         time: q.executionTime,
       }));
@@ -466,7 +466,7 @@ export class QueryPerformanceMonitor {
     const recentQueries = this.getRecentQueries(10 * 60 * 1000); // Last 10 minutes
     const olderCutoff = Date.now() - 10 * 60 * 1000;
     const olderQueries = this.getRecentQueries(20 * 60 * 1000).filter(
-      (q: any) => q.timestamp < olderCutoff,
+      (q: QueryPerformanceEntry) => q.timestamp < olderCutoff,
     ); // 10-20 minutes ago
 
     if (recentQueries?.length || 0 === 0 || olderQueries?.length || 0 === 0) {
@@ -474,10 +474,10 @@ export class QueryPerformanceMonitor {
     }
 
     const recentAvg =
-      recentQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+      recentQueries.reduce((sum: number, q: QueryPerformanceEntry) => sum + q.executionTime, 0) /
       recentQueries?.length || 0;
     const olderAvg =
-      olderQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+      olderQueries.reduce((sum: number, q: QueryPerformanceEntry) => sum + q.executionTime, 0) /
       olderQueries?.length || 0;
 
     const percentChange = ((recentAvg - olderAvg) / olderAvg) * 100;
@@ -518,7 +518,7 @@ export class QueryPerformanceMonitor {
   private cleanupHistory(): void {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000; // Keep 24 hours
     this.performanceHistory = this?.performanceHistory?.filter(
-      (entry: any) => entry.timestamp > cutoff
+      (entry: QueryPerformanceEntry) => entry.timestamp > cutoff
     );
   }
 
@@ -532,7 +532,7 @@ export class QueryPerformanceMonitor {
 
     const alerts: PerformanceAlert[] = [];
 
-    recentQueries.forEach((query: any) => {
+    recentQueries.forEach((query: QueryPerformanceEntry) => {
       if (query.executionTime > this?.alertThresholds?.criticalQueryTime) {
         alerts.push({
           type: "critical_slow_query",
@@ -564,7 +564,7 @@ export class QueryPerformanceMonitor {
   ): HourlyStats[] {
     const hourlyMap = new Map<number, QueryPerformanceEntry[]>();
 
-    queries.forEach((query: any) => {
+    queries.forEach((query: QueryPerformanceEntry) => {
       const hour = Math.floor(query.timestamp / (60 * 60 * 1000));
       if (!hourlyMap.has(hour)) {
         hourlyMap.set(hour, []);
@@ -577,12 +577,12 @@ export class QueryPerformanceMonitor {
         hour: hour * 60 * 60 * 1000,
         queryCount: hourQueries?.length || 0,
         averageTime:
-          hourQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+          hourQueries.reduce((sum: number, q: QueryPerformanceEntry) => sum + q.executionTime, 0) /
           hourQueries?.length || 0,
         slowQueries: hourQueries?.filter(
-          (q: any) => q.executionTime > this?.alertThresholds?.slowQueryTime,
+          (q: QueryPerformanceEntry) => q.executionTime > this?.alertThresholds?.slowQueryTime,
         ).length,
-        errors: hourQueries?.filter((q: any) => q.error).length,
+        errors: hourQueries?.filter((q: QueryPerformanceEntry) => q.error).length,
       }))
       .sort((a, b) => a.hour - b.hour);
   }
@@ -592,7 +592,7 @@ export class QueryPerformanceMonitor {
   ): QueryTypeBreakdown[] {
     const typeMap = new Map<string, QueryPerformanceEntry[]>();
 
-    queries.forEach((query: any) => {
+    queries.forEach((query: QueryPerformanceEntry) => {
       const type = this.classifyQuery(query.query);
       if (!typeMap.has(type)) {
         typeMap.set(type, []);
@@ -604,7 +604,7 @@ export class QueryPerformanceMonitor {
       type,
       count: typeQueries?.length || 0,
       averageTime:
-        typeQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+        typeQueries.reduce((sum: number, q: QueryPerformanceEntry) => sum + q.executionTime, 0) /
         typeQueries?.length || 0,
       percentage: (typeQueries?.length || 0 / queries?.length || 0) * 100,
     }));
@@ -658,7 +658,7 @@ export class QueryPerformanceMonitor {
     queries: QueryPerformanceEntry[],
   ): ResourceUtilization {
     // Simplified resource estimation
-    const totalTime = queries.reduce((sum: any, q: any) => sum + q.executionTime, 0);
+    const totalTime = queries.reduce((sum: number, q: QueryPerformanceEntry) => sum + q.executionTime, 0);
     const timeWindow = 5 * 60 * 1000; // 5 minutes
 
     return {
@@ -666,13 +666,13 @@ export class QueryPerformanceMonitor {
       memoryUtilization: Math.min(100, queries?.length || 0 * 0.1), // Rough estimate
       ioUtilization: Math.min(
         100,
-        queries?.filter((q: any) => q?.query?.includes("JOIN")).length * 2,
+        queries?.filter((q: QueryPerformanceEntry) => q?.query?.includes("JOIN")).length * 2,
       ),
     };
   }
 
   private getMonitorStatuses(): MonitorStatus[] {
-    return Array.from(this?.monitors?.values()).map((monitor: any) => ({
+    return Array.from(this?.monitors?.values()).map((monitor: MonitorInfo) => ({
       id: monitor.id,
       pattern: monitor.pattern,
       isActive: monitor?.statistics?.lastExecution ? Date.now() - monitor?.statistics?.lastExecution < 5 * 60 * 1000 : false,
@@ -702,7 +702,7 @@ export class QueryPerformanceMonitor {
 interface QueryExecutionInfo {
   query: string;
   executionTime: number;
-  params?: any[];
+  params?: Array<string | number | boolean | null>;
   error?: string;
   cacheHit?: boolean;
   rowsAffected?: number;
@@ -761,13 +761,21 @@ interface PerformanceStatistics {
 }
 
 
+interface PerformanceAlertDetails {
+  executionTime?: number;
+  query?: string;
+  threshold?: number;
+  error?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 interface PerformanceAlert {
   type: string;
   severity: "info" | "warning" | "error" | "critical";
   message: string;
   queryId: string;
   timestamp: number;
-  details?: any;
+  details?: PerformanceAlertDetails;
 }
 
 interface DetailedPerformanceReport extends PerformanceStatistics {
