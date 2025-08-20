@@ -195,6 +195,7 @@
     "chart.js": "^4.5.0",
     "cheerio": "^1.0.0-rc.12",
     "chromadb": "^1.7.3",
+    "chromadb-default-embed": "^2.14.0",
     "clsx": "^2.1.1",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
