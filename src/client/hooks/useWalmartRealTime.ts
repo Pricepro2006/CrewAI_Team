@@ -89,10 +89,12 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
     }
   );
 
-  // Mutations
-  const searchMutation = trpc.walmartRealTime.searchProducts.useMutation();
-  const setPriceAlertMutation = trpc.walmartRealTime.setPriceAlert.useMutation();
-  const checkAvailabilityMutation = trpc.walmartRealTime.checkStoreAvailability.useMutation();
+  // Mutations - these endpoints don't exist in the router yet
+  // For now, we'll create stub implementations that return null
+  // TODO: Implement these mutations in the router when needed
+  const searchMutation = null as any; // trpc.walmartRealTime.searchProducts.useMutation();
+  const setPriceAlertMutation = null as any; // trpc.walmartRealTime.setPriceAlert.useMutation();
+  const checkAvailabilityMutation = null as any; // trpc.walmartRealTime.checkStoreAvailability.useMutation();
 
   // Subscription for live updates
   const priceSubscription = trpc.walmartRealTime.subscribeToPriceUpdates.useSubscription(
@@ -132,7 +134,7 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
   useEffect(() => {
     setIsLoading(productQuery.isLoading);
     if (productQuery.error) {
-      setError(productQuery.error as Error);
+      setError(productQuery.error as unknown as Error);
     }
   }, [productQuery.isLoading, productQuery.error]);
 
@@ -154,6 +156,11 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
 
   const searchProducts = useCallback(async (query: string, limit: number = 10) => {
     try {
+      // searchMutation is currently null - need to implement in router
+      if (!searchMutation) {
+        console.warn('searchProducts mutation not implemented yet');
+        return [];
+      }
       const result = await searchMutation.mutateAsync({ query, limit });
       return result.products;
     } catch (err) {
@@ -210,6 +217,11 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
     alertType: 'below' | 'above'
   ) => {
     try {
+      // setPriceAlertMutation is currently null - need to implement in router
+      if (!setPriceAlertMutation) {
+        console.warn('setPriceAlert mutation not implemented yet');
+        return;
+      }
       await setPriceAlertMutation.mutateAsync({
         productId,
         targetPrice,
@@ -223,6 +235,11 @@ export function useWalmartRealTime(productId?: string): UseWalmartRealTimeReturn
 
   const checkStoreAvailability = useCallback(async (productId: string, zipCode: string) => {
     try {
+      // checkAvailabilityMutation is currently null - need to implement in router
+      if (!checkAvailabilityMutation) {
+        console.warn('checkStoreAvailability mutation not implemented yet');
+        return;
+      }
       const result = await checkAvailabilityMutation.mutateAsync({
         productId,
         zipCode

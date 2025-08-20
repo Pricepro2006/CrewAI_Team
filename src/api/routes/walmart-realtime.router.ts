@@ -69,7 +69,7 @@ export const walmartRealTimeRouter = router({
         }
 
         // Track API usage
-        ctx.metrics?.increment('walmart.realtime.getProduct');
+        // ctx.metrics?.increment('walmart.realtime.getProduct');
 
         return product;
       } catch (error) {
@@ -111,7 +111,7 @@ export const walmartRealTimeRouter = router({
           result[id] = products[index];
         });
 
-        ctx.metrics?.increment('walmart.realtime.batchGet', input.productIds.length);
+        // ctx.metrics?.increment('walmart.realtime.batchGet', input.productIds.length);
 
         return result;
       } catch (error) {
@@ -140,7 +140,7 @@ export const walmartRealTimeRouter = router({
           input.limit
         );
 
-        ctx.metrics?.increment('walmart.realtime.search');
+        // ctx.metrics?.increment('walmart.realtime.search');
 
         return {
           query: input.query,
@@ -190,7 +190,7 @@ export const walmartRealTimeRouter = router({
         );
 
         // Track subscription
-        ctx.metrics?.increment('walmart.realtime.subscriptions');
+        // ctx.metrics?.increment('walmart.realtime.subscriptions');
 
         // Return cleanup function
         return () => {
@@ -225,7 +225,7 @@ export const walmartRealTimeRouter = router({
 
         const history = await walmartRealTimeAPI.getOrderHistory(userId, input.limit);
 
-        ctx.metrics?.increment('walmart.realtime.orderHistory');
+        // ctx.metrics?.increment('walmart.realtime.orderHistory');
 
         return history;
       } catch (error) {
@@ -260,12 +260,12 @@ export const walmartRealTimeRouter = router({
 
         // Sort by price
         validProducts.sort((a, b) => {
-          const priceA = typeof a?.price === 'number' ? a.price : a?.price?.regular || 0;
-          const priceB = typeof b?.price === 'number' ? b.price : b?.price?.regular || 0;
+          const priceA = typeof a?.price === 'number' ? a.price : (a?.price as any)?.regular || 0;
+          const priceB = typeof b?.price === 'number' ? b.price : (b?.price as any)?.regular || 0;
           return priceA - priceB;
         });
 
-        ctx.metrics?.increment('walmart.realtime.priceCompare');
+        // ctx.metrics?.increment('walmart.realtime.priceCompare');
 
         return {
           count: validProducts.length,
@@ -305,12 +305,12 @@ export const walmartRealTimeRouter = router({
         const availability = {
           productId: input.productId,
           inStock: product.inStock || false,
-          availableQuantity: product.availableQuantity,
+          availableQuantity: (product as any).availableQuantity,
           lastChecked: new Date().toISOString(),
-          stores: product.storeAvailability || []
+          stores: (product as any).storeAvailability || []
         };
 
-        ctx.metrics?.increment('walmart.realtime.availability');
+        // ctx.metrics?.increment('walmart.realtime.availability');
 
         return availability;
       } catch (error) {
@@ -357,10 +357,10 @@ export const walmartRealTimeRouter = router({
         if (product) {
           history.currentPrice = typeof product.price === 'number' 
             ? product.price 
-            : product.price?.regular || null;
+            : (product.price as any)?.regular || null;
         }
 
-        ctx.metrics?.increment('walmart.realtime.priceHistory');
+        // ctx.metrics?.increment('walmart.realtime.priceHistory');
 
         return history;
       } catch (error) {

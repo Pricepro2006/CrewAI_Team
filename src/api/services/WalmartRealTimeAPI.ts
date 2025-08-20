@@ -84,8 +84,10 @@ export class WalmartRealTimeAPI {
     try {
       // Initialize WebSocket if available
       try {
-        this.webSocketGateway = new WebSocketGateway();
-        logger.info("WebSocket gateway initialized for real-time updates", "WALMART_RT");
+        // WebSocketGateway requires eventBus, monitor, and circuitBreaker
+        // For now, we'll skip WebSocket initialization as it requires dependencies
+        // this.webSocketGateway = new WebSocketGateway({}, eventBus, monitor, circuitBreaker);
+        logger.debug("WebSocket gateway initialization skipped - requires dependencies", "WALMART_RT");
       } catch (err) {
         logger.debug("WebSocket gateway not available", "WALMART_RT");
       }
