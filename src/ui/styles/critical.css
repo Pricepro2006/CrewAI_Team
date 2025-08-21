@@ -106,3 +106,64 @@ body {
 .walmart-primary { color: #0071ce; }
 .walmart-secondary { color: #f9c74f; }
 .bg-walmart { background-color: #0071ce; }
+
+/* CRITICAL FIX: Global scroll restoration */
+/* Ensures all pages and containers can scroll properly */
+.page-container,
+.content-wrapper,
+.dashboard-container,
+.chat-container,
+.agents-container,
+.walmart-container,
+.knowledge-base-container,
+.vector-search-container,
+.email-dashboard-container,
+.settings-container,
+.web-scraping-container,
+[class*="-page"],
+[class*="-view"] {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-height: calc(100vh - 60px); /* Account for header */
+  position: relative;
+}
+
+/* Ensure html and body allow scrolling */
+html {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-y: auto !important;
+  min-height: 100vh;
+}
+
+/* Main content areas must be scrollable */
+.main-content,
+.content-area,
+main {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Fix for modal backgrounds that might block scroll */
+.modal-backdrop,
+.overlay {
+  pointer-events: none;
+}
+
+.modal-content,
+.overlay-content {
+  pointer-events: auto;
+}
+
+/* Prevent scroll blocking on fixed elements */
+.fixed {
+  pointer-events: none;
+}
+
+.fixed > * {
+  pointer-events: auto;
+}

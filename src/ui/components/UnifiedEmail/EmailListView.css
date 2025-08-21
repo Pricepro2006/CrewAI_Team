@@ -5,7 +5,8 @@
   height: 100%;
   background: #fff;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-y: auto; /* Changed from hidden to auto */
+  overflow-x: hidden;
 }
 
 .email-list-header {
@@ -46,7 +47,8 @@
 
 .email-list-content {
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: auto; /* Allow horizontal scroll for table if needed */
   padding: 0;
 }
 

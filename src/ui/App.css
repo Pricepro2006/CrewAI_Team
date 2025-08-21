@@ -18,14 +18,14 @@ body {
   width: 100vw;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
   background-color: var(--bg-primary);
 }
 
 .app-content {
   flex: 1;
   display: flex;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* Loading states */

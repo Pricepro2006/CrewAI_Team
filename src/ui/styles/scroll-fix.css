@@ -1,0 +1,364 @@
+/* 
+ * COMPREHENSIVE SCROLL FIX FOR CREWAI TEAM APPLICATION
+ * This file ensures proper scrolling functionality across all pages
+ * Created: 2025-08-21
+ */
+
+/* ============================================
+   1. GLOBAL HTML/BODY SCROLL FIXES
+   ============================================ */
+
+html {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 100vh;
+  height: auto;
+  position: relative;
+}
+
+/* Root app container */
+#root {
+  min-height: 100vh;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* ============================================
+   2. MAIN LAYOUT SCROLL FIXES
+   ============================================ */
+
+/* Fix main layout to allow proper scrolling */
+.main-layout {
+  height: 100vh;
+  overflow: hidden; /* Keep this for the outer container */
+}
+
+.layout-content {
+  height: 100%;
+  overflow: hidden; /* Keep this for layout wrapper */
+}
+
+.main-content {
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-behavior: smooth;
+}
+
+/* ============================================
+   3. PAGE-SPECIFIC SCROLL FIXES
+   ============================================ */
+
+/* Dashboard Pages */
+.dashboard-container,
+.iems-dashboard,
+.email-dashboard,
+.walmart-agent,
+.business-intelligence-dashboard {
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative;
+}
+
+/* Chat Interface */
+.chat-container,
+.chat-interface {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Email List View */
+.email-list-view {
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.email-list-content {
+  overflow-y: auto !important;
+  overflow-x: auto !important; /* Allow horizontal scroll for tables */
+}
+
+/* Agents Page */
+.agents-container,
+.agents-content {
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Knowledge Base */
+.knowledge-base-container,
+.knowledge-base-content {
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Vector Search */
+.vector-search-container,
+.vector-search-content {
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Settings */
+.settings-container,
+.settings-content {
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Web Scraping */
+.web-scraping-container,
+.web-scraping-content {
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* ============================================
+   4. COMPONENT-SPECIFIC FIXES
+   ============================================ */
+
+/* Fix any component with overflow hidden that shouldn't have it */
+.page-container,
+.content-wrapper,
+.dashboard-wrapper,
+.view-container,
+[class*="-page"]:not(.modal-page),
+[class*="-view"]:not(.modal-view) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Ensure content sections are scrollable */
+.content-section,
+.dashboard-section,
+.panel-content,
+.card-content {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 200px); /* Adjust based on header/footer height */
+}
+
+/* ============================================
+   5. MODAL & OVERLAY FIXES
+   ============================================ */
+
+/* Prevent modals from blocking page scroll */
+.modal-backdrop,
+.overlay-backdrop {
+  pointer-events: none !important;
+}
+
+.modal-backdrop.active,
+.overlay-backdrop.active {
+  pointer-events: auto !important;
+}
+
+/* Modal content should be scrollable */
+.modal-content,
+.overlay-content {
+  pointer-events: auto !important;
+  max-height: 90vh;
+  overflow-y: auto !important;
+}
+
+/* ============================================
+   6. HIGH Z-INDEX ELEMENT FIXES
+   ============================================ */
+
+/* Loading states shouldn't block scroll when hidden */
+.loading-state-fullscreen:not(.loading-active) {
+  display: none !important;
+}
+
+.loading-state-overlay:not(.loading-active) {
+  display: none !important;
+}
+
+/* Toast container already has pointer-events: none, which is good */
+.toast-container {
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto !important;
+}
+
+/* Network status shouldn't block */
+.network-status {
+  pointer-events: none !important;
+}
+
+.network-status > * {
+  pointer-events: auto !important;
+}
+
+/* ============================================
+   7. SIDEBAR SCROLL FIX
+   ============================================ */
+
+.sidebar {
+  height: 100vh;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.sidebar-content {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* ============================================
+   8. TABLE SCROLL FIXES
+   ============================================ */
+
+/* Tables should allow horizontal scroll */
+.table-container,
+.data-table-wrapper {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+/* Table bodies should scroll vertically if needed */
+.table-scroll-body {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto !important;
+}
+
+/* ============================================
+   9. CUSTOM SCROLLBAR STYLING
+   ============================================ */
+
+/* Better scrollbar visibility */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+  background-clip: content-box;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+  background-clip: content-box;
+}
+
+/* ============================================
+   10. MOBILE RESPONSIVE SCROLL FIXES
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Enable touch scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Adjust heights for mobile */
+  .content-section,
+  .dashboard-section {
+    max-height: calc(100vh - 150px);
+  }
+  
+  /* Ensure mobile menu doesn't block scroll */
+  .mobile-menu-overlay {
+    pointer-events: none !important;
+  }
+  
+  .mobile-menu-overlay.open {
+    pointer-events: auto !important;
+  }
+}
+
+/* ============================================
+   11. UTILITY CLASSES
+   ============================================ */
+
+/* Force scrollable */
+.force-scroll {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Force no scroll */
+.no-scroll {
+  overflow: hidden !important;
+}
+
+/* Smooth scroll */
+.smooth-scroll {
+  scroll-behavior: smooth !important;
+}
+
+/* ============================================
+   12. CRITICAL OVERRIDES
+   ============================================ */
+
+/* Override any inline styles that might block scroll */
+[style*="overflow: hidden"]:not(.modal):not(.dropdown) {
+  overflow-y: auto !important;
+}
+
+/* Ensure page containers are never fixed height */
+[class*="dashboard"]:not(.widget):not(.card),
+[class*="container"]:not(.modal-container):not(.toast-container) {
+  min-height: 100%;
+  height: auto !important;
+}
+
+/* ============================================
+   13. PERFORMANCE OPTIMIZATIONS
+   ============================================ */
+
+/* Use GPU acceleration for smooth scrolling */
+.main-content,
+.chat-messages,
+.email-list-content {
+  will-change: scroll-position;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* ============================================
+   END OF SCROLL FIX STYLES
+   ============================================ */

@@ -5,14 +5,14 @@
   width: 100vw;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  overflow: hidden;
+  overflow: hidden; /* Keep hidden for the outer container */
 }
 
 .layout-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden; /* Keep hidden for layout wrapper */
   position: relative;
 }
 
@@ -20,11 +20,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto; /* Allow vertical scrolling for main content */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
   background-color: var(--bg-primary);
   padding: 0;
   margin-left: 0;
-  height: 100vh;
+  height: 100%;
 }
 
 /* Page transitions */

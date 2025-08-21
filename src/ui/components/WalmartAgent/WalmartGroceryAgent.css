@@ -4,9 +4,11 @@
   padding: 2rem;
   background-color: #0f172a;
   min-height: 100vh;
+  max-height: 100vh;
   color: #e2e8f0;
   overflow-y: auto; /* Enable vertical scrolling */
   overflow-x: hidden; /* Prevent horizontal overflow */
+  position: relative;
 }
 
 /* Header Section */

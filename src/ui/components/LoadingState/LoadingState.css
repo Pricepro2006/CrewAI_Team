@@ -40,6 +40,11 @@
   justify-content: center;
   background: var(--background);
   z-index: 9999;
+  pointer-events: none; /* Prevent blocking interactions when not visible */
+}
+
+.loading-state-fullscreen.loading-active {
+  pointer-events: auto; /* Only capture events when actually loading */
 }
 
 /* Overlay Loading */

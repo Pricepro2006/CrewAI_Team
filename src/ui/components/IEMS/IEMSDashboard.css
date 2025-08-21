@@ -4,7 +4,8 @@
   flex-direction: column;
   height: 100%;
   background-color: #f9fafb;
-  overflow: hidden;
+  overflow-y: auto; /* Changed from hidden to auto */
+  overflow-x: hidden;
 }
 
 /* Header */
@@ -140,6 +141,7 @@
 .iems-dashboard__content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1.5rem;
 }
 

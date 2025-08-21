@@ -3,6 +3,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import critical styles for fast rendering */
+@import './styles/critical.css';
+
+/* Import comprehensive scroll fixes */
+@import './styles/scroll-fix.css';
+
 /* Custom base layer styles */
 @layer base {
   :root {
