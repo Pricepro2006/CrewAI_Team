@@ -297,7 +297,7 @@ export const commonInitTasks = {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
       
-      const response = await fetch('http://localhost:11434/api/tags', {
+      const response = await fetch('http://localhost:8081/api/tags', {
         signal: controller.signal
       });
       

@@ -73,7 +73,7 @@ detect_incident() {
     done
     
     # Check Ollama
-    if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+    if ! curl -s http://localhost:8081/api/tags > /dev/null 2>&1; then
         issues+=("Ollama service not running")
         if [ "$severity" = "P3" ]; then
             severity="P2"

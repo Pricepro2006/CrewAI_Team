@@ -197,7 +197,7 @@ router.get("/health", async (req: Request, res: Response) => {
   try {
     // Check if Ollama is accessible
     const axios = (await import("axios")).default;
-    const ollamaHealth = await axios.get("http://localhost:11434/api/tags")
+    const ollamaHealth = await axios.get("http://localhost:8081/api/tags")
       .then(() => true)
       .catch(() => false);
 

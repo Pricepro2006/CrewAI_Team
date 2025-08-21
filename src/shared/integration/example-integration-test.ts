@@ -74,7 +74,7 @@ describe("CrewAI Team Integration Tests", () => {
         },
         llm: {
           provider: "ollama",
-          baseUrl: process.env.TEST_OLLAMA_URL || "http://localhost:11434",
+          baseUrl: process.env.TEST_OLLAMA_URL || "http://localhost:8081",
           model: "llama2:7b",
         },
         vectorStore: {

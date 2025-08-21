@@ -100,11 +100,11 @@ app.get('/health', async (req, res) => {
 
     // Check Ollama (basic connectivity)
     try {
-      const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+      const llmUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:8081';
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch(`${ollamaUrl}/api/tags`, {
+      const response = await fetch(`${llmUrl}/api/tags`, {
         method: 'GET',
         signal: controller.signal
       });

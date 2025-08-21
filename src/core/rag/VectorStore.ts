@@ -39,7 +39,7 @@ export class VectorStore {
 
     this.embeddingService = new EmbeddingService({
       model: MODEL_CONFIG?.models?.embedding,
-      baseUrl: config.baseUrl || "http://localhost:11434",
+      baseUrl: config.baseUrl || "http://localhost:8081", // Updated to llama.cpp port
     });
   }
 

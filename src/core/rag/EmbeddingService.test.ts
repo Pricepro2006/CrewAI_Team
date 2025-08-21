@@ -24,7 +24,7 @@ describe("EmbeddingService", () => {
 
     service = new EmbeddingService({
       model: "llama3.2:3b",
-      baseUrl: "http://localhost:11434",
+      baseUrl: "http://localhost:8081",
       dimensions: 768,
     });
   });

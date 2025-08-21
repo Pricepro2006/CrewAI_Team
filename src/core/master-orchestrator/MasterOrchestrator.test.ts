@@ -6,7 +6,7 @@ import type { Plan, Query, PlanStep } from './types';
 const mockOllamaProvider = {
   generate: vi.fn().mockResolvedValue("mock response"),
   client: {},
-  config: { model: "test-model", ollamaUrl: "http://localhost:11434" },
+  config: { model: "test-model", ollamaUrl: "http://localhost:8081" },
   isInitialized: true,
   generateFallbackResponse: vi.fn(),
   buildPrompt: vi.fn(),
@@ -48,7 +48,7 @@ describe("MasterOrchestrator", () => {
     vi.clearAllMocks();
 
     orchestrator = new MasterOrchestrator({
-      ollamaUrl: "http://localhost:11434",
+      ollamaUrl: "http://localhost:8081",
       rag: {
         vectorStore: {
           type: "chromadb",

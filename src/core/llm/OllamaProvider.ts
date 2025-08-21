@@ -69,7 +69,7 @@ export class OllamaProvider extends EventEmitter {
   constructor(config: OllamaConfig) {
     super();
     this.config = {
-      baseUrl: "http://localhost:11434",
+      baseUrl: "http://localhost:8081",
       temperature: 0.7,
       topP: 0.9,
       maxTokens: 4096,
@@ -78,7 +78,7 @@ export class OllamaProvider extends EventEmitter {
     };
 
     this.client = axios.create({
-      baseURL: this?.config?.baseUrl || "http://localhost:11434",
+      baseURL: this?.config?.baseUrl || "http://localhost:8081",
       timeout: 300000, // 5 minutes timeout for large models
       headers: {
         "Content-Type": "application/json",
@@ -92,7 +92,7 @@ export class OllamaProvider extends EventEmitter {
     const tracker = trackOllamaRequest(this?.config?.model, "initialize");
 
     try {
-      // Check if Ollama is running
+      // Check if LLM server is running
       await this?.client?.get("/api/tags", { timeout: 5000 });
 
       // Check if the model is available

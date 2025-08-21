@@ -18,7 +18,7 @@ import axios from "axios";
 
 export class Stage2LlamaAnalysis {
   private model = MODEL_CONFIG?.models?.primary;
-  private apiUrl = `${MODEL_CONFIG?.api?.ollamaUrl}${MODEL_CONFIG?.api?.endpoints.generate}`;
+  private apiUrl = `${MODEL_CONFIG?.api?.llmUrl}${MODEL_CONFIG?.api?.endpoints.generate}`;
   private timeout = getModelTimeout("primary");
   private batchSize = getModelBatchSize("primary");
   private progressCallback?: (count: number) => Promise<void>;

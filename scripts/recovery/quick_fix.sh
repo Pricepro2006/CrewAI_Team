@@ -117,7 +117,7 @@ fix_ollama() {
     sleep 2
     
     # Check if running
-    if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+    if curl -s http://localhost:8081/api/tags > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Ollama started${NC}"
         
         # Check for required model
@@ -148,7 +148,7 @@ NODE_ENV=development
 PORT=3001
 WEBSOCKET_PORT=8080
 DATABASE_PATH=./walmart_grocery.db
-OLLAMA_HOST=http://localhost:11434
+OLLAMA_HOST=http://localhost:8081
 NODE_OPTIONS=--max-old-space-size=2048
 EOF
         echo -e "  ${GREEN}✓ .env file created${NC}"

@@ -95,7 +95,7 @@ for env_file in .env .env.example .env.local .env.development .env.production; d
             -e 's/OLLAMA_DEFAULT_MODEL/LLAMA_DEFAULT_MODEL/g' \
             -e 's/OLLAMA_TIMEOUT/LLAMA_TIMEOUT/g' \
             -e 's/OLLAMA_MAX_RETRIES/LLAMA_MAX_RETRIES/g' \
-            -e 's/ollama:11434/localhost:8080/g' \
+            -e 's/ollama:8081/localhost:8080/g' \
             "$env_file"
         echo "  Updated: $env_file"
     fi
@@ -260,7 +260,7 @@ echo ""
 echo -e "${YELLOW}Creating migration report...${NC}"
 
 cat > migration-report.md << EOF
-# Ollama to llama.cpp Migration Report
+# LLM (llama.cpp) to llama.cpp Migration Report
 Date: $(date)
 
 ## Summary

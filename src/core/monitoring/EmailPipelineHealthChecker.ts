@@ -68,7 +68,7 @@ export class EmailPipelineHealthChecker {
       ] = await Promise.all([
         this.checkDatabaseHealth(),
         this.checkRedisHealth(),
-        this.checkOllamaHealth(),
+        this.checkLLMHealth(),
         this.checkPipelineHealth(),
         this.checkProcessingQueueHealth(),
         this.getPipelineMetrics(),
@@ -308,7 +308,7 @@ export class EmailPipelineHealthChecker {
   /**
    * Check Ollama service availability
    */
-  private async checkOllamaHealth(): Promise<ServiceHealth> {
+  private async checkLLMHealth(): Promise<ServiceHealth> {
     const startTime = Date.now();
 
     try {

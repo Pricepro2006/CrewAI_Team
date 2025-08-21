@@ -812,7 +812,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const responseData = await this.nlpQueue?.enqueue(
       async () => {
         const response = await axios.post(
-          "http://localhost:11434/api/generate",
+          "http://localhost:8081/api/generate",
           {
             model: "llama3.2:3b",
             prompt,
@@ -1033,7 +1033,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       const responseData = await this.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post(
-            "http://localhost:11434/api/generate",
+            "http://localhost:8081/api/generate",
             {
               model: "doomgrave/phi-4:14b-tools-Q3_K_S",
               prompt,

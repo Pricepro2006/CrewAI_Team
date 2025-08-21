@@ -29,7 +29,7 @@ class OptimizedEmailProcessingScript {
 
   constructor() {
     // Initialize with optimized settings
-    this.optimizer = new OllamaOptimizer("http://localhost:11434", {
+    this.optimizer = new OllamaOptimizer("http://localhost:8081", {
       maxConcurrentInference: 25,
       queueConcurrency: 20,
       enableBatching: true,

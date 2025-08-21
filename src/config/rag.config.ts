@@ -7,7 +7,7 @@ export const ragConfig: RAGConfig = {
       ? `http://${process.env['CHROMA_HOST']}:${process.env['CHROMA_PORT'] || 8000}`
       : 'http://localhost:8000',
     collectionName: 'agent-knowledge',
-    baseUrl: process.env['OLLAMA_URL'] || 'http://localhost:11434'
+    baseUrl: process.env['OLLAMA_URL'] || 'http://localhost:8081' // Updated to llama.cpp port
   },
   chunking: {
     size: parseInt(process.env['RAG_CHUNK_SIZE'] || '1000'),

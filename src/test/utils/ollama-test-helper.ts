@@ -72,8 +72,8 @@ export async function cleanupOllamaTests(): Promise<void> {
 
 export async function isOllamaRunning(url?: string): Promise<boolean> {
   try {
-    const ollamaUrl = url || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-    const response = await fetch(`${ollamaUrl}/api/tags`, {
+    const llmUrl = url || process.env.OLLAMA_BASE_URL || 'http://localhost:8081';
+    const response = await fetch(`${llmUrl}/api/tags`, {
       method: 'GET',
       signal: AbortSignal.timeout(5000) // 5 second timeout
     });
@@ -209,11 +209,11 @@ async function waitForOllamaReady(): Promise<void> {
  * Ensure required test models are available
  */
 async function ensureTestModelsAvailable(): Promise<void> {
-  const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+  const llmUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:8081';
   
   try {
     // Check available models
-    const response = await fetch(`${ollamaUrl}/api/tags`);
+    const response = await fetch(`${llmUrl}/api/tags`);
     const data = await response.json() as { models?: Array<{ name: string }> };
     const availableModels = data.models?.map((m: any) => m.name) || [];
     
@@ -263,11 +263,11 @@ async function ensureTestModelsAvailable(): Promise<void> {
  * Pull a model if not available
  */
 export async function ensureModelAvailable(modelName: string): Promise<boolean> {
-  const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+  const llmUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:8081';
   
   try {
     // Check if model is already available
-    const response = await fetch(`${ollamaUrl}/api/tags`);
+    const response = await fetch(`${llmUrl}/api/tags`);
     const data = await response.json() as { models?: Array<{ name: string }> };
     const availableModels = data.models?.map((m: any) => m.name) || [];
     
@@ -283,7 +283,7 @@ export async function ensureModelAvailable(modelName: string): Promise<boolean> 
     logger.info(`Pulling model ${modelName} for testing...`);
     
     // Pull the model
-    const pullResponse = await fetch(`${ollamaUrl}/api/pull`, {
+    const pullResponse = await fetch(`${llmUrl}/api/pull`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -342,11 +342,11 @@ export function getTestModel(): string {
 }
 
 /**
- * Create a test-safe Ollama configuration
+ * Create a test-safe LLM configuration (llama.cpp)
  */
 export function createTestOllamaConfig() {
   return {
-    baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+    baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:8081',
     model: getTestModel(),
     timeout: 30000, // 30 seconds for tests
     maxRetries: 2,

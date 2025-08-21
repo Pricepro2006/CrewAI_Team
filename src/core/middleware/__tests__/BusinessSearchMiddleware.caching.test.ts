@@ -31,7 +31,7 @@ describe("BusinessSearchMiddleware - Caching Integration", () => {
       }),
       generateStream: vi.fn().mockResolvedValue("Fresh stream response"),
       client: {} as any,
-      config: { model: "test-model", ollamaUrl: "http://localhost:11434" },
+      config: { model: "test-model", ollamaUrl: "http://localhost:8081" },
       isInitialized: true,
       generateFallbackResponse: vi.fn(),
       buildPrompt: vi.fn(),

@@ -1,0 +1,31 @@
+{
+  "query": "Process query with general approach",
+  "timestamp": "2025-08-21T15:15:15.380Z",
+  "results": [
+    {
+      "title": "Process query with general approach - Result 1",
+      "url": "https://example.com/search?q=Process%20query%20with%20general%20approach&result=1",
+      "snippet": "Information about Process query with general approach. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Process query with general approach - Result 2",
+      "url": "https://example.com/search?q=Process%20query%20with%20general%20approach&result=2",
+      "snippet": "Information about Process query with general approach. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Process query with general approach - Result 3",
+      "url": "https://example.com/search?q=Process%20query%20with%20general%20approach&result=3",
+      "snippet": "Information about Process query with general approach. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

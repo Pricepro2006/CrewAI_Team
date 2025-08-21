@@ -232,7 +232,7 @@ Respond ONLY with valid JSON.`;
       const responseData = await this?.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post(
-            "http://localhost:11434/api/generate",
+            "http://localhost:8081/api/generate",
             {
               model: "llama3.2:3b",
               prompt,
@@ -322,7 +322,7 @@ Respond ONLY with valid JSON.`;
       const responseData = await this?.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post(
-            "http://localhost:11434/api/generate",
+            "http://localhost:8081/api/generate",
             {
               model: "llama3.2:3b",
               prompt,

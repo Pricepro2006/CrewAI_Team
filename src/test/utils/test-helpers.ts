@@ -17,7 +17,7 @@ export function createTestDatabase() {
 export function createMockConfig() {
   return {
     model: 'phi3:mini',
-    ollamaUrl: 'http://localhost:11434',
+    ollamaUrl: 'http://localhost:8081',
     rag: {
       vectorStore: {
         type: 'chromadb' as const,

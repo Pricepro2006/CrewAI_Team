@@ -19,14 +19,14 @@ interface OllamaStatus {
 }
 
 class OllamaSetupOptimizer {
-  private ollamaUrl = "http://localhost:11434";
+  private ollamaUrl = "http://localhost:8081";
 
   async run(): Promise<void> {
     logger.info("Starting Ollama optimization setup...");
 
     try {
       // 1. Check Ollama status
-      const status = await this.checkOllamaStatus();
+      const status = await this.checkLLMStatus();
       if (!status.running) {
         logger.error("Ollama is not running. Please start Ollama first.");
         process.exit(1);
@@ -57,9 +57,9 @@ class OllamaSetupOptimizer {
     }
   }
 
-  private async checkOllamaStatus(): Promise<OllamaStatus> {
+  private async checkLLMStatus(): Promise<OllamaStatus> {
     try {
-      const response = await axios.get(`${this.ollamaUrl}/api/tags`);
+      const response = await axios.get(`${this.llmUrl}/api/tags`);
       const models = response?.data?.models?.map((m: any) => m.name) || [];
       
       // Check GPU availability
@@ -93,7 +93,7 @@ class OllamaSetupOptimizer {
       logger.info(`Installing ${model.name} - ${model.description}`);
       
       try {
-        await axios.post(`${this.ollamaUrl}/api/pull`, {
+        await axios.post(`${this.llmUrl}/api/pull`, {
           name: model.name,
           stream: false
         });
@@ -132,7 +132,7 @@ SYSTEM "You are a concise email analyzer. Respond only with JSON."`;
 
     // Create the optimized model
     try {
-      await axios.post(`${this.ollamaUrl}/api/create`, {
+      await axios.post(`${this.llmUrl}/api/create`, {
         name: "llama3.2:3b-optimized",
         modelfile: llamaModelfile,
         stream: false
@@ -163,7 +163,7 @@ PARAMETER repeat_penalty 1.1
 SYSTEM "You are a strategic business analyst. Provide concise JSON analysis."`;
 
     try {
-      await axios.post(`${this.ollamaUrl}/api/create`, {
+      await axios.post(`${this.llmUrl}/api/create`, {
         name: "phi-4:14b-optimized",
         modelfile: phiModelfile,
         stream: false
@@ -188,7 +188,7 @@ SYSTEM "You are a strategic business analyst. Provide concise JSON analysis."`;
         logger.info(`Preloading ${model}...`);
         const start = Date.now();
         
-        await axios.post(`${this.ollamaUrl}/api/generate`, {
+        await axios.post(`${this.llmUrl}/api/generate`, {
           model,
           prompt: "Hello",
           stream: false,
@@ -229,7 +229,7 @@ Extract: workflow_state, priority, entities`;
         const start = Date.now();
         
         try {
-          await axios.post(`${this.ollamaUrl}/api/generate`, {
+          await axios.post(`${this.llmUrl}/api/generate`, {
             model,
             prompt: testPrompt,
             stream: false,

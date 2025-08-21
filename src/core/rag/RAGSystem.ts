@@ -23,7 +23,7 @@ export class RAGSystem {
     this.documentProcessor = new DocumentProcessor(config.chunking);
     this.embeddingService = new EmbeddingService({
       model: MODEL_CONFIG?.models?.embedding,
-      baseUrl: config?.vectorStore?.baseUrl || "http://localhost:11434",
+      baseUrl: config?.vectorStore?.baseUrl || "http://localhost:8081",
     });
     this.retrievalService = new RetrievalService(config.retrieval);
   }

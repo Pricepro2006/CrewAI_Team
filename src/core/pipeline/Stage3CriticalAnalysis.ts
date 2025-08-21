@@ -15,7 +15,7 @@ import axios from "axios";
 export class Stage3CriticalAnalysis {
   private primaryModel = MODEL_CONFIG?.models?.critical;
   private fallbackModel = MODEL_CONFIG?.models?.primary;
-  private apiUrl = `${MODEL_CONFIG?.api?.ollamaUrl}${MODEL_CONFIG?.api?.endpoints.generate}`;
+  private apiUrl = `${MODEL_CONFIG?.api?.llmUrl}${MODEL_CONFIG?.api?.endpoints.generate}`;
   private primaryTimeout = MODEL_CONFIG?.timeouts?.critical;
   private fallbackTimeout = MODEL_CONFIG?.timeouts?.fallback;
   private progressCallback?: (count: number) => Promise<void>;

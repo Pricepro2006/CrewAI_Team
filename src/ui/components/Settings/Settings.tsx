@@ -40,7 +40,7 @@ export const Settings: React.FC = () => {
       model: "llama-3.2-3b-instruct",
       temperature: 0.3,
       maxTokens: 1000,
-      endpoint: "http://localhost:11434",
+      endpoint: "http://localhost:8081",
     },
     agents: {
       autoRoute: true,
@@ -312,7 +312,7 @@ export const Settings: React.FC = () => {
                       onChange={(e: any) =>
                         updateSetting("llm", "endpoint", e?.target?.value)
                       }
-                      placeholder="http://localhost:11434"
+                      placeholder="http://localhost:8081"
                     />
                   </div>
                 </>

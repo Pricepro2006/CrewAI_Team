@@ -31,7 +31,7 @@ class CredentialManager {
     // Database Configuration
     DATABASE_PATH: { required: true, sensitive: false },
 
-    // Ollama Configuration (optional - using llama.cpp)
+    // LLM Configuration (llama.cpp) (optional - using llama.cpp)
     OLLAMA_BASE_URL: { required: false, sensitive: false },
     OLLAMA_TIMEOUT: { required: false, sensitive: false },
 

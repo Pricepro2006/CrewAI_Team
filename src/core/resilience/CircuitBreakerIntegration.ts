@@ -361,7 +361,7 @@ export class CircuitBreakerServiceMesh {
 export class CircuitBreakerIntegrationExamples {
   private ollamaProvider = new CircuitBreakerOllamaProvider({
     model: 'llama3.2:3b',
-    baseUrl: 'http://localhost:11434',
+    baseUrl: 'http://localhost:8081',
   });
   
   private cacheService = new CircuitBreakerCacheManager();
@@ -493,7 +493,7 @@ export class CircuitBreakerIntegrationExamples {
 // Export singleton instances for easy access
 export const enhancedOllamaProvider = new CircuitBreakerOllamaProvider({
   model: 'llama3.2:3b',
-  baseUrl: 'http://localhost:11434',
+  baseUrl: 'http://localhost:8081',
 });
 
 export const enhancedCacheManager = new CircuitBreakerCacheManager();

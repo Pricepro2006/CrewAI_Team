@@ -113,7 +113,7 @@ const errorMessages: Record<ErrorCode, (details?: any) => UserFriendlyError> = {
     title: "AI Service Unavailable",
     message: "Cannot connect to the AI model service.",
     action:
-      "Ensure Ollama is running and accessible. Check your connection settings.",
+      "Ensure LLM server is running and accessible. Check your connection settings.",
   }),
 
   [ErrorCode.OLLAMA_MODEL_NOT_FOUND]: (details: any) => ({

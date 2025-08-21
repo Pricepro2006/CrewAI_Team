@@ -9,12 +9,12 @@ import { logger } from "./logger.js";
 const execAsync = promisify(exec);
 
 export class OllamaManager {
-  private static readonly OLLAMA_URL = "http://localhost:11434";
+  private static readonly OLLAMA_URL = "http://localhost:8081";
   private static readonly STARTUP_TIMEOUT = 30000; // 30 seconds
   private static readonly HEALTH_CHECK_INTERVAL = 1000; // 1 second
 
   /**
-   * Check if Ollama is running
+   * Check if LLM server is running
    */
   static async isRunning(): Promise<boolean> {
     try {

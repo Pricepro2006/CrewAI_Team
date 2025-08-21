@@ -442,7 +442,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   private async initializeMasterOrchestrator(): Promise<void> {
     try {
       this.masterOrchestrator = new MasterOrchestrator({
-        ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
+        ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:8081',
         rag: {
           vectorStore: {
             type: "chromadb" as const,

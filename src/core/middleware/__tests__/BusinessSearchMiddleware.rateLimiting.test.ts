@@ -35,11 +35,11 @@ describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
       }),
       generateStream: vi.fn().mockResolvedValue("Mock stream response"),
       client: {} as any,
-      config: { model: "test-model", ollamaUrl: "http://localhost:11434" },
+      config: { model: "test-model", ollamaUrl: "http://localhost:8081" },
       isInitialized: true,
       generateFallbackResponse: vi.fn(),
       buildPrompt: vi.fn(),
-      getConfig: vi.fn().mockReturnValue({ model: "test-model", ollamaUrl: "http://localhost:11434" }),
+      getConfig: vi.fn().mockReturnValue({ model: "test-model", ollamaUrl: "http://localhost:8081" }),
       initialize: vi.fn().mockResolvedValue(undefined),
       healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' })
     } as any;

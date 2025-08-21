@@ -75,7 +75,7 @@ start_ollama() {
     echo -e "\n${YELLOW}Checking Ollama...${NC}"
     
     # Check if Ollama is running
-    if check_service "Ollama" 11434 "http://localhost:11434/api/version"; then
+    if check_service "Ollama" 11434 "http://localhost:8081/api/version"; then
         echo "Ollama is already running"
         
         # Check if required model is available
@@ -104,7 +104,7 @@ start_ollama() {
         # Wait for Ollama to start
         echo -n "Waiting for Ollama to start"
         for i in {1..30}; do
-            if curl -s -f "http://localhost:11434/api/version" > /dev/null 2>&1; then
+            if curl -s -f "http://localhost:8081/api/version" > /dev/null 2>&1; then
                 echo -e " ${GREEN}✓${NC}"
                 echo "Ollama started successfully (PID: $OLLAMA_PID)"
                 
@@ -226,7 +226,7 @@ main() {
     echo ""
     echo "Services running:"
     echo "  - ChromaDB: http://localhost:8000"
-    echo "  - Ollama: http://localhost:11434"
+    echo "  - Ollama: http://localhost:8081"
     echo ""
     echo "Available commands:"
     echo "  npm run rag:index  - Index knowledge base"

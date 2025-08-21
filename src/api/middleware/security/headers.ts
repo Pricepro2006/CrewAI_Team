@@ -106,7 +106,7 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
         ...(isProduction
           ? ["wss://*.crewai-team.com", "https://*.crewai-team.com"]
           : []),
-        process.env.OLLAMA_URL || "http://localhost:11434",
+        process.env.OLLAMA_URL || "http://localhost:8081",
         process.env.CHROMA_URL || "http://localhost:8001",
         // Add any external APIs the frontend needs
         "https://api?.openai?.com", // If using OpenAI

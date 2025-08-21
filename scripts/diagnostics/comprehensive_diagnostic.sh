@@ -122,7 +122,7 @@ check_websocket() {
 
 # Function to check Ollama
 check_ollama() {
-    if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+    if curl -s http://localhost:8081/api/tags > /dev/null 2>&1; then
         print_status "success" "Ollama service: Running"
         
         # Check for Qwen model
@@ -248,7 +248,7 @@ main() {
     check_websocket
     echo ""
     
-    # Ollama Status
+    # LLM (llama.cpp) Status
     print_status "header" "Ollama/LLM Status"
     check_ollama
     echo ""
@@ -318,7 +318,7 @@ main() {
             echo "  2. Start API server: npm run api:start" | tee -a $DIAGNOSTIC_OUTPUT
         fi
         
-        if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+        if ! curl -s http://localhost:8081/api/tags > /dev/null 2>&1; then
             echo "  3. Start Ollama: ollama serve &" | tee -a $DIAGNOSTIC_OUTPUT
         fi
         

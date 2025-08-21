@@ -198,7 +198,7 @@ class ChromaDBResilienceTest {
     this.vectorStore = new ResilientVectorStore({
       collectionName: "health-test",
       path: "http://localhost:8001",
-      baseUrl: "http://localhost:11434",
+      baseUrl: "http://localhost:8081",
       type: "resilient" as any,
     });
 

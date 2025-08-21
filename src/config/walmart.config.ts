@@ -47,7 +47,7 @@ export const walmartConfig: WalmartDatabaseConfig = {
     // Use Qwen3:0.6b for NLP services as requested by user
     model: process.env.WALMART_NLP_MODEL || 'qwen3:0.6b',
     host: process.env.OLLAMA_HOST || 'http://localhost',
-    port: parseInt(process.env.OLLAMA_PORT || '11434', 10),
+    port: parseInt(process.env.OLLAMA_PORT || '8081', 10),
     timeout: parseInt(process.env.NLP_TIMEOUT || '10000', 10),
   },
 };

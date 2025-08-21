@@ -580,7 +580,7 @@ export class CircuitBreakerService extends EventEmitter {
   // Private helper methods
 
   private setupDefaultConfigurations(): void {
-    // Ollama configuration - higher timeout, more retries
+    // LLM configuration (llama.cpp) - higher timeout, more retries
     this?.serviceConfigs?.set('ollama', {
       service: 'ollama',
       config: {

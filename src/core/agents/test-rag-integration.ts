@@ -44,7 +44,7 @@ async function testRAGIntegration() {
     rag: ragConfig,
     llm: {
       type: 'ollama' as const,
-      ollamaUrl: 'http://localhost:11434',
+      ollamaUrl: 'http://localhost:8081',
       ollamaModel: 'llama3.2:3b',
     }
   };

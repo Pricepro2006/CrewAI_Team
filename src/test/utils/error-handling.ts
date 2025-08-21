@@ -36,7 +36,7 @@ export async function validateTestEnvironment(): Promise<{
   // Check Ollama
   if (!process.env.OLLAMA_BASE_URL) {
     issues.push("OLLAMA_BASE_URL is not set");
-    recommendations.push("Set OLLAMA_BASE_URL to 'http://localhost:11434'");
+    recommendations.push("Set OLLAMA_BASE_URL to 'http://localhost:8081'");
   }
 
   return {
@@ -46,7 +46,7 @@ export async function validateTestEnvironment(): Promise<{
   };
 }
 
-export async function checkOllamaHealth(baseUrl: string): Promise<{
+export async function checkLLMHealth(baseUrl: string): Promise<{
   isHealthy: boolean;
   error?: string;
   latency?: number;

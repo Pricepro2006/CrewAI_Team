@@ -92,29 +92,41 @@ async function startWebSocketServer() {
     httpServer.on('upgrade', (request, socket, head) => {
       const pathname = parse(request.url || '').pathname;
       
-      logger.info(`WebSocket upgrade request for: ${pathname}`, 'WEBSOCKET_SERVER');
+      logger.info(`WebSocket upgrade request for: ${pathname}`, 'WEBSOCKET_SERVER', { 
+        headers: request.headers,
+        method: request.method,
+        generalWSSReady: !!generalWSS 
+      });
       
       if (pathname === '/ws') {
         // Handle general WebSocket connections
-        generalWSS.handleUpgrade(request, socket, head, (ws) => {
-          generalWSS.emit('connection', ws, request);
-          
-          // Cast to AuthenticatedWebSocket and set guest defaults
-          const authenticatedWs = ws as any;
-          authenticatedWs.isAuthenticated = false;
-          authenticatedWs.userId = undefined;
-          authenticatedWs.userRole = 'guest';
-          authenticatedWs.permissions = ['read'];
-          authenticatedWs.lastActivity = new Date();
-          
-          // Register with WebSocket service
-          const clientId = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          authenticatedWs.clientId = clientId;
-          
-          wsService.registerClient(clientId, authenticatedWs);
-          
-          // Subscribe to all message types for testing
-          wsService.subscribe(clientId, ['*']);
+        try {
+          logger.info('Attempting WebSocket upgrade for /ws', 'WEBSOCKET_SERVER');
+          generalWSS.handleUpgrade(request, socket, head, (ws) => {
+          try {
+            generalWSS.emit('connection', ws, request);
+            
+            // Cast to AuthenticatedWebSocket and set guest defaults
+            const authenticatedWs = ws as any;
+            authenticatedWs.isAuthenticated = false;
+            authenticatedWs.userId = undefined;
+            authenticatedWs.userRole = 'guest';
+            authenticatedWs.permissions = ['read'];
+            authenticatedWs.lastActivity = new Date();
+            
+            // Register with WebSocket service
+            const clientId = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            authenticatedWs.clientId = clientId;
+            
+            try {
+              wsService.registerClient(clientId, authenticatedWs);
+              
+              // Subscribe to all message types for testing
+              wsService.subscribe(clientId, ['*']);
+            } catch (serviceError) {
+              logger.warn(`WebSocket service registration failed for ${clientId}:`, 'WEBSOCKET_SERVER', serviceError);
+              // Continue without service registration - basic WebSocket will still work
+            }
           
           logger.info(`General WebSocket connection established: ${clientId}`, 'WEBSOCKET_SERVER');
           
@@ -159,13 +171,27 @@ async function startWebSocketServer() {
           
           ws.on('close', () => {
             logger.info(`General WebSocket connection closed: ${clientId}`, 'WEBSOCKET_SERVER');
-            wsService.unregisterClient(clientId, authenticatedWs);
+            try {
+              wsService.unregisterClient(clientId, authenticatedWs);
+            } catch (serviceError) {
+              logger.warn(`WebSocket service unregister failed for ${clientId}:`, 'WEBSOCKET_SERVER', serviceError);
+            }
           });
           
           ws.on('error', (error) => {
             logger.error(`WebSocket error for ${clientId}:`, 'WEBSOCKET_SERVER', { error: error instanceof Error ? error.message : String(error) });
           });
-        });
+          
+          } catch (connectionError) {
+            logger.error('WebSocket connection setup failed:', 'WEBSOCKET_SERVER', connectionError);
+            ws.close();
+          }
+          });
+        } catch (upgradeError) {
+          logger.error('WebSocket upgrade failed:', 'WEBSOCKET_SERVER', upgradeError);
+          socket.write('HTTP/1.1 500 Internal Server Error\r\n\r\n');
+          socket.destroy();
+        }
       } else if (pathname === '/ws/walmart') {
         // Handle Walmart WebSocket connections
         if (walmartWSServer && 'handleUpgrade' in walmartWSServer && typeof walmartWSServer.handleUpgrade === 'function') {

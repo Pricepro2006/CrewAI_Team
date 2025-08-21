@@ -1,6 +1,6 @@
 /**
  * Setup file for integration tests
- * Ensures Ollama is running, test models are available, and error handling is configured
+ * Ensures LLM server is running, test models are available, and error handling is configured
  */
 
 import { beforeAll, afterAll } from "vitest";
@@ -20,7 +20,7 @@ const logger = new Logger("test:setup-integration");
 
 // Set up test environment variables
 process.env['NODE_ENV'] = "test";
-process.env['OLLAMA_BASE_URL'] = process.env['OLLAMA_BASE_URL'] || "http://localhost:11434";
+process.env['OLLAMA_BASE_URL'] = process.env['OLLAMA_BASE_URL'] || "http://localhost:8081";
 process.env['LOG_LEVEL'] = process.env['LOG_LEVEL'] || "error"; // Reduce noise during tests
 
 // Setup global error handling
@@ -48,7 +48,7 @@ beforeAll(async () => {
     
     // Final health check
     const healthCheck = await import("./utils/error-handling.js").then(
-      module => module.checkOllamaHealth(process.env.OLLAMA_BASE_URL!)
+      module => module.checkLLMHealth(process.env.OLLAMA_BASE_URL!)
     );
     
     if (!healthCheck.isHealthy) {

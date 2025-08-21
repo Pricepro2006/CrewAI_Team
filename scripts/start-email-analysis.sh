@@ -31,7 +31,7 @@ echo ""
 check_ollama() {
     echo -e "${YELLOW}🔍 Checking Ollama status...${NC}"
     
-    if curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
+    if curl -s http://localhost:8081/api/tags >/dev/null 2>&1; then
         echo -e "${GREEN}✓${NC} Ollama is running"
         return 0
     else

@@ -924,7 +924,7 @@ export async function createTestContext(
     },
     services: {
       ollama: {
-        baseUrl: "http://localhost:11434",
+        baseUrl: "http://localhost:8081",
         connected: false,
         mockMode: false,
         requestHistory: [],

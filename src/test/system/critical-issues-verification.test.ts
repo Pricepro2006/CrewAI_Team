@@ -60,7 +60,7 @@ describe('Critical Issues Verification', () => {
   beforeAll(async () => {
     // Check if Ollama is available
     try {
-      const response = await axios.get('http://localhost:11434/api/tags', {
+      const response = await axios.get('http://localhost:8081/api/tags', {
         timeout: 5000
       });
       ollamaAvailable = true;

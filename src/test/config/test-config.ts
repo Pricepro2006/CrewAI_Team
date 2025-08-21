@@ -47,7 +47,7 @@ export const testConfig = {
     JWT_SECRET: "test-secret-key",
     DATABASE_PATH: ":memory:",
     REDIS_URL: "redis://localhost:6379",
-    OLLAMA_HOST: "http://localhost:11434",
+    OLLAMA_HOST: "http://localhost:8081",
   },
 };
 

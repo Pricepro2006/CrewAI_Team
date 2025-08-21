@@ -824,7 +824,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       // Use NLP queue to prevent bottlenecks from concurrent Ollama requests
       const responseData = await this?.nlpQueue?.enqueue(
         async () => {
-          const response = await axios.post("http://localhost:11434/api/generate", {
+          const response = await axios.post("http://localhost:8081/api/generate", {
             model,
             prompt,
             stream: false,

@@ -47,7 +47,7 @@ describe("Email Processing Performance Benchmarks", () => {
     });
     await redis.flushdb();
 
-    // Ensure Ollama is running
+    // Ensure LLM server is running
     const ollamaReady = await OllamaManager.initialize(["llama3.2:3b"]);
     if (!ollamaReady) {
       throw new Error("Ollama service is required for performance tests");

@@ -50,12 +50,12 @@ const testQueries: TestQuery[] = [
 async function testQwen3Model() {
   logger.info("Starting Qwen3:0.6b NLP model tests...", "TEST_NLP");
   
-  const ollamaUrl = `${walmartConfig?.nlp?.host}:${walmartConfig?.nlp?.port}`;
+  const llmUrl = `${walmartConfig?.nlp?.host}:${walmartConfig?.nlp?.port}`;
   const modelName = walmartConfig?.nlp?.model;
   
   // First, verify the model is available
   try {
-    const response = await axios.get(`${ollamaUrl}/api/tags`);
+    const response = await axios.get(`${llmUrl}/api/tags`);
     const models = response?.data?.models || [];
     const modelExists = models.some((m: any) => m.name === modelName);
     
@@ -99,7 +99,7 @@ Response:`;
     try {
       const startTime = Date.now();
       
-      const response = await axios.post(`${ollamaUrl}/api/generate`, {
+      const response = await axios.post(`${llmUrl}/api/generate`, {
         model: modelName,
         prompt: prompt,
         stream: false,

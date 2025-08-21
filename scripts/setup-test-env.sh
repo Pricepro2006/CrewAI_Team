@@ -38,7 +38,7 @@ if ! docker-compose -f docker-compose.test.yml ps | grep -q "ollama-test.*Up"; t
 fi
 
 # Wait for services to be healthy
-check_service "Ollama" "http://localhost:11434/api/tags" || {
+check_service "Ollama" "http://localhost:8081/api/tags" || {
     echo "❌ Ollama is not responding. Please check the service."
     exit 1
 }

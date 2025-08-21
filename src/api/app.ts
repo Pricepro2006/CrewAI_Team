@@ -50,7 +50,7 @@ export async function createApp(): Promise<Express> {
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const ollamaResponse = await fetch(
-        `${appConfig.ollama?.baseUrl || "http://localhost:11434"}/api/tags`,
+        `${appConfig.ollama?.baseUrl || "http://localhost:8081"}/api/tags`,
         {
           signal: controller.signal,
         },

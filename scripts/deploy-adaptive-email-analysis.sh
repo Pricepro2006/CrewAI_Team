@@ -31,11 +31,11 @@ echo ""
 check_ollama() {
     echo -e "${YELLOW}🔍 Checking Ollama status...${NC}"
     
-    if curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
+    if curl -s http://localhost:8081/api/tags >/dev/null 2>&1; then
         echo -e "${GREEN}✓${NC} Ollama is running"
         
         # Check for required models
-        local models=$(curl -s http://localhost:11434/api/tags | python3 -c "
+        local models=$(curl -s http://localhost:8081/api/tags | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 models = [m['name'] for m in data.get('models', [])]
@@ -63,7 +63,7 @@ print(' '.join(models))
         ollama serve >/dev/null 2>&1 &
         sleep 5
         
-        if curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
+        if curl -s http://localhost:8081/api/tags >/dev/null 2>&1; then
             echo -e "${GREEN}✓${NC} Ollama started successfully"
             return 0
         else
@@ -143,7 +143,7 @@ User=$USER
 WorkingDirectory=$PROJECT_DIR
 Environment="PYTHONPATH=$PROJECT_DIR"
 Environment="DATABASE_PATH=$DB_PATH"
-Environment="OLLAMA_URL=http://localhost:11434"
+Environment="LLM_URL=http://localhost:8081"
 Environment="LOG_LEVEL=INFO"
 ExecStart=/usr/bin/python3 $SCRIPT_DIR/robust_llm_processor_cli.py --db $DB_PATH --batch-size 10 --continuous
 Restart=on-failure

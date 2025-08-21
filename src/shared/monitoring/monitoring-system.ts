@@ -594,8 +594,8 @@ export const createDefaultHealthChecks = (): HealthCheck[] => [
     critical: false,
     check: async (): Promise<HealthCheckResult> => {
       try {
-        const ollamaUrl = process.env.OLLAMA_URL || "http://localhost:11434";
-        const response = await fetch(`${ollamaUrl}/api/tags`, {
+        const llmUrl = process.env.OLLAMA_URL || "http://localhost:8081";
+        const response = await fetch(`${llmUrl}/api/tags`, {
           method: "GET",
           signal: AbortSignal.timeout(15000),
         });

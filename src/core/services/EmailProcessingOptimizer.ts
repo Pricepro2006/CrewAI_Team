@@ -79,7 +79,7 @@ export class EmailProcessingOptimizer {
       similarityThreshold: 0.85,
       parallelPhase2: 5,
       parallelPhase3: 3,
-      ollamaUrl: "http://localhost:11434",
+      ollamaUrl: "http://localhost:8081",
       ollamaTimeout: 30000,
       ollamaKeepAlive: "30m",
       ...config,
@@ -93,7 +93,7 @@ export class EmailProcessingOptimizer {
 
     // Initialize connection pool with keep-alive
     this.ollamaPool = axios.create({
-      baseURL: this?.config?.ollamaUrl,
+      baseURL: this?.config?.llmUrl,
       timeout: this?.config?.ollamaTimeout,
       httpAgent: new Agent({
         keepAlive: true,

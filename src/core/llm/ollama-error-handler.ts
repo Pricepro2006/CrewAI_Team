@@ -56,7 +56,7 @@ export class ErrorHandlingOllamaProvider {
             if (error?.message?.includes("ECONNREFUSED")) {
               throw OllamaConnectionError({
                 originalError: error.message,
-                suggestion: "Ensure Ollama is running: ollama serve",
+                suggestion: "Ensure LLM server is running: ollama serve",
               });
             }
             if (error?.message?.includes("not found")) {
@@ -204,7 +204,7 @@ export class ErrorHandlingOllamaProvider {
           ) {
             throw OllamaConnectionError({
               action: "list models",
-              suggestion: "Check if Ollama is running",
+              suggestion: "Check if LLM server is running",
             });
           }
           throw error;

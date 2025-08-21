@@ -330,7 +330,7 @@ export const healthRouter = router({
   }),
 
   // Service-specific health checks
-  checkOllama: publicProcedure.query(async () => {
+  checkLLM: publicProcedure.query(async () => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);

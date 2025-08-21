@@ -23,7 +23,7 @@ backend_status=$?
 check_service "Frontend" "http://localhost:5178/walmart" 10
 frontend_status=$?
 
-check_service "Ollama LLM" "http://localhost:11434/api/tags" 5
+check_service "Ollama LLM" "http://localhost:8081/api/tags" 5
 ollama_status=$?
 
 # Check WebSocket via health endpoint

@@ -10,7 +10,7 @@ export const MODEL_CONFIG = {
     primary: "./models/llama-3.2-3b-instruct.Q4_K_M.gguf",
     fallback: "./models/llama-3.2-3b-instruct.Q4_K_M.gguf", // Same model for consistency
     critical: "doomgrave/phi-4:14b-tools-Q3_K_S",
-    embedding: process.env.OLLAMA_MODEL_EMBEDDING || "nomic-embed-text", // Optimized embedding model
+    embedding: process.env.OLLAMA_MODEL_EMBEDDING || "./models/llama-3.2-3b-instruct.Q4_K_M.gguf", // Use main model for embeddings temporarily
     pattern: "iteration-script", // Local pattern matching
   },
 
@@ -44,7 +44,7 @@ export const MODEL_CONFIG = {
 
   // API configurations
   api: {
-    ollamaUrl: "http://localhost:11434",
+    ollamaUrl: "http://localhost:8081", // Updated to llama.cpp server port
     endpoints: {
       generate: "/api/generate",
       embeddings: "/api/embeddings",

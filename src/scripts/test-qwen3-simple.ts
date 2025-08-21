@@ -19,7 +19,7 @@ async function testSimpleQuery() {
     console.log(`Query: "${query}"`);
     
     try {
-      const response = await axios.post("http://localhost:11434/api/generate", {
+      const response = await axios.post("http://localhost:8081/api/generate", {
         model: "qwen3:0.6b",
         prompt: `List grocery items from: "${query}"\nItems:`,
         stream: false,

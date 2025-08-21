@@ -33,7 +33,7 @@ declare global {
       API_HOST?: string;
       DISABLE_EXTERNAL_APIS?: string;
       
-      // Ollama configuration
+      // LLM configuration (llama.cpp)
       OLLAMA_HOST?: string;
       OLLAMA_PORT?: string;
       OLLAMA_API_URL?: string;
