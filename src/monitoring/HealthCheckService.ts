@@ -675,7 +675,7 @@ export class HealthCheckService extends EventEmitter {
             result = await this.checkRedis();
             break;
           case 'ollama':
-            result = await this.checkOllama();
+            result = await this.checkLLM();
             break;
           default:
             // Check other services
@@ -798,16 +798,16 @@ export class HealthCheckService extends EventEmitter {
   /**
    * Check Ollama service
    */
-  private async checkOllama(): Promise<CheckResult> {
+  private async checkLLM(): Promise<CheckResult> {
     const startTime = performance.now();
     
     try {
-      const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+      const llmUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:8081'; // Updated to llama.cpp port
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
       try {
-        const response = await fetch(`${ollamaUrl}/api/tags`, {
+        const response = await fetch(`${llmUrl}/api/tags`, {
           signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -826,7 +826,7 @@ export class HealthCheckService extends EventEmitter {
           responseTime,
           details: {
             models: data?.models?.length || 0,
-            endpoint: ollamaUrl
+            endpoint: llmUrl
           }
         };
       } finally {

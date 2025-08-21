@@ -287,12 +287,12 @@ export function useRealtimePrices(
   // Get price update for specific product
   const getPriceUpdate = useCallback((productId: string): PriceUpdate | undefined => {
     return state?.priceUpdates?.get(productId);
-  }, [state.priceUpdates]);
+  }, []); // Removed dependency - accessing state directly is fine
 
   // Get price change indicator for specific product
   const getPriceChangeIndicator = useCallback((productId: string): PriceChangeIndicator | undefined => {
     return state?.priceChangeIndicators?.get(productId);
-  }, [state.priceChangeIndicators]);
+  }, []); // Removed dependency - accessing state directly is fine
 
   // Clear price indicator for specific product
   const clearPriceIndicator = useCallback((productId: string) => {
@@ -327,7 +327,7 @@ export function useRealtimePrices(
     return Array.from(state?.priceUpdates?.values())
       .filter(update => update.timestamp >= cutoffTime)
       .sort((a, b) => b.timestamp - a.timestamp);
-  }, [state.priceUpdates]);
+  }, []); // Removed dependency - accessing state directly is fine
 
   // Initialize subscriptions
   useEffect(() => {

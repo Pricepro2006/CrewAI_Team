@@ -17,7 +17,7 @@ describe("MasterOrchestrator Basic Tests", () => {
 
   beforeAll(async () => {
     // Check if Ollama is available once
-    isOllamaAvailable = await isOllamaRunning(process.env.OLLAMA_URL);
+    isOllamaAvailable = await isOllamaRunning(process.env.LLM_BASE_URL || "http://localhost:8081");
     if (!isOllamaAvailable) {
       console.log(
         "Ollama not running - tests will fail gracefully per guardrails",
@@ -29,7 +29,7 @@ describe("MasterOrchestrator Basic Tests", () => {
     testDb = createTestDatabase();
     orchestrator = new MasterOrchestrator({
       model: "llama3.2:3b", // Use primary model for tests
-      ollamaUrl: process.env.OLLAMA_URL || "http://localhost:11434",
+      llmUrl: process.env.LLM_BASE_URL || "http://localhost:8081",
       database: testDb,
       rag: {
         vectorStore: {

@@ -172,7 +172,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     if (value !== inputValue) {
       setInputValue(value);
     }
-  }, [value]);
+  }, [value]); // Only depend on external value prop to prevent infinite loop
 
   // Update suggestions context when commands change
   useEffect(() => {

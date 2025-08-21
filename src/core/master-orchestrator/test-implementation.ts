@@ -20,11 +20,11 @@ interface PlanStep {
 }
 
 class TestMasterOrchestrator {
-  private ollamaUrl: string;
+  private llmUrl: string;
   private model: string;
 
   constructor() {
-    this.ollamaUrl = "http://localhost:11434";
+    this.llmUrl = "http://localhost:8081";
     // Using mistral for testing - it's much faster than qwen3:14b
     this.model = "mistral:7b";
   }
@@ -59,7 +59,7 @@ Format your response as a JSON object following this structure:
 Important: Return ONLY the JSON object, no additional text.`;
 
     try {
-      const response = await axios.post(`${this.ollamaUrl}/api/generate`, {
+      const response = await axios.post(`${this.llmUrl}/api/generate`, {
         model: this.model,
         prompt: prompt,
         stream: false,

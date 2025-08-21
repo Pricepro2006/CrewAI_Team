@@ -1,5 +1,7 @@
+// Note: This file maintains the name ollama.config.ts for backward compatibility
 /**
- * Ollama Configuration
+// but actually configures llama.cpp on port 8081
+ * LLM Configuration (llama.cpp)
  * Aligned with three-stage pipeline architecture from models?.config?.ts
  */
 
@@ -19,7 +21,7 @@ export interface OllamaConfig {
 }
 
 const ollamaConfig: OllamaConfig = {
-  baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
+  baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:8081", // Updated to llama.cpp port
   defaultModel: process.env.OLLAMA_DEFAULT_MODEL || "llama3.2:3b", // Stage 2 primary model
   timeout: parseInt(process.env.OLLAMA_TIMEOUT || "45000"), // Increased for CPU inference
   maxRetries: parseInt(process.env.OLLAMA_MAX_RETRIES || "3"),

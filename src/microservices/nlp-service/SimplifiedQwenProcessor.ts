@@ -22,7 +22,7 @@ export class SimplifiedQwenProcessor {
 
   private constructor() {
     this.ollamaClient = axios.create({
-      baseURL: `${walmartConfig?.nlp?.host || 'http://localhost'}:${walmartConfig?.nlp?.port || 11434}`,
+      baseURL: `${walmartConfig?.nlp?.host || 'http://localhost'}:${walmartConfig?.nlp?.port || 8081}`,
       timeout: 30000, // Increased timeout for Qwen3:0.6b
     });
   }
