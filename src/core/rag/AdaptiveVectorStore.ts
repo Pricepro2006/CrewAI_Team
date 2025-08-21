@@ -1,6 +1,7 @@
 import type { IVectorStore } from "./IVectorStore.js";
 import type { ProcessedDocument, QueryResult, Document, VectorStoreConfig } from "./types.js";
 import { VectorStore } from "./VectorStore.js";
+import { OptimizedVectorStore } from "./OptimizedVectorStore.js";
 import { InMemoryVectorStore } from "./InMemoryVectorStore.js";
 import { logger } from "../../utils/logger.js";
 
@@ -13,14 +14,15 @@ export class AdaptiveVectorStore implements IVectorStore {
   private fallbackUsed: boolean = false;
 
   constructor(private config: VectorStoreConfig) {
-    // Start with ChromaDB attempt
-    this.store = new VectorStore(config);
+    // Start with OptimizedVectorStore for better performance
+    // Will fall back to regular VectorStore or InMemory if needed
+    this.store = new OptimizedVectorStore(config) as any;
   }
 
   async initialize(): Promise<void> {
     try {
       await this?.store?.initialize();
-      logger.info("ChromaDB vector store initialized successfully", "ADAPTIVE_VECTOR_STORE");
+      logger.info("Optimized ChromaDB vector store initialized successfully with caching and batching", "ADAPTIVE_VECTOR_STORE");
     } catch (error) {
       logger.warn(
         `ChromaDB initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. Falling back to in-memory storage.`,

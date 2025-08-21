@@ -1,0 +1,31 @@
+{
+  "query": "<script>alert(\"XSS\")</script>",
+  "timestamp": "2025-08-21T18:55:48.902Z",
+  "results": [
+    {
+      "title": "<script>alert(\"XSS\")</script> - Result 1",
+      "url": "https://example.com/search?q=%3Cscript%3Ealert(%22XSS%22)%3C%2Fscript%3E&result=1",
+      "snippet": "Information about <script>alert(\"XSS\")</script>. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "<script>alert(\"XSS\")</script> - Result 2",
+      "url": "https://example.com/search?q=%3Cscript%3Ealert(%22XSS%22)%3C%2Fscript%3E&result=2",
+      "snippet": "Information about <script>alert(\"XSS\")</script>. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "<script>alert(\"XSS\")</script> - Result 3",
+      "url": "https://example.com/search?q=%3Cscript%3Ealert(%22XSS%22)%3C%2Fscript%3E&result=3",
+      "snippet": "Information about <script>alert(\"XSS\")</script>. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

@@ -565,6 +565,10 @@ mainWSS.on('connection', (ws, request) => {
   });
 });
 
+// Setup Metrics WebSocket (moved here so it's available for upgrade handler)
+import { createMetricsWebSocketServer } from "./websocket/metricsWebSocket.js";
+const metricsWebSocketServer = createMetricsWebSocketServer(server);
+
 // Handle HTTP upgrade for WebSocket connections on the same port
 server.on('upgrade', (request, socket, head) => {
   const pathname = request.url || '';
@@ -662,6 +666,14 @@ server.on('upgrade', (request, socket, head) => {
     mainWSS.handleUpgrade(request, socket, head, (ws: any) => {
       mainWSS.emit('connection', ws, request);
     });
+  } else if (pathname === '/ws/metrics') {
+    // Handle Metrics WebSocket upgrades
+    if (metricsWebSocketServer && typeof metricsWebSocketServer.handleUpgrade === 'function') {
+      metricsWebSocketServer.handleUpgrade(request, socket, head);
+    } else {
+      socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+      socket.destroy();
+    }
   } else {
     // Reject unknown WebSocket requests
     logger.warn(`Unknown WebSocket path: ${pathname}`, 'WEBSOCKET');
@@ -682,6 +694,11 @@ console.log(
 console.log(
   `   🛒 Walmart WebSocket: ws://localhost:${PORT}/ws/walmart`,
 );
+console.log(
+  `   📊 Metrics WebSocket: ws://localhost:${PORT}/ws/metrics`,
+);
+
+// Metrics WebSocket already set up above
 
 // Setup Walmart-specific WebSocket handlers
 const dealDataService = DealDataService.getInstance();
@@ -693,6 +710,15 @@ const walmartRealtimeManager = setupWalmartWebSocket(
   dealDataService,
   emailStorageService,
 );
+
+// Register Metrics WebSocket for cleanup
+cleanupManager.register({
+  name: "metrics-websocket",
+  cleanup: async () => {
+    metricsWebSocketServer.close();
+  },
+  priority: 6,
+});
 
 // Register Walmart realtime manager for cleanup
 cleanupManager.register({
