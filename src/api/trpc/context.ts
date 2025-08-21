@@ -2,6 +2,7 @@ import type { inferAsyncReturnType } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { Request, Response } from "express";
 import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator.js";
+import type { AgentRegistry } from "../../core/agents/registry/AgentRegistry.js";
 import { ConversationService } from "../services/ConversationService.js";
 import { TaskService } from "../services/TaskService.js";
 import { MaestroFramework } from "../../core/maestro/MaestroFramework.js";
@@ -111,6 +112,15 @@ async function initializeServices() {
     eventEmitter = new EventEmitter();
   }
 
+  // Debug logging for services
+  console.log('Services initialized:', {
+    hasMasterOrchestrator: !!masterOrchestrator,
+    hasAgentRegistry: !!masterOrchestrator?.agentRegistry,
+    hasRagSystem: !!masterOrchestrator?.ragSystem,
+    agentRegistryType: typeof masterOrchestrator?.agentRegistry,
+    registryMethods: masterOrchestrator?.agentRegistry ? Object.getOwnPropertyNames(Object.getPrototypeOf(masterOrchestrator.agentRegistry)) : []
+  });
+  
   return {
     masterOrchestrator,
     conversationService,
@@ -243,11 +253,7 @@ export type TRPCContext = {
   walmartGroceryService: WalmartGroceryService;
   emailIngestionService?: EmailIngestionServiceImpl;
   eventEmitter: EventEmitter;
-  agentRegistry: {
-    getAgent: (name: string) => Promise<unknown>;
-    listAgents: () => Promise<Array<{ name: string; status: string }>>;
-    registerAgent: (name: string, agent: unknown) => Promise<void>;
-  };
+  agentRegistry: AgentRegistry;
   ragSystem: {
     query: (query: string, options?: Record<string, unknown>) => Promise<unknown[]>;
     addDocuments: (docs: unknown[]) => Promise<void>;

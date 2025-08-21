@@ -15,8 +15,7 @@
  */
 
 // Import bullmq components with proper typing
-// Import bullmq components with fallback types
-const { Queue, Worker, Job, QueueEvents } = require('bullmq') as any;
+import { Queue, Worker, Job, QueueEvents } from 'bullmq';
 import { createHash } from 'crypto';
 import { EmailRepository } from '../../database/repositories/EmailRepository.js';
 import { EmailQueueProcessor } from '../processors/EmailQueueProcessor.js';

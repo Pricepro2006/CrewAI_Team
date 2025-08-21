@@ -14,7 +14,7 @@ import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
 import { promisify } from 'node:util';
 import * as os from 'node:os';
-import * as process from 'node:process';
+// Use global process object instead of import
 import { logger } from '../utils/logger.js';
 import { metricsCollector } from './MetricsCollector.js';
 import Database from 'better-sqlite3';

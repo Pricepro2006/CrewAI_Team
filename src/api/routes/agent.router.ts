@@ -2,10 +2,29 @@ import { z } from "zod";
 import { router, publicProcedure } from "../trpc/enhanced-router.js";
 import type { Router } from "@trpc/server";
 import { getAgentModel } from "../../config/model-selection.config.js";
+import { websocketService } from "../services/WebSocketService.js";
 
 export const agentRouter: Router<any> = router({
   // List all registered agents
   list: publicProcedure.query(async ({ ctx }) => {
+    // Debug logging to check context
+    console.log('Agent list endpoint called', {
+      hasCtx: !!ctx,
+      hasAgentRegistry: !!ctx?.agentRegistry,
+      registryType: typeof ctx?.agentRegistry,
+      registryMethods: ctx?.agentRegistry ? Object.keys(ctx.agentRegistry) : []
+    });
+    
+    if (!ctx?.agentRegistry) {
+      console.error('AgentRegistry not found in context!');
+      return {
+        agents: [],
+        totalAgents: 0,
+        activeAgents: 0,
+        error: 'Agent registry not initialized'
+      };
+    }
+    
     const types = ctx?.agentRegistry?.getRegisteredTypes();
     const activeAgents = ctx?.agentRegistry?.getActiveAgents();
 
@@ -46,6 +65,10 @@ export const agentRouter: Router<any> = router({
 
   // Get agent status
   status: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx?.agentRegistry) {
+      console.error('AgentRegistry not found in status endpoint');
+      return [];
+    }
     return ctx?.agentRegistry?.getActiveAgents();
   }),
 
@@ -65,7 +88,22 @@ export const agentRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      if (!ctx?.agentRegistry) {
+        console.error('AgentRegistry not found in execute endpoint');
+        throw new Error('Agent registry not initialized');
+      }
       const agent = await ctx?.agentRegistry?.getAgent(input.agentType);
+      
+      // Broadcast agent status update
+      websocketService.broadcast({
+        type: 'agent.status',
+        payload: {
+          agentId: input.agentType,
+          status: 'executing',
+          task: input.task,
+          timestamp: new Date().toISOString()
+        }
+      });
 
       const result = await agent.execute(input.task, {
         task: input.task,
@@ -82,12 +120,28 @@ export const agentRouter: Router<any> = router({
 
       // Release agent back to pool
       ctx?.agentRegistry?.releaseAgent(input.agentType, agent);
+      
+      // Broadcast completion
+      websocketService.broadcast({
+        type: 'agent.task',
+        payload: {
+          agentId: input.agentType,
+          status: 'completed',
+          task: input.task,
+          result: result ? 'success' : 'failed',
+          timestamp: new Date().toISOString()
+        }
+      });
 
       return result;
     }),
 
   // Get agent pool status
   poolStatus: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx?.agentRegistry) {
+      console.error('AgentRegistry not found in poolStatus endpoint');
+      return { error: 'Agent registry not initialized' };
+    }
     return ctx?.agentRegistry?.getPoolStatus();
   }),
 
