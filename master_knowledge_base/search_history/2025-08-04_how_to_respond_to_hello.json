@@ -1,0 +1,31 @@
+{
+  "query": "how to respond to hello",
+  "timestamp": "2025-08-04T17:26:19.500Z",
+  "results": [
+    {
+      "title": "how to respond to hello - Result 1",
+      "url": "https://example.com/search?q=how%20to%20respond%20to%20hello&result=1",
+      "snippet": "Information about how to respond to hello. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "how to respond to hello - Result 2",
+      "url": "https://example.com/search?q=how%20to%20respond%20to%20hello&result=2",
+      "snippet": "Information about how to respond to hello. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "how to respond to hello - Result 3",
+      "url": "https://example.com/search?q=how%20to%20respond%20to%20hello&result=3",
+      "snippet": "Information about how to respond to hello. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

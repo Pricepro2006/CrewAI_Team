@@ -1,0 +1,88 @@
+{
+  "query": "TypeScript vs JavaScript",
+  "timestamp": "2025-08-17T17:10:29.341Z",
+  "results": [
+    {
+      "title": "What is TypeScript and why should I use it instead of JavaScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/12694530/what-is-typescript-and-why-should-i-use-it-instead-of-javascript",
+      "snippet": "Oct 2, 2012 ... Once a type is known to be nullable, meaning it is of a type that can also be of the value null or undefined , the TypeScript compiler can ...",
+      "source": "bing, startpage, brave",
+      "relevance": 0.6599999999999999,
+      "metadata": {
+        "engines": [
+          "bing",
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/reactjs on Reddit: Javascript vs typescript",
+      "url": "https://www.reddit.com/r/reactjs/comments/14784fy/javascript_vs_typescript/",
+      "snippet": "Jun 11, 2023 ... Typescript is the better version of Javascript. But building things on typescript requires extra amount of time. But it gets better. You get ...",
+      "source": "startpage, brave",
+      "relevance": 0.21818181818181817,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs JavaScript: Which One Is Better to Choose? - Radixweb",
+      "url": "https://radixweb.com/blog/typescript-vs-javascript",
+      "snippet": "Feb 13, 2025 ... JavaScript is best for small projects and quick prototyping due to its simplicity, whereas TypeScript is ideal for large-scale applications with ...",
+      "source": "startpage, brave",
+      "relevance": 0.11666666666666665,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-02-13T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs. JavaScript: 7 Key Differences - Sanity",
+      "url": "https://www.sanity.io/typescript-guide/typescript-vs-javascript",
+      "snippet": "This is the core difference between JavaScript and TypeScript. While JavaScript is dynamically-typed, TypeScript is a statically-typed superset of JavaScript, which means it offers strict static typing as an option but will allow dynamic typing, as well. As a result, TypeScript code is safer ...",
+      "source": "brave, duckduckgo",
+      "relevance": 0.11666666666666665,
+      "metadata": {
+        "engines": [
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": "2022-10-20T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs. JavaScript — Choosing the Right Language for Your Project",
+      "url": "https://www.sencha.com/blog/typescript-vs-javascript-choosing-the-right-language-for-your-project/",
+      "snippet": "It is basically a superset of JavaScript. This means that a valid JavaScript code is also usually a valid TypeScript code. However, the difference between TypeScript and JavaScript is that TypeScript adds static typing and other advanced features that JS lacks.",
+      "source": "startpage, brave",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2024-10-15T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

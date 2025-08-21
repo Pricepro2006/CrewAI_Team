@@ -1,0 +1,87 @@
+{
+  "query": "Research the benefits of TypeScript over JavaScript",
+  "timestamp": "2025-08-17T22:27:06.935Z",
+  "results": [
+    {
+      "title": "Advantages of TypeScript over JavaScript 2025 : Aalpha",
+      "url": "https://www.aalpha.net/articles/advantages-of-typescript-over-javascript/",
+      "snippet": "In comparison to JavaScript, TypeScript code is more dependable and refactorable. This helps developers easily avoid mistakes and do rewrites. In addition, types invalidate many trivial errors that may creep into JavaScript codebases and provide a rapid feedback loop for correcting all the ...",
+      "source": "startpage, brave",
+      "relevance": 0.24,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-06-02T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "8 Reasons Why You Should Pick TypeScript Over JavaScript",
+      "url": "https://www.geeksforgeeks.org/blogs/8-reasons-why-you-should-pick-typescript-over-javascript/",
+      "snippet": "Unlike JavaScript, TypeScript behaves the same, especially in the case of using \"this\" keyword and defining methods. The arrow function methods come with abstract classes and member visibility which offers a reliable, type-safe application model.",
+      "source": "startpage, duckduckgo",
+      "relevance": 0.225,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What Is TypeScript? Pros and Cons of TypeScript vs. JavaScript",
+      "url": "https://www.stxnext.com/blog/typescript-pros-cons-javascript",
+      "snippet": "TypeScript boosts overall performance and profits by streamlining development processes. “Based on my experience, TypeScript offers particularly significant benefits in medium-sized and large projects. I’d encourage developers to create these projects in TypeScript from scratch since migrating ...",
+      "source": "startpage, brave",
+      "relevance": 0.13333333333333333,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-03-17T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What is TypeScript and why should I use it instead of JavaScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/12694530/what-is-typescript-and-why-should-i-use-it-instead-of-javascript",
+      "snippet": "Oct 2, 2012 ... The IDE is informed in real-time by the TypeScript compiler on its rich type information. This gives a couple of major advantages. For example, ...",
+      "source": "startpage, brave",
+      "relevance": 0.12857142857142856,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Pros and Cons of TypeScript: When and Why It's Better than - AltexSoft",
+      "url": "https://www.altexsoft.com/blog/typescript-pros-and-cons/",
+      "snippet": "After automated transpiling — the process of translating one high-level language into another — the code can be executed in any browser or server equipped with JavaScript engines. The latter, in turn, compiles JS into machine-level code. There are two quick ways to get started with TS, ...",
+      "source": "startpage, brave",
+      "relevance": 0.10666666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2020-02-14T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

@@ -1,0 +1,86 @@
+{
+  "query": "Benefits of using TypeScript",
+  "timestamp": "2025-08-17T17:31:21.393Z",
+  "results": [
+    {
+      "title": "r/learnjavascript on Reddit: What are the pros and cons of using Typescript?",
+      "url": "https://www.reddit.com/r/learnjavascript/comments/imoh86/what_are_the_pros_and_cons_of_using_typescript/",
+      "snippet": "Sep 4, 2020 ... The advantages should be fairly obvious, a strongly typed language is a lot more comfortable and it is generally accepted that the errors that ...",
+      "source": "startpage, brave",
+      "relevance": 0.4,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What is TypeScript? Benefits of TypeScript and Disadvantages | itjet",
+      "url": "https://itjet.io/blog/what-is-typescript",
+      "snippet": "Jun 29, 2023 ... By using TypeScript, developers gain access to a wide range of tools and resources, including type definitions for existing JavaScript libraries ...",
+      "source": "startpage, brave",
+      "relevance": 0.16666666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2023-06-29T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Search - Benefits.gov",
+      "url": "https://www.benefits.gov/search?query=67426",
+      "snippet": "Didn't find what you were looking for? Take our Benefit Finder questionnaire to view a list of benefits you may be eligible to receive.",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript, What Good For?. The Pros and Cons of TypeScript: A… | by Chaewonkong | Medium",
+      "url": "https://medium.com/@chaewonkong/typescript-what-good-for-8240dc9173c7",
+      "snippet": "As a developer, you’re probably ... widely-used programming language. But have you ever considered its strongly-typed superset, TypeScript? TypeScript is a powerful alternative that has been gaining popularity in recent years. In this blog post, we’ll explore the benefits and drawbacks of using TypeScript ...",
+      "source": "startpage, brave",
+      "relevance": 0.08095238095238096,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2023-04-18T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Pros and Cons of TypeScript: When and Why It's Better than - AltexSoft",
+      "url": "https://www.altexsoft.com/blog/typescript-pros-and-cons/",
+      "snippet": "TypeScript inherits major pros of JavaScript, but also offers additional benefits coming from static typing and other concepts specific to TS. They prove especially useful when it comes to large-sized codebase and distributed teams working on the same project.",
+      "source": "startpage, brave",
+      "relevance": 0.075,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2020-02-14T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

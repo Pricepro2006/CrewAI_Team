@@ -1,0 +1,86 @@
+{
+  "query": "JavaScript vs TypeScript performance",
+  "timestamp": "2025-08-17T17:36:06.676Z",
+  "results": [
+    {
+      "title": "r/typescript on Reddit: Typescript performance vs JavaScript",
+      "url": "https://www.reddit.com/r/typescript/comments/1agl2dv/typescript_performance_vs_javascript/",
+      "snippet": "Feb 1, 2024 ... TypeScript compared pretty poorly and was significantly worse than JavaScript. The graphic I saw was based on a study and seemed to be implying that more green ...",
+      "source": "startpage, brave",
+      "relevance": 0.4,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Those wondering about JavaScript vs. TypeScript Performance | by Zoltan Fehervari | Medium",
+      "url": "https://medium.com/@fhrvri.mmxiv/those-wondering-about-javascript-vs-typescript-performance-fd4dc1b76d05",
+      "snippet": "JavaScript performance is influenced by several factors. Understanding these can help you write better-performing code. ... TypeScript is a typed superset of JavaScript that compiles to plain JavaScript.",
+      "source": "startpage, brave",
+      "relevance": 0.16666666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2024-06-18T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "javascript - When should I use ?? (nullish coalescing) vs || (logical ...",
+      "url": "https://stackoverflow.com/questions/61480993/when-should-i-use-nullish-coalescing-vs-logical-or",
+      "snippet": "The nullish coalescing operator (??) in JavaScript only considers null or undefined as \"nullish\" values. If the left-hand side is any other value, even falsy values like \"\" (empty string), 0, or false, it will not use the right-hand side:",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Javascript vs Typescript: Differences & Challenges | Ramotion Agency",
+      "url": "https://www.ramotion.com/blog/javascript-vs-typescript/",
+      "snippet": "Users will likely notice a difference if you develop a high-performance real-time app. TypeScript will have a longer build and compile time than plain JavaScript since the code must be compiled.",
+      "source": "startpage, brave",
+      "relevance": 0.09523809523809523,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-07-07T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "JavaScript vs TypeScript Performance - Bluebird International",
+      "url": "https://bluebirdinternational.com/javascript-vs-typescript-performance/",
+      "snippet": "Embracing TypeScript's features ... making TypeScript an ideal choice for modern web development. Improving JavaScript performance can be crucial for optimizing the execution time of your codebase....",
+      "source": "startpage, brave",
+      "relevance": 0.08333333333333333,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2024-06-06T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

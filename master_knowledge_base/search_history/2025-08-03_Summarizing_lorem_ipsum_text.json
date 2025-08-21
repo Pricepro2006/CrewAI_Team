@@ -1,0 +1,31 @@
+{
+  "query": "Summarizing lorem ipsum text",
+  "timestamp": "2025-08-03T19:34:03.230Z",
+  "results": [
+    {
+      "title": "Summarizing lorem ipsum text - Result 1",
+      "url": "https://example.com/search?q=Summarizing%20lorem%20ipsum%20text&result=1",
+      "snippet": "Information about Summarizing lorem ipsum text. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Summarizing lorem ipsum text - Result 2",
+      "url": "https://example.com/search?q=Summarizing%20lorem%20ipsum%20text&result=2",
+      "snippet": "Information about Summarizing lorem ipsum text. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Summarizing lorem ipsum text - Result 3",
+      "url": "https://example.com/search?q=Summarizing%20lorem%20ipsum%20text&result=3",
+      "snippet": "Information about Summarizing lorem ipsum text. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

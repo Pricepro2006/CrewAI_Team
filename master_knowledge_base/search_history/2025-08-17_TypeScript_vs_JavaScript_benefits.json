@@ -1,0 +1,83 @@
+{
+  "query": "TypeScript vs JavaScript benefits",
+  "timestamp": "2025-08-17T17:36:05.330Z",
+  "results": [
+    {
+      "title": "Why use triple-equal (===) in TypeScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/57125700/why-use-triple-equal-in-typescript",
+      "snippet": "Jul 20, 2019 · In JavaScript, it's commonly seen as best practice to use === instead of ==, for obvious and well-known reasons. In TypeScript, which is one to be preferred? Is there even …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/learnprogramming on Reddit: What's the difference between TypeScript and JavaScript?",
+      "url": "https://www.reddit.com/r/learnprogramming/comments/zi9ora/whats_the_difference_between_typescript_and/",
+      "snippet": "",
+      "source": "brave",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Javascript vs typescript : r/reactjs - Reddit",
+      "url": "https://www.reddit.com/r/reactjs/comments/14784fy/javascript_vs_typescript/",
+      "snippet": "Jun 11, 2023 ... Typescript is the better version of Javascript. But building things on typescript requires extra amount of time. But it gets better. You get ...",
+      "source": "startpage",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "startpage"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs JavaScript: Which One Is Better to Choose? - Radixweb",
+      "url": "https://radixweb.com/blog/typescript-vs-javascript",
+      "snippet": "Feb 13, 2025 ... As we said earlier, TypeScript is an enhanced version of JavaScript. Therefore, while comparing it with other languages like CoffeeScript (which ...",
+      "source": "startpage, brave",
+      "relevance": 0.09,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-02-13T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Does Typescript support the ?. operator? (And, what's it called?)",
+      "url": "https://stackoverflow.com/questions/15260732/does-typescript-support-the-operator-and-whats-it-called",
+      "snippet": "Jan 17, 2017 · Yes. As of TypeScript 3.7 (released on November 5, 2019), this feature is supported and is called Optional Chaining: At its core, optional chaining lets us write code …",
+      "source": "bing",
+      "relevance": 0.05,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

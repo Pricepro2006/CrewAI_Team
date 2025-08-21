@@ -1,0 +1,31 @@
+{
+  "query": "parse invalid json",
+  "timestamp": "2025-08-03T19:30:29.347Z",
+  "results": [
+    {
+      "title": "parse invalid json - Result 1",
+      "url": "https://example.com/search?q=parse%20invalid%20json&result=1",
+      "snippet": "Information about parse invalid json. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "parse invalid json - Result 2",
+      "url": "https://example.com/search?q=parse%20invalid%20json&result=2",
+      "snippet": "Information about parse invalid json. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "parse invalid json - Result 3",
+      "url": "https://example.com/search?q=parse%20invalid%20json&result=3",
+      "snippet": "Information about parse invalid json. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

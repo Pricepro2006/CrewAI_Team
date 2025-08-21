@@ -1,0 +1,31 @@
+{
+  "query": "Tell me a simple fact",
+  "timestamp": "2025-08-19T22:49:22.104Z",
+  "results": [
+    {
+      "title": "Tell me a simple fact - Result 1",
+      "url": "https://example.com/search?q=Tell%20me%20a%20simple%20fact&result=1",
+      "snippet": "Information about Tell me a simple fact. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Tell me a simple fact - Result 2",
+      "url": "https://example.com/search?q=Tell%20me%20a%20simple%20fact&result=2",
+      "snippet": "Information about Tell me a simple fact. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Tell me a simple fact - Result 3",
+      "url": "https://example.com/search?q=Tell%20me%20a%20simple%20fact&result=3",
+      "snippet": "Information about Tell me a simple fact. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

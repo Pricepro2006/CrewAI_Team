@@ -1,0 +1,86 @@
+{
+  "query": "TypeScript vs JavaScript performance",
+  "timestamp": "2025-08-17T17:33:23.577Z",
+  "results": [
+    {
+      "title": "r/typescript on Reddit: Typescript performance vs JavaScript",
+      "url": "https://www.reddit.com/r/typescript/comments/1agl2dv/typescript_performance_vs_javascript/",
+      "snippet": "Feb 1, 2024 ... TypeScript compared pretty poorly and was significantly worse than JavaScript. The graphic I saw was based on a study and seemed to be implying that more green ...",
+      "source": "startpage, brave",
+      "relevance": 0.4,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Those wondering about JavaScript vs. TypeScript Performance | by Zoltan Fehervari | Medium",
+      "url": "https://medium.com/@fhrvri.mmxiv/those-wondering-about-javascript-vs-typescript-performance-fd4dc1b76d05",
+      "snippet": "JavaScript performance is influenced by several factors. Understanding these can help you write better-performing code. ... TypeScript is a typed superset of JavaScript that compiles to plain JavaScript.",
+      "source": "startpage, brave",
+      "relevance": 0.16666666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2024-06-18T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Why use triple-equal (===) in TypeScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/57125700/why-use-triple-equal-in-typescript",
+      "snippet": "Jul 20, 2019 · In JavaScript, it's commonly seen as best practice to use === instead of ==, for obvious and well-known reasons. In TypeScript, which is one to be preferred? Is there even …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Javascript vs Typescript: Differences & Challenges | Ramotion Agency",
+      "url": "https://www.ramotion.com/blog/javascript-vs-typescript/",
+      "snippet": "Users will likely notice a difference if you develop a high-performance real-time app. TypeScript will have a longer build and compile time than plain JavaScript since the code must be compiled.",
+      "source": "startpage, brave",
+      "relevance": 0.09523809523809523,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-07-07T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs JavaScript: Beyond Benchmarks | by Amit Digga | Medium",
+      "url": "https://medium.com/@diggaamitoo7/typescript-vs-javascript-the-non-benchmarkable-stuff-5575b845e766",
+      "snippet": "May 30, 2024 ... The JavaScript file has 43 words and the TypeScript file has 54 words. Why does this seem counterintuitive? This is a crucial benefit that many ...",
+      "source": "startpage, brave",
+      "relevance": 0.09,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2024-11-24T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

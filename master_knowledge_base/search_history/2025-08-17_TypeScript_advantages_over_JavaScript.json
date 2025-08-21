@@ -1,0 +1,86 @@
+{
+  "query": "TypeScript advantages over JavaScript",
+  "timestamp": "2025-08-17T17:36:06.094Z",
+  "results": [
+    {
+      "title": "Pros and Cons of TypeScript: When and Why It's Better than - AltexSoft",
+      "url": "https://www.altexsoft.com/blog/typescript-pros-and-cons/",
+      "snippet": "Technically, TypeScript is a variant of JavaScript, the number one language for many years in a row. First rolled out in 1995, JS brought interactivity to previously lifeless websites and completely changed the front-end development landscape. Currently, 95 percent of websites take advantage of ...",
+      "source": "startpage, brave",
+      "relevance": 0.22000000000000003,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2020-02-14T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/reactjs on Reddit: Javascript vs typescript",
+      "url": "https://www.reddit.com/r/reactjs/comments/14784fy/javascript_vs_typescript/",
+      "snippet": "Jun 11, 2023 ... Typescript helps reduce the number of runtime issues in exchange for issues at build/compile time as well as increased code complexity. But - ...",
+      "source": "startpage, brave",
+      "relevance": 0.21538461538461537,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What Is TypeScript? Pros and Cons of TypeScript vs. JavaScript",
+      "url": "https://www.stxnext.com/blog/typescript-pros-cons-javascript",
+      "snippet": "Valid JavaScript code is also valid ... as it requires halting development to complete the migration. The advantage is it's future-proof, erasing concerns about legacy JavaScript code....",
+      "source": "startpage, brave",
+      "relevance": 0.12857142857142856,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-03-17T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs. JavaScript: Which One is Better? - Simplilearn.com",
+      "url": "https://www.simplilearn.com/tutorials/typescript-tutorial/typescript-vs-javascript",
+      "snippet": "3 weeks ago - TypeScript vs. JavaScript tutorial will give you a clear picture of the two languages. Know the advantages of TypeScript over JavaScript and much more now!",
+      "source": "startpage, brave",
+      "relevance": 0.10666666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Why use triple-equal (===) in TypeScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/57125700/why-use-triple-equal-in-typescript",
+      "snippet": "Jul 20, 2019 · In JavaScript, it's commonly seen as best practice to use === instead of ==, for obvious and well-known reasons. In TypeScript, which is one to be preferred? Is there even one which is preferable ...",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

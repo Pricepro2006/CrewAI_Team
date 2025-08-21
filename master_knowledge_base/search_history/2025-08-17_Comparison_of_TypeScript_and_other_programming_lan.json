@@ -1,0 +1,31 @@
+{
+  "query": "Comparison of TypeScript and other programming languages",
+  "timestamp": "2025-08-17T16:57:03.471Z",
+  "results": [
+    {
+      "title": "Comparison of TypeScript and other programming languages - Result 1",
+      "url": "https://example.com/search?q=Comparison%20of%20TypeScript%20and%20other%20programming%20languages&result=1",
+      "snippet": "Information about Comparison of TypeScript and other programming languages. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Comparison of TypeScript and other programming languages - Result 2",
+      "url": "https://example.com/search?q=Comparison%20of%20TypeScript%20and%20other%20programming%20languages&result=2",
+      "snippet": "Information about Comparison of TypeScript and other programming languages. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Comparison of TypeScript and other programming languages - Result 3",
+      "url": "https://example.com/search?q=Comparison%20of%20TypeScript%20and%20other%20programming%20languages&result=3",
+      "snippet": "Information about Comparison of TypeScript and other programming languages. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

@@ -1,0 +1,86 @@
+{
+  "query": "TypeScript benefits",
+  "timestamp": "2025-08-17T17:10:30.767Z",
+  "results": [
+    {
+      "title": "r/learnjavascript on Reddit: What are the pros and cons of using Typescript?",
+      "url": "https://www.reddit.com/r/learnjavascript/comments/imoh86/what_are_the_pros_and_cons_of_using_typescript/",
+      "snippet": "Sep 4, 2020 ... The advantages should be fairly obvious, a strongly typed language is a lot more comfortable and it is generally accepted that the errors ...",
+      "source": "startpage, brave",
+      "relevance": 0.4,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Pros and Cons of TypeScript: When and Why It's Better than - AltexSoft",
+      "url": "https://www.altexsoft.com/blog/typescript-pros-and-cons/",
+      "snippet": "Feb 14, 2020 ... TypeScript pros: what makes TypeScript a good fit for large projects · Optional static typing · Early spotted bugs · Predictability · Readability.",
+      "source": "startpage, brave",
+      "relevance": 0.2,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2020-02-14T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What is TypeScript? Benefits of TypeScript and Disadvantages | itjet",
+      "url": "https://itjet.io/blog/what-is-typescript",
+      "snippet": "TypeScript is a free and open-source high-level programming language developed by Microsoft that adds a rich type system to JavaScript. Pros and cons of TypeScript",
+      "source": "startpage, brave",
+      "relevance": 0.13333333333333333,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2023-06-29T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Why use triple-equal (===) in TypeScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/57125700/why-use-triple-equal-in-typescript",
+      "snippet": "Jul 20, 2019 · In JavaScript, it's commonly seen as best practice to use === instead of ==, for obvious and well-known reasons. In TypeScript, which is one to be preferred? Is there even one …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript, What Good For?. The Pros and Cons of TypeScript: A… | by Chaewonkong | Medium",
+      "url": "https://medium.com/@chaewonkong/typescript-what-good-for-8240dc9173c7",
+      "snippet": "TypeScript offers many benefits, such as type safety, improved tooling, scalability, and enhanced features like interfaces and generics. However, it also comes with some drawbacks, such as a learning curve, increased compile time, a smaller ecosystem, and potential compatibility issues.",
+      "source": "startpage, brave",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2023-04-18T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

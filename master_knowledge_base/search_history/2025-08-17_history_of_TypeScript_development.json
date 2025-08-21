@@ -1,0 +1,31 @@
+{
+  "query": "history of TypeScript development",
+  "timestamp": "2025-08-17T16:56:23.450Z",
+  "results": [
+    {
+      "title": "history of TypeScript development - Result 1",
+      "url": "https://example.com/search?q=history%20of%20TypeScript%20development&result=1",
+      "snippet": "Information about history of TypeScript development. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "history of TypeScript development - Result 2",
+      "url": "https://example.com/search?q=history%20of%20TypeScript%20development&result=2",
+      "snippet": "Information about history of TypeScript development. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "history of TypeScript development - Result 3",
+      "url": "https://example.com/search?q=history%20of%20TypeScript%20development&result=3",
+      "snippet": "Information about history of TypeScript development. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

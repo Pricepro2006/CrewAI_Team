@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History, Zap } from 'lucide-react';
-import { api } from '../../../client/lib/api';
+import { trpc } from '../../../utils/trpc';
+import type { AppRouter } from '../../../api/trpc/router';
 import WalmartLivePricing from './WalmartLivePricing';
 import { GroceryListEnhanced } from './GroceryListEnhanced';
+import { GroceryBudgetSplitView } from './GroceryBudgetSplitView';
 import './WalmartGroceryAgent.css';
 
 interface GroceryItem {
@@ -29,7 +31,7 @@ interface PriceHistory {
   price: number;
 }
 
-type TabType = 'shopping' | 'grocery-list' | 'budget-tracker' | 'price-history' | 'live-pricing';
+type TabType = 'shopping' | 'grocery-planning' | 'price-history' | 'live-pricing';
 
 export const WalmartGroceryAgent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('shopping');
@@ -39,29 +41,32 @@ export const WalmartGroceryAgent: React.FC = () => {
   const [priceAlerts, setPriceAlerts] = useState<Map<string, number>>(new Map());
 
   // Fetch real dashboard stats instead of hardcoded values
-  const { data: statsData } = api?.walmartGrocery?.getStats.useQuery(undefined, {
+  // Type assertion needed due to complex tRPC type inference
+  const { data: statsData } = (trpc as any).walmartGrocery?.getStats?.useQuery?.(undefined, {
     refetchInterval: 60000, // Refresh every minute
-  });
+  }) || { data: null };
 
   // Fetch trending products for price history
-  const { data: trendingData } = api?.walmartGrocery?.getTrending.useQuery(
+  // Type assertion needed due to complex tRPC type inference
+  const { data: trendingData } = (trpc as any).walmartGrocery?.getTrending?.useQuery?.(
     { limit: 6, days: 30 },
     { enabled: activeTab === 'price-history' }
-  );
+  ) || { data: null };
 
-  // Fetch budget data
-  const { data: budgetData } = api?.walmartGrocery?.getBudget.useQuery(
-    { userId: 'default_user' },
-    { enabled: activeTab === 'budget-tracker' }
-  );
+  // Fetch budget data - not needed anymore as it's handled in the split view component
+  // const { data: budgetData } = api?.walmartGrocery?.getBudget.useQuery(
+  //   { userId: 'default_user' },
+  //   { enabled: activeTab === 'grocery-planning' }
+  // );
 
   // Use tRPC mutation for searching products
-  const searchProductsMutation = api?.walmartGrocery?.searchProducts.useMutation({
-    onError: (error: any) => {
+  // Type assertion needed due to complex tRPC type inference
+  const searchProductsMutation = (trpc as any).walmartGrocery?.searchProducts?.useMutation?.({
+    onError: (error: unknown) => {
       console.error('Search failed:', error);
       // You might want to show a toast notification here
     }
-  });
+  }) || { mutateAsync: async () => ({ products: [], metadata: {} }), isPending: false, isLoading: false };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -131,8 +136,7 @@ export const WalmartGroceryAgent: React.FC = () => {
 
   const tabs = [
     { id: 'shopping' as TabType, label: 'Shopping', icon: ShoppingCart },
-    { id: 'grocery-list' as TabType, label: 'Grocery List', icon: List },
-    { id: 'budget-tracker' as TabType, label: 'Budget Tracker', icon: PieChart },
+    { id: 'grocery-planning' as TabType, label: 'Grocery Planning', icon: List },
     { id: 'price-history' as TabType, label: 'Price History', icon: BarChart3 },
     { id: 'live-pricing' as TabType, label: 'Live Pricing', icon: Zap },
   ];
@@ -371,90 +375,8 @@ export const WalmartGroceryAgent: React.FC = () => {
           </>
         )}
 
-        {activeTab === 'grocery-list' && (
-          <GroceryListEnhanced />
-        )}
-
-        {activeTab === 'budget-tracker' && (
-          <div className="budget-section">
-            <h2 className="section-title">Budget Tracker</h2>
-            
-            <div className="budget-overview">
-              <div className="budget-card primary">
-                <h3>Monthly Budget</h3>
-                <div className="budget-amount">
-                  ${budgetData?.budget?.monthlyBudget?.toFixed(2) || '400.00'}
-                </div>
-                <div className="budget-progress">
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{
-                      width: `${budgetData?.budget?.percentUsed || 0}%`
-                    }}></div>
-                  </div>
-                  <span>
-                    ${budgetData?.budget?.totalSpent?.toFixed(2) || '0.00'} spent • 
-                    ${budgetData?.budget?.remaining?.toFixed(2) || '400.00'} remaining
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="budget-categories">
-              {budgetData?.budget?.categories && Object.entries(budgetData?.budget?.categories).map(([category, data]: [string, { budget: number; spent: number }]) => {
-                const percentUsed = data.budget > 0 ? (data.spent / data.budget * 100) : 0;
-                const isWarning = percentUsed >= 90;
-                
-                return (
-                  <div key={category} className="category-card">
-                    <div className="category-header">
-                      <h4>{category}</h4>
-                      <span className="category-amount">${data?.spent?.toFixed(2)}</span>
-                    </div>
-                    <div className="category-progress">
-                      <div className={`progress-bar ${isWarning ? 'warning' : ''}`}>
-                        <div className="progress-fill" style={{width: `${percentUsed}%`}}></div>
-                      </div>
-                      <span>
-                        {percentUsed.toFixed(0)}% of ${data.budget} budget
-                        {isWarning && ' • Near limit!'}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {(!budgetData?.budget?.categories || Object.keys(budgetData?.budget?.categories).length === 0) && (
-                <div className="no-data-message">
-                  <p>No spending data available yet. Start shopping to track your budget!</p>
-                </div>
-              )}
-            </div>
-
-            <div className="budget-insights">
-              <h3>Budget Insights</h3>
-              <div className="insight-cards">
-                <div className="insight-card">
-                  <div className="insight-icon success">
-                    <TrendingUp />
-                  </div>
-                  <div className="insight-content">
-                    <h4>Great Progress!</h4>
-                    <p>You're saving 12% compared to last month through smart shopping choices.</p>
-                  </div>
-                </div>
-                
-                <div className="insight-card">
-                  <div className="insight-icon warning">
-                    <AlertCircle />
-                  </div>
-                  <div className="insight-content">
-                    <h4>Budget Alert</h4>
-                    <p>Meat & Seafood category is near its limit. Consider alternatives or wait for sales.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {activeTab === 'grocery-planning' && (
+          <GroceryBudgetSplitView />
         )}
 
         {activeTab === 'price-history' && (

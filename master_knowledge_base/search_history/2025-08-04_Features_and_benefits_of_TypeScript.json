@@ -1,0 +1,31 @@
+{
+  "query": "Features and benefits of TypeScript",
+  "timestamp": "2025-08-04T07:58:56.062Z",
+  "results": [
+    {
+      "title": "Features and benefits of TypeScript - Result 1",
+      "url": "https://example.com/search?q=Features%20and%20benefits%20of%20TypeScript&result=1",
+      "snippet": "Information about Features and benefits of TypeScript. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Features and benefits of TypeScript - Result 2",
+      "url": "https://example.com/search?q=Features%20and%20benefits%20of%20TypeScript&result=2",
+      "snippet": "Information about Features and benefits of TypeScript. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Features and benefits of TypeScript - Result 3",
+      "url": "https://example.com/search?q=Features%20and%20benefits%20of%20TypeScript&result=3",
+      "snippet": "Information about Features and benefits of TypeScript. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

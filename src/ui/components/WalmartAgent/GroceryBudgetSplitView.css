@@ -1,0 +1,294 @@
+/* GroceryBudgetSplitView.css - Split screen layout for Grocery List and Budget Tracker */
+
+.split-view-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-primary);
+}
+
+.split-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.split-view-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.split-view-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.split-control-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.split-control-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.split-view-container {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.split-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.split-panel.expanded {
+  width: 100% !important;
+}
+
+.left-panel {
+  border-right: 1px solid var(--border-color);
+}
+
+.right-panel {
+  border-left: 1px solid var(--border-color);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.panel-title svg {
+  color: var(--accent);
+}
+
+.panel-expand-btn {
+  padding: 0.375rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-expand-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  min-height: 0;
+}
+
+/* Custom scrollbar for panel content */
+.panel-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Splitter/Divider */
+.split-divider {
+  width: 8px;
+  background: var(--bg-tertiary);
+  cursor: col-resize;
+  position: relative;
+  transition: background 0.2s;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.split-divider:hover,
+.split-divider.dragging {
+  background: var(--accent);
+}
+
+.divider-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.divider-handle span {
+  width: 4px;
+  height: 20px;
+  background: var(--text-secondary);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+.split-divider:hover .divider-handle span,
+.split-divider.dragging .divider-handle span {
+  opacity: 1;
+  background: white;
+}
+
+/* Status Bar */
+.split-view-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1.5rem;
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .split-view-container {
+    flex-direction: column;
+  }
+
+  .split-panel {
+    width: 100% !important;
+    height: 50%;
+    border-right: none !important;
+    border-left: none !important;
+  }
+
+  .left-panel {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .split-divider {
+    display: none;
+  }
+
+  .panel-expand-btn {
+    display: none;
+  }
+
+  .split-view-status {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .split-view-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .split-view-title {
+    font-size: 1.25rem;
+  }
+
+  .panel-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .panel-content {
+    padding: 0.75rem;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .split-view-header {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  }
+
+  .split-control-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .split-control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Animation for panel transitions */
+@keyframes expandPanel {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.split-panel.expanded {
+  animation: expandPanel 0.3s ease;
+}
+
+/* Ensure child components respect the split layout */
+.split-panel .grocery-list-enhanced,
+.split-panel .walmart-budget-tracker {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+}
+
+/* Override any fixed heights in child components */
+.panel-content > * {
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0;
+}

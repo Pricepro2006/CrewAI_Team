@@ -1,0 +1,31 @@
+{
+  "query": "Mathematical significance of 42",
+  "timestamp": "2025-08-03T19:25:13.265Z",
+  "results": [
+    {
+      "title": "Mathematical significance of 42 - Result 1",
+      "url": "https://example.com/search?q=Mathematical%20significance%20of%2042&result=1",
+      "snippet": "Information about Mathematical significance of 42. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Mathematical significance of 42 - Result 2",
+      "url": "https://example.com/search?q=Mathematical%20significance%20of%2042&result=2",
+      "snippet": "Information about Mathematical significance of 42. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Mathematical significance of 42 - Result 3",
+      "url": "https://example.com/search?q=Mathematical%20significance%20of%2042&result=3",
+      "snippet": "Information about Mathematical significance of 42. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

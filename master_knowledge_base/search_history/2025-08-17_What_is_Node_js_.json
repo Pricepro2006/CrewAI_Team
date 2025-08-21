@@ -1,0 +1,93 @@
+{
+  "query": "What is Node.js?",
+  "timestamp": "2025-08-17T22:13:04.000Z",
+  "results": [
+    {
+      "title": "Node.js Introduction - W3Schools",
+      "url": "https://www.w3schools.com/nodejs/nodejs_intro.asp",
+      "snippet": "Node.js is an open source server environment that runs on various platforms and uses JavaScript on the server. Learn how Node.js handles file requests, creates dynamic pages, and works with databases using asynchronous programming.",
+      "source": "bing, startpage, brave, duckduckgo",
+      "relevance": 1,
+      "metadata": {
+        "engines": [
+          "bing",
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Node.js — About Node.js®",
+      "url": "https://nodejs.org/en/about",
+      "snippet": "Node.js is similar in design to, and influenced by, systems like Ruby's Event Machine and Python's Twisted. Node.js takes the event model a bit further. It presents an event loop as a runtime construct instead of as a library. In other systems, there is always a blocking call to start the ...",
+      "source": "bing, startpage, brave",
+      "relevance": 0.63,
+      "metadata": {
+        "engines": [
+          "bing",
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What Exactly is Node.js? Explained for Beginners - freeCodeCamp",
+      "url": "https://www.freecodecamp.org/news/what-is-node-js/",
+      "snippet": "Node.js exposes almost all the system resources to your programs. This means you can interact with the operating system, access the file systems, and read and write to the files. But, you do not have access to operating systems and file systems from the browser. JavaScript has a built-in global object. The JavaScript global object for the browser is ...",
+      "source": "bing, startpage, brave, duckduckgo",
+      "relevance": 0.45714285714285713,
+      "metadata": {
+        "engines": [
+          "bing",
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": "2025-04-02T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Node.js — Introduction to Node.js",
+      "url": "https://nodejs.org/en/learn/getting-started/introduction-to-nodejs",
+      "snippet": "Node.js is an open-source and cross-platform tool that runs the V8 JavaScript engine outside of the browser. It is fast, non-blocking, and allows frontend developers to write server-side code in JavaScript.",
+      "source": "bing, brave, duckduckgo",
+      "relevance": 0.2730769230769231,
+      "metadata": {
+        "engines": [
+          "bing",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/learnjavascript on Reddit: ELI5: What in the heck is node.js?",
+      "url": "https://www.reddit.com/r/learnjavascript/comments/3d4hs5/eli5_what_in_the_heck_is_nodejs/",
+      "snippet": "Jul 14, 2015 ... Node.js is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications.",
+      "source": "startpage, brave",
+      "relevance": 0.2,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

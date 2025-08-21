@@ -1,0 +1,31 @@
+{
+  "query": "greeting response",
+  "timestamp": "2025-08-03T19:40:20.464Z",
+  "results": [
+    {
+      "title": "greeting response - Result 1",
+      "url": "https://example.com/search?q=greeting%20response&result=1",
+      "snippet": "Information about greeting response. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "greeting response - Result 2",
+      "url": "https://example.com/search?q=greeting%20response&result=2",
+      "snippet": "Information about greeting response. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "greeting response - Result 3",
+      "url": "https://example.com/search?q=greeting%20response&result=3",
+      "snippet": "Information about greeting response. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

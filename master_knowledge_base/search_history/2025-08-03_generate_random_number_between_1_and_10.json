@@ -1,0 +1,31 @@
+{
+  "query": "generate random number between 1 and 10",
+  "timestamp": "2025-08-03T19:20:35.862Z",
+  "results": [
+    {
+      "title": "generate random number between 1 and 10 - Result 1",
+      "url": "https://example.com/search?q=generate%20random%20number%20between%201%20and%2010&result=1",
+      "snippet": "Information about generate random number between 1 and 10. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "generate random number between 1 and 10 - Result 2",
+      "url": "https://example.com/search?q=generate%20random%20number%20between%201%20and%2010&result=2",
+      "snippet": "Information about generate random number between 1 and 10. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "generate random number between 1 and 10 - Result 3",
+      "url": "https://example.com/search?q=generate%20random%20number%20between%201%20and%2010&result=3",
+      "snippet": "Information about generate random number between 1 and 10. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

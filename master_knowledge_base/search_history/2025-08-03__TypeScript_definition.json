@@ -1,0 +1,47 @@
+{
+  "query": "+TypeScript definition",
+  "timestamp": "2025-08-03T19:15:31.586Z",
+  "results": [
+    {
+      "title": "TypeScript - Wikipedia",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FTypeScript&rut=42fc65bf96ce4a059755c572e69e9e0bf1efd357e2a797bc6f5200b592a48494",
+      "snippet": "The default TypeScript Compiler can be used, [7] or the Babel compiler can be invoked to convert TypeScript to JavaScript. TypeScript supports definition files that can contain type information of existing JavaScript libraries, much like C++ header files can describe the structure of existing object files.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "TypeScript - Glossary - MDN",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fdeveloper.mozilla.org%2Fen%2DUS%2Fdocs%2FGlossary%2FTypeScript&rut=bd874481218d54cbea4891133f2fa760fadd6ed64df374383715201ddae5c476",
+      "snippet": "TypeScript is a programming language that adds static type checking to JavaScript. TypeScript is a superset of JavaScript, meaning that everything available in JavaScript is also available in TypeScript, and that every JavaScript program is a syntactically legal TypeScript program.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "The repository for high quality TypeScript type definitions.",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fgithub.com%2FDefinitelyTyped%2FDefinitelyTyped&rut=809b86c989ab92ade5e42ebc58f2a6d51d0bb686e804db5c7ce420622e49dd07",
+      "snippet": "The TypeScript handbook contains excellent general information about writing definitions and also this example definition file which shows how to create a definition using ES6-style module syntax, while also specifying objects made available to the global scope.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "TypeScript: Documentation - Classes",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.typescriptlang.org%2Fdocs%2Fhandbook%2F2%2Fclasses.html&rut=2035a233d24a30df35e461aca0f5019c754c35344c608d783f9bb90f293e05aa",
+      "snippet": "TypeScript is correctly telling you that you're trying to instantiate an abstract class. After all, given the definition of greet, it's perfectly legal to write this code, which would end up constructing an abstract class:",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "What is TypeScript? | Learning TypeScript",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.learningtypescript.com%2Farticles%2Fwhat%2Dis%2Dtypescript&rut=a325ae6f5dca0748e48f68a3147dea374c4ce00d02d07750c3711f7f53c90ee3",
+      "snippet": "What 'TypeScript' refers to, as both a programming language and set of tools, along with why so many developers use them.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

@@ -1,0 +1,92 @@
+{
+  "query": "Node.js definition",
+  "timestamp": "2025-08-17T17:08:53.594Z",
+  "results": [
+    {
+      "title": "Node.js — About Node.js®",
+      "url": "https://nodejs.org/en/about",
+      "snippet": "Node.js is similar in design to, and influenced by, systems like Ruby's Event Machine and Python's Twisted. Node.js takes the event model a bit further. It presents an event loop as a runtime construct instead of as a library. In other systems, there is always a blocking call to start the ...",
+      "source": "bing, startpage, brave, duckduckgo",
+      "relevance": 0.6444444444444445,
+      "metadata": {
+        "engines": [
+          "bing",
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Node.js — Introduction to Node.js",
+      "url": "https://nodejs.org/en/learn/getting-started/introduction-to-nodejs",
+      "snippet": "Introduction to Node.js Node.js is an open-source and cross-platform JavaScript runtime environment. It is a popular tool for almost any kind of project! Node.js runs the V8 JavaScript engine, the core of Google Chrome, outside of the browser. This allows Node.js to be very performant. A Node.js app runs in a single process, without creating a new thread for every request. Node.js provides a ...",
+      "source": "bing, brave, duckduckgo",
+      "relevance": 0.4166666666666667,
+      "metadata": {
+        "engines": [
+          "bing",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What Exactly is Node.js? Explained for Beginners - freeCodeCamp",
+      "url": "https://www.freecodecamp.org/news/what-is-node-js/",
+      "snippet": "Node.js is an open-source and cross-platform JavaScript runtime environment that allows you to create both front-end and back-end applications using JavaScript. Learn the differences between the browser and Node.js environments, how to install and run Node.js, and why you should learn it.",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.24285714285714288,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": "2025-04-02T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Node.js - Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Node.js",
+      "snippet": "3 days ago - Modern desktop IDEs provide editing and debugging features specifically for Node.js applications. Such IDEs include Atom, Brackets, JetBrains WebStorm, Microsoft Visual Studio (with Node.js Tools for Visual Studio, or TypeScript with Node definitions), NetBeans, Nodeclipse Enide Studio ...",
+      "source": "startpage, brave",
+      "relevance": 0.2,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Node.js Introduction - W3Schools",
+      "url": "https://www.w3schools.com/nodejs/nodejs_intro.asp",
+      "snippet": "Node.js is an open source server environment that runs on various platforms and uses JavaScript on the server. Learn how Node.js handles file requests, creates dynamic content, and executes tasks on events.",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.155,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

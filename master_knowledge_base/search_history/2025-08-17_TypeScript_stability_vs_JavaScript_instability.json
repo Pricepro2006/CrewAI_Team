@@ -1,0 +1,82 @@
+{
+  "query": "TypeScript stability vs JavaScript instability",
+  "timestamp": "2025-08-17T17:36:07.642Z",
+  "results": [
+    {
+      "title": "Why use triple-equal (===) in TypeScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/57125700/why-use-triple-equal-in-typescript",
+      "snippet": "Jul 20, 2019 · In JavaScript, it's commonly seen as best practice to use === instead of ==, for obvious and well-known reasons. In TypeScript, which is one to be preferred? Is there even …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs JavaScript Differences - 2025 : Aalpha",
+      "url": "https://www.aalpha.net/blog/typescript-vs-javascript-differences/",
+      "snippet": "Jun 14, 2025 ... The decision between TypeScript and JavaScript is no longer just a matter of developer preference—it has become a strategic choice with ...",
+      "source": "startpage",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "startpage"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/typescript on Reddit: stability-ts: A TypeScript CLI for Running Stable Diffusion through Stability AI",
+      "url": "https://www.reddit.com/r/typescript/comments/x3d2i1/stabilityts_a_typescript_cli_for_running_stable/",
+      "snippet": "TypeScript is a typed superset of JavaScript that compiles to plain JavaScript. ... A community dedicated to all things web development: both front-end and back-end. For more design-related questions, try /r/web_design. ... TypeScript is a language for application-scale JavaScript development.",
+      "source": "brave",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2022-09-01T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Does Typescript support the ?. operator? (And, what's it called?)",
+      "url": "https://stackoverflow.com/questions/15260732/does-typescript-support-the-operator-and-whats-it-called",
+      "snippet": "Jan 17, 2017 · Yes. As of TypeScript 3.7 (released on November 5, 2019), this feature is supported and is called Optional Chaining: At its core, optional chaining lets us write code …",
+      "source": "bing",
+      "relevance": 0.05,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Is there any reason to start a project in Javascript, and not use ...",
+      "url": "https://www.reddit.com/r/webdev/comments/1lir2vq/is_there_any_reason_to_start_a_project_in/",
+      "snippet": "Jun 23, 2025 ... Typescript was created to solve the problem of multiple teams of developers working on large code bases they don't necessarily fully understand, ...",
+      "source": "startpage",
+      "relevance": 0.05,
+      "metadata": {
+        "engines": [
+          "startpage"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

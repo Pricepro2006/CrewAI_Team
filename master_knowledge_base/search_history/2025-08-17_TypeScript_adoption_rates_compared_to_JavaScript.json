@@ -1,0 +1,86 @@
+{
+  "query": "TypeScript adoption rates compared to JavaScript",
+  "timestamp": "2025-08-17T17:36:08.581Z",
+  "results": [
+    {
+      "title": "JavaScript vs. TypeScript: Is Typescript Becoming More Popular than Javascript?",
+      "url": "https://www.index.dev/blog/javascript-vs-typescript-popularity",
+      "snippet": "In the 2023 Stack Overflow Developer ... than JavaScript's 61%. This satisfaction gap is particularly pronounced in large-scale projects, where TypeScript's static typing and enhanced IDE support contribute to reduced bug rates and improved code maintainability.",
+      "source": "startpage, brave",
+      "relevance": 0.4,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "JavaScript and TypeScript Trends 2024: Insights From the Developer Ecosystem Survey | The WebStorm Blog",
+      "url": "https://blog.jetbrains.com/webstorm/2024/02/js-and-ts-trends-2024/",
+      "snippet": "Feb 14, 2024 ... There's a shift towards the more type-safe TypeScript that can improve the overall developer experience, and the confidence developers have in ...",
+      "source": "startpage, brave",
+      "relevance": 0.16666666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-07-02T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Why use triple-equal (===) in TypeScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/57125700/why-use-triple-equal-in-typescript",
+      "snippet": "Jul 20, 2019 · In JavaScript, it's commonly seen as best practice to use === instead of ==, for obvious and well-known reasons. In TypeScript, which is one to be preferred? Is there even one …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/typescript on Reddit: TypeScript is now the second most popular programming language (surpassing JS)",
+      "url": "https://www.reddit.com/r/typescript/comments/17polyv/typescript_is_now_the_second_most_popular/",
+      "snippet": "Nov 7, 2023 ... TypeScript is definitely a language. It's just JavaScript with training wheels on it. A lot of modern TS/JS programmers can't articulate the difference.",
+      "source": "startpage, brave",
+      "relevance": 0.07999999999999999,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2023-11-07T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs JavaScript Differences - 2025 : Aalpha",
+      "url": "https://www.aalpha.net/blog/typescript-vs-javascript-differences/",
+      "snippet": "A 2024 study by JetBrains showed that teams maintaining JavaScript codebases over five years spent 40% more time on regression fixes and rework compared to teams using TypeScript. Enterprises often adopt domain-driven design (DDD) to manage business complexity.",
+      "source": "startpage, brave",
+      "relevance": 0.065,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-06-14T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

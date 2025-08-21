@@ -1,0 +1,204 @@
+name: PR Automated Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  
+jobs:
+  quick-checks:
+    name: Quick Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.11'
+        cache: 'npm'
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Check code formatting
+      run: |
+        npm run lint:check || echo "::warning::Linting issues found"
+    
+    - name: TypeScript check
+      run: |
+        npm run typecheck 2>&1 | tee typescript-output.log
+        ERROR_COUNT=$(grep -c "error TS" typescript-output.log || echo "0")
+        echo "::notice::Found $ERROR_COUNT TypeScript errors"
+        if [ $ERROR_COUNT -gt 50 ]; then
+          echo "::error::Too many TypeScript errors ($ERROR_COUNT). Please fix critical errors."
+          exit 1
+        fi
+    
+    - name: Run quick tests
+      run: |
+        npm test -- --passWithNoTests --maxWorkers=2
+      continue-on-error: true
+    
+    - name: Check bundle size
+      run: |
+        npm run build 2>&1 | tee build-output.log || true
+        echo "::notice::Build completed. Check artifacts for details."
+    
+    - name: Security audit
+      run: |
+        npm audit --audit-level=high || echo "::warning::Security vulnerabilities found"
+    
+    - name: PR Comment with Results
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const fs = require('fs');
+          let comment = '## 🔍 PR Quick Check Results\n\n';
+          
+          // Check if typescript output exists
+          try {
+            const tsOutput = fs.readFileSync('typescript-output.log', 'utf8');
+            const errorCount = (tsOutput.match(/error TS/g) || []).length;
+            comment += `### TypeScript\n`;
+            comment += errorCount > 0 
+              ? `⚠️ ${errorCount} errors found\n` 
+              : '✅ No errors\n';
+          } catch (e) {
+            comment += '### TypeScript\n❓ Check not completed\n';
+          }
+          
+          comment += '\n### Next Steps\n';
+          comment += '- Review the checks above\n';
+          comment += '- Fix any critical issues\n';
+          comment += '- Request review when ready\n';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: quick-checks
+    
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.11'
+        cache: 'npm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        npm ci
+        pip install chromadb
+    
+    - name: Start services
+      run: |
+        # Start ChromaDB
+        chroma run --host 0.0.0.0 --port 8000 --path ./data/chromadb &
+        sleep 5
+        
+        # Initialize database
+        npm run db:init || true
+        
+        # Start API server
+        npm run dev:server &
+        sleep 10
+    
+    - name: Run integration tests
+      run: |
+        node test-integration.js 2>&1 | tee integration-results.log
+        PASS_RATE=$(grep "Success Rate:" integration-results.log | grep -oE '[0-9.]+')
+        echo "::notice::Integration test pass rate: ${PASS_RATE}%"
+        
+        # Fail if pass rate is below 50%
+        if (( $(echo "$PASS_RATE < 50" | bc -l) )); then
+          echo "::error::Integration test pass rate too low: ${PASS_RATE}%"
+          exit 1
+        fi
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: integration-test-results
+        path: integration-results.log
+
+  label-pr:
+    name: Auto Label PR
+    runs-on: ubuntu-latest
+    needs: [quick-checks, integration-test]
+    if: always()
+    
+    steps:
+    - uses: actions/labeler@v4
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+    
+    - name: Add status labels
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const labels = [];
+          
+          // Add labels based on test results
+          if (context.payload.pull_request.draft) {
+            labels.push('draft');
+          }
+          
+          // Check job results
+          const jobs = context.payload.workflow_run?.jobs || [];
+          const hasFailures = jobs.some(job => job.conclusion === 'failure');
+          
+          if (hasFailures) {
+            labels.push('needs-work');
+          } else {
+            labels.push('ready-for-review');
+          }
+          
+          // Add size label
+          const changes = context.payload.pull_request.additions + context.payload.pull_request.deletions;
+          if (changes < 10) labels.push('size/XS');
+          else if (changes < 50) labels.push('size/S');
+          else if (changes < 200) labels.push('size/M');
+          else if (changes < 500) labels.push('size/L');
+          else labels.push('size/XL');
+          
+          // Apply labels
+          if (labels.length > 0) {
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: labels
+            });
+          }

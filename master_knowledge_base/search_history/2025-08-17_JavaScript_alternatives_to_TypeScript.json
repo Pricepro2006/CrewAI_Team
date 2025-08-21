@@ -1,0 +1,86 @@
+{
+  "query": "JavaScript alternatives to TypeScript",
+  "timestamp": "2025-08-17T17:33:22.971Z",
+  "results": [
+    {
+      "title": "10 More TypeScript Alternatives | HackerNoon",
+      "url": "https://hackernoon.com/10-more-typescript-alternatives",
+      "snippet": "Its optional static typing, class-based object-oriented programming, and easy integration with the existing JavaScript codebase are just a few of its benefits. Some of its alternatives like Flow, Dart, and PureScript offer similar features to TypeScript, but they may not have the same level ...",
+      "source": "startpage, brave",
+      "relevance": 0.3,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2023-02-21T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/typescript on Reddit: JSDoc as an alternative TypeScript syntax",
+      "url": "https://www.reddit.com/r/typescript/comments/1ayrgjq/jsdoc_as_an_alternative_typescript_syntax/",
+      "snippet": "It's not an alternative. It's a hack. ... Typescript is a hack. ... Jsdoc is a great option for server side code as there's typically no compilation step. ... I started learning TypeScript recently, and wow, it broke my brain. ... TypeScript is a language for application-scale JavaScript development. TypeScript is a typed superset of JavaScript that compiles to ...",
+      "source": "startpage, brave",
+      "relevance": 0.22222222222222224,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2024-02-24T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "JSDoc: a solid alternative to TypeScript - OpenReplay Blog",
+      "url": "https://blog.openreplay.com/jsdoc--a-solid-alternative-to-typescript/",
+      "snippet": "However, this requires an extra transpiling step, which can be a bother and a time waste. This article will show you how to use JSDoc to get all the same type of controls but write plain JavaScript for the fastest development time and better documentation as well!",
+      "source": "startpage, brave",
+      "relevance": 0.10666666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "javascript - When should I use ?? (nullish coalescing) vs || (logical ...",
+      "url": "https://stackoverflow.com/questions/61480993/when-should-i-use-nullish-coalescing-vs-logical-or",
+      "snippet": "The nullish coalescing operator (??) in JavaScript only considers null or undefined as \"nullish\" values. If the left-hand side is any other value, even falsy values like \"\" (empty string), 0, or …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Comparing the Best TypeScript Alternatives [Part I] - HackerNoon",
+      "url": "https://hackernoon.com/comparing-the-best-typescript-alternatives-part-i",
+      "snippet": "TypeScript is a statically-typed language that was developed as a superset of JavaScript. CoffeeScript, on the other hand, is a dynamically-typed language that was designed to provide a more concise and expressive alternative to JavaScript.",
+      "source": "startpage, brave",
+      "relevance": 0.09166666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2023-01-31T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

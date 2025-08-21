@@ -1,0 +1,75 @@
+# Prometheus Configuration for Walmart Grocery Agent Monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "prometheus-alerts.yml"
+
+# Scrape configuration
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Main Walmart Application
+  - job_name: 'walmart-app'
+    static_configs:
+      - targets: ['walmart-app:3000']
+    metrics_path: '/api/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Microservices
+  - job_name: 'pricing-service'
+    static_configs:
+      - targets: ['pricing-service:3007']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'nlp-service'
+    static_configs:
+      - targets: ['nlp-service:3008']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'cache-warmer'
+    static_configs:
+      - targets: ['cache-warmer:3006']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'websocket-gateway'
+    static_configs:
+      - targets: ['websocket-gateway:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Health Monitor
+  - job_name: 'health-monitor'
+    static_configs:
+      - targets: ['health-monitor:3010']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Redis monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Node.js application metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['walmart-app:3000']
+    metrics_path: '/api/node-metrics'

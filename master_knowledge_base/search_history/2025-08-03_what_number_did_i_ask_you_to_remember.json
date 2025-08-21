@@ -1,0 +1,31 @@
+{
+  "query": "what number did i ask you to remember",
+  "timestamp": "2025-08-03T19:27:11.971Z",
+  "results": [
+    {
+      "title": "what number did i ask you to remember - Result 1",
+      "url": "https://example.com/search?q=what%20number%20did%20i%20ask%20you%20to%20remember&result=1",
+      "snippet": "Information about what number did i ask you to remember. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "what number did i ask you to remember - Result 2",
+      "url": "https://example.com/search?q=what%20number%20did%20i%20ask%20you%20to%20remember&result=2",
+      "snippet": "Information about what number did i ask you to remember. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "what number did i ask you to remember - Result 3",
+      "url": "https://example.com/search?q=what%20number%20did%20i%20ask%20you%20to%20remember&result=3",
+      "snippet": "Information about what number did i ask you to remember. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

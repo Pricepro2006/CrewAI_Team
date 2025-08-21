@@ -1,0 +1,314 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "walmart-grocery-metrics",
+    "title": "Walmart Grocery Agent Performance Metrics",
+    "tags": ["walmart", "grocery", "ollama", "cache", "performance"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "type": "graph",
+        "title": "Ollama Queue Depth & Processing",
+        "targets": [
+          {
+            "expr": "ollama_queue_depth",
+            "legendFormat": "Queue Depth",
+            "refId": "A"
+          },
+          {
+            "expr": "ollama_active_requests",
+            "legendFormat": "Active Requests",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(ollama_processing_time_seconds_sum[5m]) / rate(ollama_processing_time_seconds_count[5m])",
+            "legendFormat": "Avg Processing Time",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          { "format": "short", "label": "Count" },
+          { "format": "s", "label": "Time" }
+        ]
+      },
+      {
+        "id": 2,
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "type": "graph",
+        "title": "Cache Performance",
+        "targets": [
+          {
+            "expr": "rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m]))",
+            "legendFormat": "{{cache_type}} Hit Rate",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(cache_response_time_seconds_bucket[5m]))",
+            "legendFormat": "{{cache_type}} P95 Response Time",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "Hit Rate" },
+          { "format": "s", "label": "Response Time" }
+        ]
+      },
+      {
+        "id": 3,
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "type": "graph",
+        "title": "API Response Times",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P50 {{endpoint}}",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95 {{endpoint}}",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P99 {{endpoint}}",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          { "format": "s", "label": "Response Time" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 4,
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "type": "graph",
+        "title": "Error Rates",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "HTTP 5xx {{endpoint}}",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(http_requests_total{status=~\"4..\"}[5m])",
+            "legendFormat": "HTTP 4xx {{endpoint}}",
+            "refId": "B"
+          },
+          {
+            "expr": "ollama_error_rate",
+            "legendFormat": "Ollama Error Rate",
+            "refId": "C"
+          },
+          {
+            "expr": "ollama_timeout_rate",
+            "legendFormat": "Ollama Timeout Rate",
+            "refId": "D"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "Error Rate" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 5,
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "type": "graph",
+        "title": "Database Performance",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95 {{query_type}} on {{table}}",
+            "refId": "A"
+          },
+          {
+            "expr": "db_connections_active",
+            "legendFormat": "Active Connections",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(db_query_errors_total[5m])",
+            "legendFormat": "Query Errors",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          { "format": "s", "label": "Query Time" },
+          { "format": "short", "label": "Count" }
+        ]
+      },
+      {
+        "id": 6,
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "type": "graph",
+        "title": "WebSocket Metrics",
+        "targets": [
+          {
+            "expr": "websocket_connections_active",
+            "legendFormat": "Active Connections",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(websocket_messages_total[5m])",
+            "legendFormat": "Messages/sec {{direction}}",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(websocket_errors_total[5m])",
+            "legendFormat": "Errors/sec",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          { "format": "short", "label": "Count" },
+          { "format": "ops", "label": "Rate" }
+        ]
+      },
+      {
+        "id": 7,
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+        "type": "graph",
+        "title": "System Resources",
+        "targets": [
+          {
+            "expr": "system_cpu_usage_ratio",
+            "legendFormat": "CPU Usage",
+            "refId": "A"
+          },
+          {
+            "expr": "system_memory_usage_ratio",
+            "legendFormat": "Memory Usage",
+            "refId": "B"
+          },
+          {
+            "expr": "system_load_average_1m",
+            "legendFormat": "Load Average (1m)",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "Usage", "max": 1 },
+          { "format": "short", "label": "Load" }
+        ]
+      },
+      {
+        "id": 8,
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+        "type": "graph",
+        "title": "Ollama Throughput",
+        "targets": [
+          {
+            "expr": "ollama_throughput_1min",
+            "legendFormat": "1 min",
+            "refId": "A"
+          },
+          {
+            "expr": "ollama_throughput_5min",
+            "legendFormat": "5 min",
+            "refId": "B"
+          },
+          {
+            "expr": "ollama_throughput_15min",
+            "legendFormat": "15 min",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "Requests/min" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 9,
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 32 },
+        "type": "stat",
+        "title": "Ollama Success Rate",
+        "targets": [
+          {
+            "expr": "ollama_success_rate",
+            "refId": "A"
+          }
+        ],
+        "format": "percentunit",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            { "value": null, "color": "red" },
+            { "value": 0.8, "color": "yellow" },
+            { "value": 0.95, "color": "green" }
+          ]
+        }
+      },
+      {
+        "id": 10,
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 32 },
+        "type": "stat",
+        "title": "Cache Hit Rate (Overall)",
+        "targets": [
+          {
+            "expr": "sum(rate(cache_hits_total[5m])) / (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))",
+            "refId": "A"
+          }
+        ],
+        "format": "percentunit",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            { "value": null, "color": "red" },
+            { "value": 0.7, "color": "yellow" },
+            { "value": 0.9, "color": "green" }
+          ]
+        }
+      },
+      {
+        "id": 11,
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 32 },
+        "type": "stat",
+        "title": "API Error Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"[45]..\"}[5m])) / sum(rate(http_requests_total[5m]))",
+            "refId": "A"
+          }
+        ],
+        "format": "percentunit",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            { "value": null, "color": "green" },
+            { "value": 0.01, "color": "yellow" },
+            { "value": 0.05, "color": "red" }
+          ]
+        }
+      },
+      {
+        "id": 12,
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 32 },
+        "type": "stat",
+        "title": "Active WS Connections",
+        "targets": [
+          {
+            "expr": "websocket_connections_active",
+            "refId": "A"
+          }
+        ],
+        "format": "short",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            { "value": null, "color": "green" },
+            { "value": 100, "color": "yellow" },
+            { "value": 500, "color": "red" }
+          ]
+        }
+      }
+    ]
+  }
+}

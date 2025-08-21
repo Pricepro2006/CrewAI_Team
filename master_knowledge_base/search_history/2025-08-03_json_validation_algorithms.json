@@ -1,0 +1,31 @@
+{
+  "query": "json validation algorithms",
+  "timestamp": "2025-08-03T19:30:30.008Z",
+  "results": [
+    {
+      "title": "json validation algorithms - Result 1",
+      "url": "https://example.com/search?q=json%20validation%20algorithms&result=1",
+      "snippet": "Information about json validation algorithms. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "json validation algorithms - Result 2",
+      "url": "https://example.com/search?q=json%20validation%20algorithms&result=2",
+      "snippet": "Information about json validation algorithms. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "json validation algorithms - Result 3",
+      "url": "https://example.com/search?q=json%20validation%20algorithms&result=3",
+      "snippet": "Information about json validation algorithms. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

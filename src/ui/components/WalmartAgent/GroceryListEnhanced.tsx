@@ -151,7 +151,11 @@ export const GroceryListEnhanced: React.FC = () => {
     conversationId,
     userId,
     onPriceChange: handlePriceChange,
-    onDealDetected: (dealInfo: { productName?: string }) => {
+    onDealDetected: (dealInfo: unknown) => {
+      // Type guard to check if dealInfo has productName
+      const info = dealInfo as { productName?: string } | null;
+      const productName = info?.productName;
+      
       // Flash savings indicator
       setSavingsFlash(true);
       setTimeout(() => setSavingsFlash(false), 2000);
@@ -160,7 +164,7 @@ export const GroceryListEnhanced: React.FC = () => {
       const notification = {
         id: `deal-${Date.now()}`,
         type: 'deal_detected' as const,
-        message: `🎉 New deal detected on ${dealInfo.productName || 'an item'}!`,
+        message: `🎉 New deal detected on ${productName || 'an item'}!`,
         timestamp: Date.now(),
         show: true,
       };

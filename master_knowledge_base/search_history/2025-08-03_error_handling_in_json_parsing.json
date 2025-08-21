@@ -1,0 +1,31 @@
+{
+  "query": "error handling in json parsing",
+  "timestamp": "2025-08-03T19:30:30.235Z",
+  "results": [
+    {
+      "title": "error handling in json parsing - Result 1",
+      "url": "https://example.com/search?q=error%20handling%20in%20json%20parsing&result=1",
+      "snippet": "Information about error handling in json parsing. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "error handling in json parsing - Result 2",
+      "url": "https://example.com/search?q=error%20handling%20in%20json%20parsing&result=2",
+      "snippet": "Information about error handling in json parsing. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "error handling in json parsing - Result 3",
+      "url": "https://example.com/search?q=error%20handling%20in%20json%20parsing&result=3",
+      "snippet": "Information about error handling in json parsing. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

@@ -1,0 +1,84 @@
+{
+  "query": "TypeScript vs other languages",
+  "timestamp": "2025-08-17T17:10:31.698Z",
+  "results": [
+    {
+      "title": "Compared to other statically typed languages, is TypeScript considered inferior? - Quora",
+      "url": "https://www.quora.com/Compared-to-other-statically-typed-languages-is-TypeScript-considered-inferior",
+      "snippet": "Answer (1 of 8): It depends which statically typed language you compare it to. Overall, I would say the type system in TypeScript is superior to most other popular programming languages, though perhaps not to all. There’s the elephant in the room: You’re always interacting with a dynamically ...",
+      "source": "startpage, brave",
+      "relevance": 0.13333333333333333,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "I have a strange take - I think Typescript types are better most other languages... | Hacker News",
+      "url": "https://news.ycombinator.com/item?id=35185996",
+      "snippet": "If we could push JavaScript performance to be another order of magnitude faster it wouldn't be necessary to use other languages, imho. Of course, pushing it that far without effectively creating a new one would be difficult, to say the least · By comparison, JavaScript (and by extension, ...",
+      "source": "startpage, brave",
+      "relevance": 0.11666666666666665,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Is Typescript a genuinely good language, or is it only loved because ...",
+      "url": "https://www.reddit.com/r/typescript/comments/1867eqi/is_typescript_a_genuinely_good_language_or_is_it/",
+      "snippet": "Nov 28, 2023 ... Hey, gotta say Typescript is a solid language on its own too! yeah it does make JS work easier with its static typing and all, but it's not just ...",
+      "source": "startpage",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "startpage"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Why use triple-equal (===) in TypeScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/57125700/why-use-triple-equal-in-typescript",
+      "snippet": "Jul 20, 2019 · In JavaScript, it's commonly seen as best practice to use === instead of ==, for obvious and well-known reasons. In TypeScript, which is one to be preferred? Is there even …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript: JavaScript With Syntax For Types.",
+      "url": "https://www.typescriptlang.org/",
+      "snippet": "TypeScript extends JavaScript by adding types to the language. TypeScript speeds up your development experience by catching errors and providing fixes before you even run your code.",
+      "source": "brave",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

@@ -1,0 +1,86 @@
+{
+  "query": "JavaScript vs TypeScript",
+  "timestamp": "2025-08-17T17:31:20.522Z",
+  "results": [
+    {
+      "title": "r/reactjs on Reddit: Javascript vs typescript",
+      "url": "https://www.reddit.com/r/reactjs/comments/14784fy/javascript_vs_typescript/",
+      "snippet": "Jun 11, 2023 ... Typescript is the better version of Javascript. But building things on typescript requires extra amount of time. But it gets better. You get ...",
+      "source": "startpage, brave",
+      "relevance": 0.4,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs. JavaScript — Choosing the Right Language for Your Project",
+      "url": "https://www.sencha.com/blog/typescript-vs-javascript-choosing-the-right-language-for-your-project/",
+      "snippet": "It is basically a superset of JavaScript. This means that a valid JavaScript code is also usually a valid TypeScript code. However, the difference between TypeScript and JavaScript is that TypeScript adds static typing and other advanced features that JS lacks.",
+      "source": "startpage, brave",
+      "relevance": 0.13333333333333333,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2024-10-15T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "javascript - When should I use ?? (nullish coalescing) vs || (logical ...",
+      "url": "https://stackoverflow.com/questions/61480993/when-should-i-use-nullish-coalescing-vs-logical-or",
+      "snippet": "The nullish coalescing operator (??) in JavaScript only considers null or undefined as \"nullish\" values. If the left-hand side is any other value, even falsy values like \"\" (empty string), 0, or …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs JavaScript: Which One Is Better to Choose? - Radixweb",
+      "url": "https://radixweb.com/blog/typescript-vs-javascript",
+      "snippet": "Feb 13, 2025 ... JavaScript is best for small projects and quick prototyping due to its simplicity, whereas TypeScript is ideal for large-scale applications with ...",
+      "source": "startpage, brave",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-02-13T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What are the key differences between TypeScript and JavaScript, and when should one choose TypeScript over JavaScript? - Quora",
+      "url": "https://www.quora.com/What-are-the-key-differences-between-TypeScript-and-JavaScript-and-when-should-one-choose-TypeScript-over-JavaScript",
+      "snippet": "Answer (1 of 4): TypeScript is just JavaScript, but with a (surprisingly advanced) static type system added on top. You’d normally use it for larger projects (anything above 200–300 lines or so), where you want good IDE support for auto-complete and refactoring, and prevention of some common ...",
+      "source": "startpage, brave",
+      "relevance": 0.07333333333333333,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

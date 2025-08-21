@@ -1,0 +1,85 @@
+{
+  "query": "TypeScript vs JavaScript: which is better?",
+  "timestamp": "2025-08-17T17:22:02.984Z",
+  "results": [
+    {
+      "title": "Javascript vs typescript : r/reactjs - Reddit",
+      "url": "https://www.reddit.com/r/reactjs/comments/14784fy/javascript_vs_typescript/",
+      "snippet": "Jun 11, 2023 ... Typescript is the better version of Javascript. But building things on typescript requires extra amount of time. But it gets better. You get ...",
+      "source": "startpage, brave",
+      "relevance": 0.26666666666666666,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs JavaScript: Which One Is Better to Choose? - Radixweb",
+      "url": "https://radixweb.com/blog/typescript-vs-javascript",
+      "snippet": "Feb 13, 2025 ... JavaScript is best for small projects and quick prototyping due to its simplicity, whereas TypeScript is ideal for large-scale applications with ...",
+      "source": "startpage, brave",
+      "relevance": 0.13333333333333333,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-02-13T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript vs. JavaScript: Which One is Better? - Simplilearn.com",
+      "url": "https://www.simplilearn.com/tutorials/typescript-tutorial/typescript-vs-javascript",
+      "snippet": "3 weeks ago - TypeScript vs. JavaScript tutorial will give you a clear picture of the two languages. Know the advantages of TypeScript over JavaScript and much more now!",
+      "source": "startpage, brave",
+      "relevance": 0.11666666666666665,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Why use triple-equal (===) in TypeScript? - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/57125700/why-use-triple-equal-in-typescript",
+      "snippet": "Jul 20, 2019 · In JavaScript, it's commonly seen as best practice to use === instead of ==, for obvious and well-known reasons. In TypeScript, which is one to be preferred? Is there even …",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/learnprogramming on Reddit: What's the difference between TypeScript and JavaScript?",
+      "url": "https://www.reddit.com/r/learnprogramming/comments/zi9ora/whats_the_difference_between_typescript_and/",
+      "snippet": "",
+      "source": "brave",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

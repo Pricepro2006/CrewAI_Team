@@ -1,0 +1,47 @@
+{
+  "query": "TypeScript definition",
+  "timestamp": "2025-08-04T07:58:55.536Z",
+  "results": [
+    {
+      "title": "TypeScript - Wikipedia",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FTypeScript&rut=1e47deaa0add91985108558f401742004944e7bb7eeca62087e74a702aa0ccda",
+      "snippet": "TypeScript was released to the public in October 2012, with version 0.8, after two years of internal development at Microsoft. [13] [14] Soon after the initial public release, Miguel de Icaza praised the language, but criticized the lack of mature integrated development environment (IDE) support apart from Microsoft Visual Studio, which was unavailable then on Linux and macOS.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "TypeScript: JavaScript With Syntax For Types.",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.typescriptlang.org%2F&rut=05ea9ea31c69e7abd900a0b9b2d38a656fa7059fe85ff021dd3364358247842f",
+      "snippet": "TypeScript was such a boon to our stability and sanity that we started using it for all new code within days of starting the conversion. Felix Rieseberg at Slack covered the transition of their desktop app from JavaScript to TypeScript in their blog. Read. Open Source with TypeScript. Angular. Vue. Jest. Redux. Ionic. Probot. Deno.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "The starting point for learning TypeScript",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.typescriptlang.org%2Fdocs%2F&rut=871945d18796d25099461f068d4d3242391943bb6be571d3671e53429846bc86",
+      "snippet": "TypeScript is a superset of JavaScript that adds optional static typing and other features. This web page provides a comprehensive guide to TypeScript, including quick introductions, handbook, reference, tutorials, and learning resources.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "TypeScript Introduction - W3Schools",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.w3schools.com%2Ftypescript%2Ftypescript_intro.php&rut=a310ed668bbe6adc61fc8c15db2f52337311ad5bb2607b8f7babd827dcfacabf",
+      "snippet": "Learn what TypeScript is, why use it, and how to use it with the official compiler or code editors. TypeScript is a syntactic superset of JavaScript that adds static typing and compile time type checking.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "TypeScript - Glossary | MDN - MDN Web Docs",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fdeveloper.mozilla.org%2Fen%2DUS%2Fdocs%2FGlossary%2FTypeScript&rut=d1c1ee34bfd325a74a762b6036590314de590035059eae9d9069eef0eaff1c55",
+      "snippet": "TypeScript is a programming language that adds static type checking to JavaScript. TypeScript is a superset of JavaScript, meaning that everything available in JavaScript is also available in TypeScript, and that every JavaScript program is a syntactically legal TypeScript program.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

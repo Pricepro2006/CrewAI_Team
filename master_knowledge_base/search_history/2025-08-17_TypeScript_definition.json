@@ -1,0 +1,91 @@
+{
+  "query": "TypeScript definition",
+  "timestamp": "2025-08-17T17:10:27.569Z",
+  "results": [
+    {
+      "title": "TypeScript: JavaScript With Syntax For Types.",
+      "url": "https://www.typescriptlang.org/",
+      "snippet": "TypeScript extends JavaScript by adding types to the language. TypeScript speeds up your development experience by catching errors and providing fixes before you even run your code.",
+      "source": "bing, startpage, brave, duckduckgo",
+      "relevance": 1,
+      "metadata": {
+        "engines": [
+          "bing",
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript Introduction - W3Schools",
+      "url": "https://www.w3schools.com/typescript/typescript_intro.php",
+      "snippet": "Learn what TypeScript is, why use it, and how to use it with the official compiler or code editors. TypeScript is a syntactic superset of JavaScript that adds static typing and compile time type checking.",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.55,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript - Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/TypeScript",
+      "snippet": "1 week ago - TypeScript (abbreviated as TS) is a high-level programming language that adds static typing with optional type annotations to JavaScript. It is designed for developing large applications and transpiles to JavaScript. It is developed by Microsoft as free and open-source software released under ...",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.35,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TYPESCRIPT Definition & Meaning - Merriam-Webster",
+      "url": "https://www.merriam-webster.com/dictionary/typescript",
+      "snippet": "The meaning of TYPESCRIPT is a typewritten manuscript; especially : one intended for use as printer's copy.",
+      "source": "startpage, brave",
+      "relevance": 0.09,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Introduction to TypeScript - GeeksforGeeks",
+      "url": "https://www.geeksforgeeks.org/typescript/introduction-to-typescript/",
+      "snippet": "TypeScript is a syntactic superset of JavaScript that adds optional static typing, making it easier to write and maintain large-scale applications. Allows developers to catch errors during development rather than at runtime, improving code reliability. Enhances code readability and maintainability with features like type annotations and interfaces. Fully compatible with JavaScript, enabling ...",
+      "source": "startpage, duckduckgo",
+      "relevance": 0.07333333333333333,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

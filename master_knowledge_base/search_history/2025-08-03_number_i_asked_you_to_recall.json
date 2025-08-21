@@ -1,0 +1,31 @@
+{
+  "query": "number i asked you to recall",
+  "timestamp": "2025-08-03T19:27:12.240Z",
+  "results": [
+    {
+      "title": "number i asked you to recall - Result 1",
+      "url": "https://example.com/search?q=number%20i%20asked%20you%20to%20recall&result=1",
+      "snippet": "Information about number i asked you to recall. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "number i asked you to recall - Result 2",
+      "url": "https://example.com/search?q=number%20i%20asked%20you%20to%20recall&result=2",
+      "snippet": "Information about number i asked you to recall. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "number i asked you to recall - Result 3",
+      "url": "https://example.com/search?q=number%20i%20asked%20you%20to%20recall&result=3",
+      "snippet": "Information about number i asked you to recall. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

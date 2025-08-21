@@ -1,0 +1,31 @@
+{
+  "query": "hello in different cultures",
+  "timestamp": "2025-08-04T17:26:19.851Z",
+  "results": [
+    {
+      "title": "hello in different cultures - Result 1",
+      "url": "https://example.com/search?q=hello%20in%20different%20cultures&result=1",
+      "snippet": "Information about hello in different cultures. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "hello in different cultures - Result 2",
+      "url": "https://example.com/search?q=hello%20in%20different%20cultures&result=2",
+      "snippet": "Information about hello in different cultures. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "hello in different cultures - Result 3",
+      "url": "https://example.com/search?q=hello%20in%20different%20cultures&result=3",
+      "snippet": "Information about hello in different cultures. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

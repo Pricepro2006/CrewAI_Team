@@ -1,0 +1,31 @@
+{
+  "query": "42 as an answer in Douglas Adams' book",
+  "timestamp": "2025-08-03T19:24:13.695Z",
+  "results": [
+    {
+      "title": "42 as an answer in Douglas Adams' book - Result 1",
+      "url": "https://example.com/search?q=42%20as%20an%20answer%20in%20Douglas%20Adams'%20book&result=1",
+      "snippet": "Information about 42 as an answer in Douglas Adams' book. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "42 as an answer in Douglas Adams' book - Result 2",
+      "url": "https://example.com/search?q=42%20as%20an%20answer%20in%20Douglas%20Adams'%20book&result=2",
+      "snippet": "Information about 42 as an answer in Douglas Adams' book. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "42 as an answer in Douglas Adams' book - Result 3",
+      "url": "https://example.com/search?q=42%20as%20an%20answer%20in%20Douglas%20Adams'%20book&result=3",
+      "snippet": "Information about 42 as an answer in Douglas Adams' book. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

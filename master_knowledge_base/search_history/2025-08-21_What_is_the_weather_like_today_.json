@@ -1,0 +1,31 @@
+{
+  "query": "What is the weather like today?",
+  "timestamp": "2025-08-21T02:27:29.903Z",
+  "results": [
+    {
+      "title": "What is the weather like today? - Result 1",
+      "url": "https://example.com/search?q=What%20is%20the%20weather%20like%20today%3F&result=1",
+      "snippet": "Information about What is the weather like today?. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "What is the weather like today? - Result 2",
+      "url": "https://example.com/search?q=What%20is%20the%20weather%20like%20today%3F&result=2",
+      "snippet": "Information about What is the weather like today?. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "What is the weather like today? - Result 3",
+      "url": "https://example.com/search?q=What%20is%20the%20weather%20like%20today%3F&result=3",
+      "snippet": "Information about What is the weather like today?. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

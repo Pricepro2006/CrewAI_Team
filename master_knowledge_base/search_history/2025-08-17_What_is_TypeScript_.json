@@ -1,0 +1,90 @@
+{
+  "query": "What is TypeScript?",
+  "timestamp": "2025-08-17T20:03:55.497Z",
+  "results": [
+    {
+      "title": "TypeScript: JavaScript With Syntax For Types.",
+      "url": "https://www.typescriptlang.org/",
+      "snippet": "TypeScript is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale. Learn how to use TypeScript to describe your data, catch errors early, and convert to JavaScript.",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.9,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript Introduction - W3Schools",
+      "url": "https://www.w3schools.com/typescript/typescript_intro.php",
+      "snippet": "TypeScript being a \"Syntactic Superset\" means that it shares the same base syntax as JavaScript, but adds something to it. JavaScript is a loosely typed language. It can be difficult to understand what types of data are being passed around in JavaScript.",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.27999999999999997,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript - Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/TypeScript",
+      "snippet": "TypeScript (abbreviated as TS) is a high-level programming language that adds static typing with optional type annotations to JavaScript. It is designed for developing large applications and transpiles to JavaScript. [6] It is developed by Microsoft as free and open-source software released under an Apache License 2.0. TypeScript may be used to develop JavaScript applications for both client ...",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.24807692307692308,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What is TypeScript and why should you use it? | Contentful",
+      "url": "https://www.contentful.com/blog/what-is-typescript-and-why-should-you-use-it/",
+      "snippet": "Mar 5, 2024 ... TypeScript is a statically typed language and a superset of JavaScript that builds on top of JavaScript's existing syntax and functionality.",
+      "source": "startpage, brave",
+      "relevance": 0.13999999999999999,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2024-03-05T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What Is Typescript? | The New Stack",
+      "url": "https://thenewstack.io/what-is-typescript/",
+      "snippet": "TypeScript, a programming language created and managed by Microsoft, is an open source platform. It serves as an extension of JavaScript allowing all valid JavaScript code to be considered TypeScript code well. By integrating types into the language TypeScript enhances JavaScript functionality.",
+      "source": "startpage, brave",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": "2025-02-18T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

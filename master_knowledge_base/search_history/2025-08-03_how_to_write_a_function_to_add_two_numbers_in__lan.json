@@ -1,0 +1,47 @@
+{
+  "query": "how to write a function to add two numbers in [language]",
+  "timestamp": "2025-08-03T19:15:52.892Z",
+  "results": [
+    {
+      "title": "Write a Python Program To Add Two Numbers Using Function",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fpythonmania.org%2Fwrite%2Da%2Dpython%2Dprogram%2Dto%2Dadd%2Dtwo%2Dnumbers%2Dusing%2Dfunction%2F&rut=ad8809dc61ce6c295c20d9672615f4daa296255c59fdacf31d926ceb83e2b9c3",
+      "snippet": "In this tutorial, you will learn to write a Python program to add two numbers using function. Python's ease of use and versatility make it a fantastic language for beginners and experienced developers. Python offers a straightforward way to perform mathematical operations among its many features.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Python Program to Add Two Numbers",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.programiz.com%2Fpython%2Dprogramming%2Fexamples%2Fadd%2Dnumber&rut=b78e5d91fc7be1959e6aebbcfc45687311d85a52de6ba945678609f88c9b07bd",
+      "snippet": "In this program, you will learn to add two numbers and display it using print () function.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "How to Add Two Numbers in Python - GeeksforGeeks",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.geeksforgeeks.org%2Fpython%2Fpython%2Dprogram%2Dto%2Dadd%2Dtwo%2Dnumbers%2F&rut=bf6e7c9ac3d75480ad67d6acfb48c54d740eee635890be240911addb3a1b3cfa",
+      "snippet": "The task of adding two numbers in Python involves taking two input values and computing their sum using various techniques . For example, if a = 5 and b = 7 then after addition, the result will be 12. Using the \"+\" Operator + operator is the simplest and most direct way to add two numbers . It performs standard arithmetic addition between two values and returns the result.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Python program to add two number using function",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fcode4coding.com%2Fpython%2Dprogram%2Dto%2Dadd%2Dtwo%2Dnumber%2Dusing%2Dfunction%2F&rut=b92d9af270dbe604414903f5addc0a17fc91b2e0d21db1d253766f40feb03d56",
+      "snippet": "In this topic, we will learn a simple concept of how to add two numbers using the function in the Python programming language already we learned the same this concept using the operator in a simple way.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "How would I write a function in C which adds two numbers?",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fstackoverflow.com%2Fquestions%2F65768828%2Fhow%2Dwould%2Di%2Dwrite%2Da%2Dfunction%2Din%2Dc%2Dwhich%2Dadds%2Dtwo%2Dnumbers&rut=9632c177ddc89a5f605af13ad4525a6d89a2d9818cdee0b579d27e10251362b0",
+      "snippet": "I'm just starting out learning C. I am encountering a problem-- for practice, I am trying to write a function which consumes two number and produces the sum of these two numbers. I think my code is...",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

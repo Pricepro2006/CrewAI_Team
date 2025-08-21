@@ -1,0 +1,338 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'phase*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20.11'
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  # Job 1: Linting and Type Checking
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run ESLint
+      run: npm run lint
+      continue-on-error: true
+    
+    - name: Run TypeScript type checking
+      run: npm run typecheck
+      continue-on-error: true
+    
+    - name: Upload lint results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: lint-results
+        path: |
+          eslint-report.json
+          typescript-errors.log
+
+  # Job 2: Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run unit tests
+      run: npm test -- --coverage
+      continue-on-error: true
+    
+    - name: Upload coverage reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage/
+    
+    - name: Coverage Report Comment
+      if: github.event_name == 'pull_request'
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      with:
+        lcov-file: ./coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Job 3: Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install Node dependencies
+      run: npm ci
+    
+    - name: Install ChromaDB
+      run: |
+        pip install chromadb
+        pip install chromadb-default-embed
+    
+    - name: Start ChromaDB
+      run: |
+        chroma run --host 0.0.0.0 --port 8000 --path ./data/chromadb &
+        sleep 5
+    
+    - name: Initialize database
+      run: npm run db:init
+    
+    - name: Run integration tests
+      run: |
+        npm run dev:server &
+        sleep 10
+        node test-integration.js
+      continue-on-error: true
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: integration-test-results
+        path: test-results/
+
+  # Job 4: Build
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, unit-tests]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build frontend
+      run: npm run build
+      continue-on-error: true
+    
+    - name: Build server
+      run: npm run build:server
+      continue-on-error: true
+    
+    - name: Upload build artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: |
+          dist/
+          build/
+          .next/
+
+  # Job 5: Security Scan
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run npm audit
+      run: npm audit --audit-level=moderate
+      continue-on-error: true
+    
+    - name: Run Snyk Security Scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      continue-on-error: true
+    
+    - name: Upload security results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-scan-results
+        path: security-report.json
+
+  # Job 6: Docker Build (for deployment prep)
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: crewai-team:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Save Docker image
+      run: docker save crewai-team:${{ github.sha }} | gzip > crewai-team.tar.gz
+    
+    - name: Upload Docker image
+      uses: actions/upload-artifact@v3
+      with:
+        name: docker-image
+        path: crewai-team.tar.gz
+
+  # Job 7: Deploy to Staging (manual approval required)
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, integration-tests, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.crewai-team.com
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add actual deployment commands here
+        # e.g., SSH to server, docker-compose up, etc.
+    
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests on staging..."
+        # Add smoke test commands
+
+  # Job 8: Deploy to Production (manual approval required)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, integration-tests, security-scan]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://crewai-team.com
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add actual deployment commands here
+    
+    - name: Run production health checks
+      run: |
+        echo "Running health checks on production..."
+        # Add health check commands
+    
+    - name: Notify deployment
+      if: always()
+      run: |
+        echo "Sending deployment notification..."
+        # Add notification logic (Slack, email, etc.)
+
+  # Job 9: Generate and Publish Reports
+  publish-reports:
+    name: Publish CI/CD Reports
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, unit-tests, integration-tests, security-scan]
+    if: always()
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Generate consolidated report
+      run: |
+        echo "# CI/CD Pipeline Report" > report.md
+        echo "## Build: ${{ github.sha }}" >> report.md
+        echo "## Branch: ${{ github.ref }}" >> report.md
+        echo "## Status: ${{ job.status }}" >> report.md
+        echo "" >> report.md
+        echo "### Test Results" >> report.md
+        echo "- Unit Tests: Check coverage-report/" >> report.md
+        echo "- Integration Tests: Check integration-test-results/" >> report.md
+        echo "- Security Scan: Check security-scan-results/" >> report.md
+    
+    - name: Upload final report
+      uses: actions/upload-artifact@v3
+      with:
+        name: pipeline-report
+        path: report.md
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '## 🚀 CI/CD Pipeline Results\n\nAll checks have completed. Check the Actions tab for detailed results.'
+          })

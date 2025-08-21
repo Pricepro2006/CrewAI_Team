@@ -1,0 +1,31 @@
+{
+  "query": "What is TypeScript programming language?",
+  "timestamp": "2025-08-03T19:26:07.297Z",
+  "results": [
+    {
+      "title": "What is TypeScript programming language? - Result 1",
+      "url": "https://example.com/search?q=What%20is%20TypeScript%20programming%20language%3F&result=1",
+      "snippet": "Information about What is TypeScript programming language?. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "What is TypeScript programming language? - Result 2",
+      "url": "https://example.com/search?q=What%20is%20TypeScript%20programming%20language%3F&result=2",
+      "snippet": "Information about What is TypeScript programming language?. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "What is TypeScript programming language? - Result 3",
+      "url": "https://example.com/search?q=What%20is%20TypeScript%20programming%20language%3F&result=3",
+      "snippet": "Information about What is TypeScript programming language?. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

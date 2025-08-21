@@ -1,0 +1,47 @@
+{
+  "query": "+TypeScript+ definition",
+  "timestamp": "2025-08-03T19:15:00.635Z",
+  "results": [
+    {
+      "title": "TypeScript Cheat Sheet - GeeksforGeeks",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.geeksforgeeks.org%2Ftypescript%2Ftypescript%2Dcheat%2Dsheet%2F&rut=4939686c7c68a7cc0a66f4288cd4d9412d6798f5a594232c061cf41c8e7b6860",
+      "snippet": "Your All-in-One Learning Portal: GeeksforGeeks is a comprehensive educational platform that empowers learners across domains-spanning computer science and programming, school education, upskilling, commerce, software tools, competitive exams, and more.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Learn TypeScript - A Comprehensive Guide for Beginners",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.freecodecamp.org%2Fnews%2Ftypescript%2Dfor%2Dbeginners%2Dguide&rut=98d221ef925b4b0426f0cc8356059e683b60d7919fcc9f8505a72050f8108887",
+      "snippet": "Advantages of TypeScript. TypeScript offers several advantages over JavaScript: Improved Tooling: TypeScript's static typing enables better tooling support.Features like autocompletion, type inference, and type checking make the development process more efficient and enjoyable.. Better Documentation: TypeScript codebases are often easier to understand and maintain.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Learn TypeScript - The Ultimate Beginners Guide - freeCodeCamp.org",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.freecodecamp.org%2Fnews%2Flearn%2Dtypescript%2Dbeginners%2Dguide%2F&rut=23b1f28f9813dac257d7593f7afe6190865c03ec4ef16bd3da22ae976d087aaf",
+      "snippet": "Dynamic (any) types. Using the any type, we can basically revert TypeScript back into JavaScript:. let age: any = '100'; age = 100; age = { years: 100, months: 2, }; . It's recommended to avoid using the any type as much as you can, as it prevents TypeScript from doing its job - and can lead to bugs.. Type Aliases. Type Aliases can reduce code duplication, keeping our code DRY.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "What is TypeScript and why should I use it instead of JavaScript?",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fstackoverflow.com%2Fquestions%2F12694530%2Fwhat%2Dis%2Dtypescript%2Dand%2Dwhy%2Dshould%2Di%2Duse%2Dit%2Dinstead%2Dof%2Djavascript&rut=70e891ffb99fca007055fb8b71a219327c4cc223121c47c05ced13ed1f978996",
+      "snippet": "TypeScript's relation to JavaScript. TypeScript is a typed superset of JavaScript that compiles to plain JavaScript - typescriptlang.org. JavaScript is a programming language that is developed by ECMA's Technical Committee 39, which is a group of people composed of many different stakeholders.TC39 is a committee hosted by ECMA: an internal standards organization.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "TypeScript Cheat Sheets",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.typescriptlang.org%2Fcheatsheets%2F&rut=8eb8dcf7812ae53dec343721eacde5193bb230fc0cd2f52900077de02b411ab3",
+      "snippet": "To read later or print. Downloadable syntax reference pages for different parts of everyday TypeScript code",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

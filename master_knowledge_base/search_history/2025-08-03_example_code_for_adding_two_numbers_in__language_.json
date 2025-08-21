@@ -1,0 +1,47 @@
+{
+  "query": "example code for adding two numbers in [language]",
+  "timestamp": "2025-08-03T19:15:53.877Z",
+  "results": [
+    {
+      "title": "C Program to Add Two Integers",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.programiz.com%2Fc%2Dprogramming%2Fexamples%2Fadd%2Dnumbers&rut=7a2a195a704a83011d0dc7f56730bb893d17426971655400f8acbd84792e9301",
+      "snippet": "In this C programming example, the user is asked to enter two integers. Then, the sum of these two integers is calculated and displayed on the screen. ... DSA with step-by-step code visualization. Try now! Sale ends in . Learn DSA the way it should be — with step-by-step code visualization. Learn DSA with step-by-step code visualization. Try ...",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "C Program to Add Two Integers - GeeksforGeeks",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.geeksforgeeks.org%2Fc%2Fc%2Dprogram%2Dto%2Dadd%2Dtwo%2Dintegers%2F&rut=e6f80f613b7a9c7e20612dbec267ae5dfab5149fdd4ea340bf3969d870d75665",
+      "snippet": "Given two integers, the task is to add these integer numbers and return their sum. Examples. Input: a = 5, b = 3 Output: 8 Explanation: The sum of 5 and 3 is 8.. Input: a = -2, b = 7 Output: 5 Explanation: The sum of -2 and 7 is 5.. In C, we have multiple methods to add two numbers, such as the addition operator (+), or by using bitwise addition, which uses AND and XOR operations, or by simply ...",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Addition of two numbers in C - Programming Simplified",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.programmingsimplified.com%2Fc%2Dprogram%2Dadd%2Dtwo%2Dnumbers&rut=58e149bcac53a733d707d728b5f7c2bd9f4c242d6cdfca71a152c34976f5fca6",
+      "snippet": "Suppose you are playing a game with your friend of adding two numbers. You speak two numbers (input). ... In C language, adding two numbers is the arithmetic operation of adding them using '+' operator. For example, consider the expression (z = x + y), here x, y and z are integer variables, the sum of x and y is computed and assigned to the ...",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "C Program to Add Two Numbers - Tutorial Gateway",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.tutorialgateway.org%2Fsimple%2Dc%2Dprogram%2Dto%2Dadd%2Dtwo%2Dnumbers%2F&rut=911b0304ba8f69d9b8afa566b23e3ef4f4c80f5e1c74a364c53f3e6519f6e9d4",
+      "snippet": "This program permits the user to enter two integer values. And then, add those two integer numbers and allot the total to the variable sum. In this simple program of adding two numbers examples, First, we declared three integer values called number1, number2, and sum. The next two lines of program code invite the user to enter two integer ...",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Sum of Two Numbers in C | Simple Program with Example",
+      "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Frrtutors.com%2Fsum%2Dof%2Dtwo%2Dnumbers%2Din%2Dc&rut=d0c7499a0d6dc00e957a0e93ac2443c3703df7e37306c77b716ddc665cc95bd6",
+      "snippet": "We perform the addition of two numbers in C with the simple expression sum = num1 + num2; We display the result using printf() Different Ways to Add Two Numbers in C. There are several approaches to add two numbers in C: 1. Using User Input (as shown above) This is the most common way to implement a C program to add two numbers. 2.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

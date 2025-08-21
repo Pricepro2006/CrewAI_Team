@@ -1,0 +1,50 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022"],
+    "outDir": "../../dist/server",
+    "rootDir": "../../src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": false,
+    "types": ["node"],
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "verbatimModuleSyntax": false
+  },
+  "include": [
+    "../../src/api/**/*",
+    "../../src/core/**/*",
+    "../../src/utils/**/*",
+    "../../src/types/**/*",
+    "../../src/database/**/*",
+    "../../src/config/**/*"
+  ],
+  "exclude": [
+    "../../src/ui/**/*",
+    "../../src/client/**/*",
+    "../../node_modules",
+    "../../dist",
+    "../../coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "ESNext"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "query": "general research query",
+  "timestamp": "2025-08-17T17:55:18.534Z",
+  "results": [
+    {
+      "title": "RRC Online Research Queries - The Railroad Commission of Texas",
+      "url": "https://www.rrc.texas.gov/resource-center/research/research-queries/",
+      "snippet": "General Counsel Icon Legal Oil & Gas Icon Public Engagement · Home · Resource ... Research Query System, or Mainframe System. The data sets provided by the ...",
+      "source": "startpage, brave",
+      "relevance": 0.3,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Query sampler: generating query sets for analyzing search engines using keyword research tools - PMC",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10280501/",
+      "snippet": "This only applies if the data come ... of general search behavior. Using queries delivered by search engine providers is the most promising of the feasible approaches listed in Table 1 since both criteria (popularity consideration and topic coverage) are met. Examples are studies where researchers have access ...",
+      "source": "startpage, brave",
+      "relevance": 0.225,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "GENERAL Definition & Meaning - Merriam-Webster",
+      "url": "https://www.merriam-webster.com/dictionary/general",
+      "snippet": "The meaning of GENERAL is involving, applicable to, or affecting the whole. How to use general in a sentence.",
+      "source": "bing",
+      "relevance": 0.1,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "General (United States) - Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/General_(United_States)",
+      "snippet": "General (United States) ... In the United States military, a general is the most senior general -grade officer; it is the highest achievable commissioned officer rank (or echelon) that may be …",
+      "source": "bing",
+      "relevance": 0.05,
+      "metadata": {
+        "engines": [
+          "bing"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "My Guide to Deep Research, Prompt Engineering, and Multi-Step ...",
+      "url": "https://www.reddit.com/r/ChatGPTPro/comments/1in87ic/mastering_aipowered_research_my_guide_to_deep/",
+      "snippet": "Feb 11, 2025 ... Start general, zoom in as you go. Leverage Custom Prompts ... research query and success you've had. Upvote 1. Downvote Reply reply",
+      "source": "startpage",
+      "relevance": 0.05,
+      "metadata": {
+        "engines": [
+          "startpage"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}

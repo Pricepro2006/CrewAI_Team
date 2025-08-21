@@ -1,0 +1,304 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version tag to deploy (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  NODE_VERSION: '20.11'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  validate-deployment:
+    name: Validate Deployment Request
+    runs-on: ubuntu-latest
+    outputs:
+      can-deploy: ${{ steps.check.outputs.can-deploy }}
+      
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.version }}
+    
+    - name: Check deployment eligibility
+      id: check
+      run: |
+        # Check if tag exists
+        if ! git rev-parse ${{ github.event.inputs.version }} >/dev/null 2>&1; then
+          echo "❌ Version tag does not exist"
+          echo "can-deploy=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        
+        # Check if tests passed for this version
+        echo "✅ Version tag exists"
+        echo "can-deploy=true" >> $GITHUB_OUTPUT
+    
+    - name: Log deployment request
+      run: |
+        echo "📋 Deployment Request"
+        echo "Environment: ${{ github.event.inputs.environment }}"
+        echo "Version: ${{ github.event.inputs.version }}"
+        echo "Requested by: ${{ github.actor }}"
+        echo "Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: validate-deployment
+    if: needs.validate-deployment.outputs.can-deploy == 'true'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.version }}
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=raw,value=${{ github.event.inputs.version }}
+          type=raw,value=${{ github.event.inputs.environment }}
+          type=raw,value=latest,enable=${{ github.event.inputs.environment == 'production' }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          NODE_VERSION=${{ env.NODE_VERSION }}
+          BUILD_ENV=${{ github.event.inputs.environment }}
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.crewai-team.com
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to staging server
+      env:
+        STAGING_HOST: ${{ secrets.STAGING_HOST }}
+        STAGING_USER: ${{ secrets.STAGING_USER }}
+        STAGING_KEY: ${{ secrets.STAGING_SSH_KEY }}
+      run: |
+        echo "🚀 Deploying to staging environment"
+        
+        # Create SSH key file
+        echo "$STAGING_KEY" > deploy_key
+        chmod 600 deploy_key
+        
+        # Deploy script
+        ssh -o StrictHostKeyChecking=no -i deploy_key ${STAGING_USER}@${STAGING_HOST} << 'ENDSSH'
+          # Pull latest image
+          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          
+          # Stop existing container
+          docker stop crewai-staging || true
+          docker rm crewai-staging || true
+          
+          # Start new container
+          docker run -d \
+            --name crewai-staging \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            -p 3001:3001 \
+            -e NODE_ENV=staging \
+            -e DATABASE_PATH=/data/crewai_enhanced.db \
+            -e REDIS_URL=redis://redis:6379 \
+            -e CHROMA_URL=http://chromadb:8000 \
+            -v /opt/crewai/data:/data \
+            --network crewai-network \
+            ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          
+          # Health check
+          sleep 10
+          curl -f http://localhost:3001/health || exit 1
+          echo "✅ Staging deployment successful"
+        ENDSSH
+        
+        rm deploy_key
+    
+    - name: Run smoke tests
+      run: |
+        echo "🧪 Running smoke tests on staging"
+        curl -f https://staging.crewai-team.com/health
+        curl -f https://staging.crewai-team.com/api/health
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://crewai-team.com
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to production servers
+      env:
+        PROD_HOSTS: ${{ secrets.PROD_HOSTS }}
+        PROD_USER: ${{ secrets.PROD_USER }}
+        PROD_KEY: ${{ secrets.PROD_SSH_KEY }}
+      run: |
+        echo "🚀 Deploying to production environment"
+        
+        # Create SSH key file
+        echo "$PROD_KEY" > deploy_key
+        chmod 600 deploy_key
+        
+        # Deploy to each production server
+        IFS=',' read -ra HOSTS <<< "$PROD_HOSTS"
+        for host in "${HOSTS[@]}"; do
+          echo "Deploying to $host"
+          
+          ssh -o StrictHostKeyChecking=no -i deploy_key ${PROD_USER}@${host} << 'ENDSSH'
+            # Blue-green deployment
+            NEW_CONTAINER="crewai-green"
+            OLD_CONTAINER="crewai-blue"
+            
+            if docker ps | grep -q crewai-green; then
+              NEW_CONTAINER="crewai-blue"
+              OLD_CONTAINER="crewai-green"
+            fi
+            
+            # Pull and start new container
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+            
+            docker run -d \
+              --name $NEW_CONTAINER \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -p 3001:3001 \
+              -e NODE_ENV=production \
+              -e DATABASE_PATH=/data/crewai_enhanced.db \
+              -e REDIS_URL=redis://redis:6379 \
+              -e CHROMA_URL=http://chromadb:8000 \
+              -v /opt/crewai/data:/data \
+              --network crewai-network \
+              ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+            
+            # Health check
+            sleep 15
+            if curl -f http://localhost:3001/health; then
+              # Switch traffic and remove old container
+              docker stop $OLD_CONTAINER || true
+              docker rm $OLD_CONTAINER || true
+              echo "✅ Production deployment successful on $host"
+            else
+              # Rollback
+              docker stop $NEW_CONTAINER
+              docker rm $NEW_CONTAINER
+              echo "❌ Deployment failed on $host, rolled back"
+              exit 1
+            fi
+          ENDSSH
+        done
+        
+        rm deploy_key
+    
+    - name: Verify production deployment
+      run: |
+        echo "🔍 Verifying production deployment"
+        sleep 30
+        curl -f https://crewai-team.com/health
+        curl -f https://crewai-team.com/api/health
+        echo "✅ Production verification successful"
+
+  post-deployment:
+    name: Post-Deployment Tasks
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+    - name: Send deployment notification
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        text: |
+          Deployment ${{ job.status == 'success' && 'succeeded' || 'failed' }}
+          Environment: ${{ github.event.inputs.environment }}
+          Version: ${{ github.event.inputs.version }}
+          Deployed by: ${{ github.actor }}
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    
+    - name: Create deployment record
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const deployment = await github.rest.repos.createDeployment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: '${{ github.event.inputs.version }}',
+            task: 'deploy',
+            auto_merge: false,
+            required_contexts: [],
+            environment: '${{ github.event.inputs.environment }}',
+            description: 'Deployment of ${{ github.event.inputs.version }} to ${{ github.event.inputs.environment }}'
+          });
+          
+          await github.rest.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id: deployment.data.id,
+            state: '${{ job.status == 'success' && 'success' || 'failure' }}',
+            environment_url: '${{ github.event.inputs.environment == 'production' && 'https://crewai-team.com' || 'https://staging.crewai-team.com' }}',
+            description: 'Deployment ${{ job.status == 'success' && 'completed' || 'failed' }}'
+          });
+    
+    - name: Update release notes
+      if: github.event.inputs.environment == 'production' && job.status == 'success'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const release = await github.rest.repos.getReleaseByTag({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag: '${{ github.event.inputs.version }}'
+          });
+          
+          await github.rest.repos.updateRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: release.data.id,
+            body: release.data.body + '\n\n---\n\n✅ Deployed to production on ' + new Date().toISOString()
+          });

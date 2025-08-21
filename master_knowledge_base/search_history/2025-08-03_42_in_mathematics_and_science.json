@@ -1,0 +1,31 @@
+{
+  "query": "42 in mathematics and science",
+  "timestamp": "2025-08-03T19:26:50.003Z",
+  "results": [
+    {
+      "title": "42 in mathematics and science - Result 1",
+      "url": "https://example.com/search?q=42%20in%20mathematics%20and%20science&result=1",
+      "snippet": "Information about 42 in mathematics and science. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "42 in mathematics and science - Result 2",
+      "url": "https://example.com/search?q=42%20in%20mathematics%20and%20science&result=2",
+      "snippet": "Information about 42 in mathematics and science. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "42 in mathematics and science - Result 3",
+      "url": "https://example.com/search?q=42%20in%20mathematics%20and%20science&result=3",
+      "snippet": "Information about 42 in mathematics and science. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

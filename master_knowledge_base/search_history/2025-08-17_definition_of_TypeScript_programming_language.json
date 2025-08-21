@@ -1,0 +1,31 @@
+{
+  "query": "definition of TypeScript programming language",
+  "timestamp": "2025-08-17T16:55:43.430Z",
+  "results": [
+    {
+      "title": "definition of TypeScript programming language - Result 1",
+      "url": "https://example.com/search?q=definition%20of%20TypeScript%20programming%20language&result=1",
+      "snippet": "Information about definition of TypeScript programming language. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "definition of TypeScript programming language - Result 2",
+      "url": "https://example.com/search?q=definition%20of%20TypeScript%20programming%20language&result=2",
+      "snippet": "Information about definition of TypeScript programming language. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "definition of TypeScript programming language - Result 3",
+      "url": "https://example.com/search?q=definition%20of%20TypeScript%20programming%20language&result=3",
+      "snippet": "Information about definition of TypeScript programming language. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

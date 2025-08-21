@@ -1,0 +1,31 @@
+{
+  "query": "Random number generation algorithm",
+  "timestamp": "2025-08-03T19:18:37.076Z",
+  "results": [
+    {
+      "title": "Random number generation algorithm - Result 1",
+      "url": "https://example.com/search?q=Random%20number%20generation%20algorithm&result=1",
+      "snippet": "Information about Random number generation algorithm. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Random number generation algorithm - Result 2",
+      "url": "https://example.com/search?q=Random%20number%20generation%20algorithm&result=2",
+      "snippet": "Information about Random number generation algorithm. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Random number generation algorithm - Result 3",
+      "url": "https://example.com/search?q=Random%20number%20generation%20algorithm&result=3",
+      "snippet": "Information about Random number generation algorithm. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

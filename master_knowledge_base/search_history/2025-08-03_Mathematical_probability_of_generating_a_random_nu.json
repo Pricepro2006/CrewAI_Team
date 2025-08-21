@@ -1,0 +1,31 @@
+{
+  "query": "Mathematical probability of generating a random number",
+  "timestamp": "2025-08-03T19:19:49.818Z",
+  "results": [
+    {
+      "title": "Mathematical probability of generating a random number - Result 1",
+      "url": "https://example.com/search?q=Mathematical%20probability%20of%20generating%20a%20random%20number&result=1",
+      "snippet": "Information about Mathematical probability of generating a random number. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Mathematical probability of generating a random number - Result 2",
+      "url": "https://example.com/search?q=Mathematical%20probability%20of%20generating%20a%20random%20number&result=2",
+      "snippet": "Information about Mathematical probability of generating a random number. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Mathematical probability of generating a random number - Result 3",
+      "url": "https://example.com/search?q=Mathematical%20probability%20of%20generating%20a%20random%20number&result=3",
+      "snippet": "Information about Mathematical probability of generating a random number. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

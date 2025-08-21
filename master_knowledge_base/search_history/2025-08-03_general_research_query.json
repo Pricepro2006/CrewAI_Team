@@ -1,0 +1,31 @@
+{
+  "query": "general research query",
+  "timestamp": "2025-08-03T19:27:48.115Z",
+  "results": [
+    {
+      "title": "general research query - Result 1",
+      "url": "https://example.com/search?q=general%20research%20query&result=1",
+      "snippet": "Information about general research query. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "general research query - Result 2",
+      "url": "https://example.com/search?q=general%20research%20query&result=2",
+      "snippet": "Information about general research query. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "general research query - Result 3",
+      "url": "https://example.com/search?q=general%20research%20query&result=3",
+      "snippet": "Information about general research query. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

@@ -1,0 +1,65 @@
+[Unit]
+Description=Llama.cpp Server for CrewAI Team
+Documentation=https://github.com/ggerganov/llama.cpp
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=pricepro2006
+Group=pricepro2006
+WorkingDirectory=/home/pricepro2006/CrewAI_Team
+
+# Environment configuration
+Environment="LLAMA_PROFILE=balanced"
+Environment="LLAMA_MODEL=llama-3.2-3b-instruct.Q4_K_M.gguf"
+Environment="LLAMA_PORT=8081"
+Environment="LLAMA_HOST=0.0.0.0"
+EnvironmentFile=-/home/pricepro2006/CrewAI_Team/.env
+
+# Service execution
+ExecStart=/home/pricepro2006/CrewAI_Team/scripts/start-llama-server.sh start
+ExecStop=/home/pricepro2006/CrewAI_Team/scripts/start-llama-server.sh stop
+ExecReload=/home/pricepro2006/CrewAI_Team/scripts/start-llama-server.sh restart
+
+# PID file management
+PIDFile=/tmp/llama-server.pid
+RemainAfterExit=no
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Resource limits for AMD Ryzen 7 PRO (64GB RAM)
+LimitNOFILE=65535
+LimitCORE=infinity
+LimitMEMLOCK=infinity
+
+# CPU and memory limits
+CPUQuota=1600%                    # Allow up to 16 CPU cores
+MemoryMax=32G                     # Limit to 32GB RAM
+MemoryHigh=24G                    # Start throttling at 24GB
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=false                 # Need access to home directory
+ReadWritePaths=/home/pricepro2006/CrewAI_Team
+ReadWritePaths=/tmp
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=llama-server
+
+# Health checks
+TimeoutStartSec=120
+TimeoutStopSec=30
+WatchdogSec=60
+
+[Install]
+WantedBy=multi-user.target
+Alias=llama.service

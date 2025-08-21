@@ -1,0 +1,90 @@
+{
+  "query": "advantages of TypeScript",
+  "timestamp": "2025-08-17T17:10:28.375Z",
+  "results": [
+    {
+      "title": "Pros and Cons of TypeScript: When and Why It's Better than - AltexSoft",
+      "url": "https://www.altexsoft.com/blog/typescript-pros-and-cons/",
+      "snippet": "Technically, TypeScript is a variant of JavaScript, the number one language for many years in a row. First rolled out in 1995, JS brought interactivity to previously lifeless websites and completely changed the front-end development landscape. Currently, 95 percent of websites take advantage of ...",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.75,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": "2020-02-14T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "r/learnjavascript on Reddit: What are the pros and cons of using Typescript?",
+      "url": "https://www.reddit.com/r/learnjavascript/comments/imoh86/what_are_the_pros_and_cons_of_using_typescript/",
+      "snippet": "Sep 4, 2020 ... Overall, the code feels much stronger and less prone to gotchas. The design patterns are easier to read as well (using monads to wrap return ...",
+      "source": "startpage, brave",
+      "relevance": 0.3,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "What is TypeScript? Benefits of TypeScript and Disadvantages - itjet",
+      "url": "https://itjet.io/blog/what-is-typescript",
+      "snippet": "Jun 29, 2023 ... TypeScripts can definitely bring many advantages to your project, such as code maintainability, scalability, reduced number of bugs. But don't ...",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.25,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": "2023-06-29T00:00:00",
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "Advantages and Disadvantages of TypeScript over JavaScript",
+      "url": "https://www.geeksforgeeks.org/javascript/advantages-and-disadvantages-of-typescript-over-javascript/",
+      "snippet": "What is Typescript? TypeScript is a superset of JavaScript, designed to improve the development of simple JavaScript code by adding static typing, classes, and interfaces. This optional static typing allows for better code organization and object-oriented programming techniques.",
+      "source": "startpage, duckduckgo",
+      "relevance": 0.15,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": null,
+        "thumbnail": ""
+      }
+    },
+    {
+      "title": "TypeScript, What Good For?. The Pros and Cons of TypeScript: A… | by Chaewonkong | Medium",
+      "url": "https://medium.com/@chaewonkong/typescript-what-good-for-8240dc9173c7",
+      "snippet": "TypeScript offers many benefits, such as type safety, improved tooling, scalability, and enhanced features like interfaces and generics. However, it also comes with some drawbacks, such as a learning curve, increased compile time, a smaller ecosystem, and potential compatibility issues.",
+      "source": "startpage, brave, duckduckgo",
+      "relevance": 0.14333333333333334,
+      "metadata": {
+        "engines": [
+          "startpage",
+          "brave",
+          "duckduckgo"
+        ],
+        "category": "general",
+        "publishedDate": "2023-04-18T00:00:00",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "provider": "SearXNG"
+}
