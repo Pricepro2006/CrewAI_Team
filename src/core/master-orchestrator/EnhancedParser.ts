@@ -72,6 +72,24 @@ export class EnhancedParser {
         "deploy",
         ["deploy", "release", "publish", "launch", "ship", "distribute"],
       ],
+      [
+        "scrape",
+        [
+          "scrape",
+          "extract",
+          "pull",
+          "crawl",
+          "fetch",
+          "get content",
+          "harvest",
+          "collect",
+          "grab",
+          "retrieve content from",
+          "extract information from",
+          "get data from",
+          "download content from",
+        ],
+      ],
     ]);
   }
 
@@ -346,6 +364,27 @@ Respond with only the intent category (one word).`;
       lowerText.includes("api")
     ) {
       domains.add("web");
+    }
+
+    // Add web scraping domain detection
+    if (
+      lowerText.includes("scrape") ||
+      lowerText.includes("extract") ||
+      lowerText.includes("crawl") ||
+      lowerText.includes("pull data") ||
+      lowerText.includes("get content") ||
+      lowerText.includes("fetch") ||
+      lowerText.includes("harvest") ||
+      (entities.url && (
+        lowerText.includes("get") ||
+        lowerText.includes("extract") ||
+        lowerText.includes("content") ||
+        lowerText.includes("information")
+      ))
+    ) {
+      domains.add("scraping");
+      domains.add("tools");
+      domains.add("execution");
     }
 
     if (

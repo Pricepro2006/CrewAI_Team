@@ -1,0 +1,31 @@
+{
+  "query": "Process and respond to: tell me about our RAG system",
+  "timestamp": "2025-08-21T21:00:20.410Z",
+  "results": [
+    {
+      "title": "Process and respond to: tell me about our RAG system - Result 1",
+      "url": "https://example.com/search?q=Process%20and%20respond%20to%3A%20tell%20me%20about%20our%20RAG%20system&result=1",
+      "snippet": "Information about Process and respond to: tell me about our RAG system. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Process and respond to: tell me about our RAG system - Result 2",
+      "url": "https://example.com/search?q=Process%20and%20respond%20to%3A%20tell%20me%20about%20our%20RAG%20system&result=2",
+      "snippet": "Information about Process and respond to: tell me about our RAG system. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Process and respond to: tell me about our RAG system - Result 3",
+      "url": "https://example.com/search?q=Process%20and%20respond%20to%3A%20tell%20me%20about%20our%20RAG%20system&result=3",
+      "snippet": "Information about Process and respond to: tell me about our RAG system. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

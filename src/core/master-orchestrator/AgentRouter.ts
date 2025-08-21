@@ -61,8 +61,15 @@ export class AgentRouter {
       switch(domain.toLowerCase()) {
         case 'research':
         case 'information':
-        case 'web':
           agentScores.ResearchAgent = (agentScores.ResearchAgent || 0) + 3;
+          break;
+        case 'web':
+          // Web domain could be for research OR scraping, check context
+          if (domains.includes('scraping')) {
+            agentScores.ToolExecutorAgent = (agentScores.ToolExecutorAgent || 0) + 3;
+          } else {
+            agentScores.ResearchAgent = (agentScores.ResearchAgent || 0) + 3;
+          }
           break;
         case 'code':
         case 'programming':
@@ -82,6 +89,7 @@ export class AgentRouter {
         case 'automation':
         case 'tools':
         case 'execution':
+        case 'scraping':
           agentScores.ToolExecutorAgent = (agentScores.ToolExecutorAgent || 0) + 3;
           break;
       }
@@ -102,7 +110,11 @@ export class AgentRouter {
                    'summarize', 'explain', 'describe', 'create content', 
                    'narrative', 'story', 'report writing'],
       ToolExecutorAgent: ['execute', 'run', 'automate', 'deploy', 'integrate',
-                         'workflow', 'pipeline', 'orchestrate', 'coordinate']
+                         'workflow', 'pipeline', 'orchestrate', 'coordinate',
+                         'scrape', 'extract', 'crawl', 'fetch', 'pull data',
+                         'get content', 'harvest', 'collect', 'grab',
+                         'retrieve content', 'extract information', 'get data',
+                         'download content']
     };
     
     Object.entries(intentPatterns).forEach(([agent, patterns]) => {
@@ -127,11 +139,35 @@ export class AgentRouter {
       if (entities.documents || entities.text) {
         agentScores.WriterAgent = (agentScores.WriterAgent || 0) + 1;
       }
+      
+      // Boost ToolExecutorAgent when URLs are detected with scraping keywords
+      if (entities.url) {
+        const scrapingKeywords = ['scrape', 'extract', 'crawl', 'fetch', 'pull', 
+                                 'get content', 'harvest', 'collect', 'grab',
+                                 'retrieve', 'download'];
+        const hasScrapingIntent = scrapingKeywords.some(keyword => 
+          intentLower.includes(keyword)
+        );
+        
+        if (hasScrapingIntent) {
+          agentScores.ToolExecutorAgent = (agentScores.ToolExecutorAgent || 0) + 5;
+        }
+      }
     }
     
     // Special case: prioritize CodeAgent for explicit code requests
     if (intentLower.includes('write') && intentLower.includes('function')) {
       agentScores.CodeAgent = (agentScores.CodeAgent || 0) + 5;
+    }
+    
+    // Special case: prioritize ToolExecutorAgent for explicit scraping requests
+    if ((intentLower.includes('scrape') || 
+         intentLower.includes('extract') || 
+         intentLower.includes('crawl')) && 
+        (intentLower.includes('http') || 
+         intentLower.includes('www') || 
+         entities?.url)) {
+      agentScores.ToolExecutorAgent = (agentScores.ToolExecutorAgent || 0) + 10;
     }
     
     // Find agent with highest score

@@ -5,6 +5,8 @@ import type {
   AgentResult,
 } from "../base/AgentTypes.js";
 import type { BaseTool } from "../../tools/base/BaseTool.js";
+import { WebScraperTool } from "../../tools/web/WebScraperTool.js";
+import { WebSearchTool } from "../../tools/web/WebSearchTool.js";
 
 export class ToolExecutorAgent extends BaseAgent {
   constructor() {
@@ -112,6 +114,11 @@ export class ToolExecutorAgent extends BaseAgent {
   ): Promise<ToolExecutionPlan> {
     const availableTools = this.getTools();
 
+    // Extract URLs from the original task
+    const urlPattern = /https?:\/\/[^\s\)]+/gi;
+    const urlsInTask = task.match(urlPattern) || [];
+    const cleanedUrls = urlsInTask.map(url => url.replace(/[,;.!?]$/, ''));
+
     const examplesText = toolExamples.length > 0 
       ? `\nRelevant tool execution examples:\n${toolExamples.map(e => e.content || '').join("\n\n")}\n`
       : "";
@@ -122,6 +129,7 @@ export class ToolExecutorAgent extends BaseAgent {
       ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
       ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       ${examplesText}
+      ${cleanedUrls.length > 0 ? `\nURLs found in task: ${cleanedUrls.join(', ')}\n` : ''}
       
       Available tools:
       ${availableTools.map((t: any) => `- ${t.name || 'Unknown'}: ${t.description || 'No description'}`).join("\n")}
@@ -129,7 +137,7 @@ export class ToolExecutorAgent extends BaseAgent {
       Create a detailed plan including:
       1. Which tools to use (from the available list)
       2. Order of execution
-      3. Parameters for each tool
+      3. Parameters for each tool${cleanedUrls.length > 0 ? ' (use the URLs provided: ' + cleanedUrls.join(', ') + ')' : ''}
       4. Whether tools can run in parallel
       5. Description of the overall approach
     `;
@@ -139,7 +147,16 @@ export class ToolExecutorAgent extends BaseAgent {
     }
     
     const response = await this.generateLLMResponse(prompt);
-    const parsed = this.parseToolPlan(response.response);
+    let parsed = this.parseToolPlan(response.response);
+
+    // If we found URLs in the task and web_scraper is in the plan, ensure URLs are set
+    if (cleanedUrls.length > 0 && parsed.tools) {
+      for (const tool of parsed.tools) {
+        if (tool.name === 'web_scraper' && (!tool.parameters || !tool.parameters.url)) {
+          tool.parameters = { url: cleanedUrls[0] };
+        }
+      }
+    }
 
     return {
       tools: this.resolveTools(parsed.tools),
@@ -159,11 +176,47 @@ export class ToolExecutorAgent extends BaseAgent {
     const availableToolNames = ['web_search', 'web_scraper', 'calculator', 'file_reader'];
     for (const toolName of availableToolNames) {
       if (lowerResponse.includes(toolName.replace('_', ' ')) || lowerResponse.includes(toolName)) {
-        tools.push({
+        const toolSpec: any = {
           name: toolName,
           parameters: {},
           dependsOn: []
-        });
+        };
+        
+        // Extract URL for web_scraper tool
+        if (toolName === 'web_scraper') {
+          // Look for URLs in the response
+          const urlPattern = /https?:\/\/[^\s\)]+/gi;
+          const urls = response.match(urlPattern);
+          if (urls && urls.length > 0) {
+            // Clean up the URL (remove trailing punctuation)
+            let url = urls[0].replace(/[,;.!?]$/, '');
+            toolSpec.parameters = { url };
+          } else {
+            // Try to find URL mentioned after "scrape" or "website" or "page"
+            const scrapePattern = /(?:scrape|fetch|get|retrieve|extract|website|page|url|from)\s*(?:from\s*)?[:\s]*([^\s,]+(?:\.[a-z]+)+[^\s]*)/gi;
+            const scrapeMatch = scrapePattern.exec(response);
+            if (scrapeMatch && scrapeMatch[1]) {
+              let url = scrapeMatch[1];
+              // Add https:// if no protocol specified
+              if (!url.startsWith('http')) {
+                url = 'https://' + url;
+              }
+              toolSpec.parameters = { url };
+            }
+          }
+        }
+        
+        // Extract search query for web_search tool
+        if (toolName === 'web_search') {
+          // Look for quoted search terms or extract from context
+          const queryPattern = /(?:search|query|find|look for)[:\s]*["']([^"']+)["']/i;
+          const queryMatch = queryPattern.exec(response);
+          if (queryMatch && queryMatch[1]) {
+            toolSpec.parameters = { query: queryMatch[1] };
+          }
+        }
+        
+        tools.push(toolSpec);
       }
     }
     
@@ -390,8 +443,10 @@ export class ToolExecutorAgent extends BaseAgent {
   }
 
   protected registerDefaultTools(): void {
-    // This agent can use all tools registered to it
-    // Tools are registered externally based on requirements
+    // Register web scraping and search tools for this agent
+    this.registerTool(new WebScraperTool());
+    this.registerTool(new WebSearchTool());
+    // Additional tools can be registered externally based on requirements
   }
 
   async executeSpecificTool(
