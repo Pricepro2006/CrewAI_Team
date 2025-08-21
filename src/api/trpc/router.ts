@@ -23,6 +23,7 @@ import { agentRouter } from "../routes/agent.router.js";
 import { taskRouter } from "../routes/task.router.js";
 import { ragRouter } from "../routes/rag.router.js";
 import { chatRouter } from "../routes/chat.router.js";
+import { orchestratorRouter } from "../routes/orchestrator.router.js";
 import { websocketRouter } from "../routes/websocket.router.js";
 import { healthRouter } from "../routes/health.router.js";
 import { dataCollectionRouter } from "../routes/data-collection.router.js";
@@ -56,6 +57,7 @@ export const appRouter = router({
   task: taskRouter,
   rag: ragRouter,
   chat: chatRouter,
+  orchestrator: orchestratorRouter, // MasterOrchestrator direct access
   ws: websocketRouter, // Use 'ws' for frontend compatibility
   health: healthRouter, // Health monitoring endpoints
   dataCollection: dataCollectionRouter, // Bright Data integration

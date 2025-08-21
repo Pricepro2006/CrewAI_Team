@@ -112,41 +112,45 @@ export const GroceryListEnhanced: React.FC = () => {
     [groceryList]
   );
   
+  // Memoize price change handler to prevent infinite loops
+  const handlePriceChange = useCallback((update: { productId: string; newPrice: number; oldPrice: number; savings?: number }) => {
+    // Update grocery list with new prices
+    setGroceryList(prevList => {
+      if (!prevList) return prevList;
+      const updatedItems = prevList?.items?.map((item: GroceryItem) => 
+        item.productId === update.productId
+          ? { ...item, price: update.newPrice, originalPrice: update.oldPrice }
+          : item
+      ) || [];
+      return { ...prevList, items: updatedItems };
+    });
+    
+    // Add price change notification
+    if (update.savings && update.savings > 0) {
+      const notification = {
+        id: `price-${update.productId}-${Date.now()}`,
+        type: 'price_drop' as const,
+        message: `💰 Price dropped! Save $${update?.savings?.toFixed(2)} on an item`,
+        timestamp: Date.now(),
+        show: true,
+      };
+      
+      setNotifications(prev => [...prev.slice(-2), notification]);
+      
+      setTimeout(() => {
+        setNotifications(prev => 
+          prev?.map(n => n.id === notification.id ? { ...n, show: false } : n)
+        );
+      }, 4000);
+    }
+  }, []);
+
   // Real-time price monitoring
   const realtimePricesResult = useRealtimePrices({
     productIds: currentProductIds,
     conversationId,
     userId,
-    onPriceChange: (update: { productId: string; newPrice: number; oldPrice: number; savings?: number }) => {
-      // Update grocery list with new prices
-      if (groceryList) {
-        const updatedItems = groceryList?.items?.map((item: GroceryItem) => 
-          item.productId === update.productId
-            ? { ...item, price: update.newPrice, originalPrice: update.oldPrice }
-            : item
-        ) || [];
-        setGroceryList({ ...groceryList, items: updatedItems });
-        
-        // Add price change notification
-        if (update.savings && update.savings > 0) {
-          const notification = {
-            id: `price-${update.productId}-${Date.now()}`,
-            type: 'price_drop' as const,
-            message: `💰 Price dropped! Save $${update?.savings?.toFixed(2)} on an item`,
-            timestamp: Date.now(),
-            show: true,
-          };
-          
-          setNotifications(prev => [...prev.slice(-2), notification]);
-          
-          setTimeout(() => {
-            setNotifications(prev => 
-              prev?.map(n => n.id === notification.id ? { ...n, show: false } : n)
-            );
-          }, 4000);
-        }
-      }
-    },
+    onPriceChange: handlePriceChange,
     onDealDetected: (dealInfo: { productName?: string }) => {
       // Flash savings indicator
       setSavingsFlash(true);
@@ -191,7 +195,7 @@ export const GroceryListEnhanced: React.FC = () => {
   const connectionStatus = realtimePricesResult.connectionStatus as "connecting" | "connected" | "disconnected" | "error";
 
   // tRPC hooks - using mock implementations for missing procedures
-  const processGroceryInputMutation = {
+  const processGroceryInputMutation = useMemo(() => ({
     mutateAsync: async (params: any) => {
       // Mock implementation
       console.log('Mock processGroceryInput:', params);
@@ -200,9 +204,9 @@ export const GroceryListEnhanced: React.FC = () => {
     },
     isPending: false,
     isLoading: false
-  };
+  }), []);
 
-  const calculateTotalsMutation = {
+  const calculateTotalsMutation = useMemo(() => ({
     mutate: (params: any) => {
       // Mock implementation
       console.log('Mock calculateListTotals:', params);
@@ -227,7 +231,7 @@ export const GroceryListEnhanced: React.FC = () => {
         setTotals(mockTotals);
       }, 500);
     }
-  };
+  }), []);
 
   const getSmartRecommendationsQuery = {
     isLoading: false,
@@ -255,11 +259,15 @@ export const GroceryListEnhanced: React.FC = () => {
         location: { zipCode: location.zipCode, state: location.state },
         loyaltyMember: true,
       });
-      
-      // Subscribe to price updates for current products
+    }
+  }, [groceryList?.items?.length, calculateTotalsMutation, location.zipCode, location.state]);
+  
+  // Subscribe to price updates in a separate effect
+  useEffect(() => {
+    if (currentProductIds.length > 0) {
       subscribeToPrices(currentProductIds);
     }
-  }, [groceryList, subscribeToPrices, currentProductIds, calculateTotalsMutation, location.zipCode, location.state]);
+  }, [currentProductIds, subscribeToPrices]);
 
   // Handle natural language input submission
   const handleInputSubmit = useCallback(async (input: string) => {
@@ -340,7 +348,7 @@ export const GroceryListEnhanced: React.FC = () => {
 
   // Generate success message from API result
   const getSuccessMessage = useCallback((result: any): string => {
-    if (result.groceryList && result?.groceryList?.items?.length || 0 > 0) {
+    if (result.groceryList && (result?.groceryList?.items?.length || 0) > 0) {
       return `Updated list with ${result?.groceryList?.items?.length || 0} items`;
     } else if (result.suggestions && result?.suggestions?.length > 0) {
       return `Found ${result?.suggestions?.length} suggestions`;

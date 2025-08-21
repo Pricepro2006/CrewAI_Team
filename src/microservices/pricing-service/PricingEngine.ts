@@ -180,7 +180,7 @@ export class PricingEngine {
 
     try {
       const stmt = this?.db?.prepare(`
-        SELECT id, name, current_price, unit, in_stock
+        SELECT id, name, current_price, unit_measure as unit, in_stock
         FROM walmart_products
         WHERE id = ?
       `);

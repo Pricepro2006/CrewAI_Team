@@ -84,11 +84,12 @@ function createAppConfig(): AppConfig {
       path: credentialManager.get('DATABASE_PATH') || './data/crewai_enhanced.db',
     },
     api: {
-      port: parseInt(credentialManager.get('API_PORT') || '3000', 10),
+      port: parseInt(credentialManager.get('API_PORT') || '3001', 10),
       cors: {
         origin: process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || 
               process.env.CORS_ORIGIN?.split(',').map(o => o.trim()).filter(Boolean) || [
-          'http://localhost:3000', 
+          'http://localhost:3000',
+          'http://localhost:3001', 
           'http://localhost:5173',
           'http://localhost:5174',
           'http://localhost:5175',
@@ -155,11 +156,12 @@ const appConfig: AppConfig = {
     },
   },
   api: {
-    port: parseInt(process.env.API_PORT || '3000', 10),
+    port: parseInt(process.env.API_PORT || '3001', 10),
     cors: {
       origin: process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || 
               process.env.CORS_ORIGIN?.split(',').map(o => o.trim()).filter(Boolean) || [
-        'http://localhost:3000', 
+        'http://localhost:3000',
+        'http://localhost:3001', 
         'http://localhost:5173',
         'http://localhost:5174',
         'http://localhost:5175',

@@ -8,6 +8,15 @@ import { logger } from "../../utils/logger.js";
  */
 export function csrfValidator(skipPaths: string[] = []) {
   return (req: Request, res: Response, next: NextFunction) => {
+    // DEVELOPMENT BYPASS: Skip CSRF in development for testing agents
+    if (process.env.NODE_ENV === 'development' && process.env.SKIP_CSRF === 'true') {
+      logger.debug("CSRF bypassed in development mode", "CSRF_VALIDATOR", {
+        path: req.path,
+        method: req.method
+      });
+      return next();
+    }
+
     // Skip CSRF check for safe methods
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
       return next();

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, publicProcedure } from "../trpc/enhanced-router.js";
 import type { Router } from "@trpc/server";
 import { getAgentModel } from "../../config/model-selection.config.js";
-import { websocketService } from "../services/WebSocketService.js";
+import { wsService } from "../services/WebSocketService.js";
 
 export const agentRouter: Router<any> = router({
   // List all registered agents
@@ -92,48 +92,54 @@ export const agentRouter: Router<any> = router({
         console.error('AgentRegistry not found in execute endpoint');
         throw new Error('Agent registry not initialized');
       }
-      const agent = await ctx?.agentRegistry?.getAgent(input.agentType);
       
-      // Broadcast agent status update
-      websocketService.broadcast({
-        type: 'agent.status',
-        payload: {
-          agentId: input.agentType,
-          status: 'executing',
+      let agent;
+      try {
+        agent = await ctx?.agentRegistry?.getAgent(input.agentType);
+        
+        // Broadcast agent status update
+        wsService.broadcastAgentStatus(input.agentType, 'busy');
+
+        const result = await agent.execute(input.task, {
           task: input.task,
-          timestamp: new Date().toISOString()
+          ...(input.context?.ragDocuments && {
+            ragDocuments: input?.context?.ragDocuments,
+          }),
+          ...(input.context?.previousResults && {
+            previousResults: input?.context?.previousResults,
+          }),
+          ...(input.context?.userPreferences && {
+            userPreferences: input?.context?.userPreferences,
+          }),
+        });
+
+        // Broadcast completion
+        wsService.broadcastAgentTask(
+          input.agentType,
+          input.task, 
+          'completed',
+          result
+        );
+        wsService.broadcastAgentStatus(input.agentType, 'idle');
+
+        return result;
+      } catch (error) {
+        // Broadcast error
+        wsService.broadcastAgentTask(
+          input.agentType,
+          input.task, 
+          'failed',
+          undefined,
+          error instanceof Error ? error.message : String(error)
+        );
+        wsService.broadcastAgentStatus(input.agentType, 'error');
+        throw error;
+      } finally {
+        // Always release agent back to pool
+        if (agent) {
+          ctx?.agentRegistry?.releaseAgent(input.agentType, agent);
         }
-      });
-
-      const result = await agent.execute(input.task, {
-        task: input.task,
-        ...(input.context?.ragDocuments && {
-          ragDocuments: input?.context?.ragDocuments,
-        }),
-        ...(input.context?.previousResults && {
-          previousResults: input?.context?.previousResults,
-        }),
-        ...(input.context?.userPreferences && {
-          userPreferences: input?.context?.userPreferences,
-        }),
-      });
-
-      // Release agent back to pool
-      ctx?.agentRegistry?.releaseAgent(input.agentType, agent);
-      
-      // Broadcast completion
-      websocketService.broadcast({
-        type: 'agent.task',
-        payload: {
-          agentId: input.agentType,
-          status: 'completed',
-          task: input.task,
-          result: result ? 'success' : 'failed',
-          timestamp: new Date().toISOString()
-        }
-      });
-
-      return result;
+      }
     }),
 
   // Get agent pool status

@@ -937,7 +937,7 @@ export class WebSocketService extends EventEmitter {
     status: string;
     connections: number;
     uptime: number;
-    metrics: typeof this.performanceMetrics & {
+    metrics: Record<string, unknown> & {
       connectionStats: ReturnType<WebSocketService["getConnectionStats"]>;
     };
   } {
