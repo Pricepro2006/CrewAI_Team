@@ -1,4 +1,4 @@
-import { LLMProviderManager, LLMProvider } from "../llm/LLMProviderManager.js";
+import { llmProviderManager, LLMProviderManager, LLMProvider } from "../llm/LLMProviderManager.js";
 import type { EmailAnalysisResult } from "../../api/services/EmailStorageService.js";
 import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
 import { RAGSystem } from "../rag/RAGSystem.js";
@@ -17,6 +17,8 @@ import type {
 import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types.js";
 import { logger, createPerformanceMonitor } from "../../utils/logger.js";
 import { wsService } from "../../api/services/WebSocketService.js";
+import { responseCache } from "../llm/ResponseCache.js";
+import { PromptOptimizer } from "../llm/PromptOptimizer.js";
 import {
   withTimeout,
   DEFAULT_TIMEOUTS,
@@ -74,8 +76,8 @@ export class MasterOrchestrator {
 
   private async initializeLLMProvider(): Promise<void> {
     try {
-      // Use the new LLMProviderManager
-      this.llm = new LLMProviderManager();
+      // Use the singleton LLMProviderManager instance
+      this.llm = llmProviderManager;
       await this.llm.initialize();
       
       const llmManager = this.llm as LLMProviderManager;
@@ -265,6 +267,26 @@ export class MasterOrchestrator {
       conversationId: query.conversationId,
     });
 
+    // Check cache first for instant responses
+    const cachedResponse = responseCache.get(query.text);
+    if (cachedResponse) {
+      logger.info("Using cached response", "ORCHESTRATOR", {
+        query: query.text.substring(0, 50)
+      });
+      
+      perf.end();
+      return {
+        success: true,
+        summary: cachedResponse,
+        confidence: 1.0,
+        metadata: {
+          source: "cache",
+          responseTime: perf.getDuration(),
+          timestamp: new Date().toISOString()
+        }
+      };
+    }
+
     try {
       // Step 0: Enhanced query analysis with timeout
       let queryAnalysis;
@@ -292,6 +314,25 @@ export class MasterOrchestrator {
         priority: queryAnalysis.priority,
         estimatedDuration: queryAnalysis.estimatedDuration,
       });
+
+      // Check if this is a system-related question about capabilities
+      // These should use internal knowledge, not external research
+      const systemQuestionPatterns = [
+        'which tools', 'what tools', 'available tools', 'your tools',
+        'which agents', 'what agents', 'available agents', 'your agents',
+        'capabilities', 'what can you', 'what do you', 'how do you work',
+        'your functions', 'your features', 'system info', 'about you'
+      ];
+      
+      const isSystemQuestion = systemQuestionPatterns.some(pattern => 
+        query.text.toLowerCase().includes(pattern)
+      );
+
+      if (isSystemQuestion) {
+        // Override the intent to 'system_info' so it doesn't get routed to ResearchAgent
+        queryAnalysis.intent = 'system_info';
+        queryAnalysis.domains = ['system', 'capabilities'];
+      }
 
       // Step 0.5: Create intelligent agent routing plan with timeout
       const routingPlan = await withTimeout(
@@ -425,6 +466,14 @@ export class MasterOrchestrator {
         totalSteps: result.metadata?.["totalSteps"],
       });
 
+      // Cache successful responses for future use
+      if (result.success && result.summary) {
+        responseCache.set(query.text, result.summary);
+        logger.debug("Response cached for future use", "ORCHESTRATOR", {
+          query: query.text.substring(0, 50)
+        });
+      }
+
       perf.end({ success: true });
       return result;
     } catch (error) {
@@ -464,6 +513,7 @@ export class MasterOrchestrator {
       throw error;
     }
   }
+
 
   private async createPlan(
     query: Query,
@@ -540,9 +590,55 @@ export class MasterOrchestrator {
     `
       : "";
 
+    // Add system context for system-info questions
+    const systemContext = analysis?.intent === 'system_info' ? `
+      
+      SYSTEM CAPABILITIES:
+      You oversee a team of 6 specialized agents with the following capabilities:
+      
+      1. ResearchAgent:
+         - Web search (DuckDuckGo/SearXNG)
+         - Information gathering and fact-checking
+         - Content extraction from web pages
+         
+      2. CodeAgent:
+         - Code generation in multiple languages
+         - Debugging and code analysis
+         - Algorithm implementation
+         
+      3. DataAnalysisAgent:
+         - Data processing and statistics
+         - Pattern recognition and insights
+         - Visualization and reporting
+         
+      4. WriterAgent:
+         - Content creation and documentation
+         - Summarization and explanations
+         - Report writing
+         
+      5. ToolExecutorAgent:
+         - Web scraping (WebScraperTool with Axios/Cheerio)
+         - Tool coordination and automation
+         - External API integration
+         
+      6. EmailAnalysisAgent:
+         - Email processing and categorization
+         - Chain analysis and threading
+         - Business intelligence extraction
+      
+      Additional System Features:
+      - RAG System with ChromaDB vector store for semantic search
+      - LLM: Llama 3.2 3B model for intelligent responses
+      - WebSocket real-time updates
+      - Walmart grocery tracking system
+      - Redis queue management
+      
+      When answering system questions, provide specific, accurate information about these capabilities.
+    ` : "";
+
     const prompt = `
       You are the Master Orchestrator. Create a detailed plan to address this query:
-      "${query.text}"${analysisContext}${routingContext}${ragContext}
+      "${query.text}"${analysisContext}${routingContext}${ragContext}${systemContext}
       
       Break down the task into clear, actionable steps considering the analysis, routing context, and relevant knowledge base information.
       For each step, determine:

@@ -4,6 +4,7 @@ import type {
   AgentContext,
   AgentResult,
 } from "../base/AgentTypes.js";
+import { PromptOptimizer } from "../../llm/PromptOptimizer.js";
 
 
 export class DataAnalysisAgent extends BaseAgent {
@@ -295,16 +296,18 @@ export class DataAnalysisAgent extends BaseAgent {
     task: string,
     context: AgentContext,
   ): Promise<AnalysisResult> {
-    const prompt = `
-      Perform data analysis for: ${task}
-      
-      ${context.ragDocuments ? `Data:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
-      
-      Provide comprehensive analysis including relevant statistics, 
-      patterns, insights, and recommendations.
-    `;
+    const dataContext = context.ragDocuments ? 
+      context?.ragDocuments?.map((d: any) => d.content).join("\n").substring(0, 500) : "";
+    
+    const prompt = PromptOptimizer.createQuickPrompt(
+      `${task}. Data: ${dataContext}`,
+      "DataAnalysis"
+    );
 
-    const llmResponse = await this.generateLLMResponse(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt, {
+      maxTokens: 300,  // Reduced for faster response
+      temperature: 0.7
+    });
     const analysis = llmResponse?.response;
 
     return {

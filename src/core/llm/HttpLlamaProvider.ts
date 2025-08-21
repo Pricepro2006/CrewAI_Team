@@ -20,7 +20,7 @@ export class HttpLlamaProvider implements LLMProviderInterface {
     
     this.client = axios.create({
       baseURL: this.baseUrl,
-      timeout: 30000, // 30 second timeout
+      timeout: 60000, // 60 second timeout for complex prompts
       headers: {
         'Content-Type': 'application/json',
       },
@@ -56,7 +56,7 @@ export class HttpLlamaProvider implements LLMProviderInterface {
         messages: [
           {
             role: "system",
-            content: "You are a helpful AI assistant."
+            content: options.systemPrompt || "You are an AI assistant in the CrewAI Team system, a multi-agent framework with specialized agents for research, coding, data analysis, writing, and tool execution. Be helpful, specific, and informative about the system's capabilities when asked."
           },
           {
             role: "user",
@@ -94,14 +94,31 @@ export class HttpLlamaProvider implements LLMProviderInterface {
           : 0,
       };
     } catch (error) {
-      logger.error('Failed to generate text', 'HTTP_LLAMA', { error });
-      
+      // Enhanced error logging
       if (axios.isAxiosError(error)) {
+        logger.error('HTTP request failed', 'HTTP_LLAMA', {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          url: error.config?.url,
+          method: error.config?.method
+        });
+        
         if (error.code === 'ECONNREFUSED') {
           throw new Error('Llama server is not running. Please start it with: ./llama.cpp/build/bin/llama-server -m ./models/llama-3.2-3b-instruct.Q4_K_M.gguf --host 0.0.0.0 --port 8081');
         }
-        throw new Error(`HTTP request failed: ${error.message}`);
+        
+        // Include response data in error message if available
+        const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+        throw new Error(`HTTP request failed: ${errorMessage} (status: ${error.response?.status})`);
       }
+      
+      logger.error('Failed to generate text', 'HTTP_LLAMA', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
       throw error;
     }

@@ -5,6 +5,7 @@ import type {
   AgentResult,
 } from "../base/AgentTypes.js";
 import { sanitizeLLMOutput } from "../../../utils/output-sanitizer.js";
+import { PromptOptimizer } from "../../llm/PromptOptimizer.js";
 
 export class WriterAgent extends BaseAgent {
   constructor() {
@@ -116,25 +117,18 @@ export class WriterAgent extends BaseAgent {
     context: AgentContext,
     ragContext: string = ""
   ): Promise<WritingTaskAnalysis> {
-    const prompt = `
-      Analyze this writing task: "${task}"
-      
-      ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
-      
-      Provide a detailed analysis including:
-      1. Content type: article, report, email, creative, technical, or general
-      2. Writing style: formal, casual, persuasive, informative, narrative
-      3. Target audience
-      4. Key requirements
-      5. Desired length
-    `;
+    // Simplified analysis for faster processing
+    const optimizedPrompt = `Task: "${task}"
+Determine: content type (article/report/email/creative/technical/general) and style (formal/casual).`;
 
     if (!this.llm) {
       throw new Error("LLM provider not initialized");
     }
     
-    const response = await this.generateLLMResponse(prompt);
+    const response = await this.generateLLMResponse(optimizedPrompt, {
+      maxTokens: 100,  // Very short analysis
+      temperature: 0.5
+    });
     return this.parseWritingTaskAnalysis(response.response);
   }
 
@@ -405,19 +399,18 @@ export class WriterAgent extends BaseAgent {
     task: string,
     context: AgentContext,
   ): Promise<WritingResult> {
-    const prompt = `
-      Complete this writing task: ${task}
-      
-      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
-      
-      Create well-written content that addresses all requirements.
-    `;
+    // Use optimized prompt for faster response
+    const optimizedPrompt = PromptOptimizer.createQuickPrompt(task, "Writer");
 
     if (!this.llm) {
       throw new Error("LLM provider not initialized");
     }
     
-    const contentResponse = await this.generateLLMResponse(prompt);
+    // Use reduced max tokens for faster generation
+    const contentResponse = await this.generateLLMResponse(optimizedPrompt, {
+      maxTokens: 300,  // Reduced from default 2048
+      temperature: 0.7
+    });
     const content = contentResponse.response;
 
     return {

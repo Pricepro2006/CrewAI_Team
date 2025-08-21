@@ -10,6 +10,7 @@ import { WebScraperTool } from "../../tools/web/WebScraperTool.js";
 import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider.js";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout.js";
 import { BusinessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer.js";
+import { PromptOptimizer } from "../../llm/PromptOptimizer.js";
 
 const businessSearchPromptEnhancer = new BusinessSearchPromptEnhancer();
 import { SearchKnowledgeService } from "../../services/SearchKnowledgeService.js";
@@ -501,33 +502,24 @@ export class ResearchAgent extends BaseAgent {
     // Check if this is a business-related query
     const isBusinessQuery = !businessSearchPromptEnhancer.isAlreadyEnhanced(task);
 
-    // Increase content size for business queries to capture contact info
-    const contentLength = isBusinessQuery ? 1500 : 500;
+    // Use shorter content for faster processing  
+    const contentLength = isBusinessQuery ? 300 : 200;
 
-    let basePrompt = `
-      Synthesize the following research findings to answer the task: "${task}"
-      ${cachedContext}
-      Research Findings:
-      ${topResults
-        .map(
-          (r, i) => `
-        ${i + 1}. Source: ${r.source}
-        Title: ${r.title}
-        Content: ${r?.content?.substring(0, contentLength)}...
-        Relevance: ${r.relevance}
-      `,
-        )
-        .join("\n\n")}
+    // Build compact research findings
+    const findings = topResults
+      .map((r, i) => `${i + 1}. ${r.source}: ${r?.content?.substring(0, contentLength)}`)
+      .join("\n");
+
+    // Use optimized prompt for faster response
+    let basePrompt = PromptOptimizer.optimize(
+      `Task: "${task}"
+      ${cachedContext ? `Context: ${cachedContext}` : ''}
+      Findings:
+      ${findings}
       
-      Create a comprehensive summary that:
-      1. Directly addresses the original task
-      2. Integrates information from multiple sources
-      3. Highlights key facts and insights
-      4. Notes any conflicting information
-      5. Maintains objectivity
-      
-      Format the response in clear paragraphs.
-    `;
+      Synthesize into a direct answer.`,
+      findings
+    );
 
     // Enhance the prompt for business queries
     if (isBusinessQuery) {
@@ -583,7 +575,10 @@ export class ResearchAgent extends BaseAgent {
     }
 
     const llmResponse = await withTimeout(
-      this.generateLLMResponse(basePrompt),
+      this.generateLLMResponse(basePrompt, {
+        maxTokens: 300,  // Reduced for faster response
+        temperature: 0.7
+      }),
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM synthesis timed out",
     );
