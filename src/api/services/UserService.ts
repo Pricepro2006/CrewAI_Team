@@ -37,7 +37,8 @@ export class UserService {
   private db: OptimizedQueryExecutor;
 
   constructor(dbPath?: string) {
-    const path = dbPath || appConfig?.database?.path;
+    // UserService needs app.db which contains the users table, not crewai_enhanced.db
+    const path = dbPath || './data/app.db';
     this.db = getDatabase(path);
   }
 

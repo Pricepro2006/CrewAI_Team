@@ -51,8 +51,8 @@ const piiRedactor = new PIIRedactor({
  * This ensures all services share the same connection pool and cache
  */
 export function getDatabase(dbPath?: string): OptimizedQueryExecutorClass {
-  // Default to main database if no path specified
-  const finalPath = dbPath || process.env.DATABASE_PATH || './crewai.db';
+  // Default to main database if no path specified - using crewai_enhanced.db as per documentation
+  const finalPath = dbPath || process.env.DATABASE_PATH || './data/crewai_enhanced.db';
   const absolutePath = path.resolve(finalPath);
   
   // Return existing instance if available

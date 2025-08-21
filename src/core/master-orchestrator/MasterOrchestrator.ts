@@ -470,27 +470,28 @@ export class MasterOrchestrator {
     analysis?: QueryAnalysis,
     routingPlan?: AgentRoutingPlan,
   ): Promise<Plan> {
-    // Use simple plan generator only as fallback or when explicitly requested
-    const USE_SIMPLE_PLAN = process.env["USE_SIMPLE_PLAN"] === "true"; // Changed default to false
+    // TEMPORARY: Always use simple plan to bypass RAG timeout issues
+    const USE_SIMPLE_PLAN = true; // Force simple plan until RAG is fixed
     const isComplexQuery = this.isComplexQuery(query, analysis);
     
-    // Use LLM for complex queries unless simple plan is forced
-    if (USE_SIMPLE_PLAN && !isComplexQuery) {
+    // Use simple plan for now
+    if (!isComplexQuery || USE_SIMPLE_PLAN) {
       logger.info(
-        "Using simple plan generator for basic query",
+        "Using simple plan generator (RAG bypass mode)",
         "ORCHESTRATOR",
       );
       return SimplePlanGenerator.createSimplePlan(query, routingPlan);
     }
     
-    // For complex queries, always try LLM first
+    // For complex queries when RAG is fixed
     if (isComplexQuery && !this.llm) {
       logger.warn("Complex query detected but LLM unavailable, using enhanced simple plan", "ORCHESTRATOR");
       return SimplePlanGenerator.createMultiAgentPlan(query, routingPlan, analysis);
     }
     
-    // Retrieve relevant context from RAG system
+    // Skip RAG for now - it's causing timeouts
     let ragContext = "";
+    /* DISABLED: RAG causing timeouts
     try {
       logger.debug("Searching knowledge base for relevant context", "ORCHESTRATOR");
       const ragResults = await this.ragSystem?.search(query.text, 3);
@@ -510,6 +511,7 @@ export class MasterOrchestrator {
     } catch (error) {
       logger.warn(`Failed to retrieve RAG context: ${error instanceof Error ? error.message : "Unknown error"}`, "ORCHESTRATOR");
     }
+    */
     
     const analysisContext = analysis
       ? `

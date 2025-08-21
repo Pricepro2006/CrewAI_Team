@@ -37,9 +37,10 @@ export class WalmartWebSocketServer extends EventEmitter {
    * Initialize WebSocket server
    */
   initialize(server: Server, path: string = "/ws/walmart") {
+    // Use noServer: true to prevent automatic upgrade handling
+    // We'll handle upgrades manually in server.ts
     this.wss = new WebSocketServer({ 
-      server,
-      path,
+      noServer: true,
       perMessageDeflate: {
         zlibDeflateOptions: {
           chunkSize: 1024,

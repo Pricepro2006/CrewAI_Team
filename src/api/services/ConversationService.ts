@@ -23,7 +23,8 @@ export class ConversationService {
   private db: OptimizedQueryExecutor;
 
   constructor() {
-    this.db = getDatabase(appConfig?.database?.path);
+    // ConversationService needs crewai.db which contains the conversations table
+    this.db = getDatabase('./data/crewai.db');
     this.initializeDatabase();
   }
 

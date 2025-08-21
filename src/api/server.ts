@@ -448,6 +448,9 @@ wss.on("connection", async (ws, req) => {
       status: () => mockRes,
       json: () => {},
       end: () => {},
+      setHeader: () => {},
+      getHeader: () => null,
+      headersSent: false,
     } as any;
 
     // Check WebSocket rate limit
@@ -623,6 +626,9 @@ server.on('upgrade', (request, socket, head) => {
       status: () => mockRes,
       json: () => {},
       end: () => {},
+      setHeader: () => {},
+      getHeader: () => null,
+      headersSent: false,
     } as any;
 
     // Check WebSocket rate limit
@@ -650,6 +656,12 @@ server.on('upgrade', (request, socket, head) => {
       socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
       socket.destroy();
     }
+  } else if (pathname === '/ws/email') {
+    // Handle Email WebSocket upgrades - use main WebSocket for now
+    // TODO: Implement dedicated email WebSocket handler
+    mainWSS.handleUpgrade(request, socket, head, (ws: any) => {
+      mainWSS.emit('connection', ws, request);
+    });
   } else {
     // Reject unknown WebSocket requests
     logger.warn(`Unknown WebSocket path: ${pathname}`, 'WEBSOCKET');

@@ -284,7 +284,7 @@ class WebSocketTester {
 
 // Run tests if this script is executed directly
 // Check if this module is being run directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const tester = new WebSocketTester();
   tester.runTests().catch((error) => {
     console.error('❌ Test runner failed:', error);

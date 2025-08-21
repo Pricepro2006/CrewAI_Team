@@ -30,28 +30,32 @@ const getPorts = () => {
 
 /**
  * Get WebSocket URLs for different services
+ * UPDATED: All WebSocket endpoints now point to the working API server on port 3001
+ * The standalone WebSocket server on port 8080 has connection handshake issues
  */
 export const getWebSocketEndpoints = (): WebSocketEndpoints => {
   const { apiPort, wsPort } = getPorts();
   
   if (!isBrowser) {
-    // Server-side rendering
+    // Server-side rendering - all endpoints on API server
     return {
       trpc: `ws://localhost:${apiPort}/trpc-ws`,
-      native: `ws://localhost:${wsPort}/ws`,
-      walmart: `ws://localhost:${wsPort}/ws/walmart`,
-      email: `ws://localhost:${wsPort}/ws/email`
+      native: `ws://localhost:${apiPort}/ws`,
+      walmart: `ws://localhost:${apiPort}/ws/walmart`,
+      email: `ws://localhost:${apiPort}/ws/email`
     };
   }
 
   const protocol = window?.location?.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window?.location?.hostname || 'localhost';
 
+  // TEMPORARY FIX: All WebSocket endpoints point to API server (port 3001)
+  // until standalone WebSocket server (port 8080) handshake issue is resolved
   return {
     trpc: `${protocol}//${host}:${apiPort}/trpc-ws`,
-    native: `${protocol}//${host}:${wsPort}/ws`,
-    walmart: `${protocol}//${host}:${wsPort}/ws/walmart`,
-    email: `${protocol}//${host}:${wsPort}/ws/email`
+    native: `${protocol}//${host}:${apiPort}/ws`,
+    walmart: `${protocol}//${host}:${apiPort}/ws/walmart`,
+    email: `${protocol}//${host}:${apiPort}/ws/email`
   };
 };
 
