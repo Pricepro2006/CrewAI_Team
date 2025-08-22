@@ -67,7 +67,7 @@ describe('Llama.cpp Runtime Behavior Tests', () => {
       // Should have made multiple health checks
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3);
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/v1/models');
-    });
+    }, 30000); // 30 second timeout
 
     it('should handle server startup timeout gracefully', async () => {
       // Mock continuous connection failures

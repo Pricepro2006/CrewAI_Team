@@ -457,7 +457,7 @@ export class WalmartBatchOperations {
               throw new Error(`Product not found: ${productId}`);
             }
             
-            const oldPrice = product?.current_price;
+            const oldPrice = product?.current_price as JSONValue ?? null;
             
             // Update price
             await repository.updatePrice?.(productId, newPrice);
@@ -471,7 +471,7 @@ export class WalmartBatchOperations {
               changed_at: new Date().toISOString(),
             });
             
-            results.push({ productId, oldPrice, newPrice });
+            results.push({ productId, oldPrice: oldPrice ?? null, newPrice });
           }
           return results;
         });
@@ -505,7 +505,9 @@ export class WalmartBatchOperations {
           await repository.transaction(async () => {
             for (const { productId, stockLevel } of items) {
               const updated = await repository.updateInventory?.(productId, stockLevel, location);
-              results.push(updated);
+              if (updated) {
+                results.push(updated);
+              }
             }
           });
         }
@@ -572,10 +574,26 @@ export class BatchOperationMonitor {
    */
   static getMetrics(operationType?: string): JSONObject | null {
     if (operationType) {
-      return this.metrics.get(operationType) || null;
+      const metrics = this.metrics.get(operationType);
+      if (!metrics) return null;
+      return {
+        totalOperations: metrics.totalOperations,
+        averageTime: metrics.averageTime,
+        successRate: metrics.successRate,
+        lastRun: metrics.lastRun.toISOString(),
+      };
     }
     
-    return Object.fromEntries(this.metrics);
+    const result: JSONObject = {};
+    this.metrics.forEach((value, key) => {
+      result[key] = {
+        totalOperations: value.totalOperations,
+        averageTime: value.averageTime,
+        successRate: value.successRate,
+        lastRun: value.lastRun.toISOString(),
+      };
+    });
+    return result;
   }
 
   /**

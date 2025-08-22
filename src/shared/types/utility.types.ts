@@ -70,7 +70,7 @@ export interface JWTPayload {
   exp: number;
   iss?: string;
   aud?: string;
-  [key: string]: JSONValue;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface JWTOptions {

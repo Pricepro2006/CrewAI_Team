@@ -3,7 +3,7 @@
  * Comprehensive TypeScript interfaces for UI layer components
  */
 
-import { ComponentType, ReactNode, SyntheticEvent, MouseEvent, ChangeEvent, KeyboardEvent, FocusEvent } from 'react';
+import type { ComponentType, ReactNode, SyntheticEvent, MouseEvent, ChangeEvent, KeyboardEvent, FocusEvent, ErrorInfo, CSSProperties } from 'react';
 
 // Base UI Component Types
 export interface BaseComponentProps {
@@ -416,13 +416,13 @@ export interface UseWebSocketResult<T = unknown> {
 export interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
+  errorInfo: ErrorInfo | null;
 }
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
-  fallback?: ComponentType<{ error: Error; errorInfo: React.ErrorInfo; reset: () => void }>;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  fallback?: ComponentType<{ error: Error; errorInfo: ErrorInfo; reset: () => void }>;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 // Theme and Styling Types
@@ -446,7 +446,7 @@ export interface ThemeColors {
 export interface Theme {
   colors: ThemeColors;
   spacing: Record<string, string>;
-  typography: Record<string, React.CSSProperties>;
+  typography: Record<string, CSSProperties>;
   breakpoints: Record<string, string>;
   shadows: Record<string, string>;
   borderRadius: Record<string, string>;
@@ -465,17 +465,17 @@ export type Position = 'top' | 'bottom' | 'left' | 'right' | 'center';
 export type Alignment = 'start' | 'center' | 'end' | 'stretch';
 
 // Generic component wrapper types
-export interface WithLoading<T> extends T {
+export interface WithLoading<T> {
   loading?: boolean;
 }
 
-export interface WithError<T> extends T {
+export interface WithError<T> {
   error?: Error | string | null;
 }
 
-export interface WithOptional<T, K extends keyof T> extends Omit<T, K> {
+export type WithOptional<T, K extends keyof T> = Omit<T, K> & {
   [P in K]?: T[P];
-}
+};
 
 // Type guards for UI components
 export function isReactElement(value: unknown): value is ReactNode {

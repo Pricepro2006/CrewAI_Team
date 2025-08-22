@@ -3,6 +3,7 @@ import type { CreateExpressContextOptions } from "@trpc/server/adapters/express"
 import type { Request, Response } from "express";
 import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator.js";
 import type { AgentRegistry } from "../../core/agents/registry/AgentRegistry.js";
+import type { RAGSystem } from "../../core/rag/RAGSystem.js";
 import { ConversationService } from "../services/ConversationService.js";
 import { TaskService } from "../services/TaskService.js";
 import { MaestroFramework } from "../../core/maestro/MaestroFramework.js";
@@ -254,11 +255,7 @@ export type TRPCContext = {
   emailIngestionService?: EmailIngestionServiceImpl;
   eventEmitter: EventEmitter;
   agentRegistry: AgentRegistry;
-  ragSystem: {
-    query: (query: string, options?: Record<string, unknown>) => Promise<unknown[]>;
-    addDocuments: (docs: unknown[]) => Promise<void>;
-    getStatus: () => Promise<{ status: string; documentCount: number }>;
-  };
+  ragSystem: RAGSystem;
   mcpTools: {
     callTool: (name: string, params: Record<string, unknown>) => Promise<unknown>;
     listTools: () => Promise<Array<{ name: string; description: string }>>;

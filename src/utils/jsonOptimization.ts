@@ -144,10 +144,10 @@ export class OptimizedJSONSerializer {
       }
       
       // Handle large arrays
-      if (Array.isArray(value) && value?.length || 0 > this?.config?.maxArrayLength) {
+      if (Array.isArray(value) && (value?.length || 0) > this?.config?.maxArrayLength) {
         const truncated = value.slice(0, this?.config?.maxArrayLength);
-        truncated.push(`[... ${value?.length || 0 - this?.config?.maxArrayLength} more items]`);
-        return truncated;
+        truncated.push(`[... ${(value?.length || 0) - this?.config?.maxArrayLength} more items]` as JSONValue);
+        return truncated as JSONValue;
       }
       
       // Apply custom replacer if provided
@@ -172,7 +172,7 @@ export class OptimizedJSONSerializer {
   private optimizeValue(key: string, value: JSONValue): JSONValue {
     // Remove null/undefined from objects to reduce size
     if (value === null || value === undefined) {
-      return undefined; // Will be excluded from JSON
+      return null; // Will be excluded from JSON
     }
     
     // Optimize numbers
@@ -188,9 +188,9 @@ export class OptimizedJSONSerializer {
       // Trim whitespace
       value = value.trim();
       
-      // Convert empty strings to undefined for exclusion
+      // Convert empty strings to null for exclusion
       if (value === '') {
-        return undefined;
+        return null;
       }
     }
     
@@ -214,15 +214,18 @@ export class OptimizedJSONSerializer {
     
     if (typeof data === 'number') return String(data).length;
     
-    if (typeof data === 'string') return data?.length || 0 + 2; // Add quotes
+    if (typeof data === 'string') return (data?.length || 0) + 2; // Add quotes
     
     if (Array.isArray(data)) {
       let size = 2; // []
       for (let i = 0; i < Math.min(data?.length || 0, 100); i++) { // Sample first 100 items
-        size += this.estimateSize(data[i], depth + 1);
+        const item = data[i];
+        if (item !== undefined) {
+          size += this.estimateSize(item, depth + 1);
+        }
         if (i > 0) size += 1; // comma
       }
-      return size * (data?.length || 0 / Math.min(data?.length || 0, 100)); // Extrapolate
+      return size * ((data?.length || 0) / Math.min(data?.length || 0, 100)); // Extrapolate
     }
     
     if (typeof data === 'object') {
@@ -232,7 +235,7 @@ export class OptimizedJSONSerializer {
       for (const [key, value] of Object.entries(data)) {
         if (count >= 50) break; // Sample first 50 properties
         
-        size += key?.length || 0 + 3; // "key":
+        size += (key?.length || 0) + 3; // "key":
         size += this.estimateSize(value, depth + 1);
         if (count > 0) size += 1; // comma
         count++;
@@ -283,12 +286,15 @@ class JSONStream extends Readable {
     this.push('[');
     this.isArrayStarted = true;
     
-    for (let i = 0; i < array?.length || 0; i++) {
+    for (let i = 0; i < (array?.length || 0); i++) {
       if (i > 0) {
         this.push(',');
       }
       
-      this.writeValue(array[i]);
+      const item = array[i];
+      if (item !== undefined) {
+        this.writeValue(item);
+      }
       
       // Flush buffer periodically
       if (this?.buffer?.length > this?.config?.chunkSize) {
@@ -306,7 +312,7 @@ class JSONStream extends Readable {
     
     const entries = Object.entries(obj);
     
-    for (let i = 0; i < entries?.length || 0; i++) {
+    for (let i = 0; i < (entries?.length || 0); i++) {
       const entry = entries[i];
       if (!entry) continue;
       
@@ -408,7 +414,7 @@ export class OptimizedJSONParser {
       }
       
       // Size validation
-      if (jsonString?.length || 0 > 50 * 1024 * 1024) { // 50MB limit
+      if ((jsonString?.length || 0) > 50 * 1024 * 1024) { // 50MB limit
         throw new Error('JSON input too large');
       }
       
@@ -442,7 +448,7 @@ export class OptimizedJSONParser {
           /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
         const date = new Date(value);
         if (!isNaN(date.getTime())) {
-          return date;
+          return date.toISOString();
         }
       }
       
@@ -493,7 +499,7 @@ export const JSONOptimization = {
    * Compress large arrays by sampling
    */
   compressArray<T>(arr: T[], maxLength: number = 1000): T[] | { sample: T[]; total: number } {
-    if (arr?.length || 0 <= maxLength) {
+    if ((arr?.length || 0) <= maxLength) {
       return arr;
     }
     
@@ -520,7 +526,7 @@ export const JSONOptimization = {
    */
   removeEmptyObjects(obj: JSONValue): JSONValue {
     if (Array.isArray(obj)) {
-      return obj?.map(this.removeEmptyObjects).filter(item => item !== null);
+      return obj?.map(item => this.removeEmptyObjects(item)).filter(item => item !== null) as JSONValue;
     }
     
     if (obj && typeof obj === 'object') {

@@ -5,19 +5,20 @@
  */
 
 // Core System Types
-export * from "./core.js";
-export * from "./api.js";
-export * from "./database.js";
+export * from "./core";
+export * from "./api";
+export * from "./database";
 // Export websocket types except conflicting ones
-export * from "./websocket.js";
-export * from "./agents.js";
-export * from "./monitoring.js";
-export * from "./validation.js";
-export * from "./email.js";
-export * from "./orchestration.js";
-export * from "./rag.js";
-export * from "./auth.js";
-export * from "./client.types.js";
+export * from "./websocket";
+export * from "./agents";
+export * from "./monitoring";
+export * from "./validation";
+export * from "./email";
+export * from "./orchestration";
+export * from "./rag";
+export * from "./auth";
+// client.types exports are available separately to avoid conflicts
+// import directly from "./client.types" when needed
 // Export error types with renamed ErrorContext
 export {
   type BaseError,
@@ -41,9 +42,10 @@ export {
   type ErrorReportingService,
   type ErrorHandlingMiddleware,
   type GlobalErrorHandler
-} from "./errors.js";
-export * from "./events.js";
-export * from "./ui.types.js";
+} from "./errors";
+export * from "./events";
+// ui.types exports are available separately to avoid conflicts with websocket and client types
+// import directly from "./ui.types" when needed
 
 // Re-export common utility types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -126,7 +128,7 @@ export interface BaseFilter {
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
-  error?: import('./errors.js').ApiError;
+  error?: import('./errors').ApiError;
   metadata?: ResponseMetadata;
 }
 

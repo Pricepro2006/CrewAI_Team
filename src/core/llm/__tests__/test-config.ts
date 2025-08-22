@@ -61,7 +61,7 @@ export const TEST_ENVIRONMENTS: Record<string, TestEnvironment> = {
 // Get current test environment
 export function getTestEnvironment(): TestEnvironment {
   const envName = process.env.TEST_ENV || (process.env.CI ? 'ci' : 'local');
-  return TEST_ENVIRONMENTS[envName] || TEST_ENVIRONMENTS.local;
+  return TEST_ENVIRONMENTS[envName as keyof typeof TEST_ENVIRONMENTS] || TEST_ENVIRONMENTS.local;
 }
 
 // Test data fixtures
@@ -352,12 +352,12 @@ export class PerformanceMonitor {
     
     return {
       count,
-      min: sorted[0],
-      max: sorted[count - 1],
+      min: sorted[0] || 0,
+      max: sorted[count - 1] || 0,
       mean: sorted.reduce((a, b) => a + b, 0) / count,
-      median: sorted[Math.floor(count / 2)],
-      p95: sorted[Math.floor(count * 0.95)],
-      p99: sorted[Math.floor(count * 0.99)]
+      median: sorted[Math.floor(count / 2)] || 0,
+      p95: sorted[Math.floor(count * 0.95)] || 0,
+      p99: sorted[Math.floor(count * 0.99)] || 0
     };
   }
   

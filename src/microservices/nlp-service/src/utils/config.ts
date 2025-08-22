@@ -185,7 +185,7 @@ export function getEnvironmentConfig(): Partial<NLPServiceConfig> {
         },
         cors: {
           enabled: true,
-          origins: ['*'] // Allow all origins in dev
+          origins: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080'] // Specific dev origins only
         },
         apiKeys: {
           enabled: false,

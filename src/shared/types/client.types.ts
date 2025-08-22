@@ -5,11 +5,14 @@
  */
 
 import type { 
-  PaginationRequest, 
   PaginatedResult, 
-  TimestampedEntity,
-  ApiResponse 
-} from "./api.js";
+  TimestampedEntity
+} from "./core";
+
+import type {
+  PaginationRequest,
+  ApiResponse
+} from "./index";
 
 // ============================================================================
 // DATABASE CONNECTION & QUERY TYPES

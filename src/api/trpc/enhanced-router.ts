@@ -442,7 +442,7 @@ export const databaseProcedure = t.procedure.use(securityAudit).use(authRequired
 export const safeDatabaseProcedure = t.procedure.use(securityAudit);
 
 // Utility function for creating feature-specific routers
-export function createFeatureRouter<T extends Record<string, unknown>>(
+export function createFeatureRouter<T>(
   name: string,
   procedures: T,
 ): T {
@@ -453,7 +453,7 @@ export function createFeatureRouter<T extends Record<string, unknown>>(
 }
 
 // Router builder with security defaults
-export function createSecureRouter<T extends Record<string, unknown>>(
+export function createSecureRouter<T>(
   routes: T,
   options?: {
     requireAuth?: boolean;
