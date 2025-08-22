@@ -58,17 +58,26 @@ export class EmbeddingService {
     }
 
     try {
-      // Try OpenAI-compatible endpoint first
-      const response = await this.client.post("/v1/embeddings", {
-        model: this.config.model,
-        input: text,
+      // Try llama-server native endpoint first (without /v1 prefix)
+      const response = await this.client.post("/embeddings", {
+        content: text,  // llama-server uses 'content' not 'input'
       });
 
-      return response?.data?.data?.[0]?.embedding || [];
+      // llama-server returns embedding directly, not nested in data structure
+      return response?.data?.embedding || response?.data || [];
     } catch (error) {
-      console.warn("Embedding generation not available - using fallback hash-based embeddings");
-      // Return a deterministic hash-based vector as fallback for development
-      return this.generateFallbackEmbedding(text);
+      // If native endpoint fails, try OpenAI-compatible format
+      try {
+        const response = await this.client.post("/v1/embeddings", {
+          model: this.config.model,
+          input: text,
+        });
+        return response?.data?.data?.[0]?.embedding || [];
+      } catch (innerError) {
+        console.warn("Embedding generation not available - using fallback hash-based embeddings");
+        // Return a deterministic hash-based vector as fallback for development
+        return this.generateFallbackEmbedding(text);
+      }
     }
   }
 

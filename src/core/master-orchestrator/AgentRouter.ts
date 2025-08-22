@@ -92,6 +92,12 @@ export class AgentRouter {
         case 'scraping':
           agentScores.ToolExecutorAgent = (agentScores.ToolExecutorAgent || 0) + 3;
           break;
+        case 'system':
+        case 'capabilities':
+        case 'system_info':
+          // System questions should be handled by WriterAgent to compose informative responses
+          agentScores.WriterAgent = (agentScores.WriterAgent || 0) + 5;
+          break;
       }
     });
     

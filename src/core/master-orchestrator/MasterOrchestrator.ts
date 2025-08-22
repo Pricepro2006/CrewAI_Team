@@ -262,30 +262,52 @@ export class MasterOrchestrator {
   async processQuery(query: Query): Promise<ExecutionResult> {
     const perf = this.perfMonitor.start("processQuery");
 
-    logger.info("Processing query", "ORCHESTRATOR", {
+    logger.info("Processing query START", "ORCHESTRATOR", {
       query: query?.text?.substring(0, 100),
       conversationId: query.conversationId,
+      hasLLM: !!this.llm,
+      hasAgentRegistry: !!this.agentRegistry,
+      hasRAGSystem: !!this.ragSystem,
+      hasPlanExecutor: !!this.planExecutor,
+      enhancedParserStatus: !!this.enhancedParser,
+      timestamp: new Date().toISOString()
     });
 
-    // Check cache first for instant responses
-    const cachedResponse = responseCache.get(query.text);
+    // Debug the initialization state
+    logger.debug("MasterOrchestrator state check", "ORCHESTRATOR_DEBUG", {
+      agentRegistryMethods: this.agentRegistry ? Object.getOwnPropertyNames(Object.getPrototypeOf(this.agentRegistry)) : null,
+      ragSystemMethods: this.ragSystem ? Object.getOwnPropertyNames(Object.getPrototypeOf(this.ragSystem)) : null,
+      planExecutorMethods: this.planExecutor ? Object.getOwnPropertyNames(Object.getPrototypeOf(this.planExecutor)) : null,
+      configDetails: {
+        ollamaUrl: this.config?.ollamaUrl,
+        ragConfig: !!this.config?.rag
+      }
+    });
+
+    // Check cache first for instant responses (TEMPORARILY DISABLED FOR DEBUGGING)
+    const USE_CACHE = false; // Disable cache to test actual agent processing
+    const cachedResponse = USE_CACHE ? responseCache.get(query.text) : null;
     if (cachedResponse) {
       logger.info("Using cached response", "ORCHESTRATOR", {
         query: query.text.substring(0, 50)
       });
       
-      perf.end();
+      const duration = perf.end();
       return {
         success: true,
         summary: cachedResponse,
         confidence: 1.0,
         metadata: {
           source: "cache",
-          responseTime: perf.getDuration(),
+          responseTime: duration,
           timestamp: new Date().toISOString()
         }
       };
     }
+
+    logger.info("Cache disabled - proceeding with full agent processing", "ORCHESTRATOR_DEBUG", {
+      query: query.text.substring(0, 100)
+    });
 
     try {
       // Step 0: Enhanced query analysis with timeout
@@ -366,6 +388,14 @@ export class MasterOrchestrator {
       });
 
       // Step 2: Execute plan with replan loop
+      logger.info("Starting plan execution phase", "ORCHESTRATOR_EXECUTION", {
+        planId: plan.id,
+        stepCount: plan.steps.length,
+        planMetadata: plan.metadata,
+        firstStepAgent: plan.steps[0]?.agentType,
+        firstStepTask: plan.steps[0]?.task?.substring(0, 100)
+      });
+
       let executionResult: ExecutionResult = {
         success: false,
         results: [],
@@ -394,11 +424,26 @@ export class MasterOrchestrator {
           },
         );
 
+        logger.info("About to call planExecutor.execute", "ORCHESTRATOR_EXECUTION", {
+          attempt: attempts + 1,
+          planId: plan.id,
+          executorAvailable: !!this.planExecutor,
+          timeout: DEFAULT_TIMEOUTS.AGENT_EXECUTION
+        });
+
         executionResult = await withTimeout(
           this.planExecutor.execute(plan),
           DEFAULT_TIMEOUTS.AGENT_EXECUTION,
           "Plan execution timed out",
         );
+
+        logger.info("planExecutor.execute completed", "ORCHESTRATOR_EXECUTION", {
+          success: executionResult.success,
+          resultsCount: executionResult.results?.length || 0,
+          summary: executionResult.summary?.substring(0, 100),
+          hasResults: !!executionResult.results,
+          confidence: executionResult.confidence
+        });
 
         // Step 3: Review execution results with timeout
         const review = await withTimeout(

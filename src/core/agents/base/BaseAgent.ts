@@ -6,7 +6,7 @@ import type {
   ToolExecutionParams,
 } from "./AgentTypes.js";
 import { logger } from "../../../utils/logger.js";
-import { LLMProviderManager } from "../../llm/LLMProviderManager.js";
+import { llmProviderManager, LLMProviderManager } from "../../llm/LLMProviderManager.js";
 import type { LLMProvider } from "../../llm/LLMProviderManager.js";
 import {
   MODEL_CONFIG,
@@ -98,7 +98,7 @@ export abstract class BaseAgent {
 
     // Initialize LLM provider using singleton manager
     try {
-      this.llm = new LLMProviderManager();
+      this.llm = llmProviderManager;
       await this.llm.initialize();
       logger.debug(`LLM provider initialized successfully for ${this.name}`, "AGENT", {
         isUsingFallback: (this.llm as any).isUsingFallback ? (this.llm as any).isUsingFallback() : false,

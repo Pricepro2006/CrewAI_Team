@@ -35,25 +35,20 @@ export const ChatInterface: React.FC = () => {
     }
   }, [conversationHistory.data]);
 
-  // Subscribe to real-time updates
-  React.useEffect(() => {
-    if (conversationId && api.chat?.onMessage?.useSubscription) {
-      try {
-        api.chat.onMessage.useSubscription(
-          { conversationId },
-          {
-            enabled: true,
-            onData: (data: unknown) => {
-              const message = data as Message;
-              setMessages((prev: Message[]) => [...prev, message]);
-            },
-          },
-        );
-      } catch (error) {
+  // Subscribe to real-time updates (hook must be at top level)
+  const subscription = api.chat?.onMessage?.useSubscription?.(
+    { conversationId: conversationId! },
+    {
+      enabled: !!conversationId,
+      onData: (data: unknown) => {
+        const message = data as Message;
+        setMessages((prev: Message[]) => [...prev, message]);
+      },
+      onError: (error) => {
         console.warn('WebSocket subscription failed:', error);
-      }
+      },
     }
-  }, [conversationId]);
+  );
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isProcessing) return;

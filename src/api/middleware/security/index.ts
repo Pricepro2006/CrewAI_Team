@@ -49,7 +49,7 @@ export function createSecurityAuditMiddleware() {
     const { ctx, next, path, type, input } = opts;
     const startTime = Date.now();
 
-    // Log request details
+    // Log request details with comprehensive debugging
     logger.debug("tRPC Request", "SECURITY_AUDIT", {
       path,
       type,
@@ -57,10 +57,34 @@ export function createSecurityAuditMiddleware() {
       userRole: ctx.user?.role,
       requestId: ctx.requestId,
       hasInput: !!input,
+      inputType: typeof input,
+      inputKeys: input && typeof input === 'object' ? Object.keys(input) : null,
+      contextKeys: Object.keys(ctx),
+      hasUser: !!ctx.user,
+      hasMasterOrchestrator: !!ctx.masterOrchestrator,
+      hasConversationService: !!ctx.conversationService,
+      timestamp: new Date().toISOString()
     });
 
+    // Debug input validation specifically
+    if (path === 'chat.create' || path === 'chat.message') {
+      logger.info("Chat endpoint debugging", "CHAT_DEBUG", {
+        path,
+        inputValue: input,
+        inputStringified: JSON.stringify(input),
+        contextServices: {
+          masterOrchestrator: !!ctx.masterOrchestrator,
+          conversationService: !!ctx.conversationService,
+          agentRegistry: !!ctx.agentRegistry,
+          ragSystem: !!ctx.ragSystem
+        }
+      });
+    }
+
     try {
+      logger.debug("About to call next() for tRPC procedure", "SECURITY_AUDIT", { path, type });
       const result = await next();
+      logger.debug("next() completed successfully", "SECURITY_AUDIT", { path, type });
 
       const duration = Date.now() - startTime;
 

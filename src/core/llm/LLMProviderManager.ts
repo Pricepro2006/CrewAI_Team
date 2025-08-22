@@ -35,7 +35,8 @@ export class LLMProviderManager implements LLMProvider {
    * Initialize the LLM provider
    */
   public async initialize(): Promise<void> {
-    if (this.initializationAttempted) {
+    // Allow re-initialization if we're using fallback and primary might now be available
+    if (this.initializationAttempted && !this.useFallback) {
       return;
     }
 

@@ -40,7 +40,7 @@ export const AgentMonitor: React.FC = () => {
   }
 
   return (
-    <div className="agent-monitor">
+    <div className="agent-monitor-overlay">
       <h3>Active Agents</h3>
       <div className="agent-list">
         {activeAgents?.map((agent: any) => (

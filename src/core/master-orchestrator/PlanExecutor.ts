@@ -23,11 +23,26 @@ export class PlanExecutor {
   ) {}
 
   async execute(plan: Plan): Promise<PlanExecutionResult> {
+    console.log("🚀 PlanExecutor.execute START", {
+      planId: plan.id,
+      stepCount: plan.steps.length,
+      agentRegistryAvailable: !!this.agentRegistry,
+      ragSystemAvailable: !!this.ragSystem,
+      timestamp: new Date().toISOString()
+    });
+
     const results: StepResult[] = [];
     const executedSteps = new Set<string>();
 
     // Execute steps in dependency order
     const sortedSteps = this.topologicalSort(plan.steps);
+    
+    console.log("📋 Steps sorted for execution", {
+      originalStepCount: plan.steps.length,
+      sortedStepCount: sortedSteps.length,
+      firstStepAgent: sortedSteps[0]?.agentType,
+      firstStepId: sortedSteps[0]?.id
+    });
 
     // Broadcast plan execution start
     wsService.broadcastPlanUpdate(plan.id, "executing", {
@@ -48,19 +63,51 @@ export class PlanExecutor {
       }
 
       try {
+        console.log("🔧 Executing step", {
+          stepId: step.id,
+          agentType: step.agentType,
+          task: step.task?.substring(0, 100),
+          requiresTool: step.requiresTool,
+          toolName: step.toolName,
+          dependenciesCount: step.dependencies?.length || 0
+        });
+
         // Broadcast step start
         wsService.broadcastPlanUpdate(plan.id, "executing", {
           completed: executedSteps.size,
           total: sortedSteps?.length || 0,
           currentStep: step.task,
         });
+        
         // Step 1: Gather context from RAG
+        console.log("📚 Gathering context for step", { stepId: step.id, ragQuery: step.ragQuery });
         const context = await this.gatherContext(step);
+        console.log("📚 Context gathered", { 
+          stepId: step.id, 
+          contextLength: context?.length || 0,
+          hasRAGResults: !!context
+        });
 
         // Step 2: Execute based on whether tool is required
+        console.log("🤖 About to execute agent", {
+          stepId: step.id,
+          agentType: step.agentType,
+          requiresTool: step.requiresTool,
+          toolName: step.toolName,
+          executionMethod: step.requiresTool ? "executeWithTool" : "executeInformationQuery"
+        });
+
         const result = step.requiresTool
           ? await this.executeWithTool(step, context)
           : await this.executeInformationQuery(step, context);
+
+        console.log("🤖 Agent execution completed", {
+          stepId: step.id,
+          success: result.success,
+          resultContent: result.content?.substring(0, 100),
+          hasContent: !!result.content,
+          hasError: !!result.error
+        });
 
         results.push(result);
         executedSteps.add(step.id);

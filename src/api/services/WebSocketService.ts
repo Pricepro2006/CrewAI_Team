@@ -397,23 +397,23 @@ export class WebSocketService extends EventEmitter {
    */
   registerClient(clientId: string, ws: AuthenticatedWebSocket): void {
     // Check client limit to prevent unbounded growth
-    if (this?.clients?.size >= this.MAX_CLIENTS && !this?.clients?.has(clientId)) {
+    if (this.clients.size >= this.MAX_CLIENTS && !this.clients.has(clientId)) {
       ws.close(1008, "Server at capacity");
       return;
     }
 
-    if (!this?.clients?.has(clientId)) {
-      this?.clients?.set(clientId, new Set());
+    if (!this.clients.has(clientId)) {
+      this.clients.set(clientId, new Set());
     }
-    this?.clients?.get(clientId)!.add(ws);
+    this.clients.get(clientId)!.add(ws);
 
     // Track authenticated clients
     if (ws.isAuthenticated) {
-      this?.authenticatedClients?.set(clientId, ws);
+      this.authenticatedClients.set(clientId, ws);
 
       // Store client permissions
       if (ws.permissions) {
-        this?.clientPermissions?.set(clientId, new Set(ws.permissions));
+        this.clientPermissions.set(clientId, new Set(ws.permissions));
       }
 
       logger.info("Authenticated WebSocket client registered", "WS_SERVICE", {
@@ -429,7 +429,7 @@ export class WebSocketService extends EventEmitter {
     };
 
     // Store cleanup handler for later removal
-    this?.clientCleanupHandlers?.set(clientId, cleanupHandler);
+    this.clientCleanupHandlers.set(clientId, cleanupHandler);
 
     // Clean up on disconnect
     ws.once("close", cleanupHandler);
@@ -448,7 +448,7 @@ export class WebSocketService extends EventEmitter {
    * Unregister a WebSocket client
    */
   unregisterClient(clientId: string, ws: AuthenticatedWebSocket): void {
-    const clientSockets = this?.clients?.get(clientId);
+    const clientSockets = this.clients.get(clientId);
     if (clientSockets) {
       clientSockets.delete(ws);
       if (clientSockets.size === 0) {
@@ -472,17 +472,17 @@ export class WebSocketService extends EventEmitter {
     ws.removeAllListeners();
 
     // Remove cleanup handler reference
-    this?.clientCleanupHandlers?.delete(clientId);
+    this.clientCleanupHandlers.delete(clientId);
   }
 
   /**
    * Subscribe a client to specific message types
    */
   subscribe(clientId: string, types: string[]): void {
-    if (!this?.subscriptions?.has(clientId)) {
-      this?.subscriptions?.set(clientId, new Set());
+    if (!this.subscriptions.has(clientId)) {
+      this.subscriptions.set(clientId, new Set());
     }
-    const clientSubs = this?.subscriptions?.get(clientId)!;
+    const clientSubs = this.subscriptions.get(clientId)!;
 
     // Limit subscriptions per client to prevent memory issues
     types.forEach((type: string) => {
@@ -501,7 +501,7 @@ export class WebSocketService extends EventEmitter {
    * Unsubscribe a client from specific message types
    */
   unsubscribe(clientId: string, types: string[]): void {
-    const clientSubs = this?.subscriptions?.get(clientId);
+    const clientSubs = this.subscriptions.get(clientId);
     if (clientSubs) {
       types.forEach((type: string) => clientSubs.delete(type));
     }
@@ -513,14 +513,14 @@ export class WebSocketService extends EventEmitter {
   broadcast(message: WebSocketMessage, requiredPermission?: string): void {
     const messageStr = JSON.stringify(message);
 
-    this?.clients?.forEach((sockets, clientId) => {
-      const clientSubs = this?.subscriptions?.get(clientId);
+    this.clients.forEach((sockets, clientId) => {
+      const clientSubs = this.subscriptions.get(clientId);
 
       // Check if client is subscribed to this message type
       if (clientSubs && (clientSubs.has(message.type) || clientSubs.has("*"))) {
         // Check permissions if required
         if (requiredPermission) {
-          const permissions = this?.clientPermissions?.get(clientId);
+          const permissions = this.clientPermissions.get(clientId);
           if (!permissions || !permissions.has(requiredPermission)) {
             return; // Skip this client if they don't have required permission
           }
@@ -543,7 +543,7 @@ export class WebSocketService extends EventEmitter {
    * Send a message to a specific client
    */
   sendToClient(clientId: string, message: WebSocketMessage): void {
-    const sockets = this?.clients?.get(clientId);
+    const sockets = this.clients.get(clientId);
     if (sockets) {
       const messageStr = JSON.stringify(message);
       sockets.forEach((ws: AuthenticatedWebSocket) => {
@@ -565,7 +565,7 @@ export class WebSocketService extends EventEmitter {
    * Get the number of connected clients
    */
   getClientCount(): number {
-    return this?.clients?.size;
+    return this.clients.size;
   }
 
   /**
