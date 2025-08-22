@@ -769,6 +769,39 @@ export abstract class BaseRepository<T extends BaseEntity> {
       }
     }
 
-    return this.executeQuery<T[]>(query, params);
+    return await this.executeQuery<T[]>(query, params);
+  }
+
+  /**
+   * Get the underlying database adapter (for advanced operations)
+   * @returns The IDatabaseAdapter instance
+   */
+  protected getAdapter(): IDatabaseAdapter {
+    return this.adapter;
+  }
+
+  /**
+   * Get the legacy database instance if available (for migration purposes)
+   * @returns The legacy Database.Database instance or undefined
+   * @deprecated Use getAdapter() instead
+   */
+  protected getLegacyDatabase(): DatabaseInstance | undefined {
+    return this.legacyDb;
+  }
+
+  /**
+   * Close the database connection
+   * Delegates to the adapter's close method
+   */
+  async close(): Promise<void> {
+    await this.adapter.close();
+  }
+
+  /**
+   * Perform health check on the database connection
+   */
+  async healthCheck(): Promise<boolean> {
+    const result = await this.adapter.healthCheck();
+    return result.healthy;
   }
 }

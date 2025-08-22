@@ -1,6 +1,9 @@
 /**
  * Database Module Index
  * Exports all database-related functionality for the CrewAI Team project
+ * 
+ * Supports both legacy direct database access and new adapter pattern
+ * for gradual migration to database-agnostic architecture
  */
 
 // Core Database Manager
@@ -24,18 +27,54 @@ export { OptimizedConnectionPool, createOptimizedPool } from "./OptimizedConnect
 export { OptimizedQueryExecutor } from "./OptimizedQueryExecutor.js";
 export { getOptimizedQueryExecutor, executeOptimizedQuery, getDatabaseStats, clearQueryCache } from "./query-optimizer.js";
 
-// NEW: Centralized Database Access with Singleton Pattern
+// ============================================================================
+// NEW: Database Adapter Pattern Exports (for gradual migration)
+// ============================================================================
+export { DatabaseFactory } from "./adapters/DatabaseFactory.js";
+export { IDatabaseAdapter } from "./adapters/DatabaseAdapter.interface.js";
+export { SQLiteCompatibilityShim, createCompatibilityShim, isCompatibilityShim } from "./adapters/SQLiteCompatibilityShim.js";
+export type { 
+  DatabaseConfig,
+  SQLiteConfig,
+  PostgreSQLConfig,
+  DatabaseMetrics as AdapterMetrics,
+  ITransactionAdapter 
+} from "./adapters/DatabaseAdapter.interface.js";
+export type {
+  SqlValue,
+  SqlParams,
+  ExecuteResult,
+  PreparedStatement,
+  TransactionContext,
+  HealthCheckResult,
+  QueryMetrics,
+  ConnectionMetrics,
+  DatabaseAdapterError,
+  ConnectionError,
+  QueryError,
+  TransactionError
+} from "./adapters/types.js";
+
+// ============================================================================
+// Centralized Database Access with Feature Flag Support
+// ============================================================================
 import { OptimizedQueryExecutor as OptimizedQueryExecutorClass } from './OptimizedQueryExecutor.js';
 import { PIIRedactor } from '../utils/PIIRedactor.js';
 import { Logger } from '../utils/logger.js';
+import { DatabaseFactory } from './adapters/DatabaseFactory.js';
+import { SQLiteCompatibilityShim } from './adapters/SQLiteCompatibilityShim.js';
+import { IDatabaseAdapter } from './adapters/DatabaseAdapter.interface.js';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as Database from 'better-sqlite3';
 
 const logger = new Logger('DatabaseModule');
 
-// Singleton instances for each database
+// Singleton instances for each database (legacy)
 const instances = new Map<string, OptimizedQueryExecutorClass>();
+
+// Singleton instances for adapter pattern
+const adapterInstances = new Map<string, IDatabaseAdapter>();
 
 // PII Redactor for security
 const piiRedactor = new PIIRedactor({
@@ -46,11 +85,82 @@ const piiRedactor = new PIIRedactor({
   redactAPIKeys: true
 });
 
+// Feature flag system
+const FEATURE_FLAGS = {
+  USE_DATABASE_ADAPTER: process.env.USE_DATABASE_ADAPTER === 'true',
+  ENABLE_ADAPTER_LOGGING: process.env.ENABLE_ADAPTER_LOGGING === 'true',
+  PREFER_ADAPTER_FOR_NEW_INSTANCES: process.env.PREFER_ADAPTER_FOR_NEW_INSTANCES === 'true'
+};
+
+/**
+ * Get database adapter instance (new pattern)
+ * Returns an IDatabaseAdapter for database-agnostic operations
+ */
+export async function getDatabaseAdapter(dbPath?: string): Promise<IDatabaseAdapter> {
+  const finalPath = dbPath || process.env.DATABASE_PATH || './data/crewai_enhanced.db';
+  const absolutePath = path.resolve(finalPath);
+  
+  // Check for existing adapter instance
+  if (adapterInstances.has(absolutePath)) {
+    if (FEATURE_FLAGS.ENABLE_ADAPTER_LOGGING) {
+      logger.debug('Returning existing adapter instance', absolutePath);
+    }
+    return adapterInstances.get(absolutePath)!;
+  }
+  
+  // Create adapter based on configuration
+  const config = DatabaseFactory.createConfigFromEnv();
+  
+  // Override path for SQLite if specified
+  if (config.type === 'sqlite' && config.sqlite) {
+    config.sqlite.databasePath = absolutePath;
+  }
+  
+  if (FEATURE_FLAGS.ENABLE_ADAPTER_LOGGING) {
+    logger.info('Creating new database adapter', { type: config.type, path: absolutePath });
+  }
+  
+  const adapter = await DatabaseFactory.create(config, absolutePath);
+  adapterInstances.set(absolutePath, adapter);
+  
+  return adapter;
+}
+
 /**
  * Get optimized database instance (singleton pattern)
- * This ensures all services share the same connection pool and cache
+ * Enhanced to optionally return adapter-wrapped instance based on feature flag
  */
-export function getDatabase(dbPath?: string): OptimizedQueryExecutorClass {
+export function getDatabase(dbPath?: string): OptimizedQueryExecutorClass | IDatabaseAdapter {
+  // If adapter mode is enabled, return a compatibility shim
+  if (FEATURE_FLAGS.USE_DATABASE_ADAPTER) {
+    logger.info('Database adapter mode enabled, creating compatibility layer');
+    
+    const finalPath = dbPath || process.env.DATABASE_PATH || './data/crewai_enhanced.db';
+    const absolutePath = path.resolve(finalPath);
+    
+    // Check if we already have an adapter for this path
+    if (adapterInstances.has(absolutePath)) {
+      return adapterInstances.get(absolutePath)!;
+    }
+    
+    // Create a regular OptimizedQueryExecutor first
+    const executor = getLegacyDatabase(dbPath);
+    
+    // Wrap it in a compatibility shim
+    // Note: This requires accessing the underlying database from OptimizedQueryExecutor
+    // For now, we'll return the executor directly with a warning
+    logger.warn('Adapter mode requested but returning legacy executor. Full adapter migration pending.');
+    return executor;
+  }
+  
+  // Legacy mode: return OptimizedQueryExecutor directly
+  return getLegacyDatabase(dbPath);
+}
+
+/**
+ * Internal function to get legacy database instance
+ */
+function getLegacyDatabase(dbPath?: string): OptimizedQueryExecutorClass {
   // Default to main database if no path specified - using crewai_enhanced.db as per documentation
   const finalPath = dbPath || process.env.DATABASE_PATH || './data/crewai_enhanced.db';
   const absolutePath = path.resolve(finalPath);
@@ -174,15 +284,128 @@ export function closeAllDatabases(): void {
   instances.clear();
 }
 
-// Handle process termination
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, closing database connections');
+// ============================================================================
+// Helper Functions for Adapter Pattern Migration
+// ============================================================================
+
+/**
+ * Check if adapter mode is enabled
+ */
+export function isAdapterModeEnabled(): boolean {
+  return FEATURE_FLAGS.USE_DATABASE_ADAPTER;
+}
+
+/**
+ * Convert legacy database to adapter
+ * Useful for gradual migration of existing code
+ */
+export function convertToAdapter(db: OptimizedQueryExecutorClass | Database.Database): IDatabaseAdapter {
+  if ('getMetrics' in db && 'healthCheck' in db) {
+    // Already an adapter or has adapter-like interface
+    return db as unknown as IDatabaseAdapter;
+  }
+  
+  // Wrap in compatibility shim
+  if (db instanceof Database.Database) {
+    return new SQLiteCompatibilityShim(db);
+  }
+  
+  // For OptimizedQueryExecutor, we need to access the underlying database
+  // This would require modification to OptimizedQueryExecutor to expose the database
+  logger.warn('Cannot convert OptimizedQueryExecutor to adapter without accessing underlying database');
+  throw new Error('Conversion from OptimizedQueryExecutor to adapter not yet implemented');
+}
+
+/**
+ * Execute query with automatic adapter selection
+ * Works with both legacy and adapter patterns
+ */
+export async function executeUnified<T = any>(
+  sql: string,
+  params?: any[],
+  dbPath?: string
+): Promise<T> {
+  if (FEATURE_FLAGS.USE_DATABASE_ADAPTER) {
+    const adapter = await getDatabaseAdapter(dbPath);
+    const result = await adapter.query<T>(sql, params);
+    return result as unknown as T;
+  }
+  
+  // Use legacy execution
+  return executeSecure<T>(sql, params, dbPath);
+}
+
+/**
+ * Execute transaction with automatic adapter selection
+ */
+export async function executeTransactionUnified<T = any>(
+  queries: Array<{ sql: string; params?: any[] }>,
+  dbPath?: string
+): Promise<T[]> {
+  if (FEATURE_FLAGS.USE_DATABASE_ADAPTER) {
+    const adapter = await getDatabaseAdapter(dbPath);
+    return adapter.transaction(async (tx) => {
+      const results: T[] = [];
+      for (const query of queries) {
+        const result = await tx.execute(query.sql, query.params);
+        results.push(result as unknown as T);
+      }
+      return results;
+    });
+  }
+  
+  // Use legacy transaction
+  return executeTransactionOptimized<T>(queries, dbPath);
+}
+
+/**
+ * Get unified database statistics
+ * Works with both patterns
+ */
+export async function getUnifiedDatabaseStats(dbPath?: string): Promise<{
+  stats: any;
+  cacheHitRatio?: number;
+  allInstances: string[];
+  adapterMetrics?: any;
+}> {
+  const legacyStats = getCentralizedDatabaseStats(dbPath);
+  
+  if (FEATURE_FLAGS.USE_DATABASE_ADAPTER && adapterInstances.size > 0) {
+    // Include adapter metrics if available
+    const adapterMetrics = DatabaseFactory.getMetricsAll();
+    return {
+      ...legacyStats,
+      adapterMetrics: Object.fromEntries(adapterMetrics)
+    };
+  }
+  
+  return legacyStats;
+}
+
+/**
+ * Close all databases (both legacy and adapter instances)
+ */
+export async function closeAllDatabasesUnified(): Promise<void> {
+  // Close legacy databases
   closeAllDatabases();
+  
+  // Close adapter instances
+  if (adapterInstances.size > 0) {
+    logger.info('Closing adapter database connections');
+    await DatabaseFactory.closeAll();
+    adapterInstances.clear();
+  }
+}
+
+// Handle process termination
+process.on('SIGINT', async () => {
+  logger.info('SIGINT received, closing database connections');
+  await closeAllDatabasesUnified();
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, closing database connections');
-  closeAllDatabases();
+  await closeAllDatabasesUnified();
 });
 
 // Re-export legacy Database constructor for backwards compatibility
@@ -264,6 +487,100 @@ export type {
   Migration,
   MigrationResult,
 } from "./migrations/DatabaseMigrator.js";
+
+// ============================================================================
+// Migration Utilities
+// ============================================================================
+
+/**
+ * Create a database configuration object
+ * Useful for testing and custom configurations
+ */
+export function createDatabaseConfig(
+  type: 'sqlite' | 'postgresql',
+  options: Partial<import('./adapters/DatabaseAdapter.interface.js').SQLiteConfig | import('./adapters/DatabaseAdapter.interface.js').PostgreSQLConfig>
+): import('./adapters/DatabaseAdapter.interface.js').DatabaseConfig {
+  if (type === 'sqlite') {
+    return {
+      type: 'sqlite',
+      sqlite: {
+        databasePath: './data/crewai_enhanced.db',
+        enableWAL: true,
+        enableForeignKeys: true,
+        ...options
+      } as import('./adapters/DatabaseAdapter.interface.js').SQLiteConfig
+    };
+  }
+  
+  return {
+    type: 'postgresql',
+    postgresql: {
+      host: 'localhost',
+      port: 5432,
+      database: 'crewai_team',
+      user: 'crewai_user',
+      password: '',
+      ...options
+    } as import('./adapters/DatabaseAdapter.interface.js').PostgreSQLConfig
+  };
+}
+
+/**
+ * Get feature flag status
+ */
+export function getFeatureFlags(): typeof FEATURE_FLAGS {
+  return { ...FEATURE_FLAGS };
+}
+
+/**
+ * Set feature flags (useful for testing)
+ * Note: This only affects the current process
+ */
+export function setFeatureFlag(flag: keyof typeof FEATURE_FLAGS, value: boolean): void {
+  FEATURE_FLAGS[flag] = value;
+  logger.info(`Feature flag ${flag} set to ${value}`);
+}
+
+/**
+ * Get all active database instances (both legacy and adapter)
+ */
+export function getAllDatabaseInstances(): {
+  legacy: string[];
+  adapters: string[];
+} {
+  return {
+    legacy: Array.from(instances.keys()),
+    adapters: Array.from(adapterInstances.keys())
+  };
+}
+
+/**
+ * Health check for all databases
+ */
+export async function healthCheckAll(): Promise<Map<string, boolean>> {
+  const results = new Map<string, boolean>();
+  
+  // Check legacy instances
+  for (const [path, db] of instances) {
+    try {
+      // Perform a simple query to check health
+      await db.execute('SELECT 1');
+      results.set(`legacy:${path}`, true);
+    } catch (error) {
+      results.set(`legacy:${path}`, false);
+    }
+  }
+  
+  // Check adapter instances
+  if (adapterInstances.size > 0) {
+    const adapterHealth = await DatabaseFactory.healthCheckAll();
+    for (const [key, healthy] of adapterHealth) {
+      results.set(`adapter:${key}`, healthy);
+    }
+  }
+  
+  return results;
+}
 
 // Constants and configuration
 export const DATABASE_CONSTANTS = {

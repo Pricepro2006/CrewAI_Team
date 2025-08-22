@@ -29,9 +29,8 @@ export interface ExecuteResult {
 // Statement Types for prepared statements (async for compatibility)
 export interface PreparedStatement<T = Record<string, SqlValue>> {
   run(params?: SqlParams): Promise<ExecuteResult>;
-  get(params?: SqlParams): Promise<T | undefined>;
+  get(params?: SqlParams): Promise<T | null>;
   all(params?: SqlParams): Promise<T[]>;
-  iterate(params?: SqlParams): IterableIterator<T>;
   finalize(): void;
 }
 
