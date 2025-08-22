@@ -130,7 +130,7 @@ system-status.json
 
 # Data Directories
 data/
-database/
+# database/  # Commented out to allow src/database tracking
 backups/
 
 # Test Outputs
