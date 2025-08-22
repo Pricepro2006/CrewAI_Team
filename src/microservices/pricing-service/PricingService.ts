@@ -183,7 +183,7 @@ export class PricingService extends EventEmitter {
   private setupErrorHandlers(): void {
     this.redisClient.on('error', (err: any) => {
       this.emit('error', { source: 'redis', error: err });
-      if (this.metrics.errors.redis) { this.metrics.errors.redis++ };
+      this.metrics.errors.redis++;
     });
 
     this.redisClient.on('ready', () => {
@@ -228,12 +228,12 @@ export class PricingService extends EventEmitter {
     this.metrics.latency.memory.push(latency);
 
     if (cached) {
-      if (this.metrics.hits.memory) { this.metrics.hits.memory++ };
+      this.metrics.hits.memory++;
       this.emit('cache:hit', { level: 'memory', key: cacheKey, latency });
       return { ...cached, source: 'memory' };
     }
 
-    if (this.metrics.misses.memory) { this.metrics.misses.memory++ };
+    this.metrics.misses.memory++;
     return null;
   }
 
@@ -251,7 +251,7 @@ export class PricingService extends EventEmitter {
 
       if (cached) {
         const parsed = JSON.parse(cached) as PriceResponse;
-        if (this.metrics.hits.redis) { this.metrics.hits.redis++ };
+        this.metrics.hits.redis++;
         this.emit('cache:hit', { level: 'redis', key: cacheKey, latency });
         
         // Promote to memory cache
@@ -260,10 +260,10 @@ export class PricingService extends EventEmitter {
         return { ...parsed, source: 'redis' };
       }
 
-      if (this.metrics.misses.redis) { this.metrics.misses.redis++ };
+      this.metrics.misses.redis++;
       return null;
     } catch (error) {
-      if (this.metrics.errors.redis) { this.metrics.errors.redis++ };
+      this.metrics.errors.redis++;
       this.emit('error', { source: 'redis', error, key: cacheKey });
       return null;
     }
@@ -301,7 +301,7 @@ export class PricingService extends EventEmitter {
           ttl: row.expires_at - now
         };
 
-        if (this.metrics.hits.sqlite) { this.metrics.hits.sqlite++ };
+        this.metrics.hits.sqlite++;
         this.emit('cache:hit', { level: 'sqlite', key: cacheKey, latency });
         
         // Promote to higher cache layers
@@ -310,10 +310,10 @@ export class PricingService extends EventEmitter {
         return response;
       }
 
-      if (this.metrics.misses.sqlite) { this.metrics.misses.sqlite++ };
+      this.metrics.misses.sqlite++;
       return null;
     } catch (error) {
-      if (this.metrics.errors.sqlite) { this.metrics.errors.sqlite++ };
+      this.metrics.errors.sqlite++;
       this.emit('error', { source: 'sqlite', error, key: cacheKey });
       return null;
     }
@@ -329,7 +329,7 @@ export class PricingService extends EventEmitter {
         
         const latency = Date.now() - startTime;
         this.metrics.latency.api.push(latency);
-        if (this.metrics.hits.api) { this.metrics.hits.api++ };
+        this.metrics.hits.api++;
         
         this.emit('api:fetch', { 
           productId: request.productId, 
@@ -344,7 +344,7 @@ export class PricingService extends EventEmitter {
           ttl: this.config.cache.memory.ttl
         };
       } catch (error) {
-        if (this.metrics.errors.api) { this.metrics.errors.api++ };
+        this.metrics.errors.api++;
         this.emit('error', { source: 'api', error, request });
         throw error;
       }
@@ -444,12 +444,16 @@ export class PricingService extends EventEmitter {
 
     // Process in batches to avoid overwhelming the system
     const batchSize = 50;
-    for (let i = 0; i < requests?.length || 0; i += batchSize) {
+    const requestsLength = requests?.length ?? 0;
+    for (let i = 0; i < requestsLength; i += batchSize) {
       const batch = requests.slice(i, i + batchSize);
-      await Promise.all(batch?.map(req => this.getPrice(req).catch(() => null)));
+      await Promise.all(batch?.map(req => this.getPrice(req).catch(err => {
+        console.warn('Cache warm failed for request:', req, err);
+        return null;
+      })));
       this.emit('cache:warm:progress', { 
-        completed: Math.min(i + batchSize, requests?.length || 0), 
-        total: requests?.length || 0 
+        completed: Math.min(i + batchSize, requestsLength), 
+        total: requestsLength 
       });
     }
 
@@ -477,10 +481,15 @@ export class PricingService extends EventEmitter {
 
     // Clear Redis cache
     const redisPattern = this.buildRedisPattern(criteria);
-    const keys = await this.redisClient.keys(redisPattern);
-    if (keys?.length || 0 > 0) {
-      await this.redisClient.del(...keys);
-      invalidated += keys?.length || 0;
+    try {
+      const keys = await this.redisClient.keys(redisPattern);
+      if (keys && keys.length > 0) {
+        await this.redisClient.del(...keys);
+        invalidated += keys.length;
+      }
+    } catch (error) {
+      this.emit('error', { source: 'redis:invalidate', error });
+      console.warn('Failed to invalidate Redis cache:', error);
     }
 
     // Clear SQLite cache
@@ -530,7 +539,7 @@ export class PricingService extends EventEmitter {
   // Metrics and monitoring
   public getMetrics() {
     const calculateAverage = (arr: number[]) => 
-      arr?.length || 0 ? arr.reduce((a: any, b: any) => a + b, 0) / arr?.length || 0 : 0;
+      arr && arr.length > 0 ? arr.reduce((a: number, b: number) => a + b, 0) / arr.length : 0;
 
     return {
       hits: this.metrics.hits,
@@ -580,9 +589,32 @@ export class PricingService extends EventEmitter {
 
   // Cleanup
   public async close(): Promise<void> {
-    this.memoryCache.clear();
-    await this.redisClient.quit();
-    this.sqliteDb.close();
-    this.removeAllListeners();
+    try {
+      // Clear memory cache
+      this.memoryCache.clear();
+      
+      // Close Redis connection gracefully
+      if (this.redisClient.status === 'ready') {
+        await this.redisClient.quit();
+      } else {
+        this.redisClient.disconnect();
+      }
+      
+      // Close SQLite database
+      if (this.sqliteDb.open) {
+        this.sqliteDb.close();
+      }
+      
+      // Remove all event listeners
+      this.removeAllListeners();
+      
+      // Clear metrics arrays to prevent memory leaks
+      this.metrics.latency.memory.length = 0;
+      this.metrics.latency.redis.length = 0;
+      this.metrics.latency.sqlite.length = 0;
+      this.metrics.latency.api.length = 0;
+    } catch (error) {
+      console.warn('Error during PricingService cleanup:', error);
+    }
   }
 }

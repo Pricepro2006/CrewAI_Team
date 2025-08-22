@@ -194,7 +194,7 @@ describe('Critical Issues Verification', () => {
           details: `Server started successfully on port ${API_PORT}. Health check: ${healthResponse?.data?.status}`
         });
 
-        expect(healthResponse?.data?.length).toBe('ok');
+        expect(healthResponse?.data?.status || healthResponse?.data).toBe('ok');
       } else {
         recordResult({
           testName: 'Production Server Startup',
@@ -235,6 +235,8 @@ describe('Critical Issues Verification', () => {
       const { result: orchestrator, duration: initDuration } = await measureTime(
         async () => {
           const agentRegistry = new AgentRegistry();
+          // Import at runtime to avoid circular dependencies
+          const { InMemoryVectorDB } = await import('../../core/rag/vector-stores/InMemoryVectorDB.js');
           const ragService = new InMemoryVectorDB(); // Use in-memory for speed
           
           const orchestrator = new MasterOrchestrator(
@@ -292,12 +294,15 @@ describe('Critical Issues Verification', () => {
       // Test ChromaDB fallback
       const { result: vectorDB, duration: chromaDuration } = await measureTime(
         async () => {
+          // Import at runtime to avoid circular dependencies
+          const { ChromaDBService } = await import('../../core/rag/vector-stores/ChromaDBService.js');
           const chromaDB = new ChromaDBService();
           try {
             await chromaDB.initialize();
             return { type: 'ChromaDB', instance: chromaDB };
           } catch (error) {
             // Should fallback to in-memory
+            const { InMemoryVectorDB } = await import('../../core/rag/vector-stores/InMemoryVectorDB.js');
             const inMemoryDB = new InMemoryVectorDB();
             await inMemoryDB.initialize();
             return { type: 'InMemory', instance: inMemoryDB };
