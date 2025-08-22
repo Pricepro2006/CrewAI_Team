@@ -1,16 +1,25 @@
 # Knowledge-Backed LLM Setup Guide
 
+> **Important Update (August 2025)**: CrewAI Team has fully migrated from Ollama to llama.cpp for superior performance. This guide covers the current llama.cpp setup with RAG integration.
+
 ## Overview
 
-The CrewAI Team project now supports advanced Knowledge-Backed LLM integration using `node-llama-cpp` with ChromaDB for RAG (Retrieval-Augmented Generation). This provides production-ready, context-aware AI responses with seamless fallback mechanisms.
+The CrewAI Team project uses **llama.cpp** as its primary LLM backend with ChromaDB for RAG (Retrieval-Augmented Generation). This provides production-ready, context-aware AI responses with significant performance improvements over previous solutions.
+
+## Migration Status
+
+- **Current Backend**: llama.cpp (Port 8081)
+- **Previous Backend**: Ollama (Deprecated)
+- **API Compatibility**: Dual-field support during transition
+- **Migration Guide**: See [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md)
 
 ## Features
 
-- **Native LLM Integration**: Direct integration with llama.cpp via node-llama-cpp
-- **Multi-Model Support**: Primary (Mistral 7B) and fallback (Llama 3.2) models
+- **Native C++ Performance**: Direct integration with llama.cpp server
+- **Multi-Model Support**: Primary (Llama 3.2 3B) and various alternatives
 - **RAG Integration**: ChromaDB vector store for context-aware responses
-- **Flexible Provider System**: Seamless switching between Ollama, llama.cpp, and Knowledge-Backed modes
-- **Production Ready**: Error handling, performance monitoring, and graceful fallbacks
+- **OpenAI API Compatible**: Standard API format for easy integration
+- **Production Ready**: 30-50% performance improvement over Ollama
 
 ## Quick Start
 
