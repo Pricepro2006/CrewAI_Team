@@ -855,6 +855,9 @@ export const MonitoringDashboard: React.FC = (): React.ReactElement => {
               <CardContent>
                 <Badge
                   variant={
+                    // Prefer 'llm' field, fallback to 'ollama' for backwards compatibility
+                    (healthData?.services as ServiceDetails)?.llm === "connected" ||
+                    (healthData?.services as ServiceDetails)?.llm === "healthy" ||
                     (healthData?.services as ServiceDetails)?.ollama === "connected" ||
                     (healthData?.services as ServiceDetails)?.ollama === "healthy" ||
                     (healthData?.services as ServiceDetails)?.llama === "connected" ||
@@ -863,7 +866,9 @@ export const MonitoringDashboard: React.FC = (): React.ReactElement => {
                       : "destructive"
                   }
                 >
-                  {(healthData?.services as ServiceDetails)?.ollama || 
+                  {/* Prefer 'llm' field, fallback to 'ollama' for backwards compatibility */}
+                  {(healthData?.services as ServiceDetails)?.llm || 
+                   (healthData?.services as ServiceDetails)?.ollama || 
                    (healthData?.services as ServiceDetails)?.llama || 
                    "Unknown"}
                 </Badge>

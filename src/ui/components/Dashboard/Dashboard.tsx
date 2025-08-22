@@ -313,7 +313,8 @@ export const Dashboard: React.FC = () => {
 
   const llamaStatus = React.useMemo(() => {
     if (healthError) return "disconnected";
-    return health?.services?.ollama?.status || health?.status || "disconnected";
+    // Prefer 'llm' field, fallback to 'ollama' for backwards compatibility
+    return health?.services?.llm?.status || health?.services?.ollama?.status || health?.status || "disconnected";
   }, [health, healthError]);
   
   const isLlamaConnected = React.useMemo(() => {

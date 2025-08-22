@@ -127,23 +127,40 @@ app.get("/health", async (_req, res) => {
   const startTime = Date.now();
   const services = {
     api: "running",
-    ollama: "unknown",
+    ollama: "unknown",  // Deprecated: kept for backwards compatibility
+    llm: "unknown",     // New field: accurately represents llama.cpp
     chromadb: "unknown",
     database: "unknown",
   };
 
   try {
-    // Check llama.cpp provider status
-    const { LLMProviderFactory } = await import("../core/llm/LLMProviderFactory.js");
-    const provider = LLMProviderFactory.getInstance();
+    // Check llama.cpp server status (running on port 8081)
+    const llamaUrl = process.env.LLAMA_CPP_URL || "http://localhost:8081";
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     
-    if (provider && provider.isReady && provider.isReady()) {
-      services.ollama = "connected"; // Keep field name for compatibility but it's actually llama.cpp
+    const llamaResponse = await fetch(`${llamaUrl}/v1/models`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    
+    if (llamaResponse.ok) {
+      const data = await llamaResponse.json();
+      const status = data.data && data.data.length > 0 ? "connected" : "no-model";
+      services.ollama = status;  // Deprecated: kept for backwards compatibility
+      services.llm = status;     // New field: accurately represents llama.cpp
     } else {
       services.ollama = "disconnected";
+      services.llm = "disconnected";
     }
   } catch (error) {
-    services.ollama = "error";
+    if ((error as Error).name === "AbortError") {
+      services.ollama = "timeout";
+      services.llm = "timeout";
+    } else {
+      services.ollama = "disconnected";
+      services.llm = "disconnected";
+    }
   }
 
   try {

@@ -21,7 +21,7 @@ export interface HealthStatus {
   uptime: number;
   services: {
     api: ServiceStatus;
-    ollama: ServiceStatus;
+    llm: ServiceStatus;  // Changed from ollama to llm (llama.cpp)
     database: ServiceStatus;
     chromadb: ServiceStatus;
     rag: ServiceStatus;
@@ -58,52 +58,55 @@ export const healthRouter = router({
   status: publicProcedure.query(async ({ ctx }): Promise<HealthStatus> => {
     const services: HealthStatus["services"] = {
       api: { status: "healthy", message: "API is running" },
-      ollama: { status: "unknown" },
+      llm: { status: "unknown" },
       database: { status: "unknown" },
       chromadb: { status: "unknown" },
       rag: { status: "unknown" },
-    };
+    } as any;  // Allow both 'ollama' and 'llm' fields temporarily
 
-    // Check Ollama connection
+    // Check llama.cpp server connection (running on port 8081)
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      const ollamaResponse = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
+      // llama.cpp server uses /v1/models endpoint
+      const llamaResponse = await fetch(`${ollamaConfig.baseUrl}/v1/models`, {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
-      if (ollamaResponse.ok) {
-        const data = (await ollamaResponse.json()) as {
-          models?: Array<{ name: string }>;
+      if (llamaResponse.ok) {
+        const data = (await llamaResponse.json()) as {
+          data?: Array<{ id: string; object: string }>;
         };
-        services.ollama = {
+        const llmStatus = {
           status: "healthy",
-          message: "Ollama is connected",
+          message: "llama.cpp server is connected",
           details: {
-            models: data.models?.length || 0,
+            models: data.data?.length || 0,
             baseUrl: ollamaConfig.baseUrl,
+            serverType: "llama.cpp",
           },
         };
+        services.llm = llmStatus;
+        (services as any).ollama = llmStatus;  // Deprecated: kept for backwards compatibility
       } else {
-        services.ollama = {
+        const errorStatus = {
           status: "error",
-          message: `Ollama returned status ${ollamaResponse.status}`,
+          message: `llama.cpp server returned status ${llamaResponse.status}`,
         };
+        services.llm = errorStatus;
+        (services as any).ollama = errorStatus;  // Deprecated: kept for backwards compatibility
       }
     } catch (error) {
-      if ((error as Error).name === "AbortError") {
-        services.ollama = {
-          status: "error",
-          message: "Ollama connection timeout",
-        };
-      } else {
-        services.ollama = {
-          status: "error",
-          message: `Ollama connection failed: ${(error as Error).message}`,
-        };
-      }
+      const errorStatus = {
+        status: "error",
+        message: (error as Error).name === "AbortError" 
+          ? "llama.cpp server connection timeout"
+          : `llama.cpp server connection failed: ${(error as Error).message}`,
+      };
+      services.llm = errorStatus;
+      (services as any).ollama = errorStatus;  // Deprecated: kept for backwards compatibility
     }
 
     // Check database connection
@@ -284,7 +287,7 @@ export const healthRouter = router({
     const criticalErrors = criticalServices.some(s => s.status === "error");
 
     // Important but non-critical services - error causes degradation
-    const importantServices = [services.ollama, services.rag];
+    const importantServices = [services.llm, services.rag];
     const importantErrors = importantServices.some(s => s.status === "error");
     const importantDegraded = importantServices.some(s => s.status === "degraded");
 
@@ -335,7 +338,8 @@ export const healthRouter = router({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
+      // Check llama.cpp server endpoint
+      const response = await fetch(`${ollamaConfig.baseUrl}/v1/models`, {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -345,27 +349,26 @@ export const healthRouter = router({
       }
 
       const data = (await response.json()) as {
-        models?: Array<{ name: string }>;
+        data?: Array<{ id: string; object: string }>;
       };
-      const models = data.models || [];
+      const models = data.data || [];
 
-      // Check for required models
-      const requiredModels = [MODEL_CONFIG?.models?.primary, MODEL_CONFIG?.models?.critical, MODEL_CONFIG?.models?.embedding];
-      const availableModels = models?.map((m: any) => m.name);
-      const missingModels = requiredModels?.filter(
-        (m: any) =>
-          !availableModels.some((am: any) => am.startsWith(m.split(":")[0] || m)),
-      );
+      // llama.cpp typically has one loaded model
+      const availableModels = models?.map((m: any) => m.id);
+      
+      // For llama.cpp, we check if the server is running and has a model loaded
+      const hasModel = models.length > 0;
 
       return {
         connected: true,
         baseUrl: ollamaConfig.baseUrl,
+        serverType: "llama.cpp",
         models: availableModels,
-        missingModels,
-        status: missingModels?.length || 0 === 0 ? "ready" : "missing_models",
+        modelLoaded: hasModel,
+        status: hasModel ? "ready" : "no_model_loaded",
       };
     } catch (error) {
-      logger.error("Ollama health check failed", "HEALTH", { error });
+      logger.error("llama.cpp health check failed", "HEALTH", { error });
       return {
         connected: false,
         error: (error as Error).message,
