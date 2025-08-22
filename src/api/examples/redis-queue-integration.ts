@@ -336,9 +336,9 @@ export async function demonstrateQueueOperations(
     console.log('\n📊 Queue Statistics:');
     const queueStats = await groceryPipeline.getQueueStats();
     for (const queue of queueStats) {
-      console.log(`  ${queue.name}:`);
-      console.log(`    📋 Length: ${queue?.length || 0}`);
-      console.log(`    🔄 Processing: ${queue.processing}`);
+      console.log(`  ${queue.queueName}:`);
+      console.log(`    ⏳ Waiting: ${queue.waiting}`);
+      console.log(`    🔄 Active: ${queue.active}`);
       console.log(`    ✅ Completed: ${queue.completed}`);
       console.log(`    ❌ Failed: ${queue.failed}`);
     }
