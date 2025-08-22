@@ -1,0 +1,31 @@
+{
+  "query": "Process and respond to: which tools can you use?",
+  "timestamp": "2025-08-21T22:26:52.557Z",
+  "results": [
+    {
+      "title": "Process and respond to: which tools can you use? - Result 1",
+      "url": "https://example.com/search?q=Process%20and%20respond%20to%3A%20which%20tools%20can%20you%20use%3F&result=1",
+      "snippet": "Information about Process and respond to: which tools can you use?. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Process and respond to: which tools can you use? - Result 2",
+      "url": "https://example.com/search?q=Process%20and%20respond%20to%3A%20which%20tools%20can%20you%20use%3F&result=2",
+      "snippet": "Information about Process and respond to: which tools can you use?. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Process and respond to: which tools can you use? - Result 3",
+      "url": "https://example.com/search?q=Process%20and%20respond%20to%3A%20which%20tools%20can%20you%20use%3F&result=3",
+      "snippet": "Information about Process and respond to: which tools can you use?. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

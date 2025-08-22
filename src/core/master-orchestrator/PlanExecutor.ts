@@ -509,7 +509,7 @@ export class PlanExecutor {
     }
 
     // Check for cycles
-    if (sorted?.length || 0 !== steps?.length || 0) {
+    if (sorted.length !== steps.length) {
       console.warn("Circular dependencies detected in plan");
       // Return original order as fallback
       return steps;

@@ -1,0 +1,31 @@
+{
+  "query": "scrape https://github.com/Shubhamsaboo/awesome-llm-apps",
+  "timestamp": "2025-08-21T21:43:52.510Z",
+  "results": [
+    {
+      "title": "scrape https://github.com/Shubhamsaboo/awesome-llm-apps - Result 1",
+      "url": "https://example.com/search?q=scrape%20https%3A%2F%2Fgithub.com%2FShubhamsaboo%2Fawesome-llm-apps&result=1",
+      "snippet": "Information about scrape https://github.com/Shubhamsaboo/awesome-llm-apps. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "scrape https://github.com/Shubhamsaboo/awesome-llm-apps - Result 2",
+      "url": "https://example.com/search?q=scrape%20https%3A%2F%2Fgithub.com%2FShubhamsaboo%2Fawesome-llm-apps&result=2",
+      "snippet": "Information about scrape https://github.com/Shubhamsaboo/awesome-llm-apps. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "scrape https://github.com/Shubhamsaboo/awesome-llm-apps - Result 3",
+      "url": "https://example.com/search?q=scrape%20https%3A%2F%2Fgithub.com%2FShubhamsaboo%2Fawesome-llm-apps&result=3",
+      "snippet": "Information about scrape https://github.com/Shubhamsaboo/awesome-llm-apps. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

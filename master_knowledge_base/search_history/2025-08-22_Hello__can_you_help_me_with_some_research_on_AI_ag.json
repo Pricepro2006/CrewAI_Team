@@ -1,0 +1,31 @@
+{
+  "query": "Hello, can you help me with some research on AI agents?",
+  "timestamp": "2025-08-22T00:09:41.909Z",
+  "results": [
+    {
+      "title": "Hello, can you help me with some research on AI agents? - Result 1",
+      "url": "https://example.com/search?q=Hello%2C%20can%20you%20help%20me%20with%20some%20research%20on%20AI%20agents%3F&result=1",
+      "snippet": "Information about Hello, can you help me with some research on AI agents?. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Hello, can you help me with some research on AI agents? - Result 2",
+      "url": "https://example.com/search?q=Hello%2C%20can%20you%20help%20me%20with%20some%20research%20on%20AI%20agents%3F&result=2",
+      "snippet": "Information about Hello, can you help me with some research on AI agents?. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Hello, can you help me with some research on AI agents? - Result 3",
+      "url": "https://example.com/search?q=Hello%2C%20can%20you%20help%20me%20with%20some%20research%20on%20AI%20agents%3F&result=3",
+      "snippet": "Information about Hello, can you help me with some research on AI agents?. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}
