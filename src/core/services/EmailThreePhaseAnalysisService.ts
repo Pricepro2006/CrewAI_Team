@@ -35,7 +35,9 @@ import type {
   DatabaseCallback,
   DatabaseRecord,
   FieldValidationFunction,
-  ParsingMetrics,
+  ParsingMetrics
+} from "../../shared/types/core.types.js";
+import {
   isEmailWithChainAnalysis,
   isPhase2DataWithFallback
 } from "../../shared/types/core.types.js";

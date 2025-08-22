@@ -14,8 +14,8 @@ export const databaseOptimizationConfig = {
       // Connection timeout (ms)
       timeout: 30000,
 
-      // Enable foreign keys
-      fileMustExist: true,
+      // Database file existence check
+      fileMustExist: false, // Allow creation of new database if it doesn't exist
     },
   },
 

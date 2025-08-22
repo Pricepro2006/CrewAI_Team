@@ -299,10 +299,10 @@ class CredentialManager {
 
     const config = this.schema[key];
     if (config?.mask || config?.sensitive) {
-      if (value?.length || 0 <= 8) {
+      if ((value?.length || 0) <= 8) {
         return '***';
       }
-      return `${value.substring(0, 4)}***${value.substring(value?.length || 0 - 4)}`;
+      return `${value.substring(0, 4)}***${value.substring((value?.length || 0) - 4)}`;
     }
     return value;
   }

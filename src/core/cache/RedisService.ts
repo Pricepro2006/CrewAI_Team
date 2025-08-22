@@ -36,22 +36,27 @@ export class RedisService {
   }
 
   private setupEventHandlers(): void {
-    this?.client?.on("connect", () => {
+    if (!this.client) {
+      logger.error("Redis client not initialized", "REDIS");
+      return;
+    }
+
+    this.client.on("connect", () => {
       this.isConnected = true;
       logger.info("Redis connected successfully", "REDIS");
     });
 
-    this?.client?.on("error", (error: any) => {
+    this.client.on("error", (error: any) => {
       this.isConnected = false;
-      logger.error("Redis connection error", "REDIS", { error: error.message });
+      logger.error("Redis connection error", "REDIS", { error: error?.message || 'Unknown error' });
     });
 
-    this?.client?.on("close", () => {
+    this.client.on("close", () => {
       this.isConnected = false;
       logger.warn("Redis connection closed", "REDIS");
     });
 
-    this?.client?.on("reconnecting", () => {
+    this.client.on("reconnecting", () => {
       logger.info("Redis reconnecting...", "REDIS");
     });
   }
@@ -60,12 +65,15 @@ export class RedisService {
    * Set a value in Redis with optional TTL
    */
   async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
       const serialized = JSON.stringify(value);
       if (ttlSeconds) {
-        await this?.client?.setex(key, ttlSeconds, serialized);
+        await this.client.setex(key, ttlSeconds, serialized);
       } else {
-        await this?.client?.set(key, serialized);
+        await this.client.set(key, serialized);
       }
       logger.debug(`Set cache key: ${key}`, "REDIS");
     } catch (error) {
@@ -78,8 +86,11 @@ export class RedisService {
    * Get a value from Redis
    */
   async get<T>(key: string): Promise<T | null> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      const value = await this?.client?.get(key);
+      const value = await this.client.get(key);
       if (!value) {
         return null;
       }
@@ -94,8 +105,11 @@ export class RedisService {
    * Delete a key from Redis
    */
   async delete(key: string): Promise<void> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      await this?.client?.del(key);
+      await this.client.del(key);
       logger.debug(`Deleted cache key: ${key}`, "REDIS");
     } catch (error) {
       logger.error(`Failed to delete cache key: ${key}`, "REDIS", { error });
@@ -107,12 +121,15 @@ export class RedisService {
    * Delete multiple keys matching a pattern
    */
   async deletePattern(pattern: string): Promise<void> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      const keys = await this?.client?.keys(pattern);
-      if (keys?.length || 0 > 0) {
-        await this?.client?.del(...keys);
+      const keys = await this.client.keys(pattern);
+      if (keys && keys.length > 0) {
+        await this.client.del(...keys);
         logger.debug(
-          `Deleted ${keys?.length || 0} keys matching pattern: ${pattern}`,
+          `Deleted ${keys.length} keys matching pattern: ${pattern}`,
           "REDIS",
         );
       }
@@ -128,8 +145,11 @@ export class RedisService {
    * Check if a key exists
    */
   async exists(key: string): Promise<boolean> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      const result = await this?.client?.exists(key);
+      const result = await this.client.exists(key);
       return result === 1;
     } catch (error) {
       logger.error(`Failed to check existence of key: ${key}`, "REDIS", {
@@ -143,8 +163,11 @@ export class RedisService {
    * Get remaining TTL for a key
    */
   async getTTL(key: string): Promise<number> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      return await this?.client?.ttl(key);
+      return await this.client.ttl(key);
     } catch (error) {
       logger.error(`Failed to get TTL for key: ${key}`, "REDIS", { error });
       throw error;
@@ -188,8 +211,11 @@ export class RedisService {
    * Increment a counter
    */
   async increment(key: string, by: number = 1): Promise<number> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      return await this?.client?.incrby(key, by);
+      return await this.client.incrby(key, by);
     } catch (error) {
       logger.error(`Failed to increment key: ${key}`, "REDIS", { error });
       throw error;
@@ -200,8 +226,11 @@ export class RedisService {
    * Set key expiration time
    */
   async expire(key: string, seconds: number): Promise<boolean> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      const result = await this?.client?.expire(key, seconds);
+      const result = await this.client.expire(key, seconds);
       return result === 1;
     } catch (error) {
       logger.error(`Failed to set expiration for key: ${key}`, "REDIS", { error });
@@ -213,8 +242,11 @@ export class RedisService {
    * Set hash field
    */
   async hset(key: string, field: string, value: any): Promise<void> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      await this?.client?.hset(key, field, JSON.stringify(value));
+      await this.client.hset(key, field, JSON.stringify(value));
     } catch (error) {
       logger.error(`Failed to set hash field: ${key}.${field}`, "REDIS", {
         error,
@@ -227,8 +259,11 @@ export class RedisService {
    * Get hash field
    */
   async hget<T>(key: string, field: string): Promise<T | null> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      const value = await this?.client?.hget(key, field);
+      const value = await this.client.hget(key, field);
       if (!value) {
         return null;
       }
@@ -245,8 +280,11 @@ export class RedisService {
    * Get all hash fields
    */
   async hgetall<T>(key: string): Promise<Record<string, T>> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      const hash = await this?.client?.hgetall(key);
+      const hash = await this.client.hgetall(key);
       const result: Record<string, T> = {};
 
       for (const [field, value] of Object.entries(hash)) {
@@ -264,15 +302,19 @@ export class RedisService {
    * Check if Redis is connected
    */
   isReady(): boolean {
-    return this.isConnected && this?.client?.status === "ready";
+    return this.isConnected && this.client && this.client.status === "ready";
   }
 
   /**
    * Close Redis connection
    */
   async close(): Promise<void> {
+    if (!this.client) {
+      logger.warn("Redis client not initialized, nothing to close", "REDIS");
+      return;
+    }
     try {
-      await this?.client?.quit();
+      await this.client.quit();
       logger.info("Redis connection closed", "REDIS");
     } catch (error) {
       logger.error("Failed to close Redis connection", "REDIS", { error });
@@ -284,8 +326,11 @@ export class RedisService {
    * Flush all keys (use with caution!)
    */
   async flushAll(): Promise<void> {
+    if (!this.client) {
+      throw new Error("Redis client not initialized");
+    }
     try {
-      await this?.client?.flushall();
+      await this.client.flushall();
       logger.warn("Flushed all Redis keys", "REDIS");
     } catch (error) {
       logger.error("Failed to flush Redis", "REDIS", { error });

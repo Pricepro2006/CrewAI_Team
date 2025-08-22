@@ -160,10 +160,22 @@ export const walmartGroceryRouter = createFeatureRouter(
         });
 
         try {
+          // Create adapter for MCP tools to match MCPBrightDataTool interface
+          const mcpToolAdapter: any = {
+            searchEngine: async (params: any) => 
+              ctx.mcpTools.callTool('search_engine', params),
+            scrapeAsMarkdown: async (params: any) => 
+              ctx.mcpTools.callTool('scrape_as_markdown', params),
+            scrapeAsHtml: async (params: any) => 
+              ctx.mcpTools.callTool('scrape_as_html', params),
+            extract: async (params: any) => 
+              ctx.mcpTools.callTool('extract', params),
+          };
+          
           // Use BrightData service for product search
           const brightData = new BrightDataService(
             { rateLimitPerMinute: 60 },
-            ctx.mcpTools, // Pass MCP tools from context
+            mcpToolAdapter,
           );
 
           const collectedData = await brightData.collectEcommerceData({
@@ -300,19 +312,27 @@ export const walmartGroceryRouter = createFeatureRouter(
             1,
           );
 
-          if (cachedData?.length || 0 > 0 && cachedData[0].score > 0.8) {
+          if (cachedData && cachedData.length > 0 && cachedData[0].score > 0.8) {
             logger.info("Returning cached product data", "WALMART");
             return {
               source: "cache",
               data: cachedData[0].content,
-              timestamp: cachedData[0].metadata.timestamp,
+              timestamp: cachedData[0].metadata?.timestamp || new Date().toISOString(),
             };
           }
 
           // Use BrightData for fresh data
+          // Create adapter for MCP tools
+          const mcpToolAdapter: any = {
+            searchEngine: async (params: any) => 
+              ctx.mcpTools.callTool('search_engine', params),
+            scrapeAsMarkdown: async (params: any) => 
+              ctx.mcpTools.callTool('scrape_as_markdown', params),
+          };
+          
           const brightData = new BrightDataService(
             { rateLimitPerMinute: 60 },
-            ctx.mcpTools,
+            mcpToolAdapter,
           );
 
           const productUrl = `https://www?.walmart.com/ip/${input.productId}`;
@@ -447,7 +467,7 @@ export const walmartGroceryRouter = createFeatureRouter(
               `walmart product ${productId}`,
               1,
             );
-            return cached?.length || 0 > 0 ? cached[0].content : null;
+            return cached && cached.length > 0 ? cached[0].content : null;
           });
 
           const products = await Promise.all(productPromises);
@@ -491,9 +511,17 @@ export const walmartGroceryRouter = createFeatureRouter(
         });
 
         try {
+          // Create adapter for MCP tools
+          const mcpToolAdapter: any = {
+            searchEngine: async (params: any) => 
+              ctx.mcpTools.callTool('search_engine', params),
+            scrapeAsMarkdown: async (params: any) => 
+              ctx.mcpTools.callTool('scrape_as_markdown', params),
+          };
+          
           const brightData = new BrightDataService(
             { rateLimitPerMinute: 60 },
-            ctx.mcpTools,
+            mcpToolAdapter,
           );
 
           let scrapedData: CollectedData[];

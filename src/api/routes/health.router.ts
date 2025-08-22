@@ -79,8 +79,8 @@ export const healthRouter = router({
         const data = (await llamaResponse.json()) as {
           data?: Array<{ id: string; object: string }>;
         };
-        const llmStatus = {
-          status: "healthy",
+        const llmStatus: ServiceStatus = {
+          status: "healthy" as const,
           message: "llama.cpp server is connected",
           details: {
             models: data.data?.length || 0,
@@ -91,16 +91,16 @@ export const healthRouter = router({
         services.llm = llmStatus;
         (services as any).ollama = llmStatus;  // Deprecated: kept for backwards compatibility
       } else {
-        const errorStatus = {
-          status: "error",
+        const errorStatus: ServiceStatus = {
+          status: "error" as const,
           message: `llama.cpp server returned status ${llamaResponse.status}`,
         };
         services.llm = errorStatus;
         (services as any).ollama = errorStatus;  // Deprecated: kept for backwards compatibility
       }
     } catch (error) {
-      const errorStatus = {
-        status: "error",
+      const errorStatus: ServiceStatus = {
+        status: "error" as const,
         message: (error as Error).name === "AbortError" 
           ? "llama.cpp server connection timeout"
           : `llama.cpp server connection failed: ${(error as Error).message}`,
@@ -205,7 +205,7 @@ export const healthRouter = router({
         // RAG is always healthy if initialized, regardless of vector store backend
         const isUsingFallback = ragHealth.vectorStore?.fallbackUsed || 
                                ragHealth.vectorStore?.type === "in-memory" ||
-                               ragHealth.vectorStore?.mode === "in-memory";
+                               (ragHealth.vectorStore as any)?.mode === "in-memory";
         
         services.rag = {
           status: "healthy", // Always healthy with resilient store
@@ -216,7 +216,7 @@ export const healthRouter = router({
             initialized: true,
             hasDocuments: documents?.length || 0 > 0,
             vectorStoreType: ragHealth.vectorStore?.type || "resilient",
-            vectorStoreMode: ragHealth.vectorStore?.mode || "unknown",
+            vectorStoreMode: (ragHealth.vectorStore as any)?.mode || "unknown",
             fallbackMode: isUsingFallback,
             embeddingService: ragHealth.embeddingService?.status || "unknown",
             resilient: true,
@@ -439,7 +439,7 @@ export const healthRouter = router({
         initialized: true,
         documentCount: documents?.length || 0,
         chromadbConnected:
-          ctx.ragSystem["vectorStore"]?.["isConnected"] || false,
+          (ctx.ragSystem as any)?.["vectorStore"]?.["isConnected"] || false,
         embeddingModel: MODEL_CONFIG?.models?.embedding,
         status: "healthy",
       };

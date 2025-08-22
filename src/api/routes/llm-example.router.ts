@@ -26,7 +26,7 @@ const GenerateRequestSchema = z.object({
  * POST /api/llm/generate
  * Generate text with proper client-specific rate limiting
  */
-router.post('/generate', async (req: Request, res: Response) => {
+router.post('/generate', async (req: Request, res: Response): Promise<void | Response> => {
   try {
     // Validate request body
     const validatedBody = GenerateRequestSchema.parse(req.body);

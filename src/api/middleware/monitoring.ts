@@ -9,6 +9,24 @@ interface MonitoredRequest extends Request {
   user?: { [key: string]: any; id: string };
 }
 
+// Utility to safely get headers from both Express Request and Node.js IncomingMessage
+function getHeaderSafely(req: any, headerName: string): string | undefined {
+  // If it's an Express Request object with .get() method
+  if (req && typeof req.get === 'function') {
+    return req.get(headerName);
+  }
+  
+  // If it's a Node.js IncomingMessage object with .headers
+  if (req && req.headers && typeof req.headers === 'object') {
+    const headerKey = headerName.toLowerCase();
+    const headerValue = req.headers[headerKey];
+    return Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  }
+  
+  // Fallback
+  return undefined;
+}
+
 // Generate request ID
 export function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -41,7 +59,7 @@ export function requestTracking(
     path: req.path,
     query: req.query,
     ip: req.ip,
-    userAgent: req.get("user-agent"),
+    userAgent: getHeaderSafely(req, "user-agent"),
   });
 
   // Override res.json to capture response
@@ -120,7 +138,7 @@ export function requestTracking(
         requestId,
         endpoint: req.path,
         method: req.method,
-        userAgent: req.get("user-agent"),
+        userAgent: getHeaderSafely(req, "user-agent"),
         ip: req.ip,
         userId: req.user?.id,
       };
@@ -170,7 +188,7 @@ export function errorTracking(
       requestId,
       endpoint: req.path,
       method: req.method,
-      userAgent: req.get("user-agent"),
+      userAgent: getHeaderSafely(req, "user-agent"),
       ip: req.ip,
       userId: req.user?.id,
     },
@@ -227,7 +245,7 @@ export function requestSizeTracking(
   next: NextFunction,
 ): void {
   // Track request size
-  const contentLength = req.get("content-length");
+  const contentLength = getHeaderSafely(req, "content-length");
   if (contentLength) {
     metricsCollector.histogram(
       "http_request_size_bytes",
@@ -276,7 +294,7 @@ export function rateLimitTracking(
           endpoint: req.path,
           method: req.method,
           ip: req.ip || "unknown",
-          userAgent: req.get("user-agent"),
+          userAgent: getHeaderSafely(req, "user-agent"),
           userId: req.user?.id,
         },
         "low",
@@ -316,7 +334,7 @@ export function authTracking(
             endpoint: req.path,
             method: req.method,
             ip: req.ip || "unknown",
-            userAgent: req.get("user-agent"),
+            userAgent: getHeaderSafely(req, "user-agent"),
           },
           "medium",
           true,

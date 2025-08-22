@@ -357,10 +357,10 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?).toHaveLength(3);
-      expect(result.data?).toHaveLength(3);
-      expect(result.data?).toHaveLength(0);
-      expect(result.data?).toHaveLength(0);
+      expect(result.data?.successful).toHaveLength(3);
+      expect(result.data?.total).toBe(3);
+      expect(result.data?.failed).toHaveLength(0);
+      expect(result.data?.errors).toHaveLength(0);
     });
 
     it('should handle mixed success/failure in batch', async () => {
@@ -398,9 +398,9 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?).toHaveLength(3);
-      expect(result.data?).toHaveLength(2);
-      expect(result.data?).toHaveLength(1);
+      expect(result.data?.total).toBe(3);
+      expect(result.data?.successful).toHaveLength(2);
+      expect(result.data?.failed).toHaveLength(1);
     });
 
     it('should calculate throughput correctly', async () => {
@@ -412,8 +412,8 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch(emails, IngestionSource.JSON_FILE);
 
       expect(result.success).toBe(true);
-      expect(result.data?.length).toBeGreaterThan(0);
-      expect(typeof result.data?.length).toBe('number');
+      expect(result.data?.throughput).toBeGreaterThan(0);
+      expect(typeof result.data?.throughput).toBe('number');
     });
   });
 
@@ -436,7 +436,7 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestFromJsonFile('/path/to/emails.json');
 
       expect(result.success).toBe(true);
-      expect(result.data?).toHaveLength(2);
+      expect(result.data?.successful).toHaveLength(2);
     });
 
     it('should handle invalid JSON file', async () => {
@@ -853,8 +853,8 @@ describe('EmailIngestionService', () => {
       const result = await service.ingestBatch([], IngestionSource.JSON_FILE);
       
       expect(result.success).toBe(true);
-      expect(result.data?).toHaveLength(0);
-      expect(result.data?).toHaveLength(0);
+      expect(result.data?.successful).toHaveLength(0);
+      expect(result.data?.failed).toHaveLength(0);
     });
 
     it('should handle batch with all duplicates', async () => {

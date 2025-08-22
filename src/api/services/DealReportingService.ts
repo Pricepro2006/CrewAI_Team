@@ -1241,8 +1241,8 @@ export class DealReportingService {
       // Calculate churn rate
       const prevMonthStart = new Date(monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000);
       const prevMonthUsers = dauStmt.get(prevMonthStart.toISOString()) as UserCountRow | undefined;
-      const churnRate = prevMonthUsers?.count > 0 
-        ? ((prevMonthUsers.count - mauResult?.count) / prevMonthUsers.count) * 100
+      const churnRate = prevMonthUsers?.count && prevMonthUsers.count > 0 && mauResult?.count
+        ? ((prevMonthUsers.count - mauResult.count) / prevMonthUsers.count) * 100
         : 0;
       
       return {
@@ -1375,7 +1375,7 @@ export class DealReportingService {
         dateRange.endDate
       ) as UserCountRow | undefined;
       
-      return result?.active_count || 0;
+      return typeof result?.active_count === 'number' ? result.active_count : 0;
     } catch (error) {
       logger.warn("Failed to get active user count", "DEAL_REPORTING", { error });
       return 0;

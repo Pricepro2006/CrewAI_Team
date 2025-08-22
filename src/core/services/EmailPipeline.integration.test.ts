@@ -171,13 +171,13 @@ This is clearly a critical emergency that requires our highest priority response
       expect(analysis.action_items[0].revenue_impact).toBe("$500000");
 
       // CRITICAL VALIDATION: Chain Scoring Fix Working
-      expect(analysis.chain_analysis?.length).toBeLessThan(100); // Single email never 100%
-      expect(analysis.chain_analysis?.length).toBeLessThanOrEqual(
+      expect(analysis.chain_analysis?.completeness_score).toBeLessThan(100); // Single email never 100%
+      expect(analysis.chain_analysis?.completeness_score).toBeLessThanOrEqual(
         30,
       ); // Should be low
-      expect(analysis.chain_analysis?.length).toBe(false);
-      expect(analysis.chain_analysis?).toHaveLength(1);
-      expect(analysis.chain_analysis?.length).toContain(
+      expect(analysis.chain_analysis?.is_complete).toBe(false);
+      expect(analysis.chain_analysis?.emails).toHaveLength(1);
+      expect(analysis.chain_analysis?.missing_components).toContain(
         "Multiple emails for context",
       );
 
@@ -323,13 +323,13 @@ This is clearly a critical emergency that requires our highest priority response
       expect(
         analysis.chain_analysis?.completeness_score,
       ).toBeGreaterThanOrEqual(75); // Complete chain should score high
-      expect(analysis.chain_analysis?.length).toBeLessThanOrEqual(
+      expect(analysis.chain_analysis?.completeness_score).toBeLessThanOrEqual(
         100,
       );
-      expect(analysis.chain_analysis?.length).toBe(true);
-      expect(analysis.chain_analysis?).toHaveLength(4);
-      expect(analysis.chain_analysis?.length).toBe("quote_request");
-      expect(analysis.chain_analysis?.length).toHaveLength(0); // Complete chain
+      expect(analysis.chain_analysis?.is_complete).toBe(true);
+      expect(analysis.chain_analysis?.emails).toHaveLength(4);
+      expect(analysis.chain_analysis?.detected_pattern).toBe("quote_request");
+      expect(analysis.chain_analysis?.missing_components).toHaveLength(0); // Complete chain
 
       // Should trigger Phase 3 (complete chain)
       expect(analysis.strategic_insights).toBeDefined();
@@ -415,11 +415,11 @@ This is clearly a critical emergency that requires our highest priority response
       expect(analysis.business_process).toBe("PARSING_ERROR");
 
       // CRITICAL VALIDATION: Intermediate Chain Scoring Working
-      expect(analysis.chain_analysis?.length).toBeGreaterThan(30); // Not at binary extremes
-      expect(analysis.chain_analysis?.length).toBeLessThan(80); // Moderate chain
-      expect(analysis.chain_analysis?.length).toBe(false); // Incomplete (no resolution)
-      expect(analysis.chain_analysis?).toHaveLength(3);
-      expect(analysis.chain_analysis?.length).toContain(
+      expect(analysis.chain_analysis?.completeness_score).toBeGreaterThan(30); // Not at binary extremes
+      expect(analysis.chain_analysis?.completeness_score).toBeLessThan(80); // Moderate chain
+      expect(analysis.chain_analysis?.is_complete).toBe(false); // Incomplete (no resolution)
+      expect(analysis.chain_analysis?.emails).toHaveLength(3);
+      expect(analysis.chain_analysis?.missing_components).toContain(
         "Completion/resolution confirmation",
       );
 

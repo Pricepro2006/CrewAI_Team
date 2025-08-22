@@ -490,10 +490,10 @@ export class EventMonitor extends EventEmitter {
 
   // Private utility methods
   private recordTrace(event: BaseEvent, context: EventContext): void {
-    const traceId = context.traceId || this.startTrace(event, context.parentTraceId);
+    const traceId = (typeof context.traceId === 'string' ? context.traceId : null) || this.startTrace(event, context.parentTraceId as string | undefined);
     
     if (context.processingEndTime) {
-      this.endTrace(traceId, !context.error, context.error);
+      this.endTrace(traceId, !context.error, context.error ? (context.error instanceof Error ? context.error : new Error(String(context.error))) : undefined);
     }
   }
 
@@ -592,7 +592,11 @@ export class EventMonitor extends EventEmitter {
     let value: unknown = this.metrics;
     
     for (const part of parts) {
-      value = value?.[part];
+      if (value && typeof value === 'object' && part in value) {
+        value = (value as Record<string, unknown>)[part];
+      } else {
+        value = undefined;
+      }
     }
     
     return typeof value === 'number' ? value : 0;
@@ -642,25 +646,36 @@ export class EventMonitor extends EventEmitter {
     try {
       switch (action.type) {
         case 'log':
-          const level = action.config.level || 'warn';
-          const logFn = (console as { [key: string]: (...args: unknown[]) => void })[level];
+          const config = action.config as { level?: string };
+          const level = config.level || 'warn';
+          const logMethods: Record<string, (...args: unknown[]) => void> = {
+            log: console.log,
+            warn: console.warn,
+            error: console.error,
+            info: console.info,
+            debug: console.debug
+          };
+          const logFn = logMethods[level];
           if (typeof logFn === 'function') {
             logFn(`[ALERT] ${alert.message}`, alert.metadata);
           }
           break;
 
         case 'event':
-          this.emit(action.config.eventType || 'alert', alert);
+          const eventConfig = action.config as { eventType?: string };
+          this.emit(eventConfig.eventType || 'alert', alert);
           break;
 
         case 'webhook':
           // Would implement webhook call
-          console.log(`[WEBHOOK] Would call ${action.config.url} with alert:`, alert);
+          const webhookConfig = action.config as { url?: string };
+          console.log(`[WEBHOOK] Would call ${webhookConfig.url || 'unknown'} with alert:`, alert);
           break;
 
         case 'email':
           // Would implement email notification
-          console.log(`[EMAIL] Would send to ${action.config.to}:`, alert.message);
+          const emailConfig = action.config as { to?: string };
+          console.log(`[EMAIL] Would send to ${emailConfig.to || 'unknown'}:`, alert.message);
           break;
       }
     } catch (error) {
@@ -733,9 +748,9 @@ export class EventMonitor extends EventEmitter {
         eventType: event.type,
         source: event.source,
         traceId: context.traceId,
-        duration: context.processingEndTime ? 
-          context.processingEndTime - context.processingStartTime : undefined,
-        error: context.error?.message,
+        duration: context.processingEndTime && context.processingStartTime ? 
+          Number(context.processingEndTime) - Number(context.processingStartTime) : undefined,
+        error: context.error ? (typeof context.error === 'object' && 'message' in context.error ? (context.error as Error).message : String(context.error)) : undefined,
         ...(this.config.logging.includePayloads && { payload: event.payload })
       }));
     } else {

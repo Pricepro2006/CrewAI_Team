@@ -4,7 +4,7 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import cors from "cors";
+import * as cors from "cors";
 import { logger } from "../../../utils/logger.js";
 
 /**
@@ -53,24 +53,38 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
   const isProduction = process.env.NODE_ENV === "production";
 
   // Get allowed origins from environment or use defaults
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ||
-    process.env.CORS_ORIGIN?.split(",") || [
+  const allowedOrigins = [
+    ...(process.env.ALLOWED_ORIGINS?.split(",").map(o => o.trim()).filter(Boolean) || []),
+    ...(process.env.CORS_ORIGIN?.split(",").map(o => o.trim()).filter(Boolean) || []),
+  ];
+  
+  // Add default development origins if no origins specified
+  if (allowedOrigins.length === 0 && !isProduction) {
+    allowedOrigins.push(
       "http://localhost:3000",
+      "http://localhost:3001",
       "http://localhost:5173",
       "http://localhost:5174",
       "http://localhost:5175",
-    ];
+      "http://localhost:5178",
+      "http://localhost:5179",
+      "http://localhost:5180"
+    );
+  }
 
   // Add production origins if configured
   if (isProduction && process.env.PRODUCTION_ORIGINS) {
-    allowedOrigins.push(...process.env.PRODUCTION_ORIGINS.split(","));
+    allowedOrigins.push(...process.env.PRODUCTION_ORIGINS.split(",").map(o => o.trim()).filter(Boolean));
   }
+  
+  // Remove duplicates
+  const uniqueOrigins = Array.from(new Set(allowedOrigins));
 
   return {
     cors: {
-      origins: allowedOrigins,
+      origins: uniqueOrigins,
       credentials: true,
-      maxAge: 86400, // 24 hours
+      maxAge: isDevelopment ? 3600 : 86400, // 1 hour in dev, 24 hours in prod
     },
 
     csp: {
@@ -99,19 +113,25 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
       fontSrc: ["'self'", "https://fonts?.gstatic?.com", "data:"],
       connectSrc: [
         "'self'",
-        "ws://localhost:*", // WebSocket in development
-        "wss://localhost:*",
-        "http://localhost:*", // For API calls in development
-        "https://localhost:*",
-        ...(isProduction
-          ? ["wss://*.crewai-team.com", "https://*.crewai-team.com"]
-          : []),
-        process.env.OLLAMA_URL || "http://localhost:8081",
-        process.env.CHROMA_URL || "http://localhost:8001",
+        ...(isDevelopment ? [
+          "ws://localhost:*",
+          "wss://localhost:*",
+          "http://localhost:*",
+          "https://localhost:*",
+          "ws://127.0.0.1:*",
+          "http://127.0.0.1:*"
+        ] : []),
+        ...(isProduction ? [
+          "wss://*.crewai-team.com",
+          "https://*.crewai-team.com",
+          process.env.PRODUCTION_WS_URL || "",
+          process.env.PRODUCTION_API_URL || ""
+        ].filter(Boolean) : []),
+        process.env.LLAMA_CPP_URL || process.env.OLLAMA_URL || "http://localhost:8081",
+        process.env.CHROMA_BASE_URL || process.env.CHROMA_URL || "http://localhost:8000",
         // Add any external APIs the frontend needs
-        "https://api?.openai?.com", // If using OpenAI
-        "https://*.huggingface.co", // If using Hugging Face models
-      ],
+        ...(process.env.EXTERNAL_API_URLS?.split(",").map(u => u.trim()).filter(Boolean) || []),
+      ].filter(Boolean),
       frameSrc: ["'none'"],
       workerSrc: ["'self'", "blob:"],
       objectSrc: ["'none'"], // Block plugins like Flash
@@ -147,26 +167,48 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
  * Create CORS middleware with secure configuration
  */
 export function createCorsMiddleware(config: SecurityHeadersConfig) {
-  return cors({
+  // Cache allowed origins in a Set for O(1) lookup
+  const allowedOriginsSet = new Set(config?.cors?.origins || []);
+  
+  return cors.default({
     origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+      // Allow requests with no origin (mobile apps, Postman, curl, server-to-server, etc.)
       if (!origin) {
+        // In production, be more strict about no-origin requests
+        if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_NO_ORIGIN) {
+          logger.warn(
+            "CORS: Blocked request with no origin in production",
+            "SECURITY",
+            { }
+          );
+          return callback(new Error("Origin required in production"));
+        }
         return callback(null, true);
       }
 
-      // Check if origin is in allowlist
-      if (config?.cors?.origins.includes(origin)) {
+      // Check if origin is in allowlist (O(1) lookup with Set)
+      if (allowedOriginsSet.has(origin)) {
         callback(null, true);
       } else {
-        logger.warn(
-          "CORS: Blocked request from unauthorized origin",
-          "SECURITY",
-          {
-            origin,
-            allowedOrigins: config?.cors?.origins,
-          },
-        );
-        callback(new Error("Not allowed by CORS"));
+        // In development, log but allow for easier testing
+        if (process.env.NODE_ENV === 'development') {
+          logger.debug(
+            "CORS: Allowing unregistered origin in development",
+            "SECURITY",
+            { origin }
+          );
+          callback(null, true);
+        } else {
+          logger.warn(
+            "CORS: Blocked request from unauthorized origin",
+            "SECURITY",
+            {
+              origin,
+              allowedOrigins: Array.from(allowedOriginsSet),
+            },
+          );
+          callback(new Error("Not allowed by CORS"));
+        }
       }
     },
     credentials: config?.cors?.credentials,

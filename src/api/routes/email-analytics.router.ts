@@ -30,7 +30,7 @@ interface EntityStatsRow extends DatabaseRow {
 interface DistributionRow extends DatabaseRow {
   category: string;
   count: number;
-  percentage?: number;
+  percentage: number | null;
 }
 
 // Input validation schemas
@@ -172,10 +172,10 @@ export const emailAnalyticsRouter = router({
         avg_processing_time: number;
       }[];
 
-      const total = results.reduce((sum: number, r: WorkflowStatsRow) => sum + r.count, 0);
+      const total = results.reduce((sum: number, r) => sum + r.count, 0);
 
       return {
-        workflows: results?.map((r: WorkflowStatsRow) => ({
+        workflows: results?.map((r) => ({
           ...r,
           percentage: (r.count / total) * 100,
         })),
@@ -236,7 +236,7 @@ export const emailAnalyticsRouter = router({
         return {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          data: results?.map((r: EntityStatsRow) => ({
+          data: results?.map((r) => ({
             ...r,
             success_rate:
               ((r.processed_count - r.error_count) / r.processed_count) * 100,
@@ -282,10 +282,10 @@ export const emailAnalyticsRouter = router({
         count: number;
       }[];
 
-      const total = results.reduce((sum: number, r: WorkflowStatsRow) => sum + r.count, 0);
+      const total = results.reduce((sum: number, r) => sum + r.count, 0);
 
       return {
-        distribution: results?.map((r: DistributionRow) => ({
+        distribution: results?.map((r) => ({
           level: r.urgency_level,
           count: r.count,
           percentage: (r.count / total) * 100,

@@ -8,6 +8,24 @@ interface AuthenticatedRequest extends Request {
   user?: { [key: string]: any; id: string };
 }
 
+// Utility to safely get headers from both Express Request and Node.js IncomingMessage
+function getHeaderSafely(req: any, headerName: string): string | undefined {
+  // If it's an Express Request object with .get() method
+  if (req && typeof req.get === 'function') {
+    return req.get(headerName);
+  }
+  
+  // If it's a Node.js IncomingMessage object with .headers
+  if (req && req.headers && typeof req.headers === 'object') {
+    const headerKey = headerName.toLowerCase();
+    const headerValue = req.headers[headerKey];
+    return Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  }
+  
+  // Fallback
+  return undefined;
+}
+
 // Enhanced Redis-based rate limiting with user awareness
 let redisClient: Redis | null = null;
 let redisConnected = false;
@@ -25,6 +43,17 @@ if (
       db: parseInt(process.env.REDIS_RATE_LIMIT_DB || "1"),
       maxRetriesPerRequest: 3,
       lazyConnect: true,
+      enableOfflineQueue: false,
+      connectTimeout: 5000,
+      commandTimeout: 5000,
+      retryStrategy: (times: number) => {
+        if (times > 3) {
+          console.warn('Redis connection failed after 3 attempts, falling back to memory store');
+          redisConnected = false;
+          return null; // Stop retrying
+        }
+        return Math.min(times * 100, 3000);
+      },
     });
 
     redisClient.on("error", (err: Error) => {
@@ -56,13 +85,17 @@ function createKeyGenerator(prefix: string) {
   return (req: Request): string => {
     const user = (req as AuthenticatedRequest).user;
 
-    // Use user ID if authenticated, otherwise return undefined to use default IP handling
+    // Use user ID if authenticated
     if (user?.id) {
       return `${prefix}:user:${user.id}`;
     }
 
-    // Return undefined to let express-rate-limit handle IP extraction properly
-    return undefined as unknown as string;
+    // Fallback to IP address for unauthenticated users
+    const ip = req.ip || 
+               req.socket?.remoteAddress || 
+               req.headers['x-forwarded-for']?.toString()?.split(',')[0] || 
+               'unknown';
+    return `${prefix}:ip:${ip}`;
   };
 }
 
@@ -125,7 +158,7 @@ export function createRateLimiter(options: {
         timestamp: new Date().toISOString(),
         ip: req.ip,
         userId: user?.id,
-        userAgent: req.get("User-Agent"),
+        userAgent: getHeaderSafely(req, "User-Agent"),
         endpoint: req.path,
         method: req.method,
         prefix: options.keyPrefix,
@@ -212,11 +245,13 @@ export function rateLimitMiddleware(
 // Standard API rate limiter
 export const apiRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased for development - Anonymous users
-  maxAuthenticated: 2000, // Increased for development - Authenticated users
-  maxAdmin: 5000, // Increased for development - Admin users
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Production vs Development limits
+  maxAuthenticated: process.env.NODE_ENV === 'production' ? 500 : 2000,
+  maxAdmin: process.env.NODE_ENV === 'production' ? 2000 : 5000,
   message: "Too many requests from this IP, please try again later.",
   keyPrefix: "api",
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
 });
 
 // Authentication rate limiter (very strict)
@@ -313,11 +348,13 @@ export const businessSearchRateLimit = createRateLimiter({
 // WebSocket connection rate limiter
 export const websocketRateLimit = createRateLimiter({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // Anonymous connections
-  maxAuthenticated: 30, // Authenticated connections
-  maxAdmin: 100, // Admin connections
+  max: process.env.NODE_ENV === 'production' ? 5 : 10, // Stricter in production
+  maxAuthenticated: process.env.NODE_ENV === 'production' ? 15 : 30,
+  maxAdmin: process.env.NODE_ENV === 'production' ? 50 : 100,
   message: "Too many WebSocket connections.",
   keyPrefix: "websocket",
+  skipSuccessfulRequests: false,
+  skipFailedRequests: true, // Don't count failed connection attempts
 });
 
 // Premium tier rate limiter (deprecated - now using user-aware limits)

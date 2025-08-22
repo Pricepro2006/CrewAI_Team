@@ -114,9 +114,13 @@ export class StructuredLogger {
       formats.push(winston?.format.json());
     } else {
       formats.push(
-        winston?.format?.printf((info: LogEntry) => {
-          const { timestamp, level, message, component, operation, traceId, ...meta } = info;
-          let log = `${timestamp} [${level.toUpperCase()}] ${component || 'UNKNOWN'}`;
+        winston?.format?.printf((info: winston.Logform.TransformableInfo) => {
+          const { timestamp, level, message, ...meta } = info;
+          const component = meta.component || 'UNKNOWN';
+          const operation = meta.operation;
+          const traceId = meta.traceId;
+          
+          let log = `${timestamp} [${level.toUpperCase()}] ${component}`;
           
           if (operation) log += `::${operation}`;
           if (traceId) log += ` [${traceId}]`;
@@ -203,16 +207,17 @@ export class StructuredLogger {
             } : undefined,
           },
           index: `grocery-agent-logs-${this.environment}`,
-          transformer: (logData: LogEntry) => {
+          transformer: (logData: unknown) => {
+            const data = logData as Record<string, unknown>;
             return {
               '@timestamp': new Date().toISOString(),
-              level: logData.level,
-              message: logData.message,
-              component: logData.component,
+              level: data.level,
+              message: data.message,
+              component: data.component || 'unknown',
               environment: this.environment,
               version: this.version,
               hostname: this.hostname,
-              ...logData.meta,
+              ...(data.meta as Record<string, unknown> || {}),
             };
           },
         })
@@ -454,7 +459,7 @@ export class StructuredLogger {
       data: {
         productId,
         success,
-        storeId,
+        storeId: storeId || null,
       },
       tags: ['price', 'fetch', success ? 'success' : 'failure'],
       ...context,
@@ -699,10 +704,12 @@ export class StructuredLogger {
 
     recentAggregations.forEach(agg => {
       // Count by level
-      stats.logsByLevel[agg.level] = (stats.logsByLevel[agg.level] || 0) + agg.count;
+      const logsByLevel = stats.logsByLevel as Record<string, number>;
+      logsByLevel[agg.level] = (logsByLevel[agg.level] || 0) + agg.count;
 
       // Count by component
-      stats.logsByComponent[agg.component] = (stats.logsByComponent[agg.component] || 0) + agg.count;
+      const logsByComponent = stats.logsByComponent as Record<string, number>;
+      logsByComponent[agg.component] = (logsByComponent[agg.component] || 0) + agg.count;
 
       // Count errors
       if (['emergency', 'alert', 'critical', 'error'].includes(agg.level)) {
@@ -717,8 +724,9 @@ export class StructuredLogger {
 
       // Track slow operations
       if (agg.averageDuration && agg.averageDuration > 1000) { // > 1 second
+        const slowOps = stats.slowOperations as Array<{ component: string; operation: string; duration: number }>;
         agg?.uniqueOperations?.forEach(op => {
-          stats?.slowOperations?.push({
+          slowOps.push({
             component: agg.component,
             operation: op,
             duration: agg.averageDuration!,
@@ -727,9 +735,11 @@ export class StructuredLogger {
       }
     });
 
-    stats.errorRate = stats.totalLogs > 0 ? errorCount / stats.totalLogs : 0;
+    const totalLogs = stats.totalLogs as number;
+    stats.errorRate = totalLogs > 0 ? errorCount / totalLogs : 0;
     stats.averageMemoryUsage = memoryCount > 0 ? memorySum / memoryCount : 0;
-    stats?.slowOperations?.sort((a, b) => b.duration - a.duration);
+    const slowOps = stats.slowOperations as Array<{ component: string; operation: string; duration: number }>;
+    slowOps.sort((a, b) => b.duration - a.duration);
 
     return stats;
   }

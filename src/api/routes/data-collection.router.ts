@@ -174,15 +174,57 @@ export const dataCollectionRouter = createFeatureRouter(
             },
           );
 
+          // Transform the BrightData response to match UI expectations
+          if (results && results.length > 0) {
+            const scraped = results[0];
+            const content = scraped?.data?.content;
+            
+            // Parse HTML to extract metadata, links, and images
+            const htmlContent = content?.html || "";
+            const markdownContent = content?.markdown || "";
+            
+            // Extract metadata from HTML
+            const titleMatch = htmlContent.match(/<title>(.*?)<\/title>/i);
+            const descriptionMatch = htmlContent.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i);
+            const keywordsMatch = htmlContent.match(/<meta\s+name=["']keywords["']\s+content=["'](.*?)["']/i);
+            
+            // Extract links from HTML
+            const linkMatches = htmlContent.matchAll(/<a\s+[^>]*href=["'](.*?)["'][^>]*>(.*?)<\/a>/gi);
+            const links = Array.from(linkMatches).map((match: any) => ({
+              url: match[1] || '',
+              text: (match[2] || '').replace(/<[^>]*>/g, '').trim()
+            })).filter(link => link.url && !link.url.startsWith('#'));
+            
+            // Extract images from HTML
+            const imageMatches = htmlContent.matchAll(/<img\s+[^>]*src=["'](.*?)["'](?:\s+alt=["'](.*?)["'])?/gi);
+            const images = Array.from(imageMatches).map((match: any) => ({
+              src: match[1] || '',
+              alt: match[2] || ""
+            })).filter(img => img.src);
+            
+            return {
+              metadata: {
+                title: titleMatch ? titleMatch[1] : "N/A",
+                description: descriptionMatch ? descriptionMatch[1] : "N/A",
+                keywords: keywordsMatch ? keywordsMatch[1].split(',').map((k: string) => k.trim()) : []
+              },
+              content: markdownContent || htmlContent.replace(/<[^>]*>/g, '').substring(0, 1000),
+              links: links.slice(0, 50), // Limit to first 50 links
+              images: images.slice(0, 20), // Limit to first 20 images
+              extractedData: content?.extractedData
+            };
+          }
+
+          // Fallback response if no results
           return {
-            success: true,
-            data: results,
             metadata: {
-              totalRecords: results?.length || 0,
-              url: input.url,
-              timestamp: new Date().toISOString(),
-              requestId: ctx.requestId,
+              title: "N/A",
+              description: "N/A",
+              keywords: []
             },
+            content: "Failed to extract content from the website",
+            links: [],
+            images: []
           };
         } catch (error) {
           logger.error(

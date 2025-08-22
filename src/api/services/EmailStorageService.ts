@@ -268,7 +268,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     } else {
       // Use optimized database with caching and performance monitoring
       const databasePath = dbPath || appConfig?.database?.path;
-      this.db = getDatabase(databasePath) as DatabaseConnection;
+      // getDatabase returns OptimizedQueryExecutor, keep the actual type
+      this.db = getDatabase(databasePath) as unknown as DatabaseConnection;
       logger.info(
         "EmailStorageService initialized with OptimizedQueryExecutor",
         "EMAIL_STORAGE",
@@ -296,19 +297,19 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             return {
               run: (...params: DatabaseQueryParams[]) => {
                 const connection = databaseManager.getConnection('main');
-                return connection.execute((db: DatabaseConnection) => db.prepare(sql).run(...params));
+                return connection.execute((db: any) => db.prepare(sql).run(...params));
               },
               get: (...params: DatabaseQueryParams[]) => {
                 const connection = databaseManager.getConnection('main');
-                return connection.execute((db: DatabaseConnection) => db.prepare(sql).get(...params));
+                return connection.execute((db: any) => db.prepare(sql).get(...params));
               },
               all: (...params: DatabaseQueryParams[]) => {
                 const connection = databaseManager.getConnection('main');
-                return connection.execute((db: DatabaseConnection) => db.prepare(sql).all(...params));
+                return connection.execute((db: any) => db.prepare(sql).all(...params));
               },
               iterate: (...params: DatabaseQueryParams[]) => {
                 const connection = databaseManager.getConnection('main');
-                return connection.execute((db: DatabaseConnection) => db.prepare(sql).iterate(...params));
+                return connection.execute((db: any) => db.prepare(sql).iterate(...params));
               },
             };
           };
@@ -326,7 +327,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         if (prop === "pragma") {
           return (pragma: string, options?: DatabaseQueryParams) => {
             const connection = databaseManager.getConnection('main');
-            return connection.execute((db: DatabaseConnection) => db.pragma(pragma, options));
+            return connection.execute((db: any) => db.pragma(pragma, options));
           };
         }
 
@@ -334,7 +335,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         if (prop === "exec") {
           return (sql: string) => {
             const connection = databaseManager.getConnection('main');
-            return connection.execute((db: DatabaseConnection) => db.exec(sql));
+            return connection.execute((db: any) => db.exec(sql));
           };
         }
 
@@ -351,7 +352,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           if (!connection || typeof connection.execute !== 'function') {
             throw new Error(`DatabaseManager connection does not support method: ${String(prop)}`);
           }
-          return connection.execute((db: DatabaseConnection) => (db as Database.Database)[prop as keyof Database.Database](...args));
+          return connection.execute((db: any) => (db as Database.Database)[prop as keyof Database.Database](...args));
         };
       }
     };
@@ -3057,8 +3058,58 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       if (!stmt) {
         return null;
       }
-      const email = stmt.get(emailId) as DatabaseConnection;
-      return email ? email as EmailRecord : null;
+      const row = stmt.get(emailId) as any;
+      if (!row) {
+        return null;
+      }
+      
+      // Map database row to EmailRecord
+      const emailRecord: EmailRecord = {
+        id: row.id,
+        subject: row.subject || '',
+        email_alias: row.email_alias || '',
+        requested_by: row.requested_by || '',
+        summary: row.summary || '',
+        status: row.status || 'yellow',
+        status_text: row.status_text || '',
+        workflow_state: row.workflow_state || 'START_POINT',
+        workflow_type: row.workflow_type,
+        category: row.category,
+        priority: row.priority || 'medium',
+        timestamp: row.timestamp || new Date().toISOString(),
+        receivedTime: row.received_at || row.receivedTime || new Date().toISOString(),
+        bodyText: row.body_text || row.bodyText,
+        bodyHtml: row.body_html || row.bodyHtml,
+        hasAttachments: Boolean(row.has_attachments),
+        attachments: row.attachments ? JSON.parse(row.attachments) : [],
+        assignedTo: row.assigned_to,
+        assignedAt: row.assigned_at,
+        dueDate: row.due_date,
+        entities: row.entities ? JSON.parse(row.entities) : undefined,
+        analysis: row.analysis ? JSON.parse(row.analysis) : undefined,
+        tags: row.tags ? JSON.parse(row.tags) : [],
+        conversationId: row.conversation_id || row.conversationId,
+        threadId: row.thread_id || row.threadId,
+        parentEmailId: row.parent_email_id || row.parentEmailId,
+        relatedEmails: row.related_emails ? JSON.parse(row.related_emails) : [],
+        isRead: Boolean(row.is_read),
+        isStarred: Boolean(row.is_starred),
+        isArchived: Boolean(row.is_archived),
+        isDeleted: Boolean(row.is_deleted),
+        source: row.source || 'manual',
+        isProcessed: Boolean(row.is_processed),
+        processedAt: row.processed_at,
+        processingVersion: row.processing_version,
+        customFields: row.custom_fields ? JSON.parse(row.custom_fields) : undefined,
+        // Add missing required fields from BaseEntity
+        body: row.body || row.body_text || '',
+        sender: row.sender || row.from || row.requested_by || '',
+        recipient: row.recipient || row.to || row.email_alias || '',
+        createdAt: row.created_at || row.timestamp || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString()
+      };
+      
+      return emailRecord;
     } catch (error) {
       logger.error(`Failed to get email ${emailId}: ${error}`, "EMAIL_STORAGE");
       throw error;
@@ -3152,7 +3203,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       }>;
       const workload: Record<string, number> = {};
 
-      results.forEach((row: DatabaseRow) => {
+      results.forEach((row) => {
         workload[row.assignedTo] = row.count;
       });
 

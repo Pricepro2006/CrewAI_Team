@@ -30,7 +30,7 @@ interface CachedResult {
   hitCount: number;
 }
 
-interface QueryStats {
+export interface QueryStats {
   totalQueries: number;
   cacheHits: number;
   cacheMisses: number;

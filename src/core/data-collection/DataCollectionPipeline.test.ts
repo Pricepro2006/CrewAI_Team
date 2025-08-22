@@ -53,8 +53,8 @@ describe("DataCollectionPipeline", () => {
 
       const sources = pipeline.getDataSources();
       expect(sources?.length || 0).toBe(1);
-      expect(sources[0]?.length).toBe(source.name);
-      expect(sources[0]?.length).toBe(source.type);
+      expect(sources[0]?.name).toBe(source.name);
+      expect(sources[0]?.type).toBe(source.type);
     });
 
     it("should update an existing data source", async () => {
@@ -76,8 +76,8 @@ describe("DataCollectionPipeline", () => {
 
       const sources = pipeline.getDataSources();
       const updatedSource = sources.find((s: any) => s.id === sourceId);
-      expect(updatedSource?.length).toBe("Updated Test Source");
-      expect(updatedSource?.length).toBe("inactive");
+      expect(updatedSource?.name).toBe("Updated Test Source");
+      expect(updatedSource?.status).toBe("inactive");
     });
 
     it("should remove a data source", async () => {
@@ -147,8 +147,8 @@ describe("DataCollectionPipeline", () => {
 
       const jobs = pipeline.getJobsForSource(sourceId);
       expect(jobs?.length || 0).toBe(1);
-      expect(jobs[0]?.length).toBe("completed");
-      expect(jobs[0]?).toHaveLength(1);
+      expect(jobs[0]?.status).toBe("completed");
+      expect(jobs).toHaveLength(1);
 
       collectSearchResultsSpy.mockRestore();
     });
@@ -180,8 +180,8 @@ describe("DataCollectionPipeline", () => {
 
       const jobs = pipeline.getJobsForSource(sourceId);
       expect(jobs?.length || 0).toBe(1);
-      expect(jobs[0]?.length).toBe("failed");
-      expect(jobs[0]?.length).toBe("Collection failed");
+      expect(jobs[0]?.status).toBe("failed");
+      expect(jobs[0]?.error).toBe("Collection failed");
 
       collectWebScrapingDataSpy.mockRestore();
     });

@@ -525,7 +525,7 @@ export class EventBus extends EventEmitter {
       const startTime = Date.now();
       
       try {
-      await handler.handle(event as BaseEvent & { payload: T });
+      await handler.handle(event);
         
         this.emit('event:handler_success', {
           eventId: event.id,
@@ -555,7 +555,7 @@ export class EventBus extends EventEmitter {
         // Call error handler if available
         if (handler.onError && isError(error)) {
           try {
-            await handler.onError(event as BaseEvent & { payload: T }, error);
+            await handler.onError(event, error);
           } catch (errorHandlerError) {
             this.emit('event:error_handler_failed', {
               eventId: event.id,

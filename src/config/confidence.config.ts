@@ -144,6 +144,16 @@ export function mergeConfidenceConfigs(
  * Validate confidence configuration
  */
 export function validateConfidenceConfig(config: ConfidenceConfig): boolean {
+  // Validate config structure
+  if (!config || typeof config !== 'object') {
+    return false;
+  }
+
+  // Validate nested objects exist
+  if (!config.retrieval || !config.generation || !config.overall) {
+    return false;
+  }
+
   // Ensure all values are between 0 and 1
   const allValues = [
     config?.retrieval?.minimum,
@@ -155,23 +165,25 @@ export function validateConfidenceConfig(config: ConfidenceConfig): boolean {
     config?.overall?.low,
   ];
 
-  if (!allValues.every((v: any) => v >= 0 && v <= 1)) {
+  if (!allValues.every((v: any) => typeof v === 'number' && v >= 0 && v <= 1 && !isNaN(v) && isFinite(v))) {
     return false;
   }
 
-  // Ensure logical ordering
-  if (config?.retrieval?.minimum > config?.retrieval?.preferred) {
+  // Ensure logical ordering with null checks
+  if (typeof config.retrieval.minimum !== 'number' || typeof config.retrieval.preferred !== 'number' ||
+      config.retrieval.minimum > config.retrieval.preferred) {
     return false;
   }
 
-  if (config?.generation?.review > config?.generation?.acceptable) {
+  if (typeof config.generation.review !== 'number' || typeof config.generation.acceptable !== 'number' ||
+      config.generation.review > config.generation.acceptable) {
     return false;
   }
 
-  if (
-    config?.overall?.low > config?.overall?.medium ||
-    config?.overall?.medium > config?.overall?.high
-  ) {
+  if (typeof config.overall.low !== 'number' || typeof config.overall.medium !== 'number' || 
+      typeof config.overall.high !== 'number' ||
+      config.overall.low > config.overall.medium ||
+      config.overall.medium > config.overall.high) {
     return false;
   }
 

@@ -727,7 +727,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       const analysis = await analyzer.analyzeChain("quote-1");
 
       expect(analysis.chain_type).toBe("quote_request");
-      expect(analysis?.key_entities?.quoteNumbers).toContain("987654");
+      expect(analysis?.key_entities?.quote_numbers).toContain("987654");
       // Should not be penalized for missing quote number since it has one
       expect(analysis.completeness_score).toBeGreaterThanOrEqual(40);
     });
@@ -761,7 +761,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       const analysis = await analyzer.analyzeChain("order-1");
 
       expect(analysis.chain_type).toBe("order_processing");
-      expect(analysis?.key_entities?.poNumbers).toContain("456789");
+      expect(analysis?.key_entities?.po_numbers).toContain("456789");
       // Should not be penalized since it has PO number
       expect(analysis.completeness_score).toBeGreaterThanOrEqual(40);
     });

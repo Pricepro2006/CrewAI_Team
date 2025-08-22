@@ -23,7 +23,7 @@ function generateTestDocuments(count: number): ProcessedDocument[] {
       id: `doc-${i}`,
       content: `This is test document ${i}. It contains sample text for testing the vector store performance. The content includes various keywords like machine learning, artificial intelligence, data science, and more. Document number: ${i}`,
       metadata: {
-        source: "test",
+        sourceId: "test",
         index: i,
         timestamp: new Date().toISOString(),
         category: i % 5 === 0 ? "important" : "regular",

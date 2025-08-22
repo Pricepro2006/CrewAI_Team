@@ -19,9 +19,7 @@ import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout.js";
 import type { 
   Query, 
   Plan, 
-  ExecutionResult,
-  QueryAnalysis,
-  AgentRoutingPlan 
+  ExecutionResult
 } from "../../core/master-orchestrator/types.js";
 
 // Event emitter for orchestrator events
@@ -143,14 +141,16 @@ export const orchestratorRouter = createFeatureRouter(
             timestamp: new Date().toISOString(),
           });
 
-          // Broadcast via WebSocket
-          wsService.broadcast({
-            type: "orchestrator.query.completed",
-            payload: {
-              queryId: ctx.requestId,
-              success: result.success,
-              processingTime,
+          // Broadcast via WebSocket with proper metrics structure
+          wsService.broadcastSystemMetrics({
+            responseTime: processingTime,
+            memoryUsage: {
+              total: process.memoryUsage().heapTotal,
+              used: process.memoryUsage().heapUsed,
+              percentage: (process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100,
             },
+            activeConnections: wsService.getConnectionCount(),
+            requestsPerMinute: 0, // This would need to be tracked separately
           });
 
           logger.info("Query processing completed", "ORCHESTRATOR_API", {
@@ -261,7 +261,7 @@ export const orchestratorRouter = createFeatureRouter(
       const isInitialized = await ctx.masterOrchestrator.isInitialized();
       const registeredAgents = ctx.agentRegistry?.getRegisteredTypes() || [];
       const activeAgents = ctx.agentRegistry?.getActiveAgents() || [];
-      const ragStatus = await ctx.ragSystem?.getStatus?.() || { status: "unavailable" };
+      const ragStatus = await ctx.ragSystem?.getStats?.() || { status: "unavailable" };
 
       return {
         initialized: isInitialized,
@@ -305,7 +305,7 @@ export const orchestratorRouter = createFeatureRouter(
     getAgents: publicProcedure.query(async ({ ctx }) => {
       const types = ctx.agentRegistry?.getRegisteredTypes() || [];
       const agents = types.map((type: string) => {
-        const agent = ctx.agentRegistry?.getAgentSync?.(type);
+        const agent = ctx.agentRegistry?.getAgent?.(type);
         return {
           type,
           available: !!agent,

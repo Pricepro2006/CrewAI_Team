@@ -81,16 +81,55 @@ async function startWebSocketServer() {
     generalWSS = new WebSocketServer({
       noServer: true,
       path: '/ws',
-      perMessageDeflate: true,
-      maxPayload: 1024 * 1024 // 1MB
+      perMessageDeflate: {
+        zlibDeflateOptions: {
+          chunkSize: 1024,
+          memLevel: 7,
+          level: 3
+        },
+        zlibInflateOptions: {
+          chunkSize: 10 * 1024
+        },
+        clientNoContextTakeover: true,
+        serverNoContextTakeover: true,
+        serverMaxWindowBits: 10,
+        threshold: 1024 // Only compress messages > 1KB
+      },
+      maxPayload: 1024 * 1024, // 1MB
+      clientTracking: true,
+      verifyClient: (info) => {
+        // Basic origin verification
+        const origin = info.origin;
+        if (process.env.NODE_ENV === 'production' && origin) {
+          const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+          if (!allowedOrigins.includes(origin)) {
+            logger.warn(`WebSocket connection rejected from origin: ${origin}`, 'WEBSOCKET_SERVER');
+            return false;
+          }
+        }
+        return true;
+      }
     });
 
     // Initialize the Walmart WebSocket server
     walmartWSServer.initialize(httpServer, "/ws/walmart");
 
-    // Setup HTTP upgrade handling for both endpoints
+    // Setup HTTP upgrade handling for both endpoints with error handling
     httpServer.on('upgrade', (request, socket, head) => {
       const pathname = parse(request.url || '').pathname;
+      
+      // Add socket error handling to prevent crashes
+      socket.on('error', (err) => {
+        logger.error('Socket error during upgrade:', 'WEBSOCKET_SERVER', { error: err.message });
+        socket.destroy();
+      });
+      
+      // Set socket timeout to prevent hanging connections
+      socket.setTimeout(30000); // 30 seconds
+      socket.on('timeout', () => {
+        logger.warn('Socket timeout during upgrade', 'WEBSOCKET_SERVER');
+        socket.destroy();
+      });
       
       logger.info(`WebSocket upgrade request for: ${pathname}`, 'WEBSOCKET_SERVER', { 
         headers: request.headers,
@@ -141,8 +180,24 @@ async function startWebSocketServer() {
           }));
           
           // Handle incoming messages
+          // Add ping-pong for connection health
+          const pingInterval = setInterval(() => {
+            if (ws.readyState === ws.OPEN) {
+              ws.ping();
+            } else {
+              clearInterval(pingInterval);
+            }
+          }, 30000); // Ping every 30 seconds
+          
+          ws.on('pong', () => {
+            authenticatedWs.lastActivity = new Date();
+          });
+          
           ws.on('message', (data) => {
             try {
+              // Update activity timestamp
+              authenticatedWs.lastActivity = new Date();
+              
               const message = JSON.parse(data.toString());
               logger.info(`WebSocket message received:`, 'WEBSOCKET_SERVER', message);
               
@@ -169,8 +224,12 @@ async function startWebSocketServer() {
             }
           });
           
-          ws.on('close', () => {
-            logger.info(`General WebSocket connection closed: ${clientId}`, 'WEBSOCKET_SERVER');
+          ws.on('close', (code, reason) => {
+            clearInterval(pingInterval);
+            logger.info(`General WebSocket connection closed: ${clientId}`, 'WEBSOCKET_SERVER', {
+              code,
+              reason: reason?.toString()
+            });
             try {
               wsService.unregisterClient(clientId, authenticatedWs);
             } catch (serviceError) {

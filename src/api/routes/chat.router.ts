@@ -269,8 +269,8 @@ export const chatRouter = createFeatureRouter(
       `;
 
         // Type-safe LLM access with proper error handling
-        const orchestrator = ctx.masterOrchestrator as MasterOrchestrator | undefined;
-        if (!orchestrator?.llm?.generate) {
+        const orchestrator = ctx.masterOrchestrator;
+        if (!orchestrator?.generateText) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "LLM service not available",
@@ -278,7 +278,7 @@ export const chatRouter = createFeatureRouter(
         }
         
         const response = await withTimeout(
-          orchestrator.llm.generate(prompt),
+          orchestrator.generateText(prompt),
           DEFAULT_TIMEOUTS.LLM_GENERATION,
           "Title generation timed out",
         ).catch((error) => {

@@ -12,6 +12,24 @@ import {
 import { logger } from "../../utils/logger.js";
 import { v4 as uuidv4 } from "uuid";
 
+// Utility to safely get headers from both Express Request and Node.js IncomingMessage
+function getHeaderSafely(req: any, headerName: string): string | undefined {
+  // If it's an Express Request object with .get() method
+  if (req && typeof req.get === 'function') {
+    return req.get(headerName);
+  }
+  
+  // If it's a Node.js IncomingMessage object with .headers
+  if (req && req.headers && typeof req.headers === 'object') {
+    const headerKey = headerName.toLowerCase();
+    const headerValue = req.headers[headerKey];
+    return Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  }
+  
+  // Fallback
+  return undefined;
+}
+
 export interface ErrorResponse {
   error: {
     id: string;
@@ -40,6 +58,11 @@ export function errorHandler(
 ): void {
   // If response was already sent, delegate to default Express error handler
   if (res.headersSent) {
+    logger.warn('Error occurred after response sent', 'ERROR_HANDLER', {
+      error: err.message,
+      path: req.path,
+      method: req.method
+    });
     return next(err);
   }
 
@@ -57,7 +80,7 @@ export function errorHandler(
       body: sanitizeRequestBody(req.body),
       headers: sanitizeHeaders(req.headers),
       ip: req.ip,
-      userAgent: req.get("user-agent"),
+      userAgent: getHeaderSafely(req, "user-agent"),
     },
   };
 
@@ -66,21 +89,30 @@ export function errorHandler(
     const severity = getErrorSeverity(err.code);
     switch (severity) {
       case "critical":
-        logger.error("Critical error occurred", logData);
+        logger.error("Critical error occurred", 'ERROR_HANDLER', logData);
         break;
       case "error":
-        logger.error("Error occurred", logData);
+        logger.error("Error occurred", 'ERROR_HANDLER', logData);
         break;
       case "warning":
-        logger.warn("Warning error occurred", logData);
+        logger.warn("Warning error occurred", 'ERROR_HANDLER', logData);
         break;
       case "info":
-        logger.info("Info error occurred", logData);
+        logger.info("Info error occurred", 'ERROR_HANDLER', logData);
         break;
     }
   } else {
-    // Unknown errors are always logged as errors
-    logger.error("Unexpected error occurred", logData);
+    // Check for common error types
+    if (err.name === 'ValidationError') {
+      logger.warn("Validation error occurred", 'ERROR_HANDLER', logData);
+    } else if (err.name === 'UnauthorizedError') {
+      logger.warn("Authorization error occurred", 'ERROR_HANDLER', logData);
+    } else if (err.message?.includes('ECONNREFUSED')) {
+      logger.error("External service connection refused", 'ERROR_HANDLER', logData);
+    } else {
+      // Unknown errors are always logged as errors
+      logger.error("Unexpected error occurred", 'ERROR_HANDLER', logData);
+    }
   }
 
   // Prepare error response
@@ -109,24 +141,43 @@ export function errorHandler(
       },
     };
   } else {
-    // Handle non-AppError errors
+    // Handle non-AppError errors with better classification
     const isProduction = process.env['NODE_ENV'] === "production";
+    
+    // Try to determine appropriate status code based on error type
+    if (err.name === 'ValidationError' || err.message?.includes('validation')) {
+      statusCode = 400;
+    } else if (err.name === 'UnauthorizedError' || err.message?.includes('unauthorized')) {
+      statusCode = 401;
+    } else if (err.message?.includes('not found')) {
+      statusCode = 404;
+    } else if (err.message?.includes('timeout')) {
+      statusCode = 408;
+    } else if (err.message?.includes('too many')) {
+      statusCode = 429;
+    }
 
     errorResponse = {
       error: {
         id: errorId,
-        code: "INTERNAL_SERVER_ERROR",
+        code: err.name || "INTERNAL_SERVER_ERROR",
         message: isProduction ? "An unexpected error occurred" : err.message,
-        details: isProduction ? undefined : { stack: err.stack },
+        details: isProduction ? undefined : { 
+          stack: err.stack,
+          name: err.name
+        },
         timestamp,
         path: req.path,
         method: req.method,
       },
       userMessage: {
-        title: "Something Went Wrong",
-        message: "An unexpected error occurred. Our team has been notified.",
-        action:
-          "Please try again later. If the problem persists, contact support.",
+        title: statusCode < 500 ? "Request Error" : "Something Went Wrong",
+        message: statusCode < 500 
+          ? "There was an issue with your request. Please check and try again."
+          : "An unexpected error occurred. Our team has been notified.",
+        action: statusCode < 500
+          ? "Please verify your request and try again."
+          : "Please try again later. If the problem persists, contact support.",
       },
     };
   }

@@ -79,11 +79,12 @@ errorTracker.on("error", () => {
 // Trust proxy for accurate IP addresses in rate limiting
 app.set("trust proxy", 1);
 
-// CRITICAL: Cookie parser MUST be early in the middleware stack
-// This ensures cookies are parsed before any middleware that needs them (CSRF, auth, etc.)
-app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
+// === PHASE 1: Core Middleware (Order Critical) ===
 
-// Apply comprehensive security headers (includes CORS)
+// 1. Cookie parser MUST be first (needed by CSRF and auth)
+app.use(cookieParser());
+
+// 2. Security headers including CORS (must be early for preflight requests)
 applySecurityHeaders(app, {
   cors: {
     origins: appConfig?.api?.cors.origin as string[],
@@ -91,35 +92,50 @@ applySecurityHeaders(app, {
   },
 });
 
-// Body parsers need to come after cookie parser but before routes
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+// 3. Body parsers (needed by all POST/PUT requests)
+app.use(express.json({ 
+  limit: "10mb",
+  strict: true,
+  type: ['application/json', 'text/json']
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: "10mb",
+  parameterLimit: 10000
+}));
 
-// Add response compression (Performance Optimization - 60-70% bandwidth reduction)
-// Compression should come after parsers but before routes
+// 4. Compression (after parsers, before heavy processing)
 app.use(compression({
   filter: (req: express.Request, res: express.Response) => {
     // Don't compress if client explicitly requests no compression
     if (req.headers['x-no-compression']) {
       return false;
     }
-    // Compress all responses by default for JSON/text content
+    // Don't compress server-sent events or websocket upgrades
+    if (req.headers.accept?.includes('text/event-stream')) {
+      return false;
+    }
+    // Compress all other responses by default
     return compression?.filter(req, res);
   },
   threshold: 1024, // Only compress responses larger than 1KB
-  level: 6 // Balanced compression level (1=fast, 9=best compression)
-}))
+  level: 6 // Balanced compression level
+}));
 
-// Monitoring middleware (must be early in the chain)
+// === PHASE 2: Monitoring & Auth Middleware ===
+
+// 5. Request tracking and monitoring (early for complete metrics)
 app.use(requestTracking);
 app.use(requestSizeTracking);
-app.use(rateLimitTracking);
-app.use(authTracking);
 
-// Authentication middleware (runs before rate limiting to enable user-aware limits)
+// 6. Authentication (before rate limiting for user-aware limits)
 app.use(authenticateToken);
 
-// Apply general rate limiting to all routes
+// 7. Auth tracking (after authentication)
+app.use(authTracking);
+
+// 8. Rate limiting (after auth for user-aware limits)
+app.use(rateLimitTracking);
 app.use(apiRateLimiter);
 
 // Health check endpoint

@@ -9,6 +9,7 @@ import type {
   Context,
 } from "./types.js";
 import type { DocumentChunk } from "../../shared/types/core.types.js";
+import type { QueryResult } from "../rag/types.js";
 import { wsService } from "../../api/services/WebSocketService.js";
 import {
   withTimeout,
@@ -47,7 +48,7 @@ export class PlanExecutor {
     // Broadcast plan execution start
     wsService.broadcastPlanUpdate(plan.id, "executing", {
       completed: 0,
-      total: sortedSteps?.length || 0,
+      total: sortedSteps.length,
     });
 
     for (const step of sortedSteps) {
@@ -75,7 +76,7 @@ export class PlanExecutor {
         // Broadcast step start
         wsService.broadcastPlanUpdate(plan.id, "executing", {
           completed: executedSteps.size,
-          total: sortedSteps?.length || 0,
+          total: sortedSteps.length,
           currentStep: step.task,
         });
         
@@ -84,7 +85,7 @@ export class PlanExecutor {
         const context = await this.gatherContext(step);
         console.log("📚 Context gathered", { 
           stepId: step.id, 
-          contextLength: context?.length || 0,
+          contextLength: Array.isArray(context) ? context.length : 0,
           hasRAGResults: !!context
         });
 
@@ -104,8 +105,8 @@ export class PlanExecutor {
         console.log("🤖 Agent execution completed", {
           stepId: step.id,
           success: result.success,
-          resultContent: result.content?.substring(0, 100),
-          hasContent: !!result.content,
+          resultContent: result.output?.substring(0, 100),
+          hasContent: !!result.output,
           hasError: !!result.error
         });
 
@@ -143,15 +144,15 @@ export class PlanExecutor {
     const success = results.every((r: StepResult) => r.success);
     wsService.broadcastPlanUpdate(plan.id, success ? "completed" : "failed", {
       completed: executedSteps.size,
-      total: sortedSteps?.length || 0,
+      total: sortedSteps.length,
     });
 
     return {
       success,
       results,
       summary: this.summarizeResults(results),
-      completedSteps: results?.filter((r: StepResult) => r.success).length,
-      failedSteps: results?.filter((r: StepResult) => !r.success).length,
+      completedSteps: results.filter((r: StepResult) => r.success).length,
+      failedSteps: results.filter((r: StepResult) => !r.success).length,
       error: !success ? results.find((r: StepResult) => !r.success)?.error : undefined,
     };
   }
@@ -204,7 +205,7 @@ export class PlanExecutor {
 
         progressCallback({
           completedSteps: executedSteps.size,
-          totalSteps: sortedSteps?.length || 0,
+          totalSteps: sortedSteps.length,
           currentStep: step.id,
         });
       }
@@ -213,22 +214,22 @@ export class PlanExecutor {
     // Final progress callback
     progressCallback({
       completedSteps: executedSteps.size,
-      totalSteps: sortedSteps?.length || 0,
+      totalSteps: sortedSteps.length,
     });
 
     // Broadcast plan completion
     const success = results.every((r: StepResult) => r.success);
     wsService.broadcastPlanUpdate(plan.id, success ? "completed" : "failed", {
       completed: executedSteps.size,
-      total: sortedSteps?.length || 0,
+      total: sortedSteps.length,
     });
 
     return {
       success,
       results,
       summary: this.summarizeResults(results),
-      completedSteps: results?.filter((r: StepResult) => r.success).length,
-      failedSteps: results?.filter((r: StepResult) => !r.success).length,
+      completedSteps: results.filter((r: StepResult) => r.success).length,
+      failedSteps: results.filter((r: StepResult) => !r.success).length,
       error: !success ? results.find((r: StepResult) => !r.success)?.error : undefined,
     };
   }
@@ -239,12 +240,29 @@ export class PlanExecutor {
 
     try {
       // Attempt to search RAG system with timeout
-      const searchPromise = this?.ragSystem?.search(step.ragQuery, 5);
+      if (!this.ragSystem) {
+        throw new Error("RAG system not initialized");
+      }
+      const searchPromise = this.ragSystem.search(step.ragQuery, 5);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("RAG search timeout")), 5000),
       );
 
-      documents = await Promise.race([searchPromise, timeoutPromise]);
+      const queryResults = await Promise.race([searchPromise, timeoutPromise]);
+      // Map QueryResult to DocumentChunk format
+      documents = queryResults.map((result: QueryResult) => ({
+        id: result.id,
+        content: result.content,
+        metadata: {
+          sourceId: result.metadata.sourceId,
+          sourceType: 'rag',
+          chunkIndex: result.metadata.chunkIndex || 0,
+          totalChunks: result.metadata.totalChunks || 1,
+          title: result.metadata.title,
+          score: result.score
+        },
+        score: result.score
+      }));
       relevance = this.calculateRelevance(documents, step);
     } catch (error) {
       // Log the error but don't fail the step
@@ -265,7 +283,7 @@ export class PlanExecutor {
       metadata: {
         stepId: step.id,
         query: step.ragQuery,
-        ragAvailable: documents?.length || 0 > 0,
+        ragAvailable: documents.length > 0,
       },
     };
   }
@@ -281,19 +299,24 @@ export class PlanExecutor {
     }
 
     // Try primary agent first
-    let agent = await this?.agentRegistry?.getAgent(step.agentType);
+    if (!this.agentRegistry) {
+      throw new Error("Agent registry not initialized");
+    }
+    let agent = await this.agentRegistry.getAgent(step.agentType);
     let tool = agent.getTool(step.toolName);
+    let agentType: string = step.agentType;
 
     if (!tool) {
       // Try fallback agents if primary doesn't have the tool
       const fallbackAgents = this.getFallbackAgents(step.agentType);
       for (const fallbackType of fallbackAgents) {
         console.log(`Primary agent ${step.agentType} lacks tool ${step.toolName}, trying fallback ${fallbackType}`);
-        const fallbackAgent = await this?.agentRegistry?.getAgent(fallbackType);
+        const fallbackAgent = await this.agentRegistry.getAgent(fallbackType);
         const fallbackTool = fallbackAgent.getTool(step.toolName);
         if (fallbackTool) {
           agent = fallbackAgent;
           tool = fallbackTool;
+          agentType = fallbackType; // Update agent type for status broadcasts
           console.log(`Using fallback agent ${fallbackType} for tool ${step.toolName}`);
           break;
         }
@@ -305,6 +328,10 @@ export class PlanExecutor {
         );
       }
     }
+
+    // Broadcast agent status update - starting
+    wsService.broadcastAgentStatus(agentType, 'busy');
+    wsService.broadcastAgentTask(agentType, step.description, 'started');
 
     // Execute with retry logic for failures
     let lastError: Error | undefined;
@@ -327,6 +354,15 @@ export class PlanExecutor {
         );
 
         if (result.success) {
+          // Broadcast agent status update - completed
+          wsService.broadcastAgentTask(agentType, step.description, 'completed', result);
+          wsService.broadcastAgentStatus(agentType, 'idle');
+          
+          // Release agent back to pool
+          if (this.agentRegistry) {
+            this.agentRegistry.releaseAgent(agentType, agent);
+          }
+          
           return {
             stepId: step.id,
             success: result.success,
@@ -338,7 +374,7 @@ export class PlanExecutor {
               toolUsed: step.toolName,
               contextRelevance: context.relevance,
               attempts: attempt + 1,
-              agentUsed: agent.name
+              agentUsed: agent.name || agentType
             },
           };
         }
@@ -353,7 +389,9 @@ export class PlanExecutor {
           if (fallbackAgents.length > attempt) {
             const fallbackType = fallbackAgents[attempt];
             console.log(`Retrying with fallback agent ${fallbackType} after error: ${lastError.message}`);
-            agent = await this?.agentRegistry?.getAgent(fallbackType);
+            if (this.agentRegistry && fallbackType) {
+              agent = await this.agentRegistry.getAgent(fallbackType);
+            }
             const fallbackTool = agent.getTool(step.toolName);
             if (fallbackTool) {
               tool = fallbackTool;
@@ -361,6 +399,21 @@ export class PlanExecutor {
           }
         }
       }
+    }
+    
+    // Broadcast agent status update - failed
+    wsService.broadcastAgentTask(
+      agentType,
+      step.description,
+      'failed',
+      undefined,
+      lastError?.message || "Tool execution failed after retries"
+    );
+    wsService.broadcastAgentStatus(agentType, 'error');
+    
+    // Release agent back to pool
+    if (this.agentRegistry) {
+      this.agentRegistry.releaseAgent(agentType, agent);
     }
     
     throw lastError || new Error("Tool execution failed after retries");
@@ -384,43 +437,78 @@ export class PlanExecutor {
     step: PlanStep,
     context: Context,
   ): Promise<StepResult> {
-    const agent = await this?.agentRegistry?.getAgent(step.agentType);
+    if (!this.agentRegistry) {
+      throw new Error("Agent registry not initialized");
+    }
+    const agent = await this.agentRegistry.getAgent(step.agentType);
 
-    const result = await withTimeout(
-      agent.execute(step.description, {
-        task: step.description,
-        ragDocuments: context.documents,
-      }),
-      DEFAULT_TIMEOUTS.AGENT_EXECUTION,
-      `Agent execution timed out for ${step.agentType}`,
-    );
+    // Broadcast agent status update - starting
+    wsService.broadcastAgentStatus(step.agentType, 'busy');
+    wsService.broadcastAgentTask(step.agentType, step.description, 'started');
 
-    return {
-      stepId: step.id,
-      success: result.success,
-      ...(result.output && { output: result.output }),
-      ...(result.data && { data: result.data }),
-      ...(result.error && { error: result.error }),
-      metadata: {
-        ...result.metadata,
-        contextRelevance: context.relevance,
-      },
-    };
+    try {
+      const result = await withTimeout(
+        agent.execute(step.description, {
+          task: step.description,
+          ragDocuments: context.documents,
+        }),
+        DEFAULT_TIMEOUTS.AGENT_EXECUTION,
+        `Agent execution timed out for ${step.agentType}`,
+      );
+
+      // Broadcast agent status update - completed
+      wsService.broadcastAgentTask(
+        step.agentType,
+        step.description,
+        'completed',
+        result
+      );
+      wsService.broadcastAgentStatus(step.agentType, 'idle');
+
+      return {
+        stepId: step.id,
+        success: result.success,
+        ...(result.output && { output: result.output }),
+        ...(result.data && { data: result.data }),
+        ...(result.error && { error: result.error }),
+        metadata: {
+          ...result.metadata,
+          contextRelevance: context.relevance,
+        },
+      };
+    } catch (error) {
+      // Broadcast agent status update - error
+      wsService.broadcastAgentTask(
+        step.agentType,
+        step.description,
+        'failed',
+        undefined,
+        error instanceof Error ? error.message : String(error)
+      );
+      wsService.broadcastAgentStatus(step.agentType, 'error');
+      
+      throw error; // Re-throw to be handled by caller
+    } finally {
+      // Always release agent back to pool if needed
+      if (agent && this.agentRegistry) {
+        this.agentRegistry.releaseAgent(step.agentType, agent);
+      }
+    }
   }
 
   private calculateRelevance(documents: DocumentChunk[], _step: PlanStep): number {
-    if (documents?.length || 0 === 0) return 0;
+    if (!documents || documents.length === 0) return 0;
 
     // Average relevance score of top documents
     const scores = documents.slice(0, 3).map((doc: DocumentChunk) => doc.score || 0);
 
-    return scores.reduce((a: number, b: number) => a + b, 0) / scores?.length || 0;
+    return scores.reduce((a: number, b: number) => a + b, 0) / (scores.length || 1);
   }
 
   private shouldContinue(results: StepResult[]): boolean {
     // Stop if too many failures
-    const failures = results?.filter((r: StepResult) => !r.success).length;
-    const total = results?.length || 0;
+    const failures = results.filter((r: StepResult) => !r.success).length;
+    const total = results.length;
 
     if (total > 0 && failures / total > 0.5) {
       return false;
@@ -435,12 +523,12 @@ export class PlanExecutor {
   }
 
   private summarizeResults(results: StepResult[]): string {
-    const successful = results?.filter((r: StepResult) => r.success);
-    const failed = results?.filter((r: StepResult) => !r.success);
+    const successful = results.filter((r: StepResult) => r.success);
+    const failed = results.filter((r: StepResult) => !r.success);
 
     const parts: string[] = [];
 
-    if (successful?.length || 0 > 0) {
+    if (successful.length > 0) {
       parts.push("Completed Steps:");
       successful.forEach((r: StepResult) => {
         if (r.output) {
@@ -449,7 +537,7 @@ export class PlanExecutor {
       });
     }
 
-    if (failed?.length || 0 > 0) {
+    if (failed.length > 0) {
       parts.push("\nFailed Steps:");
       failed.forEach((r: StepResult) => {
         parts.push(`- ${r.stepId}: ${r.error || "Unknown error"}`);
@@ -492,7 +580,7 @@ export class PlanExecutor {
 
     const sorted: PlanStep[] = [];
 
-    while (queue?.length || 0 > 0) {
+    while (queue.length > 0) {
       const current = queue.shift()!;
       const step = graph.get(current)!;
       sorted.push(step);

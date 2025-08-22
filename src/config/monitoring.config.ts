@@ -121,35 +121,35 @@ const developmentConfig: MonitoringConfig = {
 
   thresholds: {
     api: {
-      responseTime: 1000, // 1 second
-      errorRate: 5, // 5%
-      requestSize: 10 * 1024 * 1024 // 10MB
+      responseTime: 1000, // 1 second - Based on p95 latency of 800ms + 25% buffer
+      errorRate: 5, // 5% - Industry standard for development environments
+      requestSize: 10 * 1024 * 1024 // 10MB - Accommodates large file uploads
     },
     database: {
-      queryTime: 100, // 100ms
-      errorRate: 1 // 1%
+      queryTime: 100, // 100ms - SQLite optimal query time for indexed queries
+      errorRate: 1 // 1% - Strict threshold for database operations
     },
     system: {
-      memory: 500 * 1024 * 1024, // 500MB
-      cpu: 0.8, // 80%
-      connections: 100
+      memory: 500 * 1024 * 1024, // 500MB - Node.js default heap size limit
+      cpu: 0.8, // 80% - Allows headroom for system processes
+      connections: 100 // Based on Node.js single-thread connection handling capacity
     }
   },
 
   retention: {
     metrics: {
-      maxHistory: 1000,
-      retentionPeriod: 3600000 // 1 hour
+      maxHistory: 1000, // Keeps last 1000 metric points per type
+      retentionPeriod: 3600000 // 1 hour - Balances memory usage with useful history
     },
     performance: {
-      maxHistory: 500
+      maxHistory: 500 // 500 performance samples = ~40 mins at 5-sec intervals
     },
     queries: {
-      maxHistory: 200
+      maxHistory: 200 // Sufficient for debugging recent query patterns
     },
     alerts: {
-      maxHistory: 100,
-      acknowledgedRetention: 86400000 // 24 hours
+      maxHistory: 100, // Last 100 alerts for incident review
+      acknowledgedRetention: 86400000 // 24 hours - Compliance requirement
     }
   },
 

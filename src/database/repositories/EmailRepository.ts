@@ -747,7 +747,7 @@ export class EmailRepository {
 
       // Build final queries
       const whereClause =
-        whereClauses?.length || 0 > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+        whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
       const baseQuery = `FROM emails_enhanced ${whereClause}`;
 
       // Count query
@@ -769,12 +769,12 @@ export class EmailRepository {
       }
 
       // Execute query
-      const emails = this.db.prepare(dataQuery).all(...dataParams) as any[];
+      const emails = (this.db.prepare(dataQuery).all(...dataParams) as any[]) || [];
 
       // PERFORMANCE OPTIMIZATION: Load related data in bulk to avoid N+1 queries
-      if (emails?.length || 0 > 0) {
-        const emailIds = emails?.map((e: any) => e.id);
-        const placeholders = emailIds?.map(() => '?').join(',');
+      if (emails && emails.length > 0) {
+        const emailIds = emails.map((e: any) => e.id);
+        const placeholders = emailIds.map(() => '?').join(',');
         
         // Bulk load entities from new BI entities table (optimized for performance)
         const allEntities = this.db.prepare(`
@@ -854,7 +854,7 @@ export class EmailRepository {
         "email_repository.query_duration",
         Date.now() - startTime,
       );
-      metrics.increment("email_repository.emails_queried", emails?.length || 0);
+      metrics.increment("email_repository.emails_queried", emails.length);
 
       return { emails, total };
     } catch (error) {

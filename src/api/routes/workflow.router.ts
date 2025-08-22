@@ -8,27 +8,27 @@ import { WorkflowWebSocketHandler } from "../../core/websocket/WorkflowWebSocket
 import type { DatabaseRow, QueryParameters } from "../../shared/types/api.types.js";
 
 // Database interfaces
-interface WorkflowTaskRow extends DatabaseRow {
+export interface WorkflowTaskRow extends DatabaseRow {
   task_id: string;
   email_id: string;
   workflow_category: string;
   workflow_state: string;
   task_status: string;
   title: string;
-  description?: string;
+  description: string | null;
   priority: string;
-  current_owner?: string;
-  owner_email?: string;
+  current_owner: string | null;
+  owner_email: string | null;
   dollar_value: number;
   sla_deadline: string;
   created_at: string;
   updated_at: string;
-  completion_date?: string;
-  confidence_score?: number;
-  entities?: string; // JSON string
+  completion_date: string | null;
+  confidence_score: number | null;
+  entities: string | null; // JSON string
 }
 
-interface WorkflowStatsRow extends DatabaseRow {
+export interface WorkflowStatsRow extends DatabaseRow {
   status: string;
   count: number;
   avg_dollar_value: number;
@@ -188,13 +188,14 @@ export const workflowRouter = router({
           entities:
             task.po_numbers || task.quote_numbers || task.customers
               ? {
-                  po_numbers: task.po_numbers
+                  po_numbers: task.po_numbers && typeof task.po_numbers === 'string'
                     ? JSON.parse(task.po_numbers)
                     : [],
-                  quote_numbers: task.quote_numbers
+                  quote_numbers: task.quote_numbers && typeof task.quote_numbers === 'string'
                     ? JSON.parse(task.quote_numbers)
                     : [],
-                  customers: task.customers ? JSON.parse(task.customers) : [],
+                  customers: task.customers && typeof task.customers === 'string' 
+                    ? JSON.parse(task.customers) : [],
                 }
               : undefined,
         }));
@@ -237,13 +238,15 @@ export const workflowRouter = router({
 
         // Parse entities
         if (task.po_numbers || task.quote_numbers || task.customers) {
-          task.entities = {
-            po_numbers: task.po_numbers ? JSON.parse(task.po_numbers) : [],
-            quote_numbers: task.quote_numbers
+          task.entities = JSON.stringify({
+            po_numbers: task.po_numbers && typeof task.po_numbers === 'string' 
+              ? JSON.parse(task.po_numbers) : [],
+            quote_numbers: task.quote_numbers && typeof task.quote_numbers === 'string'
               ? JSON.parse(task.quote_numbers)
               : [],
-            customers: task.customers ? JSON.parse(task.customers) : [],
-          };
+            customers: task.customers && typeof task.customers === 'string' 
+              ? JSON.parse(task.customers) : [],
+          });
         }
 
         // Get status history

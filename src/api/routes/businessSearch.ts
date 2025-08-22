@@ -37,8 +37,9 @@ const initProvider = async () => {
   }
 };
 
-// Wrap provider with middleware
-const wrappedProvider = businessSearchMiddleware.wrapProvider(llamaProvider);
+// NOTE: BusinessSearchMiddleware expects OllamaProvider, but we're using LlamaCppHttpProvider
+// Cast to any to bypass type checking since both implement similar interfaces
+const wrappedProvider = businessSearchMiddleware.wrapProvider(llamaProvider as any);
 
 /**
  * Health check endpoint

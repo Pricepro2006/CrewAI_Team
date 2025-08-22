@@ -4,6 +4,7 @@
  */
 
 import Database from "better-sqlite3";
+import type { Database as DatabaseType } from "better-sqlite3";
 import { Logger } from "../../utils/logger.js";
 import type { DatabaseRecord } from "../../shared/types/core.types.js";
 // Using local interface instead of EmailTypes due to conflict
@@ -66,9 +67,9 @@ interface ChainAnalysis {
 
 export class EmailChainAnalyzer {
   private databasePath: string;
-  private mockDb?: Database; // For testing purposes
+  private mockDb?: DatabaseType; // For testing purposes
 
-  constructor(databasePath: string = "./data/crewai.db", mockDb?: Database) {
+  constructor(databasePath: string = "./data/crewai.db", mockDb?: DatabaseType) {
     this.databasePath = databasePath;
     this.mockDb = mockDb;
   }
@@ -78,21 +79,22 @@ export class EmailChainAnalyzer {
    */
   private mapDbRowToChainNode(row: DatabaseRecord): EmailChainNode {
     return {
-      id: row.id,
-      message_id: row.internet_message_id || row.message_id || "",
-      subject: row.subject || "",
-      sender_email: row.sender_email || "",
-      recipient_emails: row.recipient_emails || "",
-      received_at: row.received_date_time || row.received_at || "",
-      workflow_state:
+      id: String(row.id || ''),
+      message_id: String(row.internet_message_id || row.message_id || ""),
+      subject: String(row.subject || ""),
+      sender_email: String(row.sender_email || ""),
+      recipient_emails: String(row.recipient_emails || ""),
+      received_at: String(row.received_date_time || row.received_at || ""),
+      workflow_state: String(
         row.workflow_state ||
         this.detectWorkflowState(
           (row.subject || "") + " " + (row.body_content || row.body || ""),
-        ),
-      in_reply_to: row.in_reply_to || "",
-      references: row.references || "",
-      thread_id: row.conversation_id || row.thread_id || "",
-      body: row.body_content || row.body || "",
+        )
+      ),
+      in_reply_to: String(row.in_reply_to || ""),
+      references: String(row.references || ""),
+      thread_id: String(row.conversation_id || row.thread_id || ""),
+      body: String(row.body_content || row.body || ""),
     };
   }
 
@@ -163,19 +165,19 @@ export class EmailChainAnalyzer {
 
         // Map to expected format
         const chainNode: EmailChainNode = {
-          id: email.id,
-          message_id: email.internet_message_id || email.message_id || "",
-          subject: email.subject || "",
-          sender_email: email.sender_email || "",
-          recipient_emails: email.recipient_emails || "",
-          received_at: email.received_date_time || email.received_at || "",
-          workflow_state: this.detectWorkflowState(
+          id: String(email.id || ''),
+          message_id: String(email.internet_message_id || email.message_id || ""),
+          subject: String(email.subject || ""),
+          sender_email: String(email.sender_email || ""),
+          recipient_emails: String(email.recipient_emails || ""),
+          received_at: String(email.received_date_time || email.received_at || ""),
+          workflow_state: String(this.detectWorkflowState(
             (email.subject || "") + " " + (email.body_content || email.body || ""),
-          ),
-          in_reply_to: email.in_reply_to || "",
-          references: email.references || "",
-          thread_id: email.conversation_id || email.thread_id || "",
-          body: email.body_content || email.body || "",
+          )),
+          in_reply_to: String(email.in_reply_to || ""),
+          references: String(email.references || ""),
+          thread_id: String(email.conversation_id || email.thread_id || ""),
+          body: String(email.body_content || email.body || ""),
         };
 
         return chainNode;
@@ -208,19 +210,19 @@ export class EmailChainAnalyzer {
 
       // Map to expected format
       const chainNode: EmailChainNode = {
-        id: email.id,
-        message_id: email.message_id || "",
-        subject: email.subject || "",
-        sender_email: email.sender_email || "",
-        recipient_emails: email.recipient_emails || "",
-        received_at: email.received_at || "",
-        workflow_state: this.detectWorkflowState(
+        id: String(email.id || ''),
+        message_id: String(email.message_id || ""),
+        subject: String(email.subject || ""),
+        sender_email: String(email.sender_email || ""),
+        recipient_emails: String(email.recipient_emails || ""),
+        received_at: String(email.received_at || ""),
+        workflow_state: String(this.detectWorkflowState(
           (email.subject || "") + " " + (email.body || ""),
-        ),
-        in_reply_to: email.in_reply_to || "",
-        references: email.references || "",
-        thread_id: email.thread_id || "",
-        body: email.body || email.body_content || "",
+        )),
+        in_reply_to: String(email.in_reply_to || ""),
+        references: String(email.references || ""),
+        thread_id: String(email.thread_id || ""),
+        body: String(email.body || email.body_content || ""),
       };
 
       return chainNode;
@@ -250,19 +252,19 @@ export class EmailChainAnalyzer {
           
           threads.forEach((row: DatabaseRecord) => {
             const e: EmailChainNode = {
-              id: row.id,
-              message_id: row.internet_message_id || row.message_id || "",
-              subject: row.subject || "",
-              sender_email: row.sender_email || "",
-              recipient_emails: row.recipient_emails || "",
-              received_at: row.received_date_time || row.received_at || "",
-              workflow_state: this.detectWorkflowState(
+              id: String(row.id || ''),
+              message_id: String(row.internet_message_id || row.message_id || ""),
+              subject: String(row.subject || ""),
+              sender_email: String(row.sender_email || ""),
+              recipient_emails: String(row.recipient_emails || ""),
+              received_at: String(row.received_date_time || row.received_at || ""),
+              workflow_state: String(this.detectWorkflowState(
                 (row.subject || "") + " " + (row.body_content || row.body || ""),
-              ),
+              )),
               in_reply_to: "",
               references: "",
-              thread_id: row.conversation_id || row.thread_id || "",
-              body: row.body_content || row.body || "",
+              thread_id: String(row.conversation_id || row.thread_id || ""),
+              body: String(row.body_content || row.body || ""),
             };
             chainEmails.push(e);
             processedIds.add(e.id);
@@ -287,19 +289,19 @@ export class EmailChainAnalyzer {
           const threads = stmt.all(email.thread_id) as DatabaseRecord[];
           threads.forEach((row: DatabaseRecord) => {
             const e: EmailChainNode = {
-              id: row.id,
-              message_id: row.message_id || "",
-              subject: row.subject || "",
-              sender_email: row.sender_email || "",
-              recipient_emails: row.recipient_emails || "",
-              received_at: row.received_at || "",
-              workflow_state: this.detectWorkflowState(
+              id: String(row.id || ''),
+              message_id: String(row.message_id || ""),
+              subject: String(row.subject || ""),
+              sender_email: String(row.sender_email || ""),
+              recipient_emails: String(row.recipient_emails || ""),
+              received_at: String(row.received_at || ""),
+              workflow_state: String(this.detectWorkflowState(
                 (row.subject || "") + " " + (row.body || ""),
-              ),
+              )),
               in_reply_to: "",
               references: "",
-              thread_id: row.thread_id || "",
-              body: row.body || "",
+              thread_id: String(row.thread_id || ""),
+              body: String(row.body || ""),
             };
             chainEmails.push(e);
             processedIds.add(e.id);
@@ -356,21 +358,21 @@ export class EmailChainAnalyzer {
             ) as DatabaseRecord[];
 
             results.forEach((row: DatabaseRecord) => {
-              if (!processedIds.has(row.id)) {
+              if (!processedIds.has(String(row.id || ''))) {
                 const e: EmailChainNode = {
-                  id: row.id,
-                  message_id: row.message_id || "",
-                  subject: row.subject || "",
-                  sender_email: row.sender_email || "",
-                  recipient_emails: row.recipient_emails || "",
-                  received_at: row.received_at || "",
-                  workflow_state: this.detectWorkflowState(
+                  id: String(row.id || ''),
+                  message_id: String(row.message_id || ""),
+                  subject: String(row.subject || ""),
+                  sender_email: String(row.sender_email || ""),
+                  recipient_emails: String(row.recipient_emails || ""),
+                  received_at: String(row.received_at || ""),
+                  workflow_state: String(this.detectWorkflowState(
                     (row.subject || "") + " " + (row.body || ""),
-                  ),
+                  )),
                   in_reply_to: "",
                   references: "",
-                  thread_id: row.thread_id || "",
-                  body: row.body || "",
+                  thread_id: String(row.thread_id || ""),
+                  body: String(row.body || ""),
                 };
                 chainEmails.push(e);
                 processedIds.add(e.id);

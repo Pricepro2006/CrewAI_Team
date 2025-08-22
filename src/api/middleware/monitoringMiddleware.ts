@@ -84,15 +84,15 @@ export function createHTTPMonitoringMiddleware() {
         traceId,
         requestId,
         userId: (req as any).user?.id,
-        data: {
+        data: JSON.parse(JSON.stringify({
           method: req.method,
           path: req.path,
           query: req.query,
           headers: {
-            'user-agent': req.get('User-Agent'),
-            'content-type': req.get('Content-Type'),
+            'user-agent': req.get('User-Agent') || null,
+            'content-type': req.get('Content-Type') || null,
           },
-        },
+        })),
         tags: ['http', 'request', 'start'],
       }
     );
@@ -113,10 +113,10 @@ export function createHTTPMonitoringMiddleware() {
         {
           traceId,
           requestId,
-          data: {
+          data: JSON.parse(JSON.stringify({
             query: req.query,
             responseSize: Buffer.byteLength(body || ''),
-          },
+          })),
         }
       );
 
@@ -207,8 +207,8 @@ export function createErrorMonitoringMiddleware() {
         operation: 'http_request_error',
         traceId: context?.traceId,
         requestId: context?.requestId,
-        userId: context?.userId,
-        error,
+        userId: context?.userId || null,
+        error: JSON.parse(JSON.stringify({ message: error.message, name: error.name, stack: error.stack })),
         data: {
           method: req.method,
           path: req.path,
@@ -250,8 +250,8 @@ export function createWebSocketMonitoring() {
       groceryAgentMetrics.recordWebSocketEvent('connect', connectionId);
       
       structuredLogger.webSocketEvent('connect', connectionId, {
-        userId,
-        data: { connectionId, userId },
+        userId: userId || null,
+        data: { connectionId, userId: userId || null },
       });
 
       sentryErrorTracker.trackWebSocketEvent('connect', {
@@ -265,9 +265,9 @@ export function createWebSocketMonitoring() {
       groceryAgentMetrics.recordWebSocketEvent('disconnect', connectionId, duration);
       
       structuredLogger.webSocketEvent('disconnect', connectionId, {
-        userId,
+        userId: userId || null,
         duration,
-        data: { connectionId, userId, duration },
+        data: { connectionId, userId: userId || null, duration },
       });
 
       sentryErrorTracker.trackWebSocketEvent('disconnect', {
@@ -281,8 +281,8 @@ export function createWebSocketMonitoring() {
       groceryAgentMetrics.recordWebSocketEvent('message_received', connectionId);
       
       structuredLogger.webSocketEvent('message', connectionId, {
-        userId,
-        data: { connectionId, messageType, userId },
+        userId: userId || null,
+        data: { connectionId, messageType, userId: userId || null },
       });
     },
 
@@ -308,8 +308,8 @@ export function createWebSocketMonitoring() {
         'websocket',
         {
           operation: 'websocket_error',
-          data: { connectionId, userId, errorId },
-          error,
+          data: { connectionId, userId: userId || null, errorId },
+          error: JSON.parse(JSON.stringify({ message: error.message, name: error.name, stack: error.stack })),
           tags: ['websocket', 'error'],
         }
       );
@@ -345,8 +345,8 @@ export function createDatabaseMonitoring() {
       structuredLogger.databaseQuery(query, duration, success, {
         data: {
           queryId: queryInfo.queryId,
-          resultCount: results?.length || results?.rowCount,
-          error: error?.message,
+          resultCount: results?.length || results?.rowCount || 0,
+          error: error?.message || null,
         },
       });
 
@@ -409,7 +409,7 @@ export const groceryMonitoring = {
       structuredLogger.info('NLP parsing started', 'nlp_processor', {
         operation: 'nlp_parse_start',
         traceId,
-        userId,
+        userId: userId || null,
         data: { query: query.substring(0, 100) },
         tags: ['nlp', 'parsing', 'start'],
       });
@@ -440,8 +440,8 @@ export const groceryMonitoring = {
       // Log completion
       structuredLogger.nlpParsing(success, query, confidence, duration, {
         traceId: context.traceId,
-        userId,
-        data: { result, error: error?.message },
+        userId: userId || null,
+        data: { result: result || null, error: error?.message || null },
       });
 
       // Handle errors
@@ -485,7 +485,7 @@ export const groceryMonitoring = {
         matchType,
         confidence,
         searchTime,
-        { userId, data: { category } }
+        { userId: userId || null, data: { category: category || null } }
       );
 
       if (matchType === 'none') {
@@ -529,7 +529,7 @@ export const groceryMonitoring = {
         success,
         responseTime,
         storeId,
-        { userId, data: { error: error?.message } }
+        { userId: userId || null, data: { error: error?.message || null } }
       );
 
       if (!success && error) {
@@ -567,7 +567,7 @@ export const groceryMonitoring = {
       );
 
       structuredLogger.dealDetection(productId, dealsFound, detectionTime, {
-        userId,
+        userId: userId || null,
         data: { averageSavings },
       });
     },

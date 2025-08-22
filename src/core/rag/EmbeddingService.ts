@@ -18,7 +18,7 @@ export class EmbeddingService {
     };
 
     this.client = axios.create({
-      baseURL: config.baseUrl || MODEL_CONFIG?.api?.llmUrl,
+      baseURL: config.baseUrl || MODEL_CONFIG?.api?.ollamaUrl,
       timeout: MODEL_CONFIG?.timeouts?.embedding,
       headers: {
         "Content-Type": "application/json",

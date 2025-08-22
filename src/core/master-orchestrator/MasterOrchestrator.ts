@@ -147,6 +147,20 @@ export class MasterOrchestrator {
     return true; // For health checks
   }
 
+  /**
+   * Public method to generate text using the configured LLM
+   * @param prompt The prompt to generate text from
+   * @param options Optional generation parameters
+   * @returns Generated text response
+   */
+  public async generateText(prompt: string, options?: any): Promise<string> {
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    const response = await this.llm.generate(prompt, options);
+    return typeof response === 'string' ? response : response.response || '';
+  }
+
   async processEmail(email: any): Promise<EmailAnalysisResult> {
     const perf = this.perfMonitor.start("processEmail");
 
@@ -295,12 +309,13 @@ export class MasterOrchestrator {
       const duration = perf.end();
       return {
         success: true,
+        results: [],
         summary: cachedResponse,
-        confidence: 1.0,
         metadata: {
           source: "cache",
           responseTime: duration,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          confidence: 1.0
         }
       };
     }
@@ -442,7 +457,7 @@ export class MasterOrchestrator {
           resultsCount: executionResult.results?.length || 0,
           summary: executionResult.summary?.substring(0, 100),
           hasResults: !!executionResult.results,
-          confidence: executionResult.confidence
+          confidence: executionResult.metadata?.confidence
         });
 
         // Step 3: Review execution results with timeout

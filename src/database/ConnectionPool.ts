@@ -236,14 +236,14 @@ export class DatabaseConnectionPool {
 
   private constructor(config?: Partial<ConnectionPoolConfig>) {
     this.config = {
-      databasePath: config?.databasePath || appConfig?.database?.path,
-      maxConnections: config?.maxConnections || 10,
+      databasePath: config?.databasePath || appConfig?.database?.path || './data/crewai_enhanced.db',
+      maxConnections: config?.maxConnections || (isMainThread ? 5 : 3), // Reduce connections per thread
       connectionTimeout: config?.connectionTimeout || 30000,
-      idleTimeout: config?.idleTimeout || 300000, // 5 minutes
+      idleTimeout: config?.idleTimeout || 120000, // Reduced to 2 minutes for faster cleanup
       enableWAL: config?.enableWAL !== false,
       enableForeignKeys: config?.enableForeignKeys !== false,
       cacheSize: config?.cacheSize || 10000,
-      memoryMap: config?.memoryMap || 268435456, // 256MB
+      memoryMap: config?.memoryMap || 134217728, // Reduced to 128MB for better memory management
       busyTimeout: config?.busyTimeout || 30000,
     };
 
@@ -286,12 +286,16 @@ export class DatabaseConnectionPool {
 
     // Create new connection if none exists for this thread or if disposed
     if (!connection || connection.isDisposed()) {
+      // Clean up idle connections before checking limit
+      this.cleanupIdleConnections();
+      
       if (this.connections.size >= this.config.maxConnections) {
-        this.cleanupIdleConnections();
-
+        // Try one more aggressive cleanup
+        this.forceCleanupOldestConnection();
+        
         if (this.connections.size >= this.config.maxConnections) {
           throw new Error(
-            `Maximum connections (${this.config.maxConnections}) reached`,
+            `Maximum connections (${this.config.maxConnections}) reached. Active: ${this.connections.size}`,
           );
         }
       }
@@ -440,8 +444,47 @@ export class DatabaseConnectionPool {
    */
   private startCleanupInterval(): void {
     this.cleanupInterval = setInterval(() => {
-      this.cleanupIdleConnections();
-    }, this.config.idleTimeout / 2); // Run cleanup at half the idle timeout
+      try {
+        this.cleanupIdleConnections();
+        
+        // Log pool status periodically in development
+        if (process.env.NODE_ENV === 'development') {
+          const stats = this.getStats();
+          if (stats.totalConnections > 0) {
+            logger.debug(`Connection pool status - Total: ${stats.totalConnections}, Active: ${stats.activeConnections}, Idle: ${stats.idleConnections}`);
+          }
+        }
+      } catch (error) {
+        logger.error('Error during connection pool cleanup:', 'ConnectionPool', undefined, error instanceof Error ? error : new Error(String(error)));
+      }
+    }, Math.min(this.config.idleTimeout / 2, 60000)); // Run cleanup more frequently, max every minute
+  }
+  
+  /**
+   * Force cleanup of oldest connection when pool is full
+   */
+  private forceCleanupOldestConnection(): void {
+    let oldestConnection: [number, DatabaseConnection] | null = null;
+    let oldestTime = Date.now();
+    
+    const currentThreadId = threadId; // Store current thread ID
+    for (const [connThreadId, connection] of this.connections) {
+      const metrics = connection.getMetrics();
+      const lastUsedTime = metrics.lastUsed.getTime();
+      
+      if (lastUsedTime < oldestTime && connThreadId !== currentThreadId) {
+        oldestTime = lastUsedTime;
+        oldestConnection = [connThreadId, connection];
+      }
+    }
+    
+    if (oldestConnection) {
+      const [oldThreadId, oldConn] = oldestConnection;
+      oldConn.dispose();
+      this.connections.delete(oldThreadId);
+      this.connectionMetrics.delete(oldConn.getMetrics().id);
+      logger.debug(`Force closed oldest connection from thread ${oldThreadId}`);
+    }
   }
 
   /**

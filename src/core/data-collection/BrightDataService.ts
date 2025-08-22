@@ -53,11 +53,40 @@ export class BrightDataService {
   ) {
     this.credentials = credentials;
 
-    // If no MCP tools provided, create a mock implementation for development
+    // If no MCP tools provided, create a fallback implementation using fetch
     this.mcpTools = mcpTools || {
       searchEngine: async () => ({ results: [] }),
-      scrapeAsMarkdown: async () => ({ content: "" }),
-      scrapeAsHtml: async () => ({ content: "" }),
+      scrapeAsMarkdown: async ({ url }) => {
+        try {
+          const response = await fetch(url);
+          const html = await response.text();
+          // Simple HTML to markdown conversion
+          const markdown = html
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+            .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n')
+            .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n')
+            .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n')
+            .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]*>/g, '')
+            .trim();
+          return { content: markdown };
+        } catch (error) {
+          logger.warn("Fallback scraping failed, using empty content", "BRIGHT_DATA", { error });
+          return { content: "" };
+        }
+      },
+      scrapeAsHtml: async ({ url }) => {
+        try {
+          const response = await fetch(url);
+          const html = await response.text();
+          return { content: html };
+        } catch (error) {
+          logger.warn("Fallback HTML scraping failed, using empty content", "BRIGHT_DATA", { error });
+          return { content: "" };
+        }
+      },
       extract: async () => ({}),
       webDataAmazonProduct: async () => ({}),
       webDataAmazonProductSearch: async () => ({ products: [] }),

@@ -104,7 +104,7 @@ export class OptimizedVectorStore {
       
       logger.info("Optimized vector store initialized", "OPTIMIZED_VECTOR_STORE");
     } catch (error) {
-      logger.error("Failed to initialize optimized vector store", error, "OPTIMIZED_VECTOR_STORE");
+      logger.error("Failed to initialize optimized vector store", "OPTIMIZED_VECTOR_STORE", {}, error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
@@ -321,8 +321,10 @@ export class OptimizedVectorStore {
       uncachedTexts.forEach((text, i) => {
         const embedding = newEmbeddings[i];
         const originalIndex = uncachedIndices[i];
-        this.embeddingCache.set(text, embedding);
-        results[originalIndex] = embedding;
+        if (originalIndex !== undefined && embedding) {
+          this.embeddingCache.set(text, embedding);
+          results[originalIndex] = embedding;
+        }
       });
     }
 
@@ -348,7 +350,7 @@ export class OptimizedVectorStore {
         );
       }
     } catch (error) {
-      logger.warn("Failed to warm up cache", error, "OPTIMIZED_VECTOR_STORE");
+      logger.warn("Failed to warm up cache", "OPTIMIZED_VECTOR_STORE", { error: error instanceof Error ? error.message : String(error) });
     }
   }
 

@@ -18,13 +18,22 @@ import type {
   EmailAnalysisResult,
   EmailEntity,
   ProcessingError,
-  ExecutionResult,
-  TokenUsage,
-  Timestamp
+  ExecutionResult
 } from '../../shared/types/api.types.js';
 
 // Enhanced email database row with all fields from emails_enhanced table
-export interface EmailEnhancedRow extends EmailDatabaseRow {
+export interface EmailEnhancedRow {
+  // Core fields from EmailDatabaseRow
+  id: string;
+  subject: string;
+  sender_email: string;
+  sender_name: string;
+  received_date_time: string;
+  is_read: boolean | string;
+  has_attachments: boolean | string;
+  created_at?: string;
+  updated_at?: string;
+  // Enhanced fields
   email_alias?: string;
   requested_by?: string;
   body_preview?: string;
@@ -43,7 +52,8 @@ export interface EmailEnhancedRow extends EmailDatabaseRow {
   suggested_response?: string;
   phase_completed?: number;
   analyzed_at?: string;
-  is_read?: string; // 'true' | 'false' as string in DB
+  // Allow additional fields
+  [key: string]: string | number | boolean | Date | null | undefined;
 }
 
 // Dashboard stats response interface
