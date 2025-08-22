@@ -3,7 +3,7 @@ import { MagnifyingGlassIcon, SparklesIcon, ShoppingCartIcon, WifiIcon } from "@
 import { trpc } from "../../../utils/trpc";
 import { WalmartProductCard } from "./WalmartProductCard.js";
 import type { WalmartProduct } from "../../../types/walmart-grocery.js";
-import { useWalmartWebSocket } from "../../hooks/useWalmartWebSocket.js";
+import { useWebSocketSingleton } from "../../hooks/useWebSocketSingleton.js";
 import axios from "axios";
 
 interface NLPResult {
@@ -29,18 +29,22 @@ export const WalmartNLPSearch: React.FC = () => {
   const [showNLPInsight, setShowNLPInsight] = useState(false);
   const [cartItems, setCartItems] = useState<string[]>([]);
 
-  // WebSocket connection
-  const {
-    isConnected,
-    nlpProcessing,
-    nlpResult: wsNlpResult,
-    productMatches,
-    sessionId,
-    error: wsError
-  } = useWalmartWebSocket();
+  // WebSocket connection with stable singleton
+  const { isConnected, send } = useWebSocketSingleton({
+    autoConnect: true,
+    subscriberId: 'walmart-nlp-search',
+    onMessage: (message) => {
+      // Handle Walmart-specific messages here
+      if (message?.type === 'nlp_result') {
+        setNlpResult(message.data);
+      } else if (message?.type === 'product_matches') {
+        setSearchResults(message.data || []);
+      }
+    },
+  });
 
   const searchProducts = trpc?.walmartGrocery?.searchProducts?.useMutation({
-    onSuccess: (data: any) => {
+    onSuccess: (data: { products?: WalmartProduct[] }) => {
       setSearchResults(data.products || []);
     },
   });
@@ -66,7 +70,7 @@ export const WalmartNLPSearch: React.FC = () => {
       const response = await axios.post("/api/nlp/process", {
         text: searchQuery,
         userId: "user123", // TODO: Get from auth context
-        sessionId: sessionId, // Use WebSocket session ID for real-time updates
+        sessionId: `session-${Date.now()}`, // Generate session ID
       });
 
       const nlpData: NLPResult = response.data;
@@ -77,7 +81,7 @@ export const WalmartNLPSearch: React.FC = () => {
         case "add_items":
           // For add_items, we get products directly from NLP
           if (nlpData.products && nlpData?.products?.length > 0) {
-            const walmartProducts: WalmartProduct[] = nlpData?.products?.map((p: any) => ({
+            const walmartProducts: WalmartProduct[] = nlpData?.products?.map((p) => ({
               id: p.id,
               walmartId: p.id,
               name: p.name,
@@ -109,7 +113,7 @@ export const WalmartNLPSearch: React.FC = () => {
               },
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
-            }));
+            } as WalmartProduct));
             setSearchResults(walmartProducts);
           } else if (nlpData?.items?.length > 0) {
             // Fallback to regular search for items
@@ -191,60 +195,8 @@ export const WalmartNLPSearch: React.FC = () => {
     setCartItems([...cartItems, product.id]);
   };
 
-  // Update processing state from WebSocket
-  useEffect(() => {
-    if (nlpProcessing !== undefined) {
-      setIsProcessing(nlpProcessing);
-    }
-  }, [nlpProcessing]);
-
-  // Update results from WebSocket
-  useEffect(() => {
-    if (wsNlpResult) {
-      setNlpResult(wsNlpResult);
-      setShowNLPInsight(true);
-    }
-  }, [wsNlpResult]);
-
-  // Update product matches from WebSocket
-  useEffect(() => {
-    if (productMatches && (productMatches?.length || 0) > 0) {
-      const walmartProducts: WalmartProduct[] = (Array.isArray(productMatches) ? productMatches : []).map((p: any) => ({
-        id: p.id || p.product_id || `product-${Date.now()}`,
-        walmartId: p.id || p.product_id || `walmart-${Date.now()}`,
-        name: p.name,
-        brand: p.brand,
-        price: {
-          currency: 'USD',
-          regular: p.price || p.current_price || p.regular_price || 0,
-          sale: p.price || p.current_price || p.regular_price || 0
-        },
-        images: [{
-          id: `${p.id}-image`,
-          url: "/api/placeholder/200/200",
-          type: "primary" as const
-        }],
-        availability: {
-          inStock: p.inStock !== undefined ? p.inStock : (p.in_stock ?? true),
-          stockLevel: (p.inStock !== undefined ? p.inStock : (p.in_stock ?? true)) ? "in_stock" as const : "out_of_stock" as const
-        },
-        category: {
-          id: "grocery",
-          name: "Grocery",
-          path: ["grocery"],
-          level: 1
-        },
-        description: "",
-        metadata: {
-          source: "api" as const,
-          confidence: 0.9
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }));
-      setSearchResults(walmartProducts);
-    }
-  }, [productMatches]);
+  // These effects are now handled in the onMessage callback of useWebSocketSingleton
+  // The productMatches processing is done directly in the WebSocket message handler
 
   return (
     <div className="walmart-nlp-search">

@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../../../lib/trpc.js";
-import {
-  useAgentStatus,
-  useTaskQueue,
-  useSystemHealth,
-} from "../../hooks/useWebSocket.js";
+// REMOVED: WebSocket hooks imports to prevent connection storm
 import "./AgentMonitor.css";
 
 interface AgentStatus {
@@ -20,14 +16,15 @@ interface AgentStatus {
 export const AgentMonitor: React.FC = () => {
   const [activeAgents, setActiveAgents] = useState<AgentStatus[]>([]);
 
-  // Poll for agent status - use type assertion to bypass tRPC inference issues
-  const agentStatus = (api?.agent?.status as any).useQuery(undefined, {
+  // Poll for agent status
+  const agentStatus = api?.agent?.status?.useQuery ? 
+    api.agent.status.useQuery(undefined, {
     refetchInterval: 1000, // Refresh every second
     enabled: true,
     trpc: {
       ssr: false,
     },
-  });
+  }) : { data: undefined, isLoading: false };
 
   useEffect(() => {
     if (agentStatus?.data && Array.isArray(agentStatus.data)) {
@@ -43,7 +40,7 @@ export const AgentMonitor: React.FC = () => {
     <div className="agent-monitor-overlay">
       <h3>Active Agents</h3>
       <div className="agent-list">
-        {activeAgents?.map((agent: any) => (
+        {activeAgents?.map((agent: AgentStatus) => (
           <div key={agent.id} className={`agent-status agent-${agent.status}`}>
             <div className="agent-header">
               <span className="agent-icon">

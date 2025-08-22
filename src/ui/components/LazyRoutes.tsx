@@ -4,18 +4,11 @@ import { Routes, Route } from 'react-router-dom';
 import { Skeleton } from '../../client/components/loading/SkeletonLoader';
 import { ErrorBoundary } from './ErrorBoundary/ErrorBoundary';
 
-// Import proper types from status manager and interfaces
-import type { EmailStatus } from '../../client/components/status/StatusUpdateManager';
-import type { EmailRecord as ImportedEmailRecord } from '../../types/email-dashboard.interfaces';
+// Safe type definitions with proper fallbacks
+type EmailStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 
-// Create adapter type to bridge between component expectations and imported types
-type EmailRecord = Omit<ImportedEmailRecord, 'email_alias' | 'requested_by'> & {
-  emailAlias: string;
-  requestedBy: string;
-};
-
-// Type alias for AdvancedEmailDashboard's EmailRecord to avoid conflicts
-type AdvancedEmailRecord = {
+// Unified EmailRecord type that handles both formats safely
+interface SafeEmailRecord {
   id: string;
   emailAlias: string;
   requestedBy: string;
@@ -28,7 +21,27 @@ type AdvancedEmailRecord = {
   createdAt: string;
   updatedAt: string;
   tags: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
+}
+
+// Type adapter function to safely convert API data
+const adaptEmailRecord = (input: unknown): SafeEmailRecord => {
+  const data = input as any;
+  return {
+    id: data?.id || 'unknown',
+    emailAlias: data?.emailAlias || data?.email_alias || 'unknown',
+    requestedBy: data?.requestedBy || data?.requested_by || 'unknown',
+    subject: data?.subject || 'No subject',
+    summary: data?.summary || '',
+    status: data?.status || 'pending',
+    priority: data?.priority || 'medium',
+    assignedTo: data?.assignedTo,
+    dueDate: data?.dueDate,
+    createdAt: data?.createdAt || new Date().toISOString(),
+    updatedAt: data?.updatedAt || new Date().toISOString(),
+    tags: Array.isArray(data?.tags) ? data.tags : [],
+    metadata: data?.metadata || {},
+  };
 };
 
 // Lazy load major route components to reduce initial bundle
@@ -64,8 +77,8 @@ const LazyWalmartOrderHistory = lazy(async () => {
 });
 
 const LazyEmailDashboard = lazy(() => 
-  import('../../client/components/dashboard/EmailDashboardMultiPanel').then(module => ({
-    default: module.EmailDashboardMultiPanel
+  import('../components/Email/EmailDashboard').then(module => ({
+    default: module.EmailDashboard
   }))
 );
 
@@ -75,21 +88,13 @@ const LazyAdvancedEmailDashboard = lazy(() =>
 
 // Wrapper components to provide default props
 const EmailDashboardWrapper: React.FC = () => {
-  // Provide default props for the email dashboard
-  const defaultEmails: ImportedEmailRecord[] = [];
-  
-  return (
-    <LazyEmailDashboard 
-      emails={defaultEmails}
-      loading={false}
-      error={null}
-    />
-  );
+  // EmailDashboard fetches its own data via tRPC
+  return <LazyEmailDashboard />;
 };
 
 const AdvancedEmailDashboardWrapper: React.FC = () => {
-  // Use specific type for AdvancedEmailDashboard
-  const defaultEmails: AdvancedEmailRecord[] = [];
+  // Use safe unified type
+  const defaultEmails: SafeEmailRecord[] = [];
   
   const defaultUser = {
     id: 'guest',
@@ -104,8 +109,14 @@ const AdvancedEmailDashboardWrapper: React.FC = () => {
     toStatus: EmailStatus,
     comment?: string
   ): Promise<void> => {
-    // Default implementation - could integrate with actual API
-    console.log('Email status update:', { emailId, fromStatus, toStatus, comment });
+    try {
+      // Default implementation with error handling
+      console.log('Email status update:', { emailId, fromStatus, toStatus, comment });
+      // TODO: Integrate with actual API when available
+    } catch (error) {
+      console.error('Failed to update email status:', error);
+      throw error; // Re-throw to allow component to handle
+    }
   };
   
   const handleRefresh = async (): Promise<void> => {
@@ -260,15 +271,17 @@ export const OptimizedRoutes: React.FC = (): React.ReactElement => {
 };
 
 // Type definitions for preload map
+type ComponentModule = { [key: string]: React.ComponentType<unknown> };
+
 type PreloadMap = {
-  'walmart-dashboard': () => Promise<any>;
-  'walmart-grocery': () => Promise<any>;
-  'walmart-pricing': () => Promise<any>;
-  'walmart-orders': () => Promise<any>;
-  'email-dashboard': () => Promise<any>;
-  'advanced-email': () => Promise<any>;
-  'monitoring': () => Promise<any>;
-  'performance': () => Promise<any>;
+  'walmart-dashboard': () => Promise<ComponentModule>;
+  'walmart-grocery': () => Promise<ComponentModule>;
+  'walmart-pricing': () => Promise<ComponentModule>;
+  'walmart-orders': () => Promise<ComponentModule>;
+  'email-dashboard': () => Promise<ComponentModule>;
+  'advanced-email': () => Promise<ComponentModule>;
+  'monitoring': () => Promise<ComponentModule>;
+  'performance': () => Promise<ComponentModule>;
 };
 
 type RouteNames = keyof PreloadMap;

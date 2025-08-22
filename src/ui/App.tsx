@@ -58,19 +58,22 @@ function AppWithCSRF() {
           queries: {
             staleTime: 5 * 60 * 1000, // 5 minutes
             cacheTime: 10 * 60 * 1000, // 10 minutes
-            retry: (failureCount, error: any) => {
+            retry: (failureCount, error: unknown) => {
+              // Type guard for error with status
+              const httpError = error as { status?: number; message?: string };
+              
               // Don't retry on authentication/CSRF errors
-              if (error?.status === 401 || error?.status === 403) {
+              if (httpError?.status === 401 || httpError?.status === 403) {
                 return false;
               }
               // Don't retry on 404 errors (missing endpoints)
-              if (error?.status === 404) {
+              if (httpError?.status === 404) {
                 return false;
               }
               // Don't retry on CSRF token errors
               if (
-                error?.message?.includes("CSRF") ||
-                error?.message?.includes("csrf")
+                httpError?.message?.includes("CSRF") ||
+                httpError?.message?.includes("csrf")
               ) {
                 return false;
               }
@@ -92,46 +95,24 @@ function AppWithCSRF() {
     api.createClient({
       transformer: superjson,
       links: [
-        splitLink({
-          condition(op) {
-            return op.type === "subscription";
+        // EMERGENCY DISABLED - WebSocket causing connection storm
+        // Replaced splitLink with httpBatchLink only to stop server overload
+        httpBatchLink({
+          url: `${getApiBaseUrl()}/trpc`,
+          headers() {
+            const authToken = localStorage.getItem("token");
+            return {
+              ...getHeaders(), // Include CSRF headers
+              ...(authToken && { authorization: `Bearer ${authToken}` }),
+            };
           },
-          true: wsLink({
-            client: createWSClient({
-              url: webSocketConfig.url,
-              retryDelayMs: (attemptIndex) => {
-                // Exponential backoff with jitter
-                const delay = Math.min(1000 * Math.pow(2, attemptIndex), 30000);
-                return delay + Math.random() * 1000;
-              },
-              WebSocket: window.WebSocket,
-              onOpen: () => {
-                logger.info('tRPC WebSocket connected', 'WEBSOCKET');
-              },
-              onClose: (cause) => {
-                logger.info('tRPC WebSocket disconnected', 'WEBSOCKET', { cause });
-              },
-              // connectionParams is not available in this version of tRPC WebSocket client
-              // Authentication is handled via query parameters or headers in the URL
-            }),
-          }),
-          false: httpBatchLink({
-            url: `${getApiBaseUrl()}/trpc`,
-            headers() {
-              const authToken = localStorage.getItem("token");
-              return {
-                ...getHeaders(), // Include CSRF headers
-                ...(authToken && { authorization: `Bearer ${authToken}` }),
-              };
-            },
-            // Add CORS credentials
-            fetch(url, options) {
-              return fetch(url, {
-                ...options,
-                credentials: "include",
-              });
-            },
-          }),
+          // Add CORS credentials
+          fetch(url, options) {
+            return fetch(url, {
+              ...options,
+              credentials: "include",
+            });
+          },
         }),
       ],
     }),

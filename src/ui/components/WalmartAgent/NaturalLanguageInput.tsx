@@ -104,6 +104,12 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
   });
   const [lastSubmittedCommand, setLastSubmittedCommand] = useState<string | null>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>(recentCommands);
+  
+  // Stable random example phrase to prevent flashing
+  const [examplePhrase] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * (EXAMPLE_PHRASES?.length || 1));
+    return EXAMPLE_PHRASES[randomIndex];
+  });
 
   // Voice recognition hook
   const {
@@ -388,7 +394,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             <h3 className="input-title">What do you need?</h3>
             <div className="input-meta">
               <span className="help-text">
-                Use natural language like "{EXAMPLE_PHRASES[Math.floor(Math.random() * (EXAMPLE_PHRASES?.length || 1))]}"
+                Use natural language like "{examplePhrase}"
               </span>
             </div>
           </div>

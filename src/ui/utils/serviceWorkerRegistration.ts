@@ -127,12 +127,12 @@ export async function getServiceWorkerMetrics(): Promise<unknown> {
     return null;
   }
 
-  return new Promise((resolve: unknown) => {
+  return new Promise((resolve) => {
     const messageChannel = new MessageChannel();
     
     // Fix: Cannot assign to optional property - use proper null check
     if (messageChannel.port1) {
-      messageChannel.port1.onmessage = (event: unknown) => {
+      messageChannel.port1.onmessage = (event) => {
         resolve(event.data);
       };
     }

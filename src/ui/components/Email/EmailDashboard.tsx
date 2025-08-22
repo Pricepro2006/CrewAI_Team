@@ -28,19 +28,23 @@ import { api } from "../../lib/api";
 // Note: EmailIngestionPanel import removed as component may not exist
 import "./EmailDashboard.css";
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-);
+// Register ChartJS components once at module level to prevent memory leaks
+let chartJSRegistered = false;
+if (!chartJSRegistered) {
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+  );
+  chartJSRegistered = true;
+}
 
 interface EmailStats {
   totalEmails: number;
@@ -77,20 +81,31 @@ export const EmailDashboard: React.FC = () => {
   const sectionsRef = useRef<HTMLElement[]>([]);
 
   // Fetch real data using tRPC queries
-  const {
-    data: analyticsData,
-    isLoading: analyticsLoading,
-    error: analyticsError,
-  } = api?.emails?.getAnalytics.useQuery({});
-  const { data: tableData, isLoading: tableLoading } =
-    api?.emails?.getTableData?.useQuery?.({
+  // Fix: Ensure hooks are always called, not conditionally
+  const analyticsQuery = api?.emails?.getAnalytics?.useQuery ? 
+    api.emails.getAnalytics.useQuery({}) : 
+    { data: undefined, isLoading: false, error: undefined };
+    
+  const tableDataQuery = api?.emails?.getTableData?.useQuery ?
+    api.emails.getTableData.useQuery({
       page: 1,
       pageSize: 50, // Reduced from 1000 to avoid validation errors
       sortBy: "received_date",
       sortOrder: "desc",
-    }) || { data: null, isLoading: false };
-  const { data: dashboardStats, isLoading: statsLoading } =
-    api?.emails?.getDashboardStats?.useQuery?.({}) || { data: null, isLoading: false };
+    }) :
+    { data: undefined, isLoading: false };
+    
+  const dashboardStatsQuery = api?.emails?.getDashboardStats?.useQuery ?
+    api.emails.getDashboardStats.useQuery({}) :
+    { data: undefined, isLoading: false };
+  
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = analyticsQuery;
+  const { data: tableData, isLoading: tableLoading } = tableDataQuery;
+  const { data: dashboardStats, isLoading: statsLoading } = dashboardStatsQuery;
 
   // Enhanced scrolling functionality
   const handleScroll = useCallback(() => {
@@ -177,97 +192,53 @@ export const EmailDashboard: React.FC = () => {
   }, [activeTab]);
 
   // Set up real-time tRPC subscription for email processing updates
+  // Call hook at top level (not conditionally)
+  const emailSubscription = api.emails?.subscribeToEmailUpdates?.useSubscription ? 
+    api.emails.subscribeToEmailUpdates.useSubscription(
+      {}, // Provide empty object instead of undefined
+      {
+        onData: (data: unknown) => {
+          console.log('📧 Email processing update received:', data);
+          
+          // Handle different event types
+          switch (data?.type) {
+            case 'stats_updated':
+              // Invalidate dashboard stats to trigger refresh
+              utils.emails.getDashboardStats?.invalidate?.();
+              break;
+            case 'email_processed':
+              // Invalidate table data and stats
+              utils.emails.getTableData?.invalidate?.();
+              utils.emails.getDashboardStats?.invalidate?.();
+              break;
+            case 'phase_completed':
+              // Update analytics data
+              utils.emails.getAnalytics?.invalidate?.();
+              break;
+            case 'batch_completed':
+              // Refresh all email data
+              utils.emails?.invalidate?.();
+              break;
+          }
+        },
+        onError: (error: unknown) => {
+          console.warn('📧 Email processing subscription error:', error);
+        },
+      }
+    ) : null;
+
   useEffect(() => {
-    let subscription: unknown = null;
-    
-    // Subscribe to email processing updates using tRPC subscriptions if available
-    if (api.emails?.subscribeToEmailUpdates?.useSubscription) {
-      try {
-        subscription = api.emails.subscribeToEmailUpdates.useSubscription(
-          {}, // Provide empty object instead of undefined
-          {
-            onData: (data: unknown) => {
-              console.log('📧 Email processing update received:', data);
-              
-              // Handle different event types
-              switch (data?.type) {
-                case 'stats_updated':
-                  // Invalidate dashboard stats to trigger refresh
-                  utils.emails.getDashboardStats?.invalidate?.();
-                  break;
-                case 'email_processed':
-                  // Invalidate table data and stats
-                  utils.emails.getTableData?.invalidate?.();
-                  utils.emails.getDashboardStats?.invalidate?.();
-                  break;
-                case 'phase_completed':
-                  // Update analytics data
-                  utils.emails.getAnalytics?.invalidate?.();
-                  break;
-                case 'batch_completed':
-                  // Refresh all email data
-                  utils.emails?.invalidate?.();
-                  break;
-              }
-            },
-            onError: (error: unknown) => {
-              console.warn('📧 Email processing subscription error:', error);
-            },
-          }
-        );
-      } catch (error) {
-        console.warn('Failed to set up tRPC subscription:', error);
-      }
-    }
 
-    // WebSocket fallback for critical updates
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host}/trpc-ws`;
-    
+    // DISABLED: WebSocket fallback to prevent connection leaks
+    // The singleton WebSocket manager handles all real-time updates
     let ws: WebSocket | null = null;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 3;
-    const reconnectDelay = 2000;
-
-    const connectFallbackWebSocket = () => {
-      try {
-        ws = new WebSocket(wsUrl);
-        
-        ws.onopen = () => {
-          console.log('📧 Fallback WebSocket connected');
-          reconnectAttempts = 0;
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            
-            // Only handle critical updates via fallback
-            if (data.type === 'critical_update' || data.type === 'system_status') {
-              utils.emails.getDashboardStats.invalidate();
-            }
-          } catch (error) {
-            console.warn('Failed to parse fallback WebSocket message:', error);
-          }
-        };
-
-        ws.onclose = () => {
-          if (reconnectAttempts < maxReconnectAttempts) {
-            reconnectAttempts++;
-            setTimeout(connectFallbackWebSocket, reconnectDelay * reconnectAttempts);
-          }
-        };
-
-        ws.onerror = (error) => {
-          console.error('📧 Fallback WebSocket error:', error);
-        };
-      } catch (error) {
-        console.error('Failed to create fallback WebSocket connection:', error);
-      }
+    let reconnectTimeoutId: NodeJS.Timeout | null = null;
+    
+    // Placeholder for future WebSocket fallback implementation
+    const createFallbackConnection = () => {
+      // TODO: Implement singleton-based fallback when needed
+      console.log('📧 Fallback WebSocket disabled to prevent leaks');
     };
-
-    // Initial fallback connection
-    connectFallbackWebSocket();
 
     // Reduced polling interval since we have tRPC subscriptions
     const fallbackInterval = setInterval(() => {
@@ -283,20 +254,25 @@ export const EmailDashboard: React.FC = () => {
     return () => {
       // Clean up subscription
       try {
-        if (subscription && typeof (subscription as unknown)?.unsubscribe === 'function') {
-          (subscription as unknown).unsubscribe();
+        if (emailSubscription && typeof (emailSubscription as any)?.unsubscribe === 'function') {
+          (emailSubscription as any).unsubscribe();
         }
       } catch (error) {
         console.warn('Error cleaning up subscription:', error);
       }
       
-      // Clean up fallback WebSocket
+      // Clean up any existing fallback resources
       try {
         if (ws && ws.readyState !== WebSocket.CLOSED) {
           ws.close();
+          ws = null;
+        }
+        if (reconnectTimeoutId) {
+          clearTimeout(reconnectTimeoutId);
+          reconnectTimeoutId = null;
         }
       } catch (error) {
-        console.warn('Error closing WebSocket:', error);
+        console.warn('Error cleaning up WebSocket resources:', error);
       }
       
       clearInterval(fallbackInterval);

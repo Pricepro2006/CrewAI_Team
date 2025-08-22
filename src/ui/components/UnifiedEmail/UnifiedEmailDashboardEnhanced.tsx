@@ -168,14 +168,17 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
     },
   }), [filters, refetchEmails, refetchAnalytics]);
 
-  // WebSocket connection
-  const { 
-    state: wsState, 
-    subscribe, 
-    unsubscribe,
-    connect,
-    disconnect,
-  } = useEmailWebSocket(wsHandlers);
+  // WebSocket connection - EMERGENCY DISABLED due to connection storm
+  const wsState = {
+    isConnected: false,
+    isConnecting: false,
+    isReconnecting: false,
+    lastError: null,
+  };
+  const subscribe = async () => console.log('DISABLED: Connection storm prevention');
+  const unsubscribe = async () => console.log('DISABLED: Connection storm prevention');
+  const connect = () => console.log('DISABLED: Connection storm prevention');
+  const disconnect = () => console.log('DISABLED: Connection storm prevention');
 
   // Subscribe to relevant channels on mount
   useEffect(() => {

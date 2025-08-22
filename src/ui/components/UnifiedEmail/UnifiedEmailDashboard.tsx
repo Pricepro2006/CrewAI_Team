@@ -12,7 +12,7 @@ import {
   CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 import { api } from "../../../client/lib/api";
-import { useWebSocket } from "../../hooks/useWebSocket";
+import { useWebSocketSingleton } from "../../hooks/useWebSocketSingleton";
 import { MetricsBar } from "./MetricsBar";
 import { EmailListView } from "./EmailListView";
 import { EmailDashboardView } from "./EmailDashboardView";
@@ -45,7 +45,12 @@ interface DashboardMetrics {
   todaysEmails: number;
   workflowCompletion: number;
   avgResponseTime: number;
-  criticalAlerts: any[];
+  criticalAlerts: Array<{
+    id: string;
+    message: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    timestamp: Date;
+  }>;
   agentUtilization: number;
   pendingAssignment: number;
   urgentCount: number;
@@ -77,7 +82,21 @@ const defaultFilters: FilterConfig = {
 };
 
 // Helper function to convert API email to UnifiedEmailData
-const convertToUnifiedEmailData = (apiEmail: any): UnifiedEmailData => ({
+interface ApiEmailData {
+  id: string;
+  subject: string;
+  summary?: string;
+  requested_by: string;
+  email_alias: string;
+  received_date: string;
+  workflow_state: WorkflowState;
+  priority: EmailPriority;
+  status: EmailStatus;
+  has_attachments?: boolean;
+  is_read?: boolean;
+}
+
+const convertToUnifiedEmailData = (apiEmail: ApiEmailData): UnifiedEmailData => ({
   id: apiEmail.id,
   messageId: apiEmail.id,
   subject: apiEmail.subject,
@@ -85,10 +104,10 @@ const convertToUnifiedEmailData = (apiEmail: any): UnifiedEmailData => ({
   from: apiEmail.requested_by,
   to: [apiEmail.email_alias],
   receivedAt: apiEmail.received_date,
-  workflowState: apiEmail.workflow_state as any,
+  workflowState: apiEmail.workflow_state,
   isWorkflowComplete: apiEmail.workflow_state === 'COMPLETION',
-  priority: apiEmail.priority as any,
-  status: apiEmail.status as any,
+  priority: apiEmail.priority,
+  status: apiEmail.status,
   tags: undefined,
   hasAttachments: apiEmail.has_attachments || false,
   isRead: apiEmail.is_read || false,
@@ -111,10 +130,10 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
     sortBy: "received_date",
     sortOrder: "desc",
     filters: {
-      status: filters.statuses as any[],
+      status: filters.statuses as EmailStatus[],
       emailAlias: filters.emailAliases,
-      workflowState: filters.workflowStates as any[],
-      priority: filters.priorities as any[],
+      workflowState: filters.workflowStates as WorkflowState[],
+      priority: filters.priorities as EmailPriority[],
       dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
         start: filters?.dateRange?.start.toISOString(),
         end: filters?.dateRange?.end.toISOString(),
@@ -137,22 +156,18 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
     console.log("WebSocket disconnected");
   }, []);
 
-  const onError = useCallback((error: any) => {
+  const onError = useCallback((error: Error | unknown) => {
     console.error("WebSocket error:", error);
   }, []);
 
-  // Real-time updates via WebSocket with error handling
-  React.useEffect(() => {
-    try {
-      useWebSocket({
-        onConnect,
-        onDisconnect,
-        onError,
-      });
-    } catch (error) {
-      console.warn('WebSocket connection failed:', error);
-    }
-  }, [onConnect, onDisconnect, onError]);
+  // Real-time updates via WebSocket with stable singleton connection
+  const { isConnected, connect, disconnect } = useWebSocketSingleton({
+    autoConnect: true,
+    subscriberId: 'unified-email-dashboard',
+    onConnect,
+    onDisconnect,  
+    onError,
+  });
 
   // Manual refresh - memoized to prevent unnecessary re-renders
   const handleRefresh = useCallback(async () => {

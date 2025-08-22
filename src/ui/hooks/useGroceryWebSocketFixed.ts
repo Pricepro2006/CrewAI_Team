@@ -85,6 +85,19 @@ export function useGroceryWebSocket(
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const isReconnectingRef = useRef(false);
   const isMountedRef = useRef(true);
+  
+  // Stabilize callbacks with refs to prevent connect function recreation
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  const onErrorRef = useRef(onError);
+  const onEventRef = useRef(onEvent);
+  
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+    onDisconnectRef.current = onDisconnect;
+    onErrorRef.current = onError;
+    onEventRef.current = onEvent;
+  });
 
   // Log helper
   const log = useCallback((message: string, level: 'info' | 'warn' | 'error' = 'info', data?: unknown) => {
@@ -110,8 +123,8 @@ export function useGroceryWebSocket(
       eventHistory: [...prev.eventHistory, event].slice(-MAX_EVENT_HISTORY)
     }));
 
-    onEvent?.(event);
-  }, [onEvent, log]);
+    onEventRef.current?.(event);
+  }, [log]);
 
   // Send message through WebSocket
   const send = useCallback((message: unknown) => {
@@ -153,7 +166,7 @@ export function useGroceryWebSocket(
         });
         
         isReconnectingRef.current = false;
-        onConnect?.();
+        onConnectRef.current?.();
 
         // Subscribe to grocery-specific channels
         if (conversationId) {
@@ -180,34 +193,38 @@ export function useGroceryWebSocket(
         });
         
         wsRef.current = null;
-        onDisconnect?.();
+        onDisconnectRef.current?.();
 
         // Attempt reconnection if within retry limits
-        if (state.reconnectAttempts < maxReconnectAttempts && isMountedRef.current) {
-          const delay = getReconnectionDelay(state.reconnectAttempts + 1);
-          
-          log(`Attempting reconnection in ${delay}ms (attempt ${state.reconnectAttempts + 1}/${maxReconnectAttempts})`, 'info');
-          
-          isReconnectingRef.current = true;
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (isMountedRef.current) {
-              setState(prev => ({ ...prev, reconnectAttempts: prev.reconnectAttempts + 1 }));
-              connect();
-            }
-          }, delay);
-        } else if (state.reconnectAttempts >= maxReconnectAttempts) {
-          const error = new Error("Max reconnection attempts reached");
-          log("Max reconnection attempts reached", 'error', error);
-          updateState({ connectionStatus: "error", error });
-          onError?.(error);
-        }
+        setState(prev => {
+          if (prev.reconnectAttempts < maxReconnectAttempts && isMountedRef.current) {
+            const delay = getReconnectionDelay(prev.reconnectAttempts + 1);
+            
+            log(`Attempting reconnection in ${delay}ms (attempt ${prev.reconnectAttempts + 1}/${maxReconnectAttempts})`, 'info');
+            
+            isReconnectingRef.current = true;
+            reconnectTimeoutRef.current = setTimeout(() => {
+              if (isMountedRef.current) {
+                connect();
+              }
+            }, delay);
+            
+            return { ...prev, reconnectAttempts: prev.reconnectAttempts + 1 };
+          } else if (prev.reconnectAttempts >= maxReconnectAttempts) {
+            const error = new Error("Max reconnection attempts reached");
+            log("Max reconnection attempts reached", 'error', error);
+            updateState({ connectionStatus: "error", error });
+            onErrorRef.current?.(error);
+          }
+          return prev;
+        });
       };
 
       ws.onerror = (event: unknown) => {
         log("WebSocket error", 'error', event);
         const error = new Error("WebSocket connection error");
         updateState({ error });
-        onError?.(error);
+        onErrorRef.current?.(error);
       };
 
       ws.onmessage = (event: unknown) => {
@@ -233,18 +250,13 @@ export function useGroceryWebSocket(
       const err = error as Error;
       log("Failed to create WebSocket connection", 'error', err);
       updateState({ connectionStatus: "error", error: err });
-      onError?.(err);
+      onErrorRef.current?.(err);
       isReconnectingRef.current = false;
     }
   }, [
-    state.reconnectAttempts,
     maxReconnectAttempts,
     conversationId,
     userId,
-    onConnect,
-    onDisconnect,
-    onError,
-    handleEvent,
     send,
     log,
     updateState
@@ -289,14 +301,20 @@ export function useGroceryWebSocket(
     log("Cleared event history", 'info');
   }, [log, updateState]);
 
-  // Auto-connect on mount
+  // Store connect and disconnect functions in refs to avoid recreating connection on dependency changes
+  const connectRef = useRef(connect);
+  const disconnectRef = useRef(disconnect);
+  connectRef.current = connect;
+  disconnectRef.current = disconnect;
+
+  // Auto-connect on mount only - do not reconnect when dependencies change
   useEffect(() => {
     isMountedRef.current = true;
-    connect();
+    connectRef.current();
 
     return () => {
       isMountedRef.current = false;
-      disconnect();
+      disconnectRef.current();
     };
   }, []); // Empty deps to only run on mount/unmount
 

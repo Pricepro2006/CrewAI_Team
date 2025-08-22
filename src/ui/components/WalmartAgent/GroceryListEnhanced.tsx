@@ -18,7 +18,7 @@ import {
   Truck
 } from 'lucide-react';
 import { api } from '../../../client/lib/api';
-import { useRealtimePrices } from '../../hooks/useRealtimePrices';
+import { useRealtimePricesStable } from '../../hooks/useRealtimePricesStable';
 import ConnectionStatus from '../common/ConnectionStatus';
 import NaturalLanguageInput from './NaturalLanguageInput';
 import CommandHistory from './CommandHistory';
@@ -145,9 +145,8 @@ export const GroceryListEnhanced: React.FC = () => {
     }
   }, []);
 
-  // Real-time price monitoring
-  const realtimePricesResult = useRealtimePrices({
-    productIds: currentProductIds,
+  // Real-time price monitoring with stable hooks
+  const realtimePricesResult = useRealtimePricesStable({
     conversationId,
     userId,
     onPriceChange: handlePriceChange,
@@ -191,56 +190,71 @@ export const GroceryListEnhanced: React.FC = () => {
     priceUpdates,
     totalSavingsDetected,
     dealsActive,
-    subscribeToPrices,
+    updatePriceSubscription,
     getPriceChangeIndicator,
     getRecentPriceChanges,
     isConnected
   } = realtimePricesResult;
   const connectionStatus = realtimePricesResult.connectionStatus as "connecting" | "connected" | "disconnected" | "error";
 
-  // tRPC hooks - using mock implementations for missing procedures
-  const processGroceryInputMutation = useMemo(() => ({
-    mutateAsync: async (params: any) => {
-      // Mock implementation
-      console.log('Mock processGroceryInput:', params);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { groceryList: null, suggestions: [] };
+  // tRPC hooks for real API calls
+  interface ProcessGroceryInputParams {
+    conversationId: string;
+    userId: string;
+    input: string;
+    location: { zipCode: string; city: string; state: string };
+    existingList?: GroceryList;
+  }
+  
+  const processGroceryInputMutation = api.walmart.processGroceryInput.useMutation({
+    onSuccess: (data) => {
+      if (data?.groceryList) {
+        setGroceryList(data.groceryList);
+      }
+      if (data?.suggestions) {
+        setSuggestions(data.suggestions);
+      }
     },
-    isPending: false,
-    isLoading: false
-  }), []);
-
-  const calculateTotalsMutation = useMemo(() => ({
-    mutate: (params: any) => {
-      // Mock implementation
-      console.log('Mock calculateListTotals:', params);
-      setTimeout(() => {
-        const mockTotals: ListTotalCalculation = {
-          subtotal: 0,
-          originalSubtotal: 0,
-          itemSavings: 0,
-          promoDiscount: 0,
-          promoDescription: '',
-          loyaltyDiscount: 0,
-          tax: 0,
-          taxRate: 0.08,
-          deliveryFee: 4.95,
-          deliveryFeeWaived: false,
-          totalSavings: 0,
-          total: 0,
-          freeDeliveryEligible: false,
-          freeDeliveryThreshold: 35,
-          amountForFreeDelivery: 35
-        };
-        setTotals(mockTotals);
-      }, 500);
+    onError: (error) => {
+      console.error('Failed to process grocery input:', error);
+      setInputError('Failed to process your request. Please try again.');
     }
-  }), []);
+  });
 
-  const getSmartRecommendationsQuery = {
-    isLoading: false,
-    data: { recommendations: [] }
-  };
+  interface CalculateTotalsParams {
+    items: Array<{
+      productId: string;
+      quantity: number;
+      price: number;
+      originalPrice?: number;
+    }>;
+    location: { zipCode: string; state: string };
+    loyaltyMember: boolean;
+  }
+  
+  const calculateTotalsMutation = api.walmart.calculateListTotals.useMutation({
+    onSuccess: (data) => {
+      if (data) {
+        setTotals(data);
+      }
+    },
+    onError: (error) => {
+      console.error('Failed to calculate totals:', error);
+    }
+  });
+
+  const getSmartRecommendationsQuery = api.walmart.getSmartRecommendations.useQuery(
+    {
+      userId,
+      conversationId,
+      currentList: groceryList?.items || [],
+      location
+    },
+    {
+      enabled: !!groceryList && groceryList.items.length > 0,
+      refetchInterval: 60000, // Refresh every minute
+    }
+  );
 
   // Generate command history for display
   const recentCommands = useMemo(() => 
@@ -264,14 +278,14 @@ export const GroceryListEnhanced: React.FC = () => {
         loyaltyMember: true,
       });
     }
-  }, [groceryList?.items?.length, calculateTotalsMutation, location.zipCode, location.state]);
+  }, [groceryList, calculateTotalsMutation, location.zipCode, location.state]);
   
-  // Subscribe to price updates in a separate effect
+  // Subscribe to price updates using stable function - CRITICAL FIX
   useEffect(() => {
     if (currentProductIds.length > 0) {
-      subscribeToPrices(currentProductIds);
+      updatePriceSubscription(currentProductIds);
     }
-  }, [currentProductIds, subscribeToPrices]);
+  }, [currentProductIds, updatePriceSubscription]);
 
   // Handle natural language input submission
   const handleInputSubmit = useCallback(async (input: string) => {
@@ -293,7 +307,7 @@ export const GroceryListEnhanced: React.FC = () => {
     
     try {
       const startTime = Date.now();
-      const result = await processGroceryInputMutation?.mutateAsync?.({
+      const result = await processGroceryInputMutation.mutateAsync({
         conversationId,
         userId,
         input: input.trim(),

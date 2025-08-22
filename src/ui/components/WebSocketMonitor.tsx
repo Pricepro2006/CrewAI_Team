@@ -17,7 +17,7 @@ export const WebSocketMonitor: React.FC = () => {
   const [testMessage, setTestMessage] = useState('');
 
   // Memoize callback functions to prevent unnecessary re-renders
-  const onMessage = useCallback((message: any) => {
+  const onMessage = useCallback((message: WebSocketMessage) => {
     const logEntry: MessageLog = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       message,
@@ -35,24 +35,18 @@ export const WebSocketMonitor: React.FC = () => {
     console.log('WebSocket Monitor: Disconnected');
   }, []);
 
-  const onError = useCallback((error: any) => {
+  const onError = useCallback((error: Error | unknown) => {
     console.error('WebSocket Monitor: Error', error);
   }, []);
 
-  const {
-    connected,
-    connecting,
-    error,
-    connectionCount,
-    reconnectAttempts,
-    sendMessage,
-    reconnect
-  } = useWebSocketConnection({
-    onMessage,
-    onConnect,
-    onDisconnect,
-    onError
-  });
+  // EMERGENCY DISABLED - WebSocket connection causing connection storm
+  const connected = false;
+  const connecting = false;
+  const error = 'DISABLED: Connection storm prevention';
+  const connectionCount = 0;
+  const reconnectAttempts = 0;
+  const sendMessage = () => false;
+  const reconnect = () => console.log('DISABLED: Connection storm prevention');
 
   const handleSendTest = useCallback(() => {
     if (!testMessage.trim()) return;
@@ -128,8 +122,8 @@ export const WebSocketMonitor: React.FC = () => {
               <input
                 type="text"
                 value={testMessage}
-                onChange={(e: any) => setTestMessage(e?.target?.value)}
-                onKeyPress={(e: any) => e.key === 'Enter' && handleSendTest()}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestMessage(e.target.value)}
+                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSendTest()}
                 placeholder="Enter test message..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!connected}

@@ -95,32 +95,35 @@ export const WebSocketTestPanel: React.FC = () => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [selectedEndpoint, setSelectedEndpoint] = useState<'native' | 'trpc'>('native');
 
-  // Native WebSocket connection with safe casting
-  const nativeWebSocket = useWebSocketConnection({
-    onConnect: () => addTestResult('Native WebSocket Connection', 'success', 'Connected successfully'),
-    onDisconnect: () => addTestResult('Native WebSocket Connection', 'error', 'Disconnected'),
-    onError: (error) => addTestResult('Native WebSocket Connection', 'error', `Error: ${(error as Error)?.message || 'Unknown error'}`),
-    onMessage: (message) => addTestResult('Native WebSocket Message', 'success', `Received: ${(message as WebSocketMessage)?.type || 'unknown'}`)
-  }) as WebSocketConnectionReturn;
+  // EMERGENCY DISABLED - WebSocket connections causing connection storm
+  // This component was creating multiple concurrent WebSocket connections
+  // causing thousands of rate limit errors per second
+  
+  // Mock connections to prevent crashes
+  const nativeWebSocket: WebSocketConnectionReturn = {
+    connect: () => addTestResult('Native WebSocket Connection', 'error', 'DISABLED: Connection storm prevention'),
+    disconnect: () => {},
+    sendMessage: () => false,
+    isConnected: false,
+    reconnectAttempts: 0,
+    connected: false,
+  };
 
-  // tRPC WebSocket connection with safe casting
-  const trpcWebSocket = useWebSocket({
-    onConnect: () => addTestResult('tRPC WebSocket Connection', 'success', 'Connected successfully'),
-    onDisconnect: () => addTestResult('tRPC WebSocket Connection', 'error', 'Disconnected'),
-    onError: (error) => addTestResult('tRPC WebSocket Connection', 'error', `Error: ${(error as Error)?.message || 'Unknown error'}`)
-  }) as TRPCWebSocketReturn;
+  const trpcWebSocket: TRPCWebSocketReturn = {
+    isConnected: false,
+    connectionStatus: 'disconnected',
+    reconnectAttempts: 0,
+    connect: () => addTestResult('tRPC WebSocket Connection', 'error', 'DISABLED: Connection storm prevention'),
+    disconnect: () => {},
+  };
 
-  // Real-time updates hook with safe casting
-  const realTimeUpdates = useRealTimeUpdates({
-    onAgentStatusChange: (agentId: string, status: AgentStatus) => 
-      addTestResult('Agent Status Update', 'success', `Agent ${agentId}: ${status?.status || 'unknown'}`),
-    onPlanProgress: (planId: string, update: PlanUpdate) => 
-      addTestResult('Plan Progress Update', 'success', `Plan ${planId}: ${update?.status || 'unknown'}`),
-    onRAGOperation: (operation: RAGOperation) => 
-      addTestResult('RAG Operation', 'success', `${operation?.operation || 'unknown'}: ${operation?.status || 'unknown'}`),
-    onSystemHealthChange: (health: SystemHealth) => 
-      addTestResult('System Health Update', 'success', `Services: ${health?.services ? Object.keys(health.services).length : 0}`)
-  }) as RealTimeUpdatesReturn;
+  const realTimeUpdates: RealTimeUpdatesReturn = {
+    isConnected: false,
+    connectionStatus: 'DISABLED',
+    reconnectAttempts: 0,
+    connect: () => addTestResult('Real-time Updates', 'error', 'DISABLED: Connection storm prevention'),
+    disconnect: () => {},
+  };
 
   const addTestResult = (test: string, status: TestResult['status'], message: string) => {
     setTestResults(prev => [...prev, {
